@@ -96,6 +96,29 @@ func BenchmarkQuad(b *testing.B) {
 	}
 }
 
+// BenchmarkEffacer mesure la première opération de chaque image, à la résolution
+// interne. Elle se compare au blit qui la suit : une remise à zéro qui coûterait
+// autant que le dessin serait le premier endroit à regarder.
+func BenchmarkEffacer(b *testing.B) {
+	cas := []struct {
+		nom     string
+		couleur rendu.Couleur
+	}{
+		{"transparent", rendu.Couleur{}},
+		{"couleur", rendu.Couleur{R: 20, V: 30, B: 40, A: 255}},
+	}
+	for _, c := range cas {
+		b.Run(c.nom, func(b *testing.B) {
+			tampon := NouveauTampon(480, 270)
+
+			b.ResetTimer()
+			for range b.N {
+				tampon.Effacer(c.couleur)
+			}
+		})
+	}
+}
+
 // BenchmarkImage mesure une image entière : un sol qui couvre la résolution interne
 // et deux cents personnages dessus. C'est le seul chiffre qui réponde à la question
 // qui compte — combien d'images par seconde le blit laisse au reste du moteur.
