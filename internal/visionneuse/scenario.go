@@ -32,4 +32,22 @@ type Scenario struct {
 	Fond             rendu.Couleur
 	Atlas            func() (*raster.Atlas, error)
 	Quads            func(numero int, e Entrees, reserve rendu.Rendu) rendu.Rendu
+
+	// References désigne les images que la suite de non-régression compare. Vide,
+	// elles le sont toutes — ce qui convient aux scénarios courts, faits pour tenir
+	// en une image ou deux. Un scénario long n'en verse que les moments qui décident.
+	References []int
+}
+
+// ImagesDeReference rend les numéros d'image que la suite compare.
+func (s Scenario) ImagesDeReference() []int {
+	if len(s.References) > 0 {
+		return s.References
+	}
+
+	tous := make([]int, s.Images)
+	for i := range tous {
+		tous[i] = i
+	}
+	return tous
 }

@@ -8,7 +8,10 @@ import "sort"
 // catalogue associe chaque nom de scénario à sa construction. Une fonction et non un
 // Scenario tout fait : chaque rejeu part d'un scénario neuf.
 var catalogue = map[string]func() Scenario{
-	"mire": Mire,
+	"bords":   Bords,
+	"melange": Melange,
+	"mire":    Mire,
+	"ordre":   Ordre,
 }
 
 // Par rend le scénario de ce nom.
