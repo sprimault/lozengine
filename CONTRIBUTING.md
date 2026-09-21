@@ -15,16 +15,23 @@ everyone who adopted the engine. **Every new public signature is treated as
 final**, and that is what makes the upfront discussion useful rather than
 bureaucratic.
 
-## The rule with no exception
+## The rule on dependencies
 
-`go.mod` holds no `require` line. Standard library only, no cgo, including for
-tests, examples and tooling.
+**The core of the engine has none.** `geometrie`, `scene`, `tri`, `rendu` and
+`raster` use the standard library and nothing else, no cgo, tests included. A
+pull request that adds anything there is refused whatever its quality: "just for
+the tests" is not an exception, and an assertion library even less so.
 
-**A pull request that adds a dependency is refused whatever its quality.** "Just
-for the tests" is not an exception, and an assertion library even less so.
-Before proposing anything that assumes an outside package: don't propose it,
-write the code. [`docs/go.md`](docs/go.md) (French) carries the table of what is
-done instead, need by need.
+Elsewhere, a **closed list** kept in the `Makefile`, which today holds two
+entries — font rasterising and audio output. A candidate joins it through a
+decision reviewed in a pull request, never through a `require` slipped into a
+batch about something else. [`docs/go.md`](docs/go.md) (French) states what it
+must pass: the licence first, which is disqualifying; then the subject, because
+what the engine claims as its own is written whatever it costs; then the cost
+trade-off for the rest.
+
+Open an issue **before** writing code that assumes an outside package. What gets
+refused is not the dependency, it is the one discovered at review time.
 
 If a feature seems to require native bindings, it is the feature that is out of
 scope.

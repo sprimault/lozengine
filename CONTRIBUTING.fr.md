@@ -15,16 +15,25 @@ au prix de la confiance de ceux qui ont adopté le moteur. **Toute nouvelle
 signature publique est traitée comme définitive**, et c'est ce qui rend la
 discussion préalable utile plutôt que bureaucratique.
 
-## La règle qui n'a pas d'exception
+## La règle sur les dépendances
 
-`go.mod` ne contient aucune ligne `require`. Bibliothèque standard uniquement,
-sans cgo, y compris pour les tests, les exemples et l'outillage.
+**Le cœur du moteur n'en a aucune.** `geometrie`, `scene`, `tri`, `rendu` et
+`raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. Une
+pull request qui y ajoute quoi que ce soit est refusée, quelle que soit sa
+qualité : « juste pour les tests » n'est pas une exception, et une bibliothèque
+d'assertions encore moins.
 
-**Une pull request qui ajoute une dépendance est refusée quelle que soit sa
-qualité.** « Juste pour les tests » n'est pas une exception, et une bibliothèque
-d'assertions encore moins. Avant de proposer quelque chose qui suppose un paquet
-extérieur : ne pas le proposer, écrire le code. [`docs/go.md`](docs/go.md) porte
-la table de ce qu'on fait à la place, besoin par besoin.
+Ailleurs, une **liste close** tenue dans le `Makefile`, qui compte aujourd'hui
+deux entrées — le rendu de polices et la sortie audio. Une candidature s'y ajoute
+par une décision relue en pull request, jamais par un `require` glissé dans un
+lot qui parle d'autre chose. [`docs/go.md`](docs/go.md) énonce ce qu'elle doit
+passer : la licence d'abord, qui est rédhibitoire ; puis le sujet, car ce que le
+moteur revendique s'écrit quel qu'en soit le coût ; puis l'arbitrage du coût pour
+le reste.
+
+Ouvrir une issue **avant** d'écrire du code qui suppose un paquet extérieur. Ce
+qui se refuse, ce n'est pas la dépendance, c'est celle qu'on découvre à la
+relecture.
 
 Si une fonctionnalité paraît exiger une liaison native, c'est la fonctionnalité
 qui est hors périmètre.

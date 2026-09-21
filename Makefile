@@ -103,6 +103,24 @@ fmt: depot
 vet:
 	go vet ./...
 
+# Les dépendances admises, et elles seules. La liste est close : docs/go.md dit ce
+# que chacune doit passer pour y entrer, et pourquoi ces deux-là y sont.
+#
+# Une liste blanche plutôt qu'une interdiction : une interdiction absolue finit par
+# être contournée en silence, alors qu'une entrée dans cette ligne se relit en pull
+# request. On n'ajoute donc pas une dépendance par accident, seulement par décision.
+AUTORISEES = golang\.org/x/image(/.*)?|github\.com/ebitengine/oto/v3(/.*)?
+
+# Les paquets qui n'ont droit à rien, pas même à ce que la liste autorise. C'est
+# le cœur, et c'est lui qui porte la promesse.
+#
+# `apparence` n'y figure pas alors qu'il appartient au noyau au sens de la
+# frontière système : c'est lui qui rastérise les polices, donc lui qui pourra
+# puiser dans la liste. Deux notions voisines, deux listes — les confondre
+# interdirait à `apparence` ce que la liste existe précisément pour lui permettre.
+SANS_DEPENDANCE = internal/geometrie internal/scene internal/tri internal/rendu \
+                  internal/raster
+
 # La règle du dépôt, rendue exécutable.
 #
 # `.Standard` et non un filtre sur le point dans le chemin : la bibliothèque
@@ -130,11 +148,23 @@ deps:
 	done; \
 	externes=$$(printf '%s\n' $$externes \
 	  | grep -v 'github.com/sprimault/lozengine' | sort -u); \
-	if [ -n "$$externes" ]; then \
-	  echo "dépendance externe, contraire à la règle du dépôt :"; \
-	  echo "$$externes"; \
+	hors_liste=$$(printf '%s\n' $$externes | grep -Ev '^($(AUTORISEES))$$'); \
+	if [ -n "$$hors_liste" ]; then \
+	  echo "dépendance hors de la liste close de docs/go.md :"; \
+	  echo "$$hors_liste"; \
 	  exit 1; \
-	fi
+	fi; \
+	for p in $(SANS_DEPENDANCE); do \
+	  [ -d "$$p" ] || continue; \
+	  atteint=$$(go list -deps -test \
+	    -f '{{if not .Standard}}{{.ImportPath}}{{end}}' ./$$p \
+	    | grep -v 'github.com/sprimault/lozengine'); \
+	  if [ -n "$$atteint" ]; then \
+	    echo "le cœur du moteur n'a droit à aucune dépendance, et $$p atteint :"; \
+	    echo "$$atteint"; \
+	    exit 1; \
+	  fi; \
+	done
 
 # Les paquets qui consomment ou produisent un Rendu, et rien d'autre. Le paquet
 # racine en est absent : c'est lui qui assemble, donc il connaît les backends.

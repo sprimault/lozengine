@@ -1,7 +1,7 @@
 # Lozengine · Feuille de route
 
-Moteur de rendu isométrique 2D en Go, sans aucune dépendance externe. Rendu logiciel.
-Cibles : Windows et Linux.
+Moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance. Rendu
+logiciel. Cibles : Windows et Linux.
 
 État : jalon 0 en cours. Le moteur ne rend rien d'utilisable pour l'instant.
 
@@ -108,10 +108,20 @@ Fin : un exemple Rust et un exemple C++ affichent une scène rendue par le moteu
 
 ## Principe directeur
 
-Aucune dépendance externe, sur aucune plateforme. `go.mod` ne contient aucune ligne
-`require`, et cela vaut pour les tests, les exemples et l'outillage. Seule la cible
-d'interopérabilité du jalon 9 demande un compilateur C, sans rien ajouter au moteur
-lui-même.
+**Le cœur du moteur n'a aucune dépendance, sur aucune plateforme.** Géométrie, scène,
+tri, structures et rastériseur n'emploient que la bibliothèque standard, tests compris,
+et un contrôle le vérifie paquet par paquet. La fenêtre, les entrées et le son passent
+par des appels système directs et par des protocoles écrits sur socket, jamais par le
+chargement d'une bibliothèque C.
+
+Deux paquets périphériques font exception, sous licence permissive et par décision
+inscrite : le rendu de polices au jalon 4, la sortie audio au jalon 5. Les réécrire
+coûterait des semaines pour un résultat qui ne distinguerait en rien le moteur — ce qui
+n'est pas le cas du protocole X11, dont les semaines sont assumées parce qu'il est le
+sujet. La liste et les critères d'entrée sont dans `docs/go.md`.
+
+Seule la cible d'interopérabilité du jalon 9 demande un compilateur C, sans rien
+ajouter au moteur lui-même.
 
 La bibliothèque native du jalon 9 ne remet pas ce principe en cause : produire un
 `c-shared` ou un `c-archive` réclame un compilateur C sur la machine de compilation, mais

@@ -161,10 +161,22 @@ conséquences :
 Critère permanent : le hello world tient en moins de 30 lignes. S'il gonfle,
 c'est qu'un défaut manque quelque part.
 
-## Zéro dépendance
+## Dépendances
 
-`go.mod` ne contient aucune ligne `require`. Bibliothèque standard uniquement,
-sans cgo, et cela vaut pour les tests, les exemples et l'outillage.
+**Le cœur du moteur n'en a aucune.** `geometrie`, `scene`, `tri`, `rendu` et
+`raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. C'est
+là que la promesse se joue, et le contrôle la vérifie paquet par paquet plutôt
+que globalement.
+
+Deux paquets périphériques font exception, sous licence permissive et par
+décision inscrite dans le `Makefile` : le rendu de polices dans `apparence`, la
+sortie audio dans `audio`. Les réécrire coûterait des semaines pour un résultat
+qui ne distinguerait en rien le moteur.
+
+Ce qui relève du sujet, en revanche, s'écrit quel qu'en soit le coût — le
+protocole X11 demande aussi des semaines, et elles sont assumées : le déléguer
+reviendrait à annuler un jalon. `docs/go.md` porte la liste et ce qu'une
+candidature doit passer pour y entrer.
 
 Conséquences assumées, qui ne se rediscutent pas :
 

@@ -52,20 +52,41 @@ jobs:
   # La compilation croisée du job précédent prouve que le code compile pour les
   # deux cibles ; elle ne dit rien de ce qu'il fait une fois exécuté. Le moteur
   # vise Windows et Linux : la suite doit passer sur les deux, nativement.
+  #
+  # Les deux bouts de la plage annoncée, et pas seulement l'un d'eux. N'éprouver
+  # que la dernière version laisserait le plancher de go.mod dériver sans que rien
+  # ne le dise ; n'éprouver que le plancher manquerait ce qu'une version récente
+  # refuse.
+  #
+  # Le plancher se lit dans go.mod et ne s'écrit pas ici : recopié, il finirait par
+  # diverger, et c'est la valeur du workflow qu'on ne peut pas essayer avant de
+  # pousser.
   tests:
-    name: Tests — ${{ matrix.os }}
+    name: Tests — ${{ matrix.os }}, Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        go: [plancher, dernière]
     steps:
       - uses: actions/checkout@v7
 
+      # `shell: bash` parce que le runner Windows exécute `run` en PowerShell par
+      # défaut, qui ne connaît pas awk.
+      - name: Version à installer
+        id: go
+        shell: bash
+        run: |
+          if [ "${{ matrix.go }}" = "plancher" ]; then
+            echo "version=$(awk '/^go /{print $2; exit}' go.mod)" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=stable" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-go@v7
         with:
-          go-version-file: go.mod
-          check-latest: true
+          go-version: ${{ steps.go.outputs.version }}
 
       # La suite de non-régression est visuelle mais passe par le rastériseur
       # logiciel : aucun test n'ouvre de fenêtre, et les runners n'ont pas
@@ -74,3 +95,27 @@ jobs:
         run: go test ./...
         env:
           CGO_ENABLED: 0
+
+  # Le seul contexte que la protection de branche exige, et la raison en vaut la
+  # peine : elle désigne les contrôles par leur nom, si bien qu'ajouter une ligne
+  # de matrice ou renommer un job rendait le contexte requis introuvable — et la
+  # pull request attendait indéfiniment quelque chose qui ne tournerait jamais.
+  #
+  # Avec un nom stable qui dépend de tous les autres, la matrice évolue librement
+  # et la protection ne bouge plus.
+  #
+  # `if: always()` pour que le bilan s'exécute même quand un job échoue, sans quoi
+  # il serait simplement sauté — et un contexte sauté ne bloque rien. C'est donc
+  # lui qui doit lire les résultats et échouer à leur place.
+  bilan:
+    name: Bilan
+    if: always()
+    needs: [controles, tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Résultat des contrôles
+        run: |
+          echo "contrôles : ${{ needs.controles.result }}"
+          echo "tests     : ${{ needs.tests.result }}"
+          [ "${{ needs.controles.result }}" = "success" ] || exit 1
+          [ "${{ needs.tests.result }}" = "success" ] || exit 1
