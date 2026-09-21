@@ -38,6 +38,12 @@ func Mire() Scenario {
 		Images:  24,
 		Fond:    rendu.Couleur{R: 12, V: 12, B: 18, A: 255},
 
+		// Quatre moments plutôt que vingt-quatre images : le pion hors champ à
+		// gauche, puis dedans, puis le voile au milieu, puis le pion qui sort à
+		// droite. Verser la totalité ferait vingt-quatre fichiers à relire à chaque
+		// régénération, pour quatre cas distincts.
+		References: []int{0, 8, 16, 23},
+
 		Atlas: func() (*raster.Atlas, error) {
 			var atlas raster.Atlas
 			for _, p := range []raster.Planche{plancheTuile(), planchePion()} {

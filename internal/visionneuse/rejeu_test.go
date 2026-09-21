@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/sprimault/lozengine/internal/raster"
@@ -203,22 +204,32 @@ func TestNouveauRejeuRefuse(t *testing.T) {
 	}
 }
 
-// TestCatalogue vérifie que le catalogue rend un scénario neuf par appel, un scénario
-// portant un état interne étant précisément ce que le déterminisme interdit.
+// TestCatalogue vérifie que chaque scénario du catalogue est montable et porte le nom
+// sous lequel il est rangé — c'est ce nom qui donne celui de ses images de référence.
 func TestCatalogue(t *testing.T) {
-	if noms := Noms(); len(noms) == 0 || noms[0] != "mire" {
-		t.Fatalf("noms : %v", noms)
+	noms := Noms()
+	if len(noms) == 0 {
+		t.Fatal("catalogue vide")
+	}
+	if !slices.IsSorted(noms) {
+		t.Errorf("noms non triés : %v", noms)
+	}
+
+	for _, nom := range noms {
+		scenario, ok := Par(nom)
+		if !ok {
+			t.Errorf("%q absent alors qu'il est listé", nom)
+			continue
+		}
+		if scenario.Nom != nom {
+			t.Errorf("%q rangé sous le nom %q", scenario.Nom, nom)
+		}
+		if scenario.Images == 0 || scenario.Atlas == nil || scenario.Quads == nil {
+			t.Errorf("%q : scénario incomplet", nom)
+		}
 	}
 
 	if _, ok := Par("inconnu"); ok {
 		t.Error("scénario inconnu accepté")
-	}
-
-	mire, ok := Par("mire")
-	if !ok {
-		t.Fatal("mire absente du catalogue")
-	}
-	if mire.Nom != "mire" || mire.Images == 0 || mire.Atlas == nil || mire.Quads == nil {
-		t.Errorf("scénario incomplet : %+v", mire.Nom)
 	}
 }
