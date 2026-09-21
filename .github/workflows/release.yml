@@ -1,0 +1,82 @@
+# Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+# Publication d'une version, sur un tag.
+#
+# Une bibliothèque Go ne publie aucun binaire : `go get` lit le dépôt au tag
+# demandé. Il n'y a donc ni matrice de compilation ni archives à assembler, et ce
+# workflow ne fait que deux choses — refuser de publier ce qui ne passe pas les
+# contrôles, et créer la version à partir du journal des modifications.
+#
+# La cible d'interopérabilité du dernier jalon changera cela : elle produit des
+# bibliothèques natives, qui demanderont une matrice et des artefacts. Rien ne
+# sert de l'écrire avant qu'elle existe.
+
+name: Publication
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version à préparer, pour un essai à blanc"
+        required: true
+
+permissions:
+  contents: write
+
+# Une publication par tag, jamais deux en parallèle, et jamais annulée en cours :
+# une version interrompue laisse un tag sans notes, ce qui est pire que d'attendre.
+concurrency:
+  group: publication-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publication:
+    name: Publication
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      # Les contrôles sont rejoués plutôt que supposés passés : un tag se pose sur
+      # un commit, pas sur une exécution, et rien ne garantit que celui-ci soit
+      # celui que la CI a vu.
+      - name: Contrôle complet
+        run: make check
+
+      - name: Version
+        id: version
+        run: |
+          tag="${{ inputs.version && format('v{0}', inputs.version) || github.ref_name }}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "nombre=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      # Une section absente arrête la publication. C'est le seul moment où
+      # quelqu'un relit ce qui change, et une version qui n'en porte pas ne le dit
+      # à personne. La cible est la même qu'en local, donc essayable avant de
+      # pousser le tag.
+      - name: Notes de version
+        run: make notes VERSION=${{ steps.version.outputs.nombre }} > notes.md
+
+      - name: Créer la version
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --notes-file notes.md \
+            --verify-tag
+
+      # Sur un essai à blanc, rien n'est publié : les notes sont seulement
+      # affichées, ce qui suffit à vérifier qu'elles existent et qu'elles disent
+      # ce qu'on croit.
+      - name: Notes, sans publier
+        if: github.event_name == 'workflow_dispatch'
+        run: cat notes.md

@@ -13,7 +13,8 @@ export CGO_ENABLED := 0
 
 -include makefile.local
 
-.PHONY: build test bench cover depot fmt vet deps entetes frontiere cross check references clean
+.PHONY: build test bench cover depot fmt vet deps entetes frontiere cross check \
+        references notes clean
 
 build:
 	go build ./...
@@ -240,6 +241,32 @@ references:
 
 # Les binaires de test que `bench` produit vont dans la sortie, mais un `go test -c`
 # lancé à la main les dépose à la racine : on les retire aussi.
+# Les notes d'une version sont la section du CHANGELOG, reprise telle quelle. Une
+# section absente arrête la publication : c'est le seul moment où quelqu'un relit
+# ce qui change, et une version qui n'en porte pas ne le dit à personne.
+#
+# Une cible plutôt qu'un bout de script dans le workflow : celui-ci ne peut pas
+# s'essayer avant d'être poussé, et une extraction fausse ne se découvrirait qu'au
+# moment de publier.
+#
+# JOURNAL se surcharge pour éprouver la cible sur une copie, sans jamais écrire
+# dans le fichier versionné. Le journal suit la feuille de route : y ajouter une
+# section d'essai reviendrait à inventer une étape.
+VERSION ?=
+JOURNAL ?= CHANGELOG.md
+
+notes:
+	@[ -n "$(VERSION)" ] || { \
+	  echo "VERSION attendue, par exemple : make notes VERSION=0.1.0"; exit 1; }
+	@section=$$(awk -v v="$(VERSION)" \
+	  'index($$0, "## [" v "]") == 1 {p=1; next} p && /^## / {exit} p {print}' \
+	  $(JOURNAL)); \
+	if [ -z "$$(printf '%s' "$$section" | tr -d '[:space:]')" ]; then \
+	  echo "aucune section [$(VERSION)] dans $(JOURNAL)"; \
+	  exit 1; \
+	fi; \
+	printf '%s\n' "$$section"
+
 clean:
 	rm -rf $(SORTIE) dist
 	rm -f *.test *.test.exe

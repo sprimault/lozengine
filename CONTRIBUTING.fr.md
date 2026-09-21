@@ -149,6 +149,11 @@ Le dépôt suit SemVer avec la clause du zéro, définie dans
 [`CHANGELOG.md`](CHANGELOG.md) : **en `0.x`, rien n'est garanti.** Les signatures
 publiques peuvent changer à chaque version mineure.
 
+**Le journal des modifications suit la feuille de route.** Le mineur marque un
+jalon franchi, pas une rupture d'API ; tout le reste s'accumule en correctif. Une
+section de version s'écrit donc quand un jalon se termine, et le tag qui la
+publie porte le même numéro.
+
 Le gel de l'API et le passage en `1.0.0` interviennent après validation du
 moteur par un second jeu, au jalon 7 de [`ROADMAP.md`](ROADMAP.md). Une API
 validée par un seul jeu n'est pas universelle, et une ABI C se révise encore
