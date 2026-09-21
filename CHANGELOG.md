@@ -20,14 +20,26 @@ second game.
 
 ## [Non publié]
 
-Rien encore. Ce journal ne consigne que ce qui se voit depuis l'extérieur du moteur,
-et aucune signature publique n'existe à ce jour. La mise en place du dépôt, sa
-documentation et son outillage n'y figurent pas : ce sont les entrées du premier
-paquet livré qui ouvriront cette section.
+### Ajouté
 
-Nothing yet. This log records only what is visible from outside the engine, and no
-public signature exists so far. Repository setup, documentation and tooling do not
-belong here: this section opens with the first package actually delivered.
+- `Quad`, la primitive de dessin du moteur : un rectangle de planche posé dans le
+  tampon, en disposition compatible C — vingt octets, champs de taille fixe. Il porte
+  sa destination, sa source, sa planche, une teinte de modulation et ses drapeaux de
+  miroir et d'aplat, mais pas sa clé de tri.
+- `Rendu`, la suite ordonnée des quads d'une image : l'ordre du tableau est l'ordre de
+  dessin.
+- `Couleur`, une couleur RVBA à alpha prémultiplié, et `Blanc`, la teinte neutre.
+- Les drapeaux `MiroirX`, `MiroirY` et `Aplat`.
+
+### Added
+
+- `Quad`, the engine's drawing primitive: a sheet rectangle placed in the buffer, with
+  a C-compatible layout — twenty bytes, fixed-size fields. It carries its destination,
+  its source, its sheet, a modulation tint and its mirror and flat-fill flags, but not
+  its sort key.
+- `Rendu`, the ordered list of an image's quads: array order is drawing order.
+- `Couleur`, a premultiplied-alpha RGBA color, and `Blanc`, the neutral tint.
+- The `MiroirX`, `MiroirY` and `Aplat` flags.
 
 <!--
 Catégories : Ajouté, Modifié, Déprécié, Retiré, Corrigé, Sécurité.
