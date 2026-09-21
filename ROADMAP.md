@@ -3,7 +3,9 @@
 Moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance. Rendu
 logiciel. Cibles : Windows et Linux.
 
-État : jalon 0 en cours. Le moteur ne rend rien d'utilisable pour l'instant.
+État : jalon 0 franchi, jalon 1 en cours. Le moteur rend hors écran et sa suite de
+non-régression compare des images de référence sans ouvrir de fenêtre ; il n'a encore
+ni géométrie, ni scène, ni fenêtre.
 
 ## Jalons
 
