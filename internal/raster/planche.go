@@ -18,10 +18,18 @@ import (
 //
 // Rectangles porte la découpe, remplie par [Planche.DecouperGrille] ou à la main.
 // Vide, la planche vaut pour elle-même — une tuile unique n'a rien à découper.
+//
+// Les séquences de lignes, elles, ne se remplissent pas à la main : [Atlas.Ajouter]
+// les calcule, et c'est le seul passage obligé avant qu'un quad puisse désigner la
+// planche. Une planche construite pixel par pixel est donc encodée comme les
+// autres, sans que personne ait à y penser.
 type Planche struct {
 	Largeur, Hauteur uint16
 	Pixels           []rendu.Couleur
 	Rectangles       []Rectangle
+
+	sequences []sequence
+	lignes    []uint32 // Hauteur+1 bornes : la ligne y occupe [lignes[y], lignes[y+1])
 }
 
 // NouvellePlanche rend une planche transparente aux dimensions demandées.
