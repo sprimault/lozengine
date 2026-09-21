@@ -103,7 +103,12 @@ internal/raster       rastériseur logiciel, écriture PNG        rendu
 internal/apparence    interface fournisseur, atlas, animation   geometrie, rendu
 internal/backend/…    fenêtre, entrées, présentation            rendu
 internal/audio        mixeur et sorties système                 aucune
+internal/visionneuse  scènes scriptées, rejeu, images           rendu, raster
+cmd/visionneuse       commande de rejeu                         visionneuse
 ```
+
+La visionneuse n'est pas le moteur : c'est l'outillage qui le rend jugeable sans
+écran. Rien ne dépend d'elle, et elle ne s'adresse qu'à `rendu` et `raster`.
 
 Le paquet racine est le seul à tout connaître, et rien ne dépend de lui.
 
