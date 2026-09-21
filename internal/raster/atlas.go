@@ -19,16 +19,22 @@ type Atlas struct {
 	Planches []Planche
 }
 
-// Ajouter range une planche et rend l'index qui la désigne dans un quad.
+// Ajouter encode les lignes de la planche, la range, et rend l'index qui la
+// désigne dans un quad.
 //
-// L'erreur au-delà de la limite arrive ici parce qu'elle ne peut plus arriver
-// ailleurs : le chemin de rendu ne renvoie rien, et un index qui déborde du champ
-// de la clé se lirait comme une autre planche.
+// L'encodage a lieu ici parce que c'est le seul passage obligé : une planche
+// devient dessinable en entrant dans un atlas, et l'oubli n'est donc pas possible.
+// Le blit, lui, ne peut ni encoder ni s'en plaindre — il ne renvoie pas d'erreur et
+// n'alloue pas.
+//
+// L'erreur au-delà de la limite arrive ici pour la même raison : un index qui
+// déborde du champ de la clé se lirait comme une autre planche.
 func (a *Atlas) Ajouter(p Planche) (uint16, error) {
 	if len(a.Planches) >= planchesMax {
 		return 0, fmt.Errorf("ajout d'une planche : %d au plus, limite des dix bits que la clé de tri leur réserve", planchesMax)
 	}
 
+	p.encoder()
 	a.Planches = append(a.Planches, p)
 	return uint16(len(a.Planches) - 1), nil
 }
