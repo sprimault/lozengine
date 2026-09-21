@@ -64,7 +64,12 @@ jobs:
       - name: Notes de version
         run: make notes VERSION=${{ steps.version.outputs.nombre }} > notes.md
 
-      - name: Créer la version
+      # En brouillon : le workflow fait la partie mécanique — rejouer les contrôles,
+      # extraire les notes, créer la version sur le tag — et s'arrête là. Rien n'est
+      # visible avant qu'on ait relu les notes et publié soi-même. Un tag se corrige
+      # mal une fois que quelqu'un l'a vu, et une version publiée automatiquement ne
+      # laisse pas ce moment de relecture.
+      - name: Créer la version, en brouillon
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -72,7 +77,8 @@ jobs:
           gh release create "${{ steps.version.outputs.tag }}" \
             --title "${{ steps.version.outputs.tag }}" \
             --notes-file notes.md \
-            --verify-tag
+            --verify-tag \
+            --draft
 
       # Sur un essai à blanc, rien n'est publié : les notes sont seulement
       # affichées, ce qui suffit à vérifier qu'elles existent et qu'elles disent
