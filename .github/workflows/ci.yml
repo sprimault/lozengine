@@ -1,0 +1,76 @@
+# Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+# Vérification de chaque poussée et de chaque pull request.
+#
+# Les cibles appelées sont celles du Makefile, jamais des commandes go réécrites
+# ici : deux définitions finiraient par diverger, et c'est celle du workflow qu'on
+# ne peut pas essayer avant de pousser.
+#
+# Les tests font exception. Ils tournent nativement sur les deux plateformes, et
+# le runner Windows n'a pas GNU make : ils appellent donc `go test` directement,
+# ce qui reste vrai puisque la cible ne fait rien d'autre.
+
+name: Vérification
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Un seul job pour les sept étapes : elles sont rapides, sans dépendance à
+  # installer, et les séparer multiplierait les contextes à nommer dans la
+  # protection de branche sans rien apprendre de plus.
+  controles:
+    name: Contrôles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          # La version vient de go.mod : la répéter ici créerait un second
+          # endroit à mettre à jour, et personne ne penserait aux deux.
+          go-version-file: go.mod
+          check-latest: true
+
+      # Formatage, vet, absence de dépendance externe, mentions de licence,
+      # étanchéité de la frontière, compilation croisée, tests. La liste se passe
+      # entière, ici comme en local.
+      - name: Contrôle complet
+        run: make check
+
+  # La compilation croisée du job précédent prouve que le code compile pour les
+  # deux cibles ; elle ne dit rien de ce qu'il fait une fois exécuté. Le moteur
+  # vise Windows et Linux : la suite doit passer sur les deux, nativement.
+  tests:
+    name: Tests — ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      # La suite de non-régression est visuelle mais passe par le rastériseur
+      # logiciel : aucun test n'ouvre de fenêtre, et les runners n'ont pas
+      # d'écran.
+      - name: Tests
+        run: go test ./...
+        env:
+          CGO_ENABLED: 0
