@@ -329,6 +329,25 @@ func TestDessinerQuadVide(t *testing.T) {
 	}
 }
 
+// TestDessinerNAlloueRien vérifie l'invariant du chemin de rendu : aucune
+// allocation par image. Un tampon réutilisé, une liste réutilisée, et rien qui
+// échappe — sans quoi le ramasse-miettes s'invite à soixante hertz.
+func TestDessinerNAlloueRien(t *testing.T) {
+	a := atlasDe(t, 2, 2, rouge, vert, bleu, demiRge)
+	tampon := NouveauTampon(8, 8)
+
+	q := quadDe(1, 1, 2, 2)
+	miroir := quadDe(-1, 5, 2, 2)
+	miroir.Drapeaux = rendu.MiroirX | rendu.MiroirY
+	aplat := quadDe(4, 4, 3, 3)
+	aplat.Drapeaux = rendu.Aplat
+	r := rendu.Rendu{q, miroir, aplat}
+
+	if n := testing.AllocsPerRun(10, func() { tampon.Dessiner(r, a) }); n != 0 {
+		t.Errorf("allocations par image : %v, attendu aucune", n)
+	}
+}
+
 // TestDessinerSourceDebordante vérifie qu'un rectangle de source plus grand que la
 // planche s'arrête à la dernière ligne au lieu de lire la suivante.
 func TestDessinerSourceDebordante(t *testing.T) {
