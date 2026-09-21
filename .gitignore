@@ -1,0 +1,19 @@
+# Binaires et artefacts de compilation, y compris ceux de la cible FFI
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+/dist/
+
+# Go
+*.test
+*.out
+*.prof
+*.pprof
+
+# Tout ce que Go produit — binaires, caches, profils, rendus de contrôle —
+# reste dans le dépôt et hors du suivi. Seules les images de
+# testdata/references/ sont versionnées : elles font foi.
+/.tmp/
+/makefile.local

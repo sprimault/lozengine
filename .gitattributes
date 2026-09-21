@@ -1,0 +1,36 @@
+# Normalisation des fins de ligne. Indispensable quand le dépôt est alimenté
+# depuis Windows et consommé sous Linux : sans ça, un script shell ou un test
+# comparant des octets casse de façon incompréhensible.
+* text=auto eol=lf
+
+# Doivent rester en LF quoi qu'il arrive
+*.go text eol=lf
+*.mod text eol=lf
+*.sum text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+Makefile text eol=lf
+
+# Spécifiques Windows, dont le backend est l'une des deux cibles
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binaire, jamais converti ni fusionné. Les images de testdata/references/ sont
+# la seule vérité du rendu : la suite les compare pixel à pixel, et un octet
+# réécrit par une heuristique de détection invaliderait la comparaison sans
+# laisser de trace dans le diff.
+*.png binary
+*.wav binary
+*.ogg binary
+*.zip binary
+*.gz binary
+*.exe binary
+*.dll binary
+*.so binary
+*.a binary
+*.lib binary
+*.ttf binary
+*.otf binary

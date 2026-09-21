@@ -1,0 +1,35 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.go]
+indent_style = tab
+
+# La documentation du dépôt est relue en diff plus souvent qu'en rendu : une
+# limite fixe garde les modifications lisibles ligne à ligne.
+[*.md]
+indent_style = space
+indent_size = 2
+max_line_length = 90
+
+[*.{yml,yaml,json}]
+indent_style = space
+indent_size = 2
+
+[*.sh]
+indent_style = space
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+# Les scripts Windows gardent les fins de ligne que leur interpréteur attend,
+# conformément à .gitattributes.
+[*.{ps1,bat,cmd}]
+end_of_line = crlf
+indent_style = space
+indent_size = 4
