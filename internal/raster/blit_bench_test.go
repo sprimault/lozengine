@@ -9,6 +9,31 @@ import (
 	"github.com/sprimault/lozengine/internal/rendu"
 )
 
+// Les deux machines du projet sont du même haut de gamme 2025, et aucune ne donne un
+// plancher. Une mesure brute y est donc optimiste, et ce qu'on veut savoir est la part
+// d'image que l'opération prendrait ailleurs.
+const (
+	// ponderation est le rapport supposé entre une machine modeste et celles-ci. Il
+	// vaut pour ce qui dépend de la bande passante mémoire, où les deux machines du
+	// projet diffèrent déjà d'un facteur 2,5 entre elles.
+	ponderation = 4
+
+	// imageA60Hz est le budget d'une image, en nanosecondes.
+	imageA60Hz = 16_666_667
+)
+
+// partDImage rapporte la part d'une image à 60 Hz que l'opération prendrait sur une
+// machine modeste. Le ns/op brut reste rapporté à côté : c'est lui que `benchstat`
+// compare, la pondération n'étant qu'une lecture.
+//
+// Elle n'a de sens que pour ce qui se fait une fois par image. Un banc à l'échelle du
+// quad n'en reçoit pas : ce qu'on y lit est un rapport entre chemins, et un rapport
+// n'a pas besoin d'être pondéré.
+func partDImage(b *testing.B) {
+	parOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
+	b.ReportMetric(parOp*ponderation*100/imageA60Hz, "%image-pondere")
+}
+
 // tuile rend une tuile de sol en losange 32×16 : coins transparents, corps opaque,
 // bord à demi transparent. Les trois genres de séquence y sont représentés dans les
 // proportions d'un vrai sprite, ce qui est tout ce qu'on demande à une mire de
@@ -115,6 +140,7 @@ func BenchmarkEffacer(b *testing.B) {
 			for range b.N {
 				tampon.Effacer(c.couleur)
 			}
+			partDImage(b)
 		})
 	}
 }
@@ -141,6 +167,7 @@ func BenchmarkAgrandir(b *testing.B) {
 			for range b.N {
 				interne.Agrandir(sortie, c.facteur, rendu.Couleur{A: 255})
 			}
+			partDImage(b)
 		})
 	}
 }
@@ -180,4 +207,5 @@ func BenchmarkImage(b *testing.B) {
 	}
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "images/s")
 	b.ReportMetric(float64(tuiles), "tuiles/image")
+	partDImage(b)
 }
