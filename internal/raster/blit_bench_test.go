@@ -119,6 +119,32 @@ func BenchmarkEffacer(b *testing.B) {
 	}
 }
 
+// BenchmarkAgrandir mesure la dernière opération de l'image, celle qu'un backend sans
+// mise à l'échelle matérielle doit faire lui-même. Les deux tailles de sortie séparent
+// ce que coûtent les bandes de ce que coûte l'agrandissement.
+func BenchmarkAgrandir(b *testing.B) {
+	cas := []struct {
+		nom                          string
+		largeurSortie, hauteurSortie uint16
+		facteur                      int
+	}{
+		{"sans bande, facteur 4", 1920, 1080, 4},
+		{"avec bandes, facteur 3", 1920, 1080, 3},
+	}
+	for _, c := range cas {
+		b.Run(c.nom, func(b *testing.B) {
+			interne := NouveauTampon(480, 270)
+			interne.Effacer(rendu.Couleur{R: 60, V: 80, B: 60, A: 255})
+			sortie := NouveauTampon(c.largeurSortie, c.hauteurSortie)
+
+			b.ResetTimer()
+			for range b.N {
+				interne.Agrandir(sortie, c.facteur, rendu.Couleur{A: 255})
+			}
+		})
+	}
+}
+
 // BenchmarkImage mesure une image entière : un sol qui couvre la résolution interne
 // et deux cents personnages dessus. C'est le seul chiffre qui réponde à la question
 // qui compte — combien d'images par seconde le blit laisse au reste du moteur.
