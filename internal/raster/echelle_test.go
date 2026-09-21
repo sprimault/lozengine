@@ -130,6 +130,45 @@ func TestAgrandirSortiePlusPetite(t *testing.T) {
 	}
 }
 
+// TestAgrandirBandesEtDecoupage éprouve le croisement des deux : la sortie est plus
+// étroite que l'image et plus haute qu'elle, donc il faut découper sur un axe et
+// peindre des bandes sur l'autre.
+func TestAgrandirBandesEtDecoupage(t *testing.T) {
+	interne := tamponDe(t, 4, 2,
+		rouge, vert, bleu, blanc,
+		blanc, bleu, vert, rouge,
+	)
+	sortie := NouveauTampon(2, 4)
+
+	interne.Agrandir(sortie, 1, demiRge)
+
+	attendu := [8]rendu.Couleur{
+		demiRge, demiRge,
+		vert, bleu,
+		bleu, vert,
+		demiRge, demiRge,
+	}
+	for i, veut := range attendu {
+		if sortie.Pixels[i] != veut {
+			t.Errorf("pixel %d : %v, attendu %v", i, sortie.Pixels[i], veut)
+		}
+	}
+}
+
+// TestAgrandirRienATenir vérifie qu'une sortie dans laquelle l'image ne tient pas du
+// tout n'est pas laissée à moitié peinte : tout y est fond.
+func TestAgrandirRienATenir(t *testing.T) {
+	sortie := NouveauTampon(2, 2)
+
+	NouveauTampon(0, 0).Agrandir(sortie, 4, bleu)
+
+	for i, got := range sortie.Pixels {
+		if got != bleu {
+			t.Errorf("pixel %d : %v, attendu %v", i, got, bleu)
+		}
+	}
+}
+
 // TestAgrandirMemeTaille vérifie le chemin rapide : une sortie de même taille au
 // facteur un est une recopie.
 func TestAgrandirMemeTaille(t *testing.T) {

@@ -36,16 +36,25 @@ func NouveauTampon(largeur, hauteur uint16) *Tampon {
 // vectorise pas et coûtait douze fois plus, mesuré — 74 µs contre 6 sur la
 // résolution interne, soit près d'un tiers du temps de dessin d'une image entière.
 func (t *Tampon) Effacer(c rendu.Couleur) {
+	remplir(t.Pixels, c)
+}
+
+// remplir écrit une couleur sur toute une tranche de pixels.
+//
+// Le doublement vaut pour une tranche d'un seul tenant et de bonne taille. Sur des
+// segments courts et nombreux — les bandes latérales d'une image mise à l'échelle —
+// le coût d'appel de copy l'emporte, et l'appelant recopie plutôt une ligne modèle.
+func remplir(pixels []rendu.Couleur, c rendu.Couleur) {
 	if c == (rendu.Couleur{}) {
-		clear(t.Pixels)
+		clear(pixels)
 		return
 	}
-	if len(t.Pixels) == 0 {
+	if len(pixels) == 0 {
 		return
 	}
 
-	t.Pixels[0] = c
-	for ecrit := 1; ecrit < len(t.Pixels); ecrit *= 2 {
-		copy(t.Pixels[ecrit:], t.Pixels[:ecrit])
+	pixels[0] = c
+	for ecrit := 1; ecrit < len(pixels); ecrit *= 2 {
+		copy(pixels[ecrit:], pixels[:ecrit])
 	}
 }
