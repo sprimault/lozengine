@@ -38,10 +38,10 @@ const (
 // la copie directe : la modulation se décide une fois par quad et non par pixel.
 //
 // La disposition est celle qu'un hôte écrirait en C — champs de taille fixe,
-// vingt octets, alignement de deux. D'où trois limites, documentées plutôt que
-// vérifiées à chaque image : un tampon et une planche de 32 767 pixels de côté,
-// et 1 024 planches, ce dernier chiffre venant des dix bits que la clé de tri
-// réserve à la planche.
+// vingt octets, alignement de deux. D'où trois limites, que le chargement signale
+// quand il peut mais que le chemin de rendu ne vérifie jamais : un tampon de
+// 32 767 pixels de côté, une planche de 65 535, et 1 024 planches, ce dernier
+// chiffre venant des dix bits que la clé de tri réserve à la planche.
 //
 // La valeur zéro ne dessine rien, ce qui est l'échec sûr : une structure remplie
 // de zéros par un hôte reste invisible au lieu de peindre n'importe quoi.
