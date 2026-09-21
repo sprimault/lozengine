@@ -15,6 +15,7 @@ make cross        # compile pour Windows et pour Linux
 make cover        # couverture, ouverte dans le navigateur
 make bench        # bancs d'essai, un profil par paquet
 make references   # régénère les images de référence
+make notes VERSION=0.1.0   # les notes d'une version, tirées du CHANGELOG
 make clean
 ```
 
@@ -120,6 +121,31 @@ C'est la seule exception à la règle de dépendance, et elle ne met rien dans l
 moteur : `go.mod` reste vide, le code reste identique, et les binaires des deux
 plateformes continuent de se construire sans cgo. La règle porte sur ce que le
 moteur embarque, pas sur ce qu'un artefact annexe exige au moment de le produire.
+
+## Publier une version
+
+Une bibliothèque Go ne publie aucun binaire : `go get` lit le dépôt au tag
+demandé. Publier, c'est donc poser un tag `vX.Y.Z` sur `master` — le reste est
+automatique.
+
+Le numéro ne se choisit pas : **le journal des modifications suit la feuille de
+route**, et le mineur marque un jalon franchi. Une version se publie quand un
+jalon se termine, pas quand on en a envie.
+
+Le workflow rejoue les contrôles sur le commit taggé plutôt que de les supposer
+passés, puis tire les notes de la version de `CHANGELOG.md` :
+
+```
+make notes VERSION=0.1.0
+```
+
+**Une section absente arrête la publication.** C'est le seul moment où quelqu'un
+relit ce qui change, et une version qui n'en porte pas ne le dit à personne. La
+cible étant la même en local et dans le workflow, elle s'essaie avant de poser le
+tag.
+
+Un déclenchement manuel fait le même travail sans rien publier : il affiche les
+notes et s'arrête là.
 
 ## Les images de référence
 

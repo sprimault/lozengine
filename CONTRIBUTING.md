@@ -151,6 +151,11 @@ The repository follows SemVer with the zero clause, defined in
 [`CHANGELOG.md`](CHANGELOG.md): **in `0.x`, nothing is guaranteed.** Public
 signatures may change with every minor release.
 
+**The changelog follows the roadmap.** The minor marks a milestone reached, not
+an API break; everything else accumulates as a patch. A version section is
+therefore written when a milestone ends, and the tag that publishes it carries
+the same number.
+
 The API freeze and the move to `1.0.0` happen once the engine has been validated
 by a second game, at milestone 7 of [`ROADMAP.md`](ROADMAP.md) (French). An API
 validated by a single game is not universal, and a C ABI revises even worse than
