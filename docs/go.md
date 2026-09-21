@@ -192,12 +192,71 @@ types changeant de direction sur la même image sans pic.
 
 ## Dépendances
 
-`go.mod` ne contient aucune ligne `require`. Bibliothèque standard uniquement,
-sans cgo, y compris pour les tests, les exemples et l'outillage.
+**Le cœur du moteur n'a aucune dépendance.** `geometrie`, `scene`, `tri`, `rendu`
+et `raster` n'emploient que la bibliothèque standard, sans cgo — tests compris.
+C'est là que la promesse se joue, et `make deps` la vérifie paquet par paquet.
 
-Ce n'est pas une préférence de style, c'est ce que le moteur promet. Une pull
-request qui ajoute une dépendance est refusée quelle que soit sa qualité, et
-« juste pour les tests » n'est pas une exception.
+Ailleurs, une **liste close de deux entrées**, et aucune autre :
+
+| Dépendance | Licence | Pour | À partir du |
+| --- | --- | --- | --- |
+| `golang.org/x/image` | BSD-3 | rastériser une police dans `apparence` | jalon 4 |
+| `github.com/ebitengine/oto` | Apache-2.0 | sortie audio dans `audio` | jalon 5 |
+
+### Ce qu'une dépendance doit passer pour entrer
+
+**La licence d'abord, et elle est rédhibitoire.** BSD-2/3, MIT, Apache-2.0, ISC,
+Zlib passent. GPL et AGPL, jamais : incompatibles avec du permissif. LGPL non
+plus, Go liant statiquement — le relinking qu'elle exige devient impraticable.
+
+**Ensuite, le sujet.** Si ce qu'elle fait appartient à ce que le moteur
+revendique, on l'écrit, quel qu'en soit le coût. Le protocole X11 demande des
+semaines et on le fera : c'est précisément le sujet du projet, et le déléguer
+reviendrait à annuler un jalon.
+
+**Sinon, c'est l'arbitrage du coût.** Des semaines de travail pour retrouver ce
+qu'un paquet fait déjà, et qui ne distinguera jamais le moteur, c'est du temps
+pris au moteur lui-même. Dans ce cas on prend le paquet, sans regret : un
+rastériseur TrueType écrit à la main ne rendra pas le rendu isométrique meilleur.
+Quelques heures de travail, en revanche, ne valent pas une ligne de `require`.
+
+C'est cet arbitrage qui a retenu les deux entrées ci-dessus, et lui seul. La
+liste n'est pas fermée par principe : elle s'ouvre à ce qui passe les mêmes
+tests, par une décision inscrite dans le `Makefile` et relue en pull request.
+C'est pour cela que c'est une liste blanche et non une interdiction — une
+interdiction absolue finit par être contournée en silence.
+
+Une entrée porte sa notice dans `THIRD-PARTY-NOTICES` dès le commit qui
+l'importe.
+
+### Ce qui reste écarté, et pourquoi
+
+- **`x/sys`, `x/sync`, `x/text`** — chacun a son équivalent standard dans la table
+  ci-dessous, et l'écart se comble en quelques heures. L'arbitrage du coût tombe
+  du mauvais côté.
+- **`purego`** — il supprime cgo, pas la dépendance à une bibliothèque C. Il
+  déplace le problème au lieu de le résoudre.
+- **`jezek/xgb`** — un client X11 tout fait. Il échoue sur le sujet : c'est le
+  travail que le moteur revendique, et les semaines qu'il coûte sont assumées.
+
+## Version minimale de Go
+
+Le plancher de `go.mod` est le minimum réellement exigé par le code, jamais la
+version installée sur le poste de développement. Depuis Go 1.21 cette ligne est
+une exigence impérative : un consommateur dont la chaîne est plus ancienne doit
+en télécharger une autre, ce qui suppose le réseau et l'accès au proxy de
+modules, et échoue net en `GOTOOLCHAIN=local`.
+
+**On ne le remonte que lorsqu'une fonctionnalité précise l'impose**, en le
+justifiant dans le message de commit. Sans cette règle il dérive vers la version
+du poste, et chaque dérive exclut des projets pour rien.
+
+N'ayant aucune dépendance, le moteur choisit ce plancher librement — là où une
+bibliothèque qui en a subit celui du plus exigeant de ses modules. C'est l'un des
+bénéfices concrets de la règle ci-dessus, et il vaut mieux ne pas le dilapider.
+
+L'intégration continue éprouve les deux bouts de la plage annoncée : le plancher
+tel que `go.mod` le déclare, et la dernière version publiée.
 
 | Besoin | Ce qu'on fait à la place |
 | --- | --- |

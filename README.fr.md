@@ -2,8 +2,8 @@
 
 English: [README.md](README.md)
 
-Un moteur de rendu isométrique 2D en Go, sans aucune dépendance externe. Rendu
-logiciel, sans GPU : on lui décrit une scène, il en sort une liste de quads
+Un moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance.
+Rendu logiciel, sans GPU : on lui décrit une scène, il en sort une liste de quads
 projetés et triés, qu'il rastérise lui-même ou qu'un hôte pousse dans son propre
 pipeline.
 
@@ -19,12 +19,18 @@ La projection est une matrice affine paramétrable, gardée avec son inverse. Le
 dimétrique est le sujet du moteur, mais l'isométrie vraie et la grille carrée vue
 de dessus sont des constructeurs de plus, pas un second chemin de rendu.
 
-La règle de dépendance se prend au mot. `go.mod` ne contient aucune ligne
-`require`, et cela vaut pour les tests, les exemples et l'outillage. La fenêtre,
-les entrées et le son passent par `syscall` sous Windows et par les protocoles
-X11 et PulseAudio écrits sur socket sous Linux, jamais par le chargement d'une
+La règle de dépendance se prend au mot là où elle compte. **Géométrie, scène,
+tri, structures et rastériseur n'emploient que la bibliothèque standard**, tests
+compris, et un contrôle le vérifie paquet par paquet. La fenêtre, les entrées et
+le son passent par `syscall` sous Windows et par les protocoles X11 et
+PulseAudio écrits sur socket sous Linux, jamais par le chargement d'une
 bibliothèque C. Le rendu est donc logiciel, en résolution interne basse remontée
 vers la fenêtre par un facteur entier.
+
+Deux paquets périphériques font exception, sous licence permissive et par
+décision inscrite : le rendu de polices et la sortie audio. Les réécrire
+coûterait des semaines pour un résultat qui ne distinguerait en rien le moteur.
+Le détail est dans [`docs/go.md`](docs/go.md).
 
 ## La frontière qui porte tout
 

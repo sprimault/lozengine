@@ -2,9 +2,10 @@
 
 Français : [README.fr.md](README.fr.md)
 
-A 2D isometric rendering engine in Go, with no external dependencies. Software
-rendering, no GPU: you describe a scene, it produces a list of projected, sorted
-quads, which it rasterises itself or which a host pushes into its own pipeline.
+A 2D isometric rendering engine in Go, whose core has no dependencies at all.
+Software rendering, no GPU: you describe a scene, it produces a list of
+projected, sorted quads, which it rasterises itself or which a host pushes into
+its own pipeline.
 
 MIT or Apache-2.0, at your option — see [`LICENSE-MIT`](LICENSE-MIT) and
 [`LICENSE-APACHE`](LICENSE-APACHE). Unless you state otherwise, any contribution
@@ -18,12 +19,18 @@ Projection is a configurable affine matrix, kept alongside its inverse. Dimetric
 is what the engine is for, but true isometric and a plain top-down square grid
 are one more constructor, not a second render path.
 
-The dependency rule is meant literally. `go.mod` holds no `require` line, and
-that covers the tests, the examples and the tooling. Window, input and sound go
-through `syscall` on Windows and through the X11 and PulseAudio protocols
-written straight onto a socket on Linux, never by loading a C library. Rendering
-is therefore software, at a low internal resolution scaled up to the window by
-an integer factor.
+The dependency rule is meant literally where it matters. **Geometry, scene,
+sort, structures and rasteriser use the standard library and nothing else**,
+tests included, and a check enforces it package by package. Window, input and
+sound go through `syscall` on Windows and through the X11 and PulseAudio
+protocols written straight onto a socket on Linux, never by loading a C library.
+Rendering is therefore software, at a low internal resolution scaled up to the
+window by an integer factor.
+
+Two peripheral packages are the exception, permissively licensed and admitted by
+a recorded decision: font rasterising and audio output. Rewriting them would
+cost weeks for a result that would set this engine apart in no way. The detail
+is in [`docs/go.md`](docs/go.md) (French).
 
 ## The boundary that carries everything
 
