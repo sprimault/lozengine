@@ -1,7 +1,7 @@
 # Lozengine · Feuille de route
 
 Moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance. Rendu
-logiciel. Cibles : Windows et Linux.
+logiciel. Cibles : Windows, Linux et le navigateur en WebAssembly.
 
 État : jalon 0 franchi, jalon 1 en cours. Le moteur rend hors écran et sa suite de
 non-régression compare des images de référence sans ouvrir de fenêtre ; il n'a encore
@@ -34,6 +34,8 @@ appels système directs. Paquet racine qui assemble le tout : boucle à pas fixe
 utilisables, et une seule méthode à écrire côté jeu — l'ordre de dessin vient de la clé
 de tri, l'échelle du facteur entier.
 
+La boucle s'appuie sur une étape appelable, qu'un hôte pilote lui-même.
+
 Fin : un exemple de moins de 30 lignes affiche une grille et un personnage déplaçable.
 
 ### 3 · Backend Linux
@@ -65,7 +67,26 @@ amorti, fabrique de sprites depuis des modèles volumiques.
 
 Fin : 800 entités de 6 types changent de direction sur la même image sans pic.
 
-### 7 · Validation par un second jeu
+### 7 · Backend web
+
+Client WebAssembly : canvas, entrées, présentation. Le rendu logiciel s'y transporte tel
+quel — le tampon part en `putImageData`, qui ne met rien à l'échelle, et l'agrandissement
+entier revient à `image-rendering: pixelated` sur un canvas dimensionné par CSS, comme il
+revient à `StretchDIBits` sous Windows.
+
+`syscall/js` étant dans la bibliothèque standard, la cible n'ouvre pas la liste close.
+Elle demande en revanche de livrer `wasm_exec.js`, le fichier de liaison fourni avec la
+chaîne Go : un artefact à distribuer avec la page, pas une dépendance du moteur. Le son y
+passe par WebAudio, troisième sortie du mixeur, qui ne change pas pour autant.
+
+Go n'émettant pas de SIMD en WebAssembly et n'y ayant pas de vrais threads, c'est la
+cible où une charge élevée saturera en premier. Le budget d'image s'y mesure, il ne s'y
+suppose pas.
+
+Fin : le même exemple qu'aux jalons 2 et 3 tourne dans un navigateur, et son temps par
+image y est mesuré.
+
+### 8 · Validation par un second jeu
 
 Portage d'un jeu au tour par tour sur le moteur, face au jeu temps réel qui a servi à
 l'écrire. Gel des signatures publiques.
@@ -74,14 +95,14 @@ Fin : le second jeu tourne sur le moteur sans qu'aucune signature publique ait e
 changer pour lui. Toute signature qu'il a fallu reprendre est corrigée avant le gel,
 puisque c'est exactement ce que cette étape sert à découvrir.
 
-### 8 · Publication
+### 9 · Publication
 
 Documentation, exemples, intégration continue sur les deux plateformes.
 
 Fin : l'intégration continue est verte sur Windows et sur Linux, et un clone neuf
 compile et passe la suite sans autre installation qu'une chaîne Go.
 
-### 9 · Interopérabilité
+### 10 · Interopérabilité
 
 Bibliothèque native consommable depuis Rust, C++ et tout langage parlant l'ABI C, en
 `c-shared` et `c-archive`, avec en-tête généré et exemples minimaux.
@@ -98,11 +119,13 @@ Fin : un exemple Rust et un exemple C++ affichent une scène rendue par le moteu
 
 ## Hors périmètre
 
-- **macOS.** Impossible sans dépendance ni compilateur C. La frontière backend le garde
-  atteignable si la contrainte change.
+- **macOS natif.** Cocoa ne s'atteint qu'à travers l'exécution Objective-C, ce qui
+  demande cgo ou une couche comme purego — l'une comme l'autre sortiraient de la liste
+  close. La frontière backend le garde atteignable si la contrainte change, et le backend
+  web y donne accès entre-temps, dans un navigateur.
 - **Accélération GPU.** Exclue par la règle de dépendance. Le rendu est logiciel, en
   résolution interne basse mise à l'échelle par un facteur entier.
-- **Wayland natif.** Envisagé après le jalon 8. XWayland couvre le besoin d'ici là.
+- **Wayland natif.** Envisagé après le jalon 9. XWayland couvre le besoin d'ici là.
 - **Moteur de jeu généraliste.** Le moteur rend une scène et lit des entrées. Ni
   physique, ni système d'entités, ni éditeur, ni script. Et le rendu logiciel ne vise pas
   le nombre de sprites qu'une carte graphique absorbe : la projection se paramètre, la
@@ -122,10 +145,10 @@ coûterait des semaines pour un résultat qui ne distinguerait en rien le moteur
 n'est pas le cas du protocole X11, dont les semaines sont assumées parce qu'il est le
 sujet. La liste et les critères d'entrée sont dans `docs/go.md`.
 
-Seule la cible d'interopérabilité du jalon 9 demande un compilateur C, sans rien
+Seule la cible d'interopérabilité du jalon 10 demande un compilateur C, sans rien
 ajouter au moteur lui-même.
 
-La bibliothèque native du jalon 9 ne remet pas ce principe en cause : produire un
+La bibliothèque native du jalon 10 ne remet pas ce principe en cause : produire un
 `c-shared` ou un `c-archive` réclame un compilateur C sur la machine de compilation, mais
 n'ajoute rien au moteur. Les binaires Windows et Linux continuent de se construire sans
 cgo, et le code reste identique.

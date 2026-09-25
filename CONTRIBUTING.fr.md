@@ -164,7 +164,7 @@ section de version s'écrit donc quand un jalon se termine, et le tag qui la
 publie porte le même numéro.
 
 Le gel de l'API et le passage en `1.0.0` interviennent après validation du
-moteur par un second jeu, au jalon 7 de [`ROADMAP.md`](ROADMAP.md). Une API
+moteur par un second jeu, au jalon 8 de [`ROADMAP.md`](ROADMAP.md). Une API
 validée par un seul jeu n'est pas universelle, et une ABI C se révise encore
 moins bien qu'une API Go.
 
