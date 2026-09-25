@@ -14,7 +14,7 @@ export CGO_ENABLED := 0
 -include makefile.local
 
 .PHONY: build test bench cover depot fmt vet deps entetes frontiere cross check \
-        references notes clean
+        references notes titre clean
 
 build:
 	go build ./...
@@ -269,8 +269,6 @@ PKG_REFERENCES ?= ./internal/visionneuse
 references:
 	go test $(PKG_REFERENCES) -regenerer
 
-# Les binaires de test que `bench` produit vont dans la sortie, mais un `go test -c`
-# lancé à la main les dépose à la racine : on les retire aussi.
 # Les notes d'une version sont la section du CHANGELOG, reprise telle quelle. Une
 # section absente arrête la publication : c'est le seul moment où quelqu'un relit
 # ce qui change, et une version qui n'en porte pas ne le dit à personne.
@@ -297,6 +295,41 @@ notes:
 	fi; \
 	printf '%s\n' "$$section"
 
+# Le titre d'une version est celui que porte la page des versions. Le numéro ne
+# suffit pas : le mineur marque un jalon franchi sans en porter le numéro, donc
+# `0.1.0` ne dit pas de quel jalon il vient. La date, elle, n'y entre pas — GitHub
+# affiche déjà la sienne, et deux dates qui diffèrent d'un fuseau font douter de
+# la bonne.
+#
+# Un correctif ne franchit aucun jalon et sa section n'en nomme donc aucun : le
+# titre se réduit alors au numéro, ce qui est exact plutôt que vide.
+#
+# Le tiret du séparateur s'écrit en octal et le motif reste en ASCII : make
+# réencode les octets non ASCII d'une ligne de recette avant de les passer au
+# shell, et un tiret long tapé ici ressortirait en mojibake dans le titre. Ce qui
+# vient du journal par `sed`, lui, traverse intact.
+titre:
+	@[ -n "$(VERSION)" ] || { \
+	  echo "VERSION attendue, par exemple : make titre VERSION=0.1.0"; exit 1; }
+	@ligne=$$(awk -v v="$(VERSION)" \
+	  'index($$0, "## [" v "]") == 1 {print; exit}' $(JOURNAL)); \
+	if [ -z "$$ligne" ]; then \
+	  echo "aucune section [$(VERSION)] dans $(JOURNAL)"; \
+	  exit 1; \
+	fi; \
+	jalon=$$(printf '%s' "$$ligne" | \
+	  sed -E 's/^## \[[^]]+\][^0-9]*[0-9]{4}-[0-9]{2}-[0-9]{2}[^[:alnum:]]*//'); \
+	case "$$jalon" in \
+	  '## '*) echo "titre de section non conforme : $$ligne"; exit 1;; \
+	esac; \
+	if [ -n "$$jalon" ]; then \
+	  printf '%s \342\200\224 %s\n' "$(VERSION)" "$$jalon"; \
+	else \
+	  printf '%s\n' "$(VERSION)"; \
+	fi
+
+# Les binaires de test que `bench` produit vont dans la sortie, mais un `go test -c`
+# lancé à la main les dépose à la racine : on les retire aussi.
 clean:
 	rm -rf $(SORTIE) dist
 	rm -f *.test *.test.exe
