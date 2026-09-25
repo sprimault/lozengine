@@ -88,9 +88,13 @@ loop: a host game already has its own and will not give up its main thread.
 
 ## Status
 
-**Milestone 0 in progress. The engine does not render anything usable yet**, and
-nothing is published: public signatures freeze only once the engine has been
-validated by a second game, at milestone 8.
+**Milestone 1 in progress.** The engine renders off-screen and compares its
+images against references without opening a window; it has no geometry, no scene
+and no window yet, and nothing in it is enough to write a game.
+
+A release marks every milestone reached, but **no signature is frozen**: they may
+change with every minor until milestone 8, where validation by a second game
+freezes them.
 
 The roadmap has eleven milestones, each with a verifiable completion criterion.
 

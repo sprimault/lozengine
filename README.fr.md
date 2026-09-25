@@ -90,9 +90,13 @@ principal.
 
 ## État
 
-**Jalon 0 en cours. Le moteur ne rend rien d'utilisable pour l'instant**, et
-rien n'est publié : les signatures publiques ne gèlent qu'une fois le moteur
-validé par un second jeu, au jalon 8.
+**Jalon 1 en cours.** Le moteur rend hors écran et compare ses images à des
+références sans ouvrir de fenêtre ; il n'a encore ni géométrie, ni scène, ni
+fenêtre, et rien n'y suffit à écrire un jeu.
+
+Une version marque chaque jalon franchi, mais **aucune signature n'est figée** :
+elles peuvent changer à chaque mineure jusqu'au jalon 8, où la validation du
+moteur par un second jeu les gèle.
 
 La feuille de route compte onze jalons, chacun avec un critère de fin vérifiable.
 
