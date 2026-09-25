@@ -8,7 +8,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning:
 [SemVer](https://semver.org/). Every version carries its entries in French then in
 English: release notes reuse the section as is.
 
-Tant que le jalon 7 de la [feuille de route](ROADMAP.md) n'est pas atteint, la version
+Tant que le jalon 8 de la [feuille de route](ROADMAP.md) n'est pas atteint, la version
 reste en `0.x` et les signatures publiques peuvent changer à chaque version mineure. Le
 gel de l'API et le passage en `1.0.0` interviennent après validation du moteur par un
 second jeu.
@@ -19,7 +19,7 @@ et vouloir les aligner imposerait soit un `v0.0.0`, que Go confond avec l'absenc
 version, soit une renumérotation de la feuille de route que l'historique ne suivrait
 pas.
 
-Until milestone 7 of the [roadmap](ROADMAP.md) (in French) is reached, the version
+Until milestone 8 of the [roadmap](ROADMAP.md) (in French) is reached, the version
 stays in `0.x` and public signatures may change with every minor release. The API
 freeze and the move to `1.0.0` happen once the engine has been validated by a
 second game.

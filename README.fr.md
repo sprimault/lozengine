@@ -92,9 +92,9 @@ principal.
 
 **Jalon 0 en cours. Le moteur ne rend rien d'utilisable pour l'instant**, et
 rien n'est publié : les signatures publiques ne gèlent qu'une fois le moteur
-validé par un second jeu, au jalon 7.
+validé par un second jeu, au jalon 8.
 
-La feuille de route compte dix jalons, chacun avec un critère de fin vérifiable.
+La feuille de route compte onze jalons, chacun avec un critère de fin vérifiable.
 
 - [`ROADMAP.md`](ROADMAP.md) — les jalons, leurs critères de fin, et ce qui est
   hors périmètre

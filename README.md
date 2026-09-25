@@ -90,9 +90,9 @@ loop: a host game already has its own and will not give up its main thread.
 
 **Milestone 0 in progress. The engine does not render anything usable yet**, and
 nothing is published: public signatures freeze only once the engine has been
-validated by a second game, at milestone 7.
+validated by a second game, at milestone 8.
 
-The roadmap has ten milestones, each with a verifiable completion criterion.
+The roadmap has eleven milestones, each with a verifiable completion criterion.
 
 - [`ROADMAP.md`](ROADMAP.md) — the milestones, their completion criteria and
   what is out of scope (French)

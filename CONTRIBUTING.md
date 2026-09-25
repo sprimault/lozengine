@@ -164,7 +164,7 @@ therefore written when a milestone ends, and the tag that publishes it carries
 the same number.
 
 The API freeze and the move to `1.0.0` happen once the engine has been validated
-by a second game, at milestone 7 of [`ROADMAP.md`](ROADMAP.md) (French). An API
+by a second game, at milestone 8 of [`ROADMAP.md`](ROADMAP.md) (French). An API
 validated by a single game is not universal, and a C ABI revises even worse than
 a Go API.
 
