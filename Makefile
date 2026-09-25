@@ -57,9 +57,13 @@ bench: | $(SORTIE)
 	    -o $(SORTIE)/$$nom.test $$p || exit 1; \
 	done
 
+# `-o` n'est pas cosmétique : sans lui, `go tool cover` écrit son rapport dans le
+# temporaire du système — que `GOTMPDIR` ne couvre pas, celui-ci suivant `TMP` — et
+# ouvre le navigateur par défaut. Une cible de lecture ne prend pas la main sur la
+# session de qui la lance, et tout ce que la chaîne Go produit reste dans la sortie.
 cover: | $(SORTIE)
 	go test -coverprofile=$(SORTIE)/couverture.out $(PKG)
-	go tool cover -html=$(SORTIE)/couverture.out
+	go tool cover -html=$(SORTIE)/couverture.out -o $(SORTIE)/couverture.html
 
 # Plusieurs contrôles tirent leur périmètre de git. Hors d'un dépôt, la liste
 # revient vide et la cible passe au vert sans avoir rien lu : un contrôle qui ne
