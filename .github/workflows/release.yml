@@ -64,6 +64,17 @@ jobs:
       - name: Notes de version
         run: make notes VERSION=${{ steps.version.outputs.nombre }} > notes.md
 
+      # Le tag ne fait pas un titre : le mineur marque un jalon franchi sans en
+      # porter le numéro, donc `v0.2.0` ne dit pas de quel jalon il vient. La cible
+      # le tire du journal, seul endroit où cette correspondance est écrite, et
+      # échoue si le titre de section ne suit pas la forme attendue.
+      - name: Titre de version
+        id: titre
+        run: |
+          texte=$(make titre VERSION=${{ steps.version.outputs.nombre }})
+          echo "texte=$texte" >> "$GITHUB_OUTPUT"
+          echo "$texte"
+
       # En brouillon : le workflow fait la partie mécanique — rejouer les contrôles,
       # extraire les notes, créer la version sur le tag — et s'arrête là. Rien n'est
       # visible avant qu'on ait relu les notes et publié soi-même. Un tag se corrige
@@ -75,7 +86,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
-            --title "${{ steps.version.outputs.tag }}" \
+            --title "${{ steps.titre.outputs.texte }}" \
             --notes-file notes.md \
             --verify-tag \
             --draft
