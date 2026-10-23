@@ -105,9 +105,10 @@ loop: a host game already has its own and will not give up its main thread.
 
 ## Status
 
-**Milestone 1 in progress.** The engine renders off-screen and compares its
-images against references without opening a window; it has no geometry, no scene
-and no window yet, and nothing in it is enough to write a game.
+**Milestone 1 in progress.** The engine renders off-screen, compares its images
+against references without opening a window, and can convert between world cells
+and screen pixels; it has no scene, no draw order and no window yet, and nothing in
+it is enough to write a game.
 
 A release marks every milestone reached, but **no signature is frozen**: they may
 change with every minor until milestone 9, where validation by a second game

@@ -106,9 +106,10 @@ principal.
 
 ## État
 
-**Jalon 1 en cours.** Le moteur rend hors écran et compare ses images à des
-références sans ouvrir de fenêtre ; il n'a encore ni géométrie, ni scène, ni
-fenêtre, et rien n'y suffit à écrire un jeu.
+**Jalon 1 en cours.** Le moteur rend hors écran, compare ses images à des références
+sans ouvrir de fenêtre, et sait convertir entre les cellules du monde et les pixels de
+l'écran ; il n'a encore ni scène, ni ordre de dessin, ni fenêtre, et rien n'y suffit à
+écrire un jeu.
 
 Une version marque chaque jalon franchi, mais **aucune signature n'est figée** :
 elles peuvent changer à chaque mineure jusqu'au jalon 9, où la validation du
