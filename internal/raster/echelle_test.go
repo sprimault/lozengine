@@ -130,6 +130,32 @@ func TestAgrandirSortiePlusPetite(t *testing.T) {
 	}
 }
 
+// TestAgrandirSortieMoinsHaute éprouve le découpage sur la hauteur, où le décalage
+// de centrage devient négatif.
+//
+// C'est le pendant vertical de TestAgrandirSortiePlusPetite, qui ne rend négatif que
+// le décalage horizontal : toutes les sorties du dépôt sont au moins aussi hautes que
+// l'image, donc le clamp qui coupe les lignes du haut n'était parcouru par aucun cas.
+func TestAgrandirSortieMoinsHaute(t *testing.T) {
+	interne := tamponDe(t, 2, 4,
+		rouge, rouge,
+		vert, vert,
+		bleu, bleu,
+		blanc, blanc,
+	)
+	sortie := NouveauTampon(2, 2)
+
+	interne.Agrandir(sortie, 1, demiRge)
+
+	// Les deux lignes du milieu, le reste d'un centrage impair allant vers le bas.
+	attendu := [4]rendu.Couleur{vert, vert, bleu, bleu}
+	for i, veut := range attendu {
+		if sortie.Pixels[i] != veut {
+			t.Errorf("pixel %d : %v, attendu %v", i, sortie.Pixels[i], veut)
+		}
+	}
+}
+
 // TestAgrandirBandesEtDecoupage éprouve le croisement des deux : la sortie est plus
 // étroite que l'image et plus haute qu'elle, donc il faut découper sur un axe et
 // peindre des bandes sur l'autre.
