@@ -92,10 +92,10 @@ Code conventions and the testing doctrine are in [`docs/go.md`](docs/go.md)
 ## Delivery
 
 **One batch, one branch, one pull request.** The branch starts from an up-to-date
-`master` and is named after its subject, in French and with no conventional
-prefix: the repository uses none, neither in branches nor in commits. Do not
-chain two batches on the same branch — each must stay readable and revertible on
-its own.
+`master` and carries a nature prefix followed by its subject in French —
+`feat/`, `fix/`, `doc/`, `refactor/`, `test/`, `chore/`, `perf/` — which keeps
+the branch list readable without opening them. Do not chain two batches on the
+same branch: each must stay readable and revertible on its own.
 
 **Verify before pushing, not after:**
 
@@ -125,10 +125,29 @@ change makes false elsewhere: the status stated in the README, a decision in
 [`docs/conception.md`](docs/conception.md), a completion criterion in
 [`ROADMAP.md`](ROADMAP.md) (French).
 
-**A message says what changes and why**, in French, in the imperative, with no
-conventional prefix. Short first line; a body exists only when it carries
-something the title does not say and the diff does not show. No `Co-Authored-By`
-trailer.
+**A message says what changes and why**, shaped as `nature(scope): subject in
+the imperative`, the nature being that of the branch. Short first line; a body
+exists only when it carries something the title does not say and the diff does
+not show. No `Co-Authored-By` trailer.
+
+**The message is bilingual**: the French block then the English one, separated by
+a line of three asterisks. The prefix is not translated — it is what tooling
+reads, and a translated scope would make two names for one package.
+
+```
+doc(jalons): avancer le backend web avant l'audio
+
+C'est lui qui donne Android et iOS par le navigateur.
+
+***
+
+doc(jalons): move the web backend ahead of audio
+
+It is the one that brings Android and iOS through the browser.
+```
+
+Never separate the two blocks with `---`: `git am` treats it as the start of a
+patch and truncates everything after it.
 
 **The pull request repeats that message**, title and body, verbatim. One batch is
 one commit: there is nothing to say in the PR that the commit does not already
@@ -144,10 +163,13 @@ word onto something nobody calls anything else.
 **Documentation is in French**: godoc, comments, error messages.
 
 Bilingual are the documents addressed to someone who does not know the project
-yet — the README, this guide, the security policy and the changelog. Each pair
-is kept in agreement within the same commit: a version that moves on its own is
-an oversight, not a translation for later. Licence notices, for their part, are
-in English.
+yet — the README, this guide, the security policy and the changelog — as well as
+commit messages and pull request descriptions. Each pair is kept in agreement
+within the same commit: a version that moves on its own is an oversight, not a
+translation for later. Licence notices, for their part, are in English.
+
+The roadmap and `docs/` stay in French only: they address whoever already works
+on the engine.
 
 Contributions written in English are welcome and are not subject to the
 bilingual rule.
