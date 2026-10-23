@@ -45,40 +45,35 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.1.1] — 2026-10-23
+
+Le moteur ne rend toujours pas de jeu : ni fenêtre, ni géométrie, ni scène.
+
 ### Ajouté
 
-- Le paquet `rendu` devient public, à `github.com/sprimault/lozengine/rendu` : les
-  champs de `Quad` et de `Couleur` se lisent enfin dans la documentation, qu'un alias
-  vers un paquet interne ne montrait pas. `lozengine.Quad` reste le nom qu'on écrit.
-- Cinq couples de plus à la compilation croisée que le contrôle vérifie —
-  `windows/arm64`, `linux/arm64`, `linux/arm`, `linux/386` et `js/wasm`. Ils
-  **compilent**, et c'est tout ce qui est annoncé : la suite de tests ne tourne
-  nativement que sur `amd64`.
+- Le paquet `rendu` est public : `github.com/sprimault/lozengine/rendu`. Les champs de
+  `Quad` et de `Couleur` se lisent dans sa documentation.
+- Cinq architectures de plus vérifiées à la compilation : `windows/arm64`,
+  `linux/arm64`, `linux/arm`, `linux/386`, `js/wasm`. Elles compilent, rien de plus.
 
 ### Modifié
 
-- Le plancher de `go.mod` descend à Go 1.22, qui est ce que le code exige — `range`
-  sur un entier, et rien de plus récent. Un projet en 1.22 ou 1.23 n'a plus à
-  télécharger une autre chaîne, ni à échouer quand `GOTOOLCHAIN=local` le lui
-  interdit.
+- Plancher abaissé à Go 1.22, ce que le code exige réellement.
 
 ***
 
+The engine still renders no game: no window, no geometry, no scene.
+
 ### Added
 
-- The `rendu` package becomes public, at `github.com/sprimault/lozengine/rendu`: the
-  fields of `Quad` and `Couleur` can at last be read in the documentation, which an
-  alias to an internal package did not show. `lozengine.Quad` remains the name to
-  write.
-- Five more pairs to the cross-compilation the check verifies — `windows/arm64`,
-  `linux/arm64`, `linux/arm`, `linux/386` and `js/wasm`. They **compile**, and that
-  is all that is claimed: the test suite only runs natively on `amd64`.
+- The `rendu` package is public: `github.com/sprimault/lozengine/rendu`. The fields of
+  `Quad` and `Couleur` can be read in its documentation.
+- Five more architectures verified at build time: `windows/arm64`, `linux/arm64`,
+  `linux/arm`, `linux/386`, `js/wasm`. They compile, nothing more.
 
 ### Changed
 
-- The `go.mod` floor drops to Go 1.22, which is what the code actually requires —
-  `range` over an integer, and nothing newer. A project on 1.22 or 1.23 no longer has
-  to fetch another toolchain, nor to fail where `GOTOOLCHAIN=local` forbids it.
+- Floor lowered to Go 1.22, which is what the code actually requires.
 
 ## [0.1.0] — 2026-09-22 — Jalon 0 · Rendu hors écran
 
