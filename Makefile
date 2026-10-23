@@ -138,7 +138,12 @@ SANS_DEPENDANCE = internal/geometrie internal/scene internal/tri internal/rendu 
 # aurait une raison de tenter, et c'est précisément celle qui échappait.
 #
 # Les deux plateformes, parce qu'un import placé sous contrainte de construction ne
-# se voit pas depuis l'autre.
+# se voit pas depuis l'autre — et les deux boucles, pas seulement la première. Le trou
+# que cela ferme est étroit mais c'est le pire possible : une dépendance **de la liste
+# close** importée dans le cœur sous contrainte de construction. La première boucle la
+# laisse passer puisqu'elle est autorisée ailleurs, et la seconde ne la voyait pas.
+# Éprouvé sur une copie dans `.tmp/`, par un `golang.org/x/image` substitué et importé
+# depuis un fichier `_linux.go` de `internal/raster` : le contrôle passait au vert.
 #
 # Le filtre du module n'est pas ancré : `-test` fait remonter des pseudo-paquets de
 # la forme `paquet [paquet.test]`, dont le chemin du module ne commence pas la ligne.
@@ -158,16 +163,18 @@ deps:
 	  echo "$$hors_liste"; \
 	  exit 1; \
 	fi; \
-	for p in $(SANS_DEPENDANCE); do \
-	  [ -d "$$p" ] || continue; \
-	  atteint=$$(go list -deps -test \
-	    -f '{{if not .Standard}}{{.ImportPath}}{{end}}' ./$$p \
-	    | grep -v 'github.com/sprimault/lozengine'); \
-	  if [ -n "$$atteint" ]; then \
-	    echo "le cœur du moteur n'a droit à aucune dépendance, et $$p atteint :"; \
-	    echo "$$atteint"; \
-	    exit 1; \
-	  fi; \
+	for os in windows linux; do \
+	  for p in $(SANS_DEPENDANCE); do \
+	    [ -d "$$p" ] || continue; \
+	    atteint=$$(GOOS=$$os go list -deps -test \
+	      -f '{{if not .Standard}}{{.ImportPath}}{{end}}' ./$$p \
+	      | grep -v 'github.com/sprimault/lozengine'); \
+	    if [ -n "$$atteint" ]; then \
+	      echo "le cœur du moteur n'a droit à aucune dépendance, et $$p atteint sous $$os :"; \
+	      echo "$$atteint"; \
+	      exit 1; \
+	    fi; \
+	  done; \
 	done
 
 # Les paquets qui consomment ou produisent un Rendu, et rien d'autre. Le paquet
@@ -221,9 +228,28 @@ frontiere:
 
 # Produit deux binaires qu'on jette : ce qui compte est que le code compile pour les
 # deux cibles sans compilateur C.
+# Les couples que les README annoncent, et rien de plus. « Compile » est tout ce que
+# cette cible prouve : ni « tourne », ni « reste vert en intégration continue », qui
+# sont deux autres promesses et ne valent que pour `amd64`.
+#
+# Ils passent tous sans rien changer au code, et c'est le zéro-dépendance qui le
+# permet — une dépendance cgo retirerait des cibles au lieu d'en ajouter, puisque
+# `go build` ne suffirait plus. `js/wasm` y figure parce qu'il porte le backend du
+# jalon 5 et que `syscall/js` est dans la bibliothèque standard, donc la cible n'ouvre
+# pas la liste close.
+#
+# `linux/riscv64`, `freebsd/amd64` et les cibles Apple compilent aussi, mesuré le
+# 5 octobre 2026. Elles ne sont pas ici parce qu'aucun README ne les annonce : cette
+# liste est celle des promesses tenues, pas celle du possible.
+CIBLES = windows/amd64 windows/arm64 linux/amd64 linux/arm64 linux/arm linux/386 \
+         js/wasm
+
 cross:
-	GOOS=windows GOARCH=amd64 go build ./...
-	GOOS=linux GOARCH=amd64 go build ./...
+	@for cible in $(CIBLES); do \
+	  os=$${cible%/*}; arch=$${cible#*/}; \
+	  echo "GOOS=$$os GOARCH=$$arch go build ./..."; \
+	  GOOS=$$os GOARCH=$$arch go build ./... || exit 1; \
+	done
 
 # Le périmètre vient de git : ce que le dépôt ne publie pas n'a rien à déclarer.
 # La liste close des dispensés est dans docs/go.md — la reprendre ici en dur

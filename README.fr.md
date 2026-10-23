@@ -27,6 +27,20 @@ PulseAudio écrits sur socket sous Linux, jamais par le chargement d'une
 bibliothèque C. Le rendu est donc logiciel, en résolution interne basse remontée
 vers la fenêtre par un facteur entier.
 
+**Les plateformes, et ce que chacune promet.** Compile, tourne, ou reste vert en
+intégration continue : trois promesses différentes, et seule celle qui est tenue
+est annoncée. Windows et Linux en `amd64` — la suite de tests y passe en
+intégration continue, à chaque lot. `windows/arm64`, `linux/arm64`, `linux/arm`,
+`linux/386` et `js/wasm` — ils **compilent**, ce que `make check` vérifie, et rien
+de plus tant que le parc ne contient ni Raspberry Pi, ni téléphone. C'est le
+zéro-dépendance qui ouvre cette liste, et une dépendance cgo la refermerait au lieu
+de l'élargir : `go build` ne suffirait plus.
+
+Le navigateur est la troisième cible, par WebAssembly, et c'est lui qui donnera
+Android et iOS. macOS, iOS et Android **natifs** restent fermés, par l'ABI et non
+par arbitrage de coût — le hors-périmètre de [`ROADMAP.md`](ROADMAP.md) en donne le
+motif.
+
 Deux paquets périphériques font exception, sous licence permissive et par
 décision inscrite : le rendu de polices et la sortie audio. Les réécrire
 coûterait des semaines pour un résultat qui ne distinguerait en rien le moteur.
@@ -125,7 +139,7 @@ make clean
 
 `make check` enchaîne le formatage, `go vet`, le contrôle d'absence de
 dépendance externe, la mention de licence, l'étanchéité de la frontière, la
-compilation croisée vers Windows et Linux, puis les tests.
+compilation croisée vers les sept couples annoncés, puis les tests.
 
 Le contrôle d'étanchéité est celui qui garde l'architecture : aucun paquet du
 noyau ne doit importer `syscall`, `net` ou un backend, ni directement ni à

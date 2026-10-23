@@ -49,9 +49,10 @@ jobs:
       - name: Contrôle complet
         run: make check
 
-  # La compilation croisée du job précédent prouve que le code compile pour les
-  # deux cibles ; elle ne dit rien de ce qu'il fait une fois exécuté. Le moteur
-  # vise Windows et Linux : la suite doit passer sur les deux, nativement.
+  # La compilation croisée du job précédent prouve que le code compile pour chacun
+  # des couples annoncés ; elle ne dit rien de ce qu'il fait une fois exécuté. D'où
+  # ce job : « tourne » est une autre promesse que « compile », et elle ne vaut que
+  # là où la suite passe nativement — `amd64` sur les deux systèmes.
   #
   # Les deux bouts de la plage annoncée, et pas seulement l'un d'eux. N'éprouver
   # que la dernière version laisserait le plancher de go.mod dériver sans que rien

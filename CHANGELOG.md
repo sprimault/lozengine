@@ -45,6 +45,21 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- Cinq couples de plus à la compilation croisée que le contrôle vérifie —
+  `windows/arm64`, `linux/arm64`, `linux/arm`, `linux/386` et `js/wasm`. Ils
+  **compilent**, et c'est tout ce qui est annoncé : la suite de tests ne tourne
+  nativement que sur `amd64`.
+
+***
+
+### Added
+
+- Five more pairs to the cross-compilation the check verifies — `windows/arm64`,
+  `linux/arm64`, `linux/arm`, `linux/386` and `js/wasm`. They **compile**, and that
+  is all that is claimed: the test suite only runs natively on `amd64`.
+
 ## [0.1.0] — 2026-09-22 — Jalon 0 · Rendu hors écran
 
 **Ce que la 0.1.0 donne, et ce qu'elle ne donne pas.** Le moteur publie sa primitive de

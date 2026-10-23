@@ -11,7 +11,7 @@ make vet
 make deps         # échoue si une dépendance externe est entrée
 make entetes      # la mention de licence, sur ce que le dépôt publie
 make frontiere    # le noyau ne touche ni au système ni à un backend
-make cross        # compile pour Windows et pour Linux
+make cross        # compile pour chacun des couples que les README annoncent
 make cover        # couverture, ouverte dans le navigateur
 make bench        # bancs d'essai, un profil par paquet
 make references   # régénère les images de référence
@@ -51,8 +51,8 @@ make check
 ```
 
 Formatage, `go vet`, absence de dépendance externe, mention de licence,
-étanchéité de la frontière, compilation croisée vers les deux plateformes, puis
-la suite de tests. **La liste se passe entière**, jamais
+étanchéité de la frontière, compilation croisée vers tous les couples annoncés,
+puis la suite de tests. **La liste se passe entière**, jamais
 réduite à ce qui touche au changement qu'on vient d'écrire : composer sa liste
 revient à ne vérifier que ce qu'on a déjà en tête, et le défaut est ailleurs par
 construction.
@@ -82,7 +82,7 @@ backend. Aucun paquet parmi `geometrie`, `scene`, `tri`, `rendu`, `raster` et
 directement, ni à travers un autre paquet du moteur.
 
 C'est le contrôle que `make cross` ne fait pas, contrairement à ce qu'on croit
-spontanément. Compiler pour les deux plateformes ne dit rien de l'étanchéité :
+spontanément. Compiler pour une plateforme ne dit rien de l'étanchéité :
 le backend Linux est du protocole écrit sur socket, donc il n'emploie que `net`
 et `os`, qui existent des deux côtés. Un `net.Dial` placé dans `geometrie`
 compile pour Windows comme pour Linux, sans un mot.
@@ -93,8 +93,18 @@ pas : `fmt` tire `os`, qui tire `syscall`, si bien que le moindre paquet
 deviendrait une fuite.
 
 **`make cross`** n'est pas là pour produire un binaire ; les artefacts sont
-jetés. Elle vérifie que le code compile pour les deux plateformes sans
-compilateur C, ce qui attrape l'usage d'une API absente d'un des deux systèmes.
+jetés. Elle vérifie que le code compile sans compilateur C pour chaque couple de
+la variable `CIBLES`, ce qui attrape l'usage d'une API absente d'un système ou
+d'une architecture.
+
+**`CIBLES` est la liste des promesses tenues, pas celle du possible.** Elle porte
+les sept couples que les `README` annoncent — `windows/amd64`, `windows/arm64`,
+`linux/amd64`, `linux/arm64`, `linux/arm`, `linux/386` et `js/wasm` —, et « compile »
+est tout ce qu'elle prouve : « tourne » et « reste vert en intégration continue »
+sont deux autres promesses, et elles ne valent que pour `amd64`. D'autres couples
+compilent aussi, `linux/riscv64` et les cibles Apple comprises ; ils n'entrent ici
+que si un `README` les annonce, faute de quoi la cible vérifierait plus que ce que le
+dépôt promet et personne ne saurait lequel des deux croire.
 
 ## Compiler sans cgo
 
