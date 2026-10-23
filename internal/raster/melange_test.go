@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // TestProduit vérifie l'arrondi de la multiplication par un huitième de tour : la

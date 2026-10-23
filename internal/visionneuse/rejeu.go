@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/sprimault/lozengine/internal/raster"
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // Rejeu tient ce qu'un scénario réutilise d'une image à l'autre : son atlas, son

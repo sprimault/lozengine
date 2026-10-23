@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // tamponDe rend un tampon rempli des pixels donnés, ligne par ligne.

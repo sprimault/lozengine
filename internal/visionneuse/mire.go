@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/sprimault/lozengine/internal/raster"
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // Mire est le scénario de démonstration : un sol en damier de losanges, un pion qui

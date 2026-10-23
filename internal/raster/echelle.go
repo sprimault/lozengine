@@ -3,7 +3,7 @@
 
 package raster
 
-import "github.com/sprimault/lozengine/internal/rendu"
+import "github.com/sprimault/lozengine/rendu"
 
 // Facteur rend le plus grand facteur entier qui fait tenir le tampon dans la sortie,
 // et jamais moins de 1.

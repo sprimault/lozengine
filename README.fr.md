@@ -80,8 +80,10 @@ boucle fournie ajoute du confort, jamais de capacité : tout ce qu'elle permet s
 fait aussi en pilotant le moteur à la main.
 
 Tout le reste vit sous `internal/`, que le compilateur interdit d'importer depuis
-un autre module. Ce qui est publié l'a donc été délibérément — et un hôte ne peut
-pas se lier à un backend en contournant la frontière.
+un autre module — à une exception près, `rendu`, dont l'ABI exposera les structures
+et dont un hôte doit donc pouvoir lire les champs. Ce qui est publié l'a été
+délibérément, et un hôte ne peut pas se lier à un backend en contournant la
+frontière.
 
 ## Ce qu'il ne fait pas
 

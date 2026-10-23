@@ -6,7 +6,7 @@ package lozengine
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // TestConstantesRepubliees vérifie que chaque constante republiée vaut celle du

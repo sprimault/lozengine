@@ -6,7 +6,7 @@ package raster
 import (
 	"fmt"
 
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // Planche est une page de pixels dans laquelle les quads puisent, ligne par ligne

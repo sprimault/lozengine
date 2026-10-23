@@ -142,7 +142,7 @@ lozengine             surface publique, boucle, assemblage      tous les interne
 internal/geometrie    projection, matrices, conversions         aucune
 internal/scene        grille, entités, couches, caméra          geometrie
 internal/tri          culling, clé, tri topologique             geometrie, scene
-internal/rendu        structures Quad et Rendu                  geometrie
+rendu                 structures Quad et Rendu, publiques       geometrie
 internal/raster       rastériseur logiciel, écriture PNG        rendu
 internal/apparence    interface fournisseur, atlas, animation   geometrie, rendu
 internal/backend/…    fenêtre, entrées, présentation            rendu
@@ -156,11 +156,21 @@ La visionneuse n'est pas le moteur : c'est l'outillage qui le rend jugeable sans
 
 Le paquet racine est le seul à tout connaître, et rien ne dépend de lui.
 
-**Tout le moteur vit sous `internal/`, et c'est une décision, pas un rangement.**
-Le compilateur Go interdit d'importer un tel paquet depuis un autre module : la
-surface publique se réduit donc à ce que le paquet racine republie, et publier
-quelque chose demande de l'écrire, au lieu de l'être par défaut. C'est ce qui rend
-tenable la règle voulant que toute signature publique soit définitive.
+**Tout le moteur vit sous `internal/` sauf `rendu`, et les deux moitiés de cette
+phrase sont des décisions, pas un rangement.** Le compilateur Go interdit d'importer
+un paquet `internal` depuis un autre module : la surface publique se réduit donc à
+ce que le paquet racine republie, et publier quelque chose demande de l'écrire, au
+lieu de l'être par défaut. C'est ce qui rend tenable la règle voulant que toute
+signature publique soit définitive.
+
+**`rendu` est l'exception, et une seule chose la motive** : un type publié par alias
+ne montre aucune structure quand il désigne un paquet `internal`. Un consommateur
+lisait `type Quad = rendu.Quad` et la godoc de l'alias, sans un seul champ — ni
+coordonnées, ni teinte, ni planche —, donc sans de quoi construire la primitive du
+moteur. Ce sont les structures que l'ABI C exposera, et celles qu'un hôte doit
+pouvoir lire avant d'écrire une ligne. L'invariant tient pour autant : le seul
+paquet public est celui qu'on a décidé de publier, et être public ne relâche rien —
+`rendu` reste le cœur, donc sans aucune dépendance.
 
 Deux conséquences qui comptent davantage que la discipline. Réorganiser l'intérieur
 ne casse aucun consommateur, tant que ce que republie le paquet racine ne bouge pas.

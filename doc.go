@@ -4,9 +4,10 @@
 // Package lozengine est la surface publique du moteur, et la seule.
 //
 // Tout le reste vit sous internal/, que le compilateur rend impossible à importer
-// depuis un autre module. Publier quelque chose demande donc de l'écrire ici, au
-// lieu de l'être par défaut : c'est ce qui rend tenable la règle voulant que toute
-// signature publique soit définitive.
+// depuis un autre module — sauf [github.com/sprimault/lozengine/rendu], dont l'ABI
+// exposera les structures et dont un hôte doit pouvoir lire les champs. Publier
+// demande donc de l'écrire, au lieu de l'être par défaut : c'est ce qui rend tenable
+// la règle voulant que toute signature publique soit définitive.
 //
 // Les types du noyau sont republiés par alias et non par enveloppe. Un alias
 // désigne le même type, sans conversion ni copie — ce qui compte pour des

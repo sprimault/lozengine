@@ -5,7 +5,7 @@ package visionneuse
 
 import (
 	"github.com/sprimault/lozengine/internal/raster"
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // Ordre éprouve l'ordre de dessin et les miroirs : trois quads en escalier, deux

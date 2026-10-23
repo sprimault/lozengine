@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // TestEffacer vérifie les deux régimes, le transparent passant par une mise à zéro

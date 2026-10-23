@@ -5,7 +5,7 @@ package visionneuse
 
 import (
 	"github.com/sprimault/lozengine/internal/raster"
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // Melange éprouve la composition : une échelle d'opacités sur un fond opaque, deux

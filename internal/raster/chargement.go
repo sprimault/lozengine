@@ -11,7 +11,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // ChargerPlanche lit un PNG et rend une planche en alpha prémultiplié.

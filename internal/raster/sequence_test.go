@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // ligneDAlphas construit une planche d'une seule ligne dont les alphas sont donnés,

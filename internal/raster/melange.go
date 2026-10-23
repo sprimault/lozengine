@@ -3,7 +3,7 @@
 
 package raster
 
-import "github.com/sprimault/lozengine/internal/rendu"
+import "github.com/sprimault/lozengine/rendu"
 
 // produit rend l'arrondi exact de a × b / 255 sans division.
 //
