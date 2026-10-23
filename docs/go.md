@@ -103,7 +103,7 @@ quatre à la fois :
 // Cle est l'ordre de dessin d'un quad, réduit à un entier comparable.
 //
 // Composée du bit fort au bit faible : couche 4 bits, étage 6, profondeur en
-// quarts de cellule 20, hauteur 16, planche 10, index stable 8. L'ordre des
+// quarts de cellule 18, hauteur 16, planche 10, index stable 10. L'ordre des
 // champs est l'ordre de priorité, et c'est tout le procédé — comparer deux
 // clés revient à comparer les couches, puis les étages à couche égale, et
 // ainsi de suite, sans une seule branche.
@@ -113,10 +113,11 @@ quatre à la fois :
 // entiers de 64 bits : une fonction appelée des milliers de fois par image
 // coûte plus que tout le reste du tri réuni.
 //
-// Les 20 bits de profondeur fixent la limite annoncée du moteur, 32 000 cases
-// de côté. Au-delà, deux cellules éloignées se replient sur la même valeur et
-// s'ordonnent par leur index stable, c'est-à-dire par leur ordre d'insertion :
-// le rendu resterait déterministe, et faux.
+// Les 18 bits de profondeur fixent la limite du moteur, 32 768 cases de côté :
+// ils portent 262 144 quarts, soit 65 536 cellules, et une carte carrée de côté
+// N a x+y au plus égal à 2N. Au-delà, deux cellules éloignées se replient sur la
+// même valeur et s'ordonnent par leur index stable, c'est-à-dire par leur ordre
+// d'insertion : le rendu resterait déterministe, et faux.
 type Cle uint64
 ```
 

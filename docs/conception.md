@@ -34,12 +34,36 @@ d'écran, parce qu'elle court-circuiterait la seule chose que le moteur apporte.
   la clé de tri se calcule sur `(x+y)` puis `z`. Fondre les deux perd
   l'information à l'entrée du pipeline et rend le tri irréparable.
 - **Projection.** Matrice affine avec son inverse calculée une fois et gardée.
-  Constructeurs pour le dimétrique et pour l'isométrie vraie, plus la matrice
-  brute pour les cas exotiques. Aucune constante de ratio ailleurs que dans un
-  constructeur de matrice : pas de division par deux disséminée dans le code.
+  Quatre voies de construction : le dimétrique au ratio libre, l'isométrie vraie
+  qui **dérive le sien**, la grille carrée vue de dessus, et la matrice brute pour
+  les cas exotiques. Aucune constante de ratio ailleurs que dans un constructeur
+  de matrice : pas de division par deux disséminée dans le code.
+
+  L'isométrie dérive son ratio parce qu'un constructeur qui n'impose rien n'en est
+  pas un : son rapport est déterminé — `1/√3`, soit 18 pour une largeur de 32
+  contre 16 pour le dimétrique —, et le laisser en paramètre en ferait un
+  dimétrique sous un autre nom. La racine carrée est à arrondi correct par
+  IEEE-754, comme la division, et s'évalue une fois à la construction.
+- **Hauteur de l'étage.** Le facteur par lequel `z` monte à l'écran vit dans la
+  matrice, et vaut par défaut la hauteur de la cellule — le cas d'un cube
+  isométrique. Un ajusteur le change, plutôt qu'un paramètre de plus à chaque
+  constructeur. S'il vivait ailleurs, l'appelant appliquerait la soustraction et le
+  calcul se disséminerait, ce que la clause ci-dessus interdit.
+- **Sortie absolue, vue retranchée par la caméra.** La projection rend des pixels
+  **absolus**, en `int32`, et c'est la scène qui y retranche l'origine de la vue
+  avant de remplir un `Quad`. Deux étages, et la raison est le débordement : en
+  absolu sur 16 bits, la plus grande carte représentable serait de 2 047 cases de
+  côté à tuile 32 — seize fois moins que la limite de la clé de tri, et un chiffre
+  qui dépendrait de la taille de tuile.
 - **Caméra.** Quatre orientations discrètes à 90°. Elles touchent la matrice, la
   permutation des axes dans la clé de tri, et le décalage de direction demandé
   au fournisseur d'apparence.
+
+  **La rotation est un remappage de coordonnées, jamais un changement de signe.**
+  Une rotation en `(−y, x)` rendrait la profondeur signée, demanderait un biais et
+  ferait tomber de moitié la plage du champ. La scène possédant l'étendue de sa
+  grille, elle rend `(Max−y, x)` : les coordonnées restent positives et le champ de
+  profondeur garde ses dix-huit bits non signés.
 - **Échelle.** Facteur entier obligatoire vers la fenêtre, bandes autour quand
   la taille ne tombe pas juste. Jamais de mise à l'échelle fractionnaire.
 
@@ -70,17 +94,34 @@ Trois conséquences, à ne pas redécouvrir :
 
 - **Seize bits de fraction sur un `int32`** laissent ±32 768 à la partie entière,
   ce qui tombe exactement sur la limite de cases de côté que la clé de tri
-  documente. Les deux décisions se renforcent au lieu de se contrarier.
+  documente. **L'accord porte sur les coordonnées de monde, et sur elles seules**
+  — en pixels d'écran absolus, la même limite demanderait 524 272, soit seize fois
+  le plafond. C'est ce qui oblige la caméra à retrancher la vue.
 - **Le produit passe par `int64`** avant décalage : un produit de coordonnée par
   coefficient déborde un `int32` bien avant les bornes utiles.
+- **La conversion depuis le flottant sature**, et sans elle tout le reste est
+  vain : hors plage, la conversion d'un flottant vers un `int32` est laissée à
+  l'implémentation, `amd64` rendant le plus petit entier là où `arm64` sature au
+  plus grand. Deux comparaisons par appel, et une entité posée hors plage cesse de
+  rendre des pixels différents selon la machine.
 - **L'aller-retour admet un quantum.** L'inverse d'une matrice en virgule fixe
   n'est pas exact ; la tolérance s'écrit dans la godoc plutôt que de se supposer
   nulle.
 
+**Le format n'est pas qu'un choix de plage : c'est ce qui rend l'entrée flottante
+gratuite.** Un consommateur qui tient déjà ses positions en virgule fixe au même
+format — seize bits de fraction sur un `int32` — les passe en `float64` et les
+retrouve exactes de l'autre côté, un `float64` ayant 53 bits de mantisse contre 32.
+Mesuré sur 4,2 millions de valeurs couvrant tout le domaine : aucun écart. Vingt
+bits de fraction, ou un `int64`, et ce même consommateur perdrait un cran à chaque
+appel. C'est pourquoi le moteur n'expose aucun type de coordonnée fixe : il serait
+définitif, tous les consommateurs devraient le connaître, et il n'achèterait rien
+que le format n'offre déjà.
+
 Ce que le déterminisme ne demande pas ici : réécrire des fonctions
 transcendantes. Une projection isométrique affine n'en appelle aucune — ses
-constructeurs prennent une largeur et une hauteur, pas un angle — et la division
-d'IEEE-754 est à arrondi correct.
+constructeurs prennent des longueurs, jamais un angle — et la division comme la
+racine carrée d'IEEE-754 sont à arrondi correct.
 
 ## Structure et interopérabilité
 
@@ -132,6 +173,14 @@ ordre partiel, et il n'aurait que 256 valeurs pour départager des quads partage
 déjà couche, étage, profondeur au quart, `z` et planche ; le jour où il sature, la
 clé ne peut plus exprimer l'ordre, et rien ne le rattrape. Cent trente mille cases
 de côté ne servent personne quand la cible de contrôle est 500×500.
+
+**L'axe transverse `x−y` n'est pas un champ de la clé, c'est une entrée du tri
+topologique.** Un moteur qui trie par comparateur le porte naturellement comme
+critère de départage, après la profondeur ; celui-ci trie par paquets et n'a pas de
+comparateur où le mettre. Lui donner des bits les prendrait à l'index stable, et
+rouvrirait l'arbitrage que les deux bits ci-dessus viennent de clore. Le tri
+topologique s'en sert donc pour décider, puis exprime sa décision dans l'index
+stable — ce qui est précisément son rôle.
 
 ## Frontières de paquets
 
@@ -214,8 +263,15 @@ conséquences :
   change au prix de la confiance de ceux qui ont adopté le moteur. Toute
   nouvelle signature publique est traitée comme définitive.
 - Ne jamais coder en dur ce qui relève du jeu : nombre de directions, taille de
-  tuile, ratio de projection, nombre de couches. Tout vient du paramétrage ou du
-  fournisseur d'apparence.
+  tuile, ratio de projection, nombre de couches **employées**. Tout vient du
+  paramétrage ou du fournisseur d'apparence.
+
+  Les **plafonds de structure** du moteur n'en relèvent pas, et la distinction
+  compte : une clé de tri sur 64 bits est par nature un jeu de plafonds — seize
+  couches, soixante-quatre étages, mille vingt-quatre planches —, et les annoncer
+  dit ce que le format porte au lieu de décider à la place du jeu. La règle
+  interdit de fixer combien de couches un jeu emploie, pas de borner ce que la clé
+  sait distinguer.
 
 Critère permanent : le hello world tient en moins de 30 lignes. S'il gonfle,
 c'est qu'un défaut manque quelque part.
