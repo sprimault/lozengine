@@ -38,9 +38,10 @@ La boucle s'appuie sur une étape appelable, qu'un hôte pilote lui-même.
 
 Fin : un exemple de moins de 30 lignes affiche une grille et un personnage déplaçable.
 
-### 3 · Backend Linux
+### 3 · Backend Linux par X11
 
-Client X11 écrit sur le protocole, sans bibliothèque C.
+Client X11 écrit sur le protocole, sans bibliothèque C. Wayland natif et DRM/KMS sont
+le jalon 6 : empilés ici, ils feraient un jalon qu'on ne finit pas.
 
 Fin : le même exemple tourne sous X11 et sous XWayland.
 
@@ -53,21 +54,7 @@ chemin de rendu.
 
 Fin : un décor à deux niveaux se traverse sans perdre le personnage.
 
-### 5 · Audio
-
-Mixeur logiciel et sorties système sur les deux plateformes.
-
-Fin : huit sons simultanés et une musique en boucle, sans rupture ni décalage
-perceptible, sous Windows et sous Linux.
-
-### 6 · Apparence calculée
-
-Éclairage par cartes de normales et de hauteur, atlas dynamique avec cache et budget
-amorti, fabrique de sprites depuis des modèles volumiques.
-
-Fin : 800 entités de 6 types changent de direction sur la même image sans pic.
-
-### 7 · Backend web
+### 5 · Backend web
 
 Client WebAssembly : canvas, entrées, présentation. Le rendu logiciel s'y transporte tel
 quel — le tampon part en `putImageData`, qui ne met rien à l'échelle, et l'agrandissement
@@ -76,17 +63,57 @@ revient à `StretchDIBits` sous Windows.
 
 `syscall/js` étant dans la bibliothèque standard, la cible n'ouvre pas la liste close.
 Elle demande en revanche de livrer `wasm_exec.js`, le fichier de liaison fourni avec la
-chaîne Go : un artefact à distribuer avec la page, pas une dépendance du moteur. Le son y
-passe par WebAudio, troisième sortie du mixeur, qui ne change pas pour autant.
+chaîne Go : un artefact à distribuer avec la page, pas une dépendance du moteur.
+
+C'est ce jalon qui donne Android et iOS, par le navigateur : un jeu en page plein écran
+ne se distingue pas d'une application pour qui y joue. Il passe donc devant l'audio, dont
+aucun appareil n'attend la sortie. Les entrées tactiles et le dimensionnement de la vue
+en font partie, faute de quoi la cible ne sert que le poste.
 
 Go n'émettant pas de SIMD en WebAssembly et n'y ayant pas de vrais threads, c'est la
 cible où une charge élevée saturera en premier. Le budget d'image s'y mesure, il ne s'y
 suppose pas.
 
-Fin : le même exemple qu'aux jalons 2 et 3 tourne dans un navigateur, et son temps par
-image y est mesuré.
+Fin : le même exemple qu'aux jalons 2 et 3 tourne dans un navigateur, du poste au
+téléphone, et son temps par image y est mesuré.
 
-### 8 · Validation par un second jeu
+### 6 · Linux sans serveur graphique
+
+Client Wayland écrit sur le protocole, et un chemin DRM/KMS avec `evdev` pour les
+machines qui n'ont aucun serveur à qui parler.
+
+Wayland est le compositeur par défaut des distributions récentes et de Raspberry Pi OS :
+XWayland couvre le besoin jusqu'ici, au prix d'une couche de traduction qu'un moteur
+logiciel paie en latence. DRM/KMS vise le Pi en kiosque et les bornes embarquées.
+
+Même nature de travail qu'au jalon 3 — un protocole décrit, parlé sur une socket Unix,
+`wayland.xml` étant sa description même — et des `ioctl` relevés dans les en-têtes UAPI
+du noyau. `WriteMsgUnix`, `UnixRights`, `Ftruncate` et `Mmap` sont dans la bibliothèque
+standard ; seul `memfd_create` manque à `syscall`, et son numéro se déclare comme se
+déclarent les opcodes.
+
+Deux protocoles entiers, chacun comparable à X11 en volume. Les empiler sur le jalon 3
+ferait un jalon qu'on ne finit pas, d'où celui-ci.
+
+Fin : le même exemple tourne sous un compositeur Wayland et sur un connecteur DRM/KMS,
+sans serveur graphique.
+
+### 7 · Audio
+
+Mixeur logiciel et sorties système sur les deux plateformes, plus WebAudio comme
+troisième sortie du même mixeur.
+
+Fin : huit sons simultanés et une musique en boucle, sans rupture ni décalage
+perceptible, sous Windows, sous Linux et dans un navigateur.
+
+### 8 · Apparence calculée
+
+Éclairage par cartes de normales et de hauteur, atlas dynamique avec cache et budget
+amorti, fabrique de sprites depuis des modèles volumiques.
+
+Fin : 800 entités de 6 types changent de direction sur la même image sans pic.
+
+### 9 · Validation par un second jeu
 
 Portage d'un jeu au tour par tour sur le moteur, face au jeu temps réel qui a servi à
 l'écrire. Gel des signatures publiques.
@@ -95,14 +122,14 @@ Fin : le second jeu tourne sur le moteur sans qu'aucune signature publique ait e
 changer pour lui. Toute signature qu'il a fallu reprendre est corrigée avant le gel,
 puisque c'est exactement ce que cette étape sert à découvrir.
 
-### 9 · Publication
+### 10 · Publication
 
 Documentation, exemples, intégration continue sur les deux plateformes.
 
 Fin : l'intégration continue est verte sur Windows et sur Linux, et un clone neuf
 compile et passe la suite sans autre installation qu'une chaîne Go.
 
-### 10 · Interopérabilité
+### 11 · Interopérabilité
 
 Bibliothèque native consommable depuis Rust, C++ et tout langage parlant l'ABI C, en
 `c-shared` et `c-archive`, avec en-tête généré et exemples minimaux.
@@ -119,13 +146,18 @@ Fin : un exemple Rust et un exemple C++ affichent une scène rendue par le moteu
 
 ## Hors périmètre
 
-- **macOS natif.** Cocoa ne s'atteint qu'à travers l'exécution Objective-C, ce qui
-  demande cgo ou une couche comme purego — l'une comme l'autre sortiraient de la liste
-  close. La frontière backend le garde atteignable si la contrainte change, et le backend
-  web y donne accès entre-temps, dans un navigateur.
+- **macOS, iOS et Android natifs.** Fermés par l'ABI, et non par arbitrage de coût :
+  c'est ce qui les distingue du protocole X11, dont les semaines sont assumées parce
+  qu'il est le sujet. Cocoa ne s'atteint que par l'ABI Objective-C, dont le point
+  d'entrée s'obtient par `dlsym`, et Apple n'expose aucune ABI d'appel système stable ;
+  Go lui-même refuse de lier pour iOS sans cgo ; Android n'a pas de X11, SurfaceFlinger
+  parle un protocole non documenté, et l'`ANativeWindow` du NDK comme JNI sont des
+  bibliothèques C. Tout chemin charge donc une bibliothèque C, ce que la règle de
+  dépendance interdit — `purego` aussi bien que cgo. Le jalon 5 couvre ces trois
+  systèmes par le navigateur, et la frontière backend les garde atteignables si la
+  contrainte change.
 - **Accélération GPU.** Exclue par la règle de dépendance. Le rendu est logiciel, en
   résolution interne basse mise à l'échelle par un facteur entier.
-- **Wayland natif.** Envisagé après le jalon 9. XWayland couvre le besoin d'ici là.
 - **Moteur de jeu généraliste.** Le moteur rend une scène et lit des entrées. Ni
   physique, ni système d'entités, ni éditeur, ni script. Et le rendu logiciel ne vise pas
   le nombre de sprites qu'une carte graphique absorbe : la projection se paramètre, la
@@ -140,15 +172,15 @@ par des appels système directs et par des protocoles écrits sur socket, jamais
 chargement d'une bibliothèque C.
 
 Deux paquets périphériques font exception, sous licence permissive et par décision
-inscrite : le rendu de polices au jalon 4, la sortie audio au jalon 5. Les réécrire
+inscrite : le rendu de polices au jalon 4, la sortie audio au jalon 7. Les réécrire
 coûterait des semaines pour un résultat qui ne distinguerait en rien le moteur — ce qui
 n'est pas le cas du protocole X11, dont les semaines sont assumées parce qu'il est le
 sujet. La liste et les critères d'entrée sont dans `docs/go.md`.
 
-Seule la cible d'interopérabilité du jalon 10 demande un compilateur C, sans rien
+Seule la cible d'interopérabilité du jalon 11 demande un compilateur C, sans rien
 ajouter au moteur lui-même.
 
-La bibliothèque native du jalon 10 ne remet pas ce principe en cause : produire un
+La bibliothèque native du jalon 11 ne remet pas ce principe en cause : produire un
 `c-shared` ou un `c-archive` réclame un compilateur C sur la machine de compilation, mais
 n'ajoute rien au moteur. Les binaires Windows et Linux continuent de se construire sans
 cgo, et le code reste identique.

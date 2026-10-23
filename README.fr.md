@@ -95,10 +95,10 @@ références sans ouvrir de fenêtre ; il n'a encore ni géométrie, ni scène, 
 fenêtre, et rien n'y suffit à écrire un jeu.
 
 Une version marque chaque jalon franchi, mais **aucune signature n'est figée** :
-elles peuvent changer à chaque mineure jusqu'au jalon 8, où la validation du
+elles peuvent changer à chaque mineure jusqu'au jalon 9, où la validation du
 moteur par un second jeu les gèle.
 
-La feuille de route compte onze jalons, chacun avec un critère de fin vérifiable.
+La feuille de route compte douze jalons, chacun avec un critère de fin vérifiable.
 
 - [`ROADMAP.md`](ROADMAP.md) — les jalons, leurs critères de fin, et ce qui est
   hors périmètre
