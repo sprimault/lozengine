@@ -67,10 +67,17 @@ func (r *Rejeu) Ecrire(repertoire string, numero, facteur int) error {
 
 	source := r.tampon
 	if facteur > 1 {
-		large := uint16(int(r.tampon.Largeur) * facteur)
-		haut := uint16(int(r.tampon.Hauteur) * facteur)
-		if r.sortie == nil || r.sortie.Largeur != large || r.sortie.Hauteur != haut {
-			r.sortie = raster.NouveauTampon(large, haut)
+		// La taille reste en int jusqu'au contrôle : convertie d'abord, elle se
+		// repliait sur un facteur élevé et rendait une image minuscule que rien ne
+		// distinguait de celle qu'on avait demandée.
+		large := int(r.tampon.Largeur) * facteur
+		haut := int(r.tampon.Hauteur) * facteur
+		if large > raster.BorneTampon || haut > raster.BorneTampon {
+			return fmt.Errorf("facteur %d : l'image ferait %d×%d, au-delà des %d de côté qu'un tampon porte", facteur, large, haut, raster.BorneTampon)
+		}
+
+		if r.sortie == nil || int(r.sortie.Largeur) != large || int(r.sortie.Hauteur) != haut {
+			r.sortie = raster.NouveauTampon(uint16(large), uint16(haut))
 		}
 		r.tampon.Agrandir(r.sortie, facteur, r.scenario.Fond)
 		source = r.sortie

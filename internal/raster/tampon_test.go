@@ -67,3 +67,39 @@ func TestEffacerNAlloueRien(t *testing.T) {
 		t.Errorf("allocations : %v, attendu aucune", n)
 	}
 }
+
+// TestNouveauTamponRefuseAuDelaDeLaBorne couvre celle des trois limites du quad que
+// rien ne tenait. Les deux autres se voient — une planche trop grande ou trop
+// nombreuse est refusée au chargement — alors que celle-ci n'a aucune forme visible :
+// la part inatteignable du tampon reçoit les quads lointains repliés.
+func TestNouveauTamponRefuseAuDelaDeLaBorne(t *testing.T) {
+	cas := []struct {
+		nom              string
+		largeur, hauteur uint16
+	}{
+		{"largeur", BorneTampon + 1, 1},
+		{"hauteur", 1, BorneTampon + 1},
+	}
+	for _, c := range cas {
+		t.Run(c.nom, func(t *testing.T) {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("tampon de %d×%d accepté", c.largeur, c.hauteur)
+				}
+			}()
+
+			NouveauTampon(c.largeur, c.hauteur)
+		})
+	}
+}
+
+// TestNouveauTamponAccepteLaBorne vérifie que la garde s'arrête à la borne au lieu de
+// la manger. Un hors-par-un ici retirerait une colonne au plus grand tampon possible,
+// et aucun autre cas ne le verrait.
+func TestNouveauTamponAccepteLaBorne(t *testing.T) {
+	tampon := NouveauTampon(BorneTampon, 1)
+
+	if len(tampon.Pixels) != BorneTampon {
+		t.Errorf("pixels : %d, attendu %d", len(tampon.Pixels), BorneTampon)
+	}
+}

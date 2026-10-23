@@ -183,6 +183,24 @@ func TestEcrireAgrandit(t *testing.T) {
 	}
 }
 
+// TestEcrireRefuseUnFacteurQuiDeborde vérifie que l'agrandissement refuse au lieu de
+// replier. La taille de sortie passait par un uint16 avant tout contrôle : sur ce
+// scénario de quatre pixels de large, le facteur 16 385 en demandait 65 540 et écrivait
+// une image de quatre, sans erreur et sans que rien ne distingue le fichier obtenu de
+// celui qu'on voulait.
+func TestEcrireRefuseUnFacteurQuiDeborde(t *testing.T) {
+	rejeu, err := NouveauRejeu(scenarioEssai())
+	if err != nil {
+		t.Fatalf("rejeu : %v", err)
+	}
+
+	rejeu.Image(0, "")
+
+	if err := rejeu.Ecrire(t.TempDir(), 0, 16385); err == nil {
+		t.Error("facteur accepté")
+	}
+}
+
 // TestNouveauRejeuRefuse vérifie que les erreurs de montage se voient au montage, et
 // avec leur contexte : passé ce point, le rendu ne rend plus d'erreur.
 func TestNouveauRejeuRefuse(t *testing.T) {
