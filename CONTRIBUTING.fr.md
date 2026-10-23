@@ -93,9 +93,10 @@ Les conventions de code et la doctrine de test sont dans
 ## Livraison
 
 **Un lot, une branche, une pull request.** La branche part de `master` à jour et
-porte le nom de son sujet, en français et sans préfixe de convention : le dépôt
-n'en utilise pas, ni dans les branches ni dans les commits. Ne pas enchaîner
-deux lots sur la même branche — chacun doit rester lisible et annulable seul.
+porte un préfixe de nature suivi de son sujet en français — `feat/`, `fix/`,
+`doc/`, `refactor/`, `test/`, `chore/`, `perf/` —, ce qui rend la liste des
+branches lisible sans les ouvrir. Ne pas enchaîner deux lots sur la même branche :
+chacun doit rester lisible et annulable seul.
 
 **Vérifier avant de pousser, pas après :**
 
@@ -125,10 +126,29 @@ le changement rend faux ailleurs : l'état annoncé dans le README, une décisio
 de [`docs/conception.md`](docs/conception.md), un critère de fin de
 [`ROADMAP.md`](ROADMAP.md).
 
-**Un message dit ce qui change et pourquoi**, en français, à l'impératif
-présent, sans préfixe de convention. Première ligne courte ; un corps n'existe
-que s'il porte quelque chose que le titre ne dit pas et que le diff ne montre
-pas. Pas de trailer `Co-Authored-By`.
+**Un message dit ce qui change et pourquoi**, sous la forme `nature(portée):
+sujet à l'impératif présent`, la nature étant celle de la branche. Première
+ligne courte ; un corps n'existe que s'il porte quelque chose que le titre ne dit
+pas et que le diff ne montre pas. Pas de trailer `Co-Authored-By`.
+
+**Le message est bilingue** : le bloc français puis l'anglais, séparés par une
+ligne de trois astérisques. Le préfixe ne se traduit pas — c'est ce que lit
+l'outillage, et une portée traduite ferait deux noms pour un même paquet.
+
+```
+doc(jalons): avancer le backend web avant l'audio
+
+C'est lui qui donne Android et iOS par le navigateur.
+
+***
+
+doc(jalons): move the web backend ahead of audio
+
+It is the one that brings Android and iOS through the browser.
+```
+
+Ne jamais séparer les deux blocs par `---` : `git am` le traite comme le début
+d'un patch et tronque tout ce qui suit.
 
 **La pull request reprend ce message**, titre et corps, à l'identique. Un lot
 tient en un commit : il n'y a rien à dire dans la PR que le commit ne dise déjà,
@@ -145,9 +165,13 @@ technique naturel et sans équivalent usuel courant : `atlas`, `sprite`,
 
 Sont bilingues les documents qui s'adressent à quelqu'un ne connaissant pas
 encore le projet — le README, ce guide, la politique de sécurité et le journal
-des modifications. Chaque paire est tenue d'accord dans le même commit : une
-version qui avance seule est un oubli, pas une traduction à faire plus tard.
-Les mentions de licence, elles, sont en anglais.
+des modifications —, ainsi que les messages de commit et les descriptions de
+pull request. Chaque paire est tenue d'accord dans le même commit : une version
+qui avance seule est un oubli, pas une traduction à faire plus tard. Les mentions
+de licence, elles, sont en anglais.
+
+La feuille de route et `docs/` restent en français seulement : ils s'adressent à
+qui travaille déjà sur le moteur.
 
 Les contributions rédigées en anglais sont les bienvenues et ne sont pas
 soumises à la règle bilingue.
