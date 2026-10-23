@@ -9,13 +9,23 @@ import (
 	"github.com/sprimault/lozengine/rendu"
 )
 
+// Les couleurs des cas de dessin, nommées pour que les attentes se lisent en clair :
+// un test qui attend « rouge, rien, bleu » dit ce qu'il vérifie, là où trois
+// structures littérales ne disent rien. Les quatre premières sont opaques, donc
+// recopiées telles quelles par le rastériseur.
 var (
-	rouge   = rendu.Couleur{R: 255, A: 255}
-	vert    = rendu.Couleur{V: 255, A: 255}
-	bleu    = rendu.Couleur{B: 255, A: 255}
-	blanc   = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
-	demiRge = rendu.Couleur{R: 128, A: 128} // rouge à demi transparent, prémultiplié
-	rien    = rendu.Couleur{}
+	rouge = rendu.Couleur{R: 255, A: 255}
+	vert  = rendu.Couleur{V: 255, A: 255}
+	bleu  = rendu.Couleur{B: 255, A: 255}
+	blanc = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+
+	// demiRge est la seule à alpha partiel, et donc la seule dont le mélange se
+	// calcule au lieu de se recopier. Prémultipliée : sa composante égale son alpha.
+	demiRge = rendu.Couleur{R: 128, A: 128}
+
+	// rien est la valeur zéro, entièrement transparente, que le dessin doit laisser
+	// passer sans toucher à la destination.
+	rien = rendu.Couleur{}
 )
 
 // atlasDe range une planche remplie des pixels donnés, ligne par ligne, et rend

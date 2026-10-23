@@ -9,13 +9,12 @@ import (
 	"github.com/sprimault/lozengine/rendu"
 )
 
-// Les deux machines du projet sont du même haut de gamme 2025, et aucune ne donne un
-// plancher. Une mesure brute y est donc optimiste, et ce qu'on veut savoir est la part
-// d'image que l'opération prendrait ailleurs.
+// Une mesure brute dit ce que l'opération coûte sur la machine qui mesure. Ce qu'on
+// veut savoir est la part d'image qu'elle prendrait sur une machine modeste : les
+// chiffres de ces bancs se lisent donc pondérés, jamais bruts.
 const (
-	// ponderation est le rapport supposé entre une machine modeste et celles-ci. Il
-	// vaut pour ce qui dépend de la bande passante mémoire, où les deux machines du
-	// projet diffèrent déjà d'un facteur 2,5 entre elles.
+	// ponderation rapporte la mesure à une machine plus lente, pour ce qui dépend de
+	// la bande passante mémoire.
 	ponderation = 4
 
 	// imageA60Hz est le budget d'une image, en nanosecondes.

@@ -3,9 +3,9 @@
 Français : [README.fr.md](README.fr.md)
 
 A 2D isometric rendering engine in Go, whose core has no dependencies at all.
-Software rendering, no GPU: you describe a scene, it produces a list of
-projected, sorted quads, which it rasterises itself or which a host pushes into
-its own pipeline.
+Software rendering, no GPU: you describe a scene, it produces the list of
+rectangles to paint — *quads* — already placed on screen and in drawing order. It
+paints them itself, or a host pushes them into its own pipeline.
 
 MIT or Apache-2.0, at your option — see [`LICENSE-MIT`](LICENSE-MIT) and
 [`LICENSE-APACHE`](LICENSE-APACHE). Unless you state otherwise, any contribution
@@ -49,9 +49,9 @@ is in [`docs/go.md`](docs/go.md) (French).
 
 ## The boundary that carries everything
 
-The core produces a `Rendu`: a list of quads already projected, culled, sorted
-and grouped by sheet. Nothing in that structure knows about Windows, X11 or an
-image format.
+The core produces a `Rendu`: the list of quads already placed, in drawing order
+and grouped by sheet, with those falling outside the screen already removed.
+Nothing in that structure knows about Windows, X11 or an image format.
 
 A backend translates that list and nothing else. If it has to sort, project or
 consult the scene, the boundary is in the wrong place, and the fix belongs in

@@ -3,9 +3,9 @@
 English: [README.md](README.md)
 
 Un moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance.
-Rendu logiciel, sans GPU : on lui décrit une scène, il en sort une liste de quads
-projetés et triés, qu'il rastérise lui-même ou qu'un hôte pousse dans son propre
-pipeline.
+Rendu logiciel, sans GPU : on lui décrit une scène, il en sort la liste des
+rectangles à peindre — des *quads* —, déjà placés à l'écran et rangés dans l'ordre
+de dessin. Il les peint lui-même, ou un hôte les pousse dans son propre pipeline.
 
 MIT ou Apache-2.0, au choix — voir [`LICENSE-MIT`](LICENSE-MIT) et
 [`LICENSE-APACHE`](LICENSE-APACHE). Sauf mention contraire de son auteur, toute
@@ -48,9 +48,9 @@ Le détail est dans [`docs/go.md`](docs/go.md).
 
 ## La frontière qui porte tout
 
-Le noyau produit un `Rendu` : une liste de quads déjà projetés, cullés, triés et
-groupés par planche. Rien dans cette structure ne connaît Windows, X11 ou un
-format d'image.
+Le noyau produit un `Rendu` : la liste des quads déjà placés, rangés dans l'ordre
+de dessin et groupés par planche, ceux qui sortent de l'écran en ayant été retirés.
+Rien dans cette structure ne connaît Windows, X11 ou un format d'image.
 
 Un backend traduit cette liste et rien d'autre. S'il doit trier, projeter ou
 consulter la scène, la frontière est mal placée, et le correctif est dans le

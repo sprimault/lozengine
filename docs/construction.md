@@ -16,11 +16,12 @@ make cover        # couverture, ouverte dans le navigateur
 make bench        # bancs d'essai, un profil par paquet
 make references   # régénère les images de référence
 make notes VERSION=0.1.0   # les notes d'une version, tirées du CHANGELOG
+make titre VERSION=0.1.0   # le titre d'une version, que la publication réclame
 make clean
 ```
 
 `PKG` restreint la portée de `test`, `bench` et `cover` à un paquet :
-`make test PKG=./tri`. `RUN` restreint `test` à un motif de nom.
+`make test PKG=./internal/raster`. `RUN` restreint `test` à un motif de nom.
 
 `bench` mesure un paquet à la fois et nomme ses profils d'après lui, parce que la
 chaîne Go refuse `-cpuprofile` dès qu'il y a plus d'un paquet. `references` ne

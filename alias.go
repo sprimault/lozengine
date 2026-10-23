@@ -6,7 +6,8 @@ package lozengine
 import "github.com/sprimault/lozengine/rendu"
 
 // Quad est la primitive unique du moteur : un rectangle de planche posé dans le
-// tampon, déjà projeté, cullé et trié. Sa disposition est compatible C.
+// tampon, déjà placé à l'écran et rangé dans l'ordre de dessin. Sa disposition est
+// compatible C.
 type Quad = rendu.Quad
 
 // Rendu est la suite ordonnée des quads d'une image : l'ordre du tableau est
