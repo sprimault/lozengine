@@ -3,13 +3,23 @@
 
 package raster
 
-import "github.com/sprimault/lozengine/rendu"
+import (
+	"fmt"
+	"math"
+
+	"github.com/sprimault/lozengine/rendu"
+)
+
+// BorneTampon est le plus grand côté qu'un tampon puisse avoir : c'est la plus
+// grande coordonnée qu'un Quad sait désigner, ses champs de position étant des
+// int16. Au-delà, le tampon aurait une part qu'aucun quad ne peut atteindre.
+const BorneTampon = math.MaxInt16
 
 // Tampon est l'image dans laquelle le rastériseur écrit : des pixels contigus,
 // ligne par ligne, sans remplissage, prémultipliés comme ceux d'une planche.
 //
-// Aucune taille n'est imposée ici. La résolution interne du moteur est un
-// paramètre du paquet racine, et la même structure sert au tampon de sortie
+// Seul le côté est borné, par BorneTampon. La résolution interne du moteur reste
+// un paramètre du paquet racine, et la même structure sert au tampon de sortie
 // qu'un backend présente.
 type Tampon struct {
 	Largeur, Hauteur uint16
@@ -17,7 +27,17 @@ type Tampon struct {
 }
 
 // NouveauTampon rend un tampon transparent aux dimensions demandées.
+//
+// Au-delà de BorneTampon de côté, il panique, et c'est une violation d'invariant de
+// programmation plutôt qu'une donnée du jeu : aucun écran n'en approche la moitié,
+// donc un dépassement signale un calcul fautif en amont. Le laisser passer serait
+// pire que s'arrêter — le tampon aurait une part qu'aucun quad ne sait désigner, où
+// les quads lointains arriveraient repliés au milieu de l'image.
 func NouveauTampon(largeur, hauteur uint16) *Tampon {
+	if largeur > BorneTampon || hauteur > BorneTampon {
+		panic(fmt.Sprintf("tampon de %d×%d : %d de côté au plus, la plus grande coordonnée qu'un quad désigne", largeur, hauteur, BorneTampon))
+	}
+
 	return &Tampon{
 		Largeur: largeur,
 		Hauteur: hauteur,
