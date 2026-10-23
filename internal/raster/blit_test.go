@@ -373,3 +373,74 @@ func TestDessinerSourceDebordante(t *testing.T) {
 		t.Errorf("pixels peints : %d, attendu 2", n)
 	}
 }
+
+// TestDessinerArreteLeQuadSurSaLargeur éprouve le découpage d'une suite de pixels
+// plus longue que le quad qui la lit.
+//
+// Une planche entièrement opaque forme une seule suite, large de toute sa ligne, et
+// un quad plus étroit ne doit en prendre que sa part. Aucun quad du dépôt ne
+// parcourait ce cas : tous lisent une planche à leur propre taille.
+func TestDessinerArreteLeQuadSurSaLargeur(t *testing.T) {
+	a := atlasDe(t, 4, 1, rouge, vert, bleu, blanc)
+	tampon := NouveauTampon(4, 1)
+
+	tampon.Dessiner(rendu.Rendu{quadDe(0, 0, 2, 1)}, a)
+
+	if got := pixel(tampon, 0, 0); got != rouge {
+		t.Errorf("pixel 0 : %v, attendu rouge", got)
+	}
+	if got := pixel(tampon, 1, 0); got != vert {
+		t.Errorf("pixel 1 : %v, attendu vert", got)
+	}
+	if n := peints(tampon); n != 2 {
+		t.Errorf("pixels peints : %d, attendu 2 — la suite a débordé du quad", n)
+	}
+}
+
+// TestDessinerMiroirSurSourcePartielle éprouve le miroir quand la source ne commence
+// pas au bord gauche de la planche.
+//
+// Le miroir calcule sa destination à partir de SourceX : une source décalée est donc
+// le seul cas où ce calcul peut se tromper, et aucun quad miroité du dépôt n'avait de
+// SourceX non nul.
+func TestDessinerMiroirSurSourcePartielle(t *testing.T) {
+	a := atlasDe(t, 4, 1, rouge, vert, bleu, blanc)
+	tampon := NouveauTampon(2, 1)
+
+	q := quadDe(0, 0, 2, 1)
+	q.SourceX = 1
+	q.Drapeaux = rendu.MiroirX
+	tampon.Dessiner(rendu.Rendu{q}, a)
+
+	// La source lue est vert puis bleu ; le miroir la rend dans l'autre sens.
+	if got := pixel(tampon, 0, 0); got != bleu {
+		t.Errorf("pixel 0 : %v, attendu bleu", got)
+	}
+	if got := pixel(tampon, 1, 0); got != vert {
+		t.Errorf("pixel 1 : %v, attendu vert", got)
+	}
+}
+
+// TestDessinerAplatTransparentNePeintRien vérifie qu'un aplat à teinte entièrement
+// transparente laisse le tampon intact. Il se rencontre dès qu'un fondu commence à
+// zéro : sa première image demande un aplat qui n'a rien à écrire.
+//
+// Ce cas ne garde pas le court-circuit qui traite cet alpha nul, et il faut le dire
+// plutôt que de le laisser croire : retirer ce raccourci ne changerait aucune image,
+// puisque mélanger une couleur d'alpha zéro rend la destination inchangée. C'est une
+// optimisation, pas une correction.
+//
+// Ce que le cas garde est le comportement lui-même : si le mélange venait à écrire
+// quelque chose pour un alpha nul, l'image changerait et ce test le dirait.
+func TestDessinerAplatTransparentNePeintRien(t *testing.T) {
+	a := atlasDe(t, 1, 1, rouge)
+	tampon := NouveauTampon(2, 2)
+
+	tampon.Dessiner(rendu.Rendu{{
+		Largeur: 2, Hauteur: 2, Teinte: rien, Drapeaux: rendu.Aplat,
+	}}, a)
+
+	if n := peints(tampon); n != 0 {
+		t.Errorf("pixels peints : %d, attendu 0", n)
+	}
+}
