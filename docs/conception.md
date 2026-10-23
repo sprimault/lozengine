@@ -47,6 +47,41 @@ La projection étant une matrice paramétrable, une grille carrée vue de dessus
 est un constructeur de plus et non un second moteur. Le dimétrique reste le
 sujet ; le reste vient avec.
 
+## Déterminisme entre architectures
+
+La même scène rend la même image, au pixel près, du poste au Raspberry Pi et au
+navigateur. Sans cela, la suite de non-régression — qui compare pixel à pixel —
+ne vaudrait que sur la machine qui a produit les références.
+
+**La virgule fixe commence à la projection.** La matrice est en entiers, le
+produit en entiers, et plus un flottant ne subsiste dans le chemin de rendu.
+L'entrée reste flottante, comme le repère ci-dessus le veut : un jeu pose une
+entité en `x = 3.5`, et la conversion vers le fixe se fait à l'entrée de la
+projection — un arrondi, déterministe, et non une expression fusionnable.
+
+Le piège est propre à Go, dont la spécification autorise la fusion de `x*y + z`
+en une opération FMA que `arm64`, `riscv64`, `ppc64` et `s390x` pratiquent là où
+`amd64` ne la pratique pas. Une matrice affine n'est faite que de `x*y + z`. Le
+contournement par `float64(x*y) + z` existe, mais il demande d'y penser à chaque
+expression, pour toujours, sans que rien ne le vérifie : la virgule fixe, elle,
+tient par construction.
+
+Trois conséquences, à ne pas redécouvrir :
+
+- **Seize bits de fraction sur un `int32`** laissent ±32 768 à la partie entière,
+  ce qui tombe exactement sur la limite de cases de côté que la clé de tri
+  documente. Les deux décisions se renforcent au lieu de se contrarier.
+- **Le produit passe par `int64`** avant décalage : un produit de coordonnée par
+  coefficient déborde un `int32` bien avant les bornes utiles.
+- **L'aller-retour admet un quantum.** L'inverse d'une matrice en virgule fixe
+  n'est pas exact ; la tolérance s'écrit dans la godoc plutôt que de se supposer
+  nulle.
+
+Ce que le déterminisme ne demande pas ici : réécrire des fonctions
+transcendantes. Une projection isométrique affine n'en appelle aucune — ses
+constructeurs prennent une largeur et une hauteur, pas un angle — et la division
+d'IEEE-754 est à arrondi correct.
+
 ## Structure et interopérabilité
 
 - **Primitive unique.** Tout converge vers le quad trié. Les fonctions de
@@ -82,12 +117,21 @@ frontière par handles opaques, jamais par pointeur Go.
   Huit pour l'implémentation de référence en planches PNG, seize pour la
   fabrique volumique. Le littéral n'apparaît que dans le fournisseur.
 - Clé de tri : un entier de 64 bits composé, du bit fort au bit faible — couche
-  4 bits, étage 6, profondeur `x+y` 20 en quarts de cellule, `z` 16, planche 10,
-  index stable 8.
+  4 bits, étage 6, profondeur `x+y` 18 en quarts de cellule, `z` 16, planche 10,
+  index stable 10.
 
 Le tri topologique exprime son ordre partiel en ajustant l'index stable ; la clé
-reste la seule vérité de l'ordre de dessin. Limite documentée qui en découle :
-32 000 cases de côté.
+reste la seule vérité de l'ordre de dessin. Dix-huit bits donnent 262 144 quarts,
+soit 65 536 cellules de profondeur `x+y`, et une carte carrée de côté N a `x+y`
+au plus égal à 2N : la limite documentée est donc de 32 768 cases de côté, exacte
+et non arrondie.
+
+Les deux bits qui séparent cette répartition d'une profondeur de vingt vont à
+l'index stable, seul champ sans recours. Le tri topologique y exprime tout son
+ordre partiel, et il n'aurait que 256 valeurs pour départager des quads partageant
+déjà couche, étage, profondeur au quart, `z` et planche ; le jour où il sature, la
+clé ne peut plus exprimer l'ordre, et rien ne le rattrape. Cent trente mille cases
+de côté ne servent personne quand la cible de contrôle est 500×500.
 
 ## Frontières de paquets
 
@@ -189,7 +233,12 @@ Conséquences assumées, qui ne se rediscutent pas :
   protocole X11 écrit sur socket sous Linux. Jamais de chargement de
   bibliothèque C, sur aucune plateforme.
 - Pas de carte graphique, donc rendu logiciel en résolution interne basse.
-- macOS impossible sans compromis, donc écarté.
+- macOS, iOS et Android natifs fermés par l'ABI, et non par arbitrage de coût :
+  Cocoa ne s'atteint que par l'ABI Objective-C, dont le point d'entrée s'obtient
+  par `dlsym` ; Go refuse de lier pour iOS sans cgo ; le NDK et JNI sont des
+  bibliothèques C. Tout chemin en charge une, ce que la règle interdit. Le backend
+  web y donne accès dans un navigateur, et la frontière backend les garde
+  atteignables si la contrainte change.
 
 Si une fonctionnalité paraît exiger une liaison native, c'est la fonctionnalité
 qui est hors périmètre.
@@ -201,3 +250,26 @@ l'ABI C. Cette cible est optionnelle et séparée. `go.mod` reste vide, le code
 reste identique, et les binaires des deux plateformes continuent de se
 construire sans cgo. La règle porte sur ce que le moteur embarque, pas sur ce
 qu'un artefact annexe exige au moment de le produire.
+
+## Les backends s'écrivent depuis la spécification
+
+Aucun backend ne se dérive du code d'un autre moteur. La source est la
+spécification, jamais une implémentation :
+
+| Backend | Ce qu'on lit |
+| --- | --- |
+| Windows | documentation Microsoft de `user32` et `gdi32` |
+| X11 | spécification du protocole X.Org, `xproto.xml` comme description |
+| Wayland | `wayland.xml`, qui *est* la description du protocole |
+| DRM/KMS, `evdev` | en-têtes UAPI du noyau, sous `GPL-2.0 WITH Linux-syscall-note` |
+| Web | spécifications W3C du canvas et de WebAudio |
+
+Un numéro d'appel système, une constante d'`ioctl`, un opcode de protocole sont
+des faits d'interface : les relever dans une documentation est légitime, et la
+`Linux-syscall-note` existe précisément pour que du code non-GPL emploie les
+en-têtes UAPI. Ce qui ne se reprend pas, c'est l'implémentation — découpage des
+fonctions, structures internes, contournements, commentaires.
+
+**Si un passage ne s'explique que par « c'est comme ça qu'un autre moteur fait »,
+il est à réécrire.** Devant une difficulté de protocole, la réponse est dans la
+spécification, pas dans un dépôt voisin.

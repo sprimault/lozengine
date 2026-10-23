@@ -93,10 +93,10 @@ images against references without opening a window; it has no geometry, no scene
 and no window yet, and nothing in it is enough to write a game.
 
 A release marks every milestone reached, but **no signature is frozen**: they may
-change with every minor until milestone 8, where validation by a second game
+change with every minor until milestone 9, where validation by a second game
 freezes them.
 
-The roadmap has eleven milestones, each with a verifiable completion criterion.
+The roadmap has twelve milestones, each with a verifiable completion criterion.
 
 - [`ROADMAP.md`](ROADMAP.md) — the milestones, their completion criteria and
   what is out of scope (French)

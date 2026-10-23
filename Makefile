@@ -3,7 +3,7 @@
 SORTIE ?= .tmp
 
 # Décision de projet, pas réglage de poste : le moteur se compile sans cgo sur
-# les deux cibles. Seul le jalon 9 surcharge, et lui seul.
+# les deux cibles. Seul le jalon 11 surcharge, et lui seul.
 export CGO_ENABLED := 0
 
 # Fixé avant l'inclusion : GNU make retient comme but par défaut la première cible
