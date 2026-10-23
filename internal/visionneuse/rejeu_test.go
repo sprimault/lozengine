@@ -68,7 +68,10 @@ func TestRejeuDeterministe(t *testing.T) {
 		t.Fatalf("second rejeu : %v", err)
 	}
 
-	for numero := range 4 {
+	// Les images que la suite de référence compare, et non les quatre premières : un
+	// scénario peut très bien être déterministe au début et dériver ensuite, et c'est
+	// sur celles-là que la non-régression s'appuie.
+	for _, numero := range []int{0, 8, 16, 23} {
 		a := copiePixels(premier.Image(numero, ""))
 		b := second.Image(numero, "")
 		if !memesPixels(a, b) {

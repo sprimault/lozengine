@@ -47,6 +47,49 @@ func TestEcrirePNGAllerRetour(t *testing.T) {
 	}
 }
 
+// TestEcrirePNGAlphaPartielPerdUnCran établit ce que l'aller-retour ne rend pas, et
+// c'est le pendant du test ci-dessus : les quatre pixels qu'il compare sont exacts
+// par construction — deux opaques, un transparent, un dont la composante égale son
+// alpha, donc qui vaut 255 une fois divisé.
+//
+// Partout ailleurs, le PNG stockant ses composantes non prémultipliées, l'écriture
+// divise par l'alpha et le rechargement remultiplie, sans que les deux arrondis se
+// compensent. Mesuré sur les 32 896 couples prémultipliés valides : 11 352 perdent
+// un cran, soit un tiers, et jamais davantage.
+//
+// D'où la contrainte que la suite de non-régression porte : un scénario rend un
+// tampon opaque. Une référence à alpha partiel ferait échouer une comparaison
+// stricte sans qu'aucun défaut existe, et personne ne chercherait la cause ici.
+func TestEcrirePNGAlphaPartielPerdUnCran(t *testing.T) {
+	cas := []struct {
+		nom           string
+		pose, attendu rendu.Couleur
+	}{
+		{"un demi-cran sous deux", rendu.Couleur{R: 1, V: 1, B: 1, A: 2}, rendu.Couleur{A: 2}},
+		{"deux sur quatre", rendu.Couleur{R: 2, V: 2, B: 2, A: 4}, rendu.Couleur{R: 1, V: 1, B: 1, A: 4}},
+		{"un sur six", rendu.Couleur{R: 1, V: 1, B: 1, A: 6}, rendu.Couleur{A: 6}},
+	}
+
+	for _, c := range cas {
+		t.Run(c.nom, func(t *testing.T) {
+			tampon := NouveauTampon(1, 1)
+			tampon.Pixels[0] = c.pose
+
+			var fichier bytes.Buffer
+			if err := tampon.EcrirePNG(&fichier); err != nil {
+				t.Fatalf("écriture : %v", err)
+			}
+			p, err := ChargerPlanche(&fichier)
+			if err != nil {
+				t.Fatalf("rechargement : %v", err)
+			}
+			if p.Pixels[0] != c.attendu {
+				t.Errorf("%v revient %v, attendu %v", c.pose, p.Pixels[0], c.attendu)
+			}
+		})
+	}
+}
+
 // TestEcrirePNGOpaque vérifie le cas que l'encodeur traite à part — une image sans
 // transparence, qu'il écrit sans canal alpha —, puisque c'est celui de presque
 // toutes les images de référence.
