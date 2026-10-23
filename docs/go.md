@@ -201,7 +201,7 @@ Ailleurs, une **liste close de deux entrées**, et aucune autre :
 | Dépendance | Licence | Pour | À partir du |
 | --- | --- | --- | --- |
 | `golang.org/x/image` | BSD-3 | rastériser une police dans `apparence` | jalon 4 |
-| `github.com/ebitengine/oto` | Apache-2.0 | sortie audio dans `audio` | jalon 7 |
+| `github.com/ebitengine/oto/v3` | Apache-2.0 | sortie audio dans `audio` | jalon 7 |
 
 ### Ce qu'une dépendance doit passer pour entrer
 
@@ -239,6 +239,23 @@ l'importe.
 - **`jezek/xgb`** — un client X11 tout fait. Il échoue sur le sujet : c'est le
   travail que le moteur revendique, et les semaines qu'il coûte sont assumées.
 
+### Ce qu'on fait à la place
+
+| Besoin | Ce qu'on fait à la place |
+| --- | --- |
+| Fenêtre et entrées Windows | appels système directs sur `user32` et `gdi32` |
+| Présentation Windows | `StretchDIBits`, qui prend en charge la mise à l'échelle entière, donc sans passe supplémentaire côté moteur |
+| Fenêtre et entrées Linux | protocole X11 écrit sur socket |
+| Authentification X11 | lecture du fichier d'autorisation, cookie magique |
+| Transfert d'image X11 | `PutImage`, mémoire partagée quand elle est là |
+| Audio Windows | `winmm`, puis l'interface audio système |
+| Audio Linux | protocole du serveur de son sur socket, jamais ALSA |
+| Décodage PNG | `image/png` de la bibliothèque standard |
+| Comparaison d'images en test | code du dépôt, pas de bibliothèque d'assertions |
+
+Si une fonctionnalité paraît exiger une liaison native, c'est la fonctionnalité
+qui est hors périmètre.
+
 ## Version minimale de Go
 
 Le plancher de `go.mod` est le minimum réellement exigé par le code, jamais la
@@ -257,18 +274,3 @@ bénéfices concrets de la règle ci-dessus, et il vaut mieux ne pas le dilapide
 
 L'intégration continue éprouve les deux bouts de la plage annoncée : le plancher
 tel que `go.mod` le déclare, et la dernière version publiée.
-
-| Besoin | Ce qu'on fait à la place |
-| --- | --- |
-| Fenêtre et entrées Windows | appels système directs sur `user32` et `gdi32` |
-| Présentation Windows | `StretchDIBits`, qui prend en charge la mise à l'échelle entière, donc sans passe supplémentaire côté moteur |
-| Fenêtre et entrées Linux | protocole X11 écrit sur socket |
-| Authentification X11 | lecture du fichier d'autorisation, cookie magique |
-| Transfert d'image X11 | `PutImage`, mémoire partagée quand elle est là |
-| Audio Windows | `winmm`, puis l'interface audio système |
-| Audio Linux | protocole du serveur de son sur socket, jamais ALSA |
-| Décodage PNG | `image/png` de la bibliothèque standard |
-| Comparaison d'images en test | code du dépôt, pas de bibliothèque d'assertions |
-
-Si une fonctionnalité paraît exiger une liaison native, c'est la fonctionnalité
-qui est hors périmètre.

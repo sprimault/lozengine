@@ -25,8 +25,8 @@ var regenerer = flag.Bool("regenerer", false, "réécrit les images de référen
 const referencesDir = "testdata/references"
 
 // echecsDir reçoit le rendu et l'écart quand une comparaison échoue. Il est sous le
-// `.tmp` du dépôt, seul endroit où la chaîne Go a le droit d'écrire sur ce poste, et
-// il n'est pas suivi.
+// `.tmp` du dépôt, qui n'est pas suivi : ces deux images servent à voir ce qu'on a
+// cassé, pas à entrer dans l'historique.
 var echecsDir = filepath.Join("..", "..", ".tmp", "references")
 
 // TestReferences rend chaque scénario du catalogue et compare ses images à celles qui
@@ -147,11 +147,14 @@ func TestEcartsPixelsSaitEchouer(t *testing.T) {
 }
 
 // deposer écrit le rendu obtenu et la carte des écarts, et rend la phrase qui dit où
-// ils sont.
+// ils sont — ou une chaîne vide si le dépôt lui-même échoue, l'échec de la
+// comparaison se rapportant alors seul.
 //
 // Une mesure dit qu'une image a changé, pas en quoi : sans ces deux fichiers, il
 // faudrait réécrire la référence pour voir ce qu'on a cassé, c'est-à-dire effacer la
-// preuve.
+// preuve. Un dépôt qui échoue n'aggrave donc pas l'échec, il le rend seulement moins
+// lisible — et c'est tout ce qu'on peut faire de mieux ici, puisque le test a déjà
+// quelque chose à rapporter.
 func deposer(t *testing.T, nom string, tampon *raster.Tampon, reference raster.Planche) string {
 	t.Helper()
 

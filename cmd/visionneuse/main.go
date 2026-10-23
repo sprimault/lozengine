@@ -20,6 +20,11 @@ import (
 	"github.com/sprimault/lozengine/internal/visionneuse"
 )
 
+// main lit les drapeaux de la ligne de commande et rejoue le scénario demandé.
+//
+// Tout le travail est dans rejouer ; ce qui reste ici est la traduction des drapeaux
+// et le code de sortie, pour qu'un échec se voie depuis un script au lieu de se lire
+// dans la sortie.
 func main() {
 	nom := flag.String("scenario", "mire", "scénario à rejouer, parmi "+strings.Join(visionneuse.Noms(), ", "))
 	repertoire := flag.String("sortie", filepath.Join(".tmp", "images"), "répertoire des images écrites")

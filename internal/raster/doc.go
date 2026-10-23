@@ -4,7 +4,8 @@
 // Package raster dessine une liste de quads dans un tampon de pixels, sans carte
 // graphique et sans fenêtre.
 //
-// Il consomme un rendu déjà projeté, cullé et trié : il ne décide d'aucun ordre.
+// Il consomme un rendu déjà placé et rangé dans l'ordre de dessin, dont les quads
+// hors tampon ont été retirés : il ne décide d'aucun ordre.
 // S'il devait trier, projeter ou consulter la scène, la frontière serait mal
 // placée et le correctif appartiendrait au noyau, pas à lui.
 //

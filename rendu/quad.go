@@ -26,7 +26,8 @@ const (
 )
 
 // Quad est la primitive unique du moteur : un rectangle de planche posé dans le
-// tampon, déjà projeté, cullé et trié.
+// tampon, déjà placé à l'écran, rangé dans l'ordre de dessin, et retenu — ceux qui
+// sortaient du tampon ont été retirés en amont.
 //
 // Tout converge ici et rien n'en sort — les fonctions de confort produisent des
 // quads, jamais un second chemin de dessin. Un quad ne porte pas sa clé de tri :
