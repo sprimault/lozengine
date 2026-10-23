@@ -157,9 +157,21 @@ jobs:
           GOTOOLCHAIN: local
           CGO_ENABLED: 0
         run: |
+          # `setup-go` installe un matcher de problèmes qui transforme la sortie de go
+          # en annotations d'échec. Ici l'échec est le résultat attendu : sans ce
+          # retrait, un job vert remonte huit erreurs au récapitulatif de la pull
+          # request, et qui les lit croit que quelque chose est cassé.
+          echo "::remove-matcher owner=go::"
+
           sous="${{ steps.sous.outputs.version }}"
           sed -i "s/^go .*/go $sous/" go.mod
-          if go vet ./...; then
+
+          echo "::group::Ce que Go $sous refuse de construire"
+          vet=0
+          go vet ./... || vet=$?
+          echo "::endgroup::"
+
+          if [ "$vet" -eq 0 ]; then
             echo "::error::Go $sous construit le dépôt : le plancher ${{ steps.sous.outputs.plancher }} de go.mod est trop haut."
             exit 1
           fi
