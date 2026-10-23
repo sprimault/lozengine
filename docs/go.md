@@ -274,3 +274,12 @@ bénéfices concrets de la règle ci-dessus, et il vaut mieux ne pas le dilapide
 
 L'intégration continue éprouve les deux bouts de la plage annoncée : le plancher
 tel que `go.mod` le déclare, et la dernière version publiée.
+
+**Et elle mesure que le plancher déclaré est le vrai.** Éprouver la version annoncée
+ne dit jamais qu'elle est trop haute : un job tautologique, qui a laissé le plancher
+dériver jusqu'à 1.24 sans broncher. Un troisième job exige donc un **échec** — la
+version juste en dessous doit refuser de construire le dépôt. Si elle y arrive, le
+plancher exclut des consommateurs pour rien.
+
+C'est le seul contrôle du dépôt qui réussit quand quelque chose échoue, et c'est la
+nature du sujet : un minimum ne se garde qu'en montrant que rien de moins ne suffit.

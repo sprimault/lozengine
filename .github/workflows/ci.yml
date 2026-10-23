@@ -22,9 +22,17 @@ on:
 permissions:
   contents: read
 
+# Une poussée annule la précédente sur la même référence, ce qui est juste sur une
+# branche de pull request : seul le dernier état compte. Jamais sur `master`, en
+# revanche — le groupe étant par référence, deux fusions rapprochées y annuleraient le
+# premier passage, et ce commit ne serait alors vérifié par rien.
+#
+# Relevé le 23 octobre 2026, et le défaut était latent : les huit fusions du jour
+# étaient assez espacées pour qu'aucun passage ne soit annulé. La parade ne coûte rien,
+# et le jour où deux lots se suivent de près, elle aura déjà servi.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 jobs:
   # Un seul job pour les sept étapes : elles sont rapides, sans dépendance à
@@ -108,15 +116,66 @@ jobs:
   # `if: always()` pour que le bilan s'exécute même quand un job échoue, sans quoi
   # il serait simplement sauté — et un contexte sauté ne bloque rien. C'est donc
   # lui qui doit lire les résultats et échouer à leur place.
+  # Le plancher déclaré n'est pas le plancher réel tant que rien ne le mesure. Le job
+  # `tests` installe la version que go.mod annonce : il ne peut donc pas dire qu'elle
+  # est trop haute, et le plancher a dérivé jusqu'à 1.24 sans qu'il bronche.
+  #
+  # Ce job exige un échec, et c'est le seul moyen de garder un plancher : la version
+  # juste en dessous doit refuser de construire le dépôt. Si elle y arrive, le plancher
+  # exclut des consommateurs pour rien — ils doivent télécharger une autre chaîne, et
+  # échouent net quand `GOTOOLCHAIN=local` le leur interdit.
+  #
+  # La directive de go.mod est abaissée avant l'essai, dans le dépôt éphémère du
+  # runner : sans cela Go refuserait sur la directive elle-même et non sur le code, ce
+  # qui passerait pour une mesure réussie alors qu'elle n'aurait rien mesuré.
+  plancher:
+    name: Plancher
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Version juste en dessous du plancher
+        id: sous
+        run: |
+          plancher=$(awk '/^go /{print $2; exit}' go.mod)
+          majeur=${plancher%%.*}
+          reste=${plancher#*.}
+          mineur=${reste%%.*}
+          if [ "$mineur" -le 0 ]; then
+            echo "::error::plancher $plancher : aucune version inférieure à essayer."
+            exit 1
+          fi
+          echo "plancher=$plancher" >> "$GITHUB_OUTPUT"
+          echo "version=$majeur.$((mineur - 1)).0" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ steps.sous.outputs.version }}
+
+      - name: La version inférieure doit échouer
+        env:
+          GOTOOLCHAIN: local
+          CGO_ENABLED: 0
+        run: |
+          sous="${{ steps.sous.outputs.version }}"
+          sed -i "s/^go .*/go $sous/" go.mod
+          if go vet ./...; then
+            echo "::error::Go $sous construit le dépôt : le plancher ${{ steps.sous.outputs.plancher }} de go.mod est trop haut."
+            exit 1
+          fi
+          echo "Go $sous échoue, comme attendu : le plancher déclaré est bien le minimum."
+
   bilan:
     name: Bilan
     if: always()
-    needs: [controles, tests]
+    needs: [controles, tests, plancher]
     runs-on: ubuntu-latest
     steps:
       - name: Résultat des contrôles
         run: |
           echo "contrôles : ${{ needs.controles.result }}"
           echo "tests     : ${{ needs.tests.result }}"
+          echo "plancher  : ${{ needs.plancher.result }}"
           [ "${{ needs.controles.result }}" = "success" ] || exit 1
           [ "${{ needs.tests.result }}" = "success" ] || exit 1
+          [ "${{ needs.plancher.result }}" = "success" ] || exit 1
