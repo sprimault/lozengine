@@ -8,7 +8,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // ecrivainEnPanne refuse tout ce qu'on lui donne, pour éprouver le chemin d'erreur.

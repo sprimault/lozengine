@@ -80,8 +80,10 @@ comes with it adds convenience, never capability: everything it allows can also
 be done by driving the engine by hand.
 
 Everything else lives under `internal/`, which the compiler forbids importing
-from another module. What is published was published deliberately — and a host
-cannot bind to a backend by going around the boundary.
+from another module — with one exception, `rendu`, whose structures the ABI will
+expose and whose fields a host must therefore be able to read. What is published
+was published deliberately, and a host cannot bind to a backend by going around
+the boundary.
 
 ## What it does not do
 

@@ -3,7 +3,7 @@
 
 package raster
 
-import "github.com/sprimault/lozengine/internal/rendu"
+import "github.com/sprimault/lozengine/rendu"
 
 // Tampon est l'image dans laquelle le rastériseur écrit : des pixels contigus,
 // ligne par ligne, sans remplissage, prémultipliés comme ceux d'une planche.

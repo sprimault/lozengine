@@ -47,6 +47,9 @@ notes de publication.
 
 ### Ajouté
 
+- Le paquet `rendu` devient public, à `github.com/sprimault/lozengine/rendu` : les
+  champs de `Quad` et de `Couleur` se lisent enfin dans la documentation, qu'un alias
+  vers un paquet interne ne montrait pas. `lozengine.Quad` reste le nom qu'on écrit.
 - Cinq couples de plus à la compilation croisée que le contrôle vérifie —
   `windows/arm64`, `linux/arm64`, `linux/arm`, `linux/386` et `js/wasm`. Ils
   **compilent**, et c'est tout ce qui est annoncé : la suite de tests ne tourne
@@ -56,6 +59,10 @@ notes de publication.
 
 ### Added
 
+- The `rendu` package becomes public, at `github.com/sprimault/lozengine/rendu`: the
+  fields of `Quad` and `Couleur` can at last be read in the documentation, which an
+  alias to an internal package did not show. `lozengine.Quad` remains the name to
+  write.
 - Five more pairs to the cross-compilation the check verifies — `windows/arm64`,
   `linux/arm64`, `linux/arm`, `linux/386` and `js/wasm`. They **compile**, and that
   is all that is claimed: the test suite only runs natively on `amd64`.

@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/internal/raster"
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // regenerer réécrit les images de référence au lieu de les comparer.

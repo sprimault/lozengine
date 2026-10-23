@@ -3,7 +3,7 @@
 
 package lozengine
 
-import "github.com/sprimault/lozengine/internal/rendu"
+import "github.com/sprimault/lozengine/rendu"
 
 // Quad est la primitive unique du moteur : un rectangle de planche posé dans le
 // tampon, déjà projeté, cullé et trié. Sa disposition est compatible C.

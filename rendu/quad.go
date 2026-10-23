@@ -38,7 +38,9 @@ const (
 // la copie directe : la modulation se décide une fois par quad et non par pixel.
 //
 // La disposition est celle qu'un hôte écrirait en C — champs de taille fixe,
-// vingt octets, alignement de deux. D'où trois limites, que le chargement signale
+// vingt octets, alignement de deux, dont un octet de remplissage final que la
+// documentation résume en « champ non exporté » : les huit champs nommés en
+// occupent dix-neuf. D'où trois limites, que le chargement signale
 // quand il peut mais que le chemin de rendu ne vérifie jamais : un tampon de
 // 32 767 pixels de côté, une planche de 65 535, et 1 024 planches, ce dernier
 // chiffre venant des dix bits que la clé de tri réserve à la planche.

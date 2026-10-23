@@ -3,7 +3,7 @@
 
 package raster
 
-import "github.com/sprimault/lozengine/internal/rendu"
+import "github.com/sprimault/lozengine/rendu"
 
 // Dessiner peint les quads dans l'ordre du tableau, sans rien allouer.
 //

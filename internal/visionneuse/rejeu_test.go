@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/internal/raster"
-	"github.com/sprimault/lozengine/internal/rendu"
+	"github.com/sprimault/lozengine/rendu"
 )
 
 // scenarioEssai rend un scénario minuscule et rapide, pour ce qui n'a pas besoin de la
