@@ -49,15 +49,22 @@ d'écran, parce qu'elle court-circuiterait la seule chose que le moteur apporte.
   isométrique. Un ajusteur le change, plutôt qu'un paramètre de plus à chaque
   constructeur. S'il vivait ailleurs, l'appelant appliquerait la soustraction et le
   calcul se disséminerait, ce que la clause ci-dessus interdit.
-- **Sortie absolue, vue retranchée par la caméra.** La projection rend des pixels
-  **absolus**, en `int32`, et c'est la scène qui y retranche l'origine de la vue
-  avant de remplir un `Quad`. Deux étages, et la raison est le débordement : en
-  absolu sur 16 bits, la plus grande carte représentable serait de 2 047 cases de
-  côté à tuile 32 — seize fois moins que la limite de la clé de tri, et un chiffre
-  qui dépendrait de la taille de tuile.
-- **Caméra.** Quatre orientations discrètes à 90°. Elles touchent la matrice, la
-  permutation des axes dans la clé de tri, et le décalage de direction demandé
-  au fournisseur d'apparence.
+- **Sortie absolue, vue retranchée au moment du retrait.** La projection rend des
+  pixels **absolus**, en `int32`. La scène possède l'origine de la vue ; c'est le
+  tri qui la retranche, au moment où il retire ce qui tombe hors de l'image, et c'est
+  lui qui remplit le `Quad`. Deux étages, et la raison est le débordement : en absolu
+  sur 16 bits, la plus grande carte représentable serait de 2 047 cases de côté à
+  tuile 32 — seize fois moins que la limite de la clé de tri, et un chiffre qui
+  dépendrait de la taille de tuile.
+
+  **Les deux se font ensemble parce que c'est le même calcul** : situer un point par
+  rapport aux bords de l'image, c'est à la fois lui donner sa place dedans et savoir
+  s'il y tombe. C'est aussi le seul endroit où la réduction à seize bits ne peut pas
+  déborder : ce qui est trop loin est déjà parti, et ce qui dépasse d'un bord commence
+  au plus à sa largeur en arrière.
+- **Caméra.** Quatre orientations discrètes à 90°. Elles touchent le remappage des
+  coordonnées par la scène et le décalage de direction demandé au fournisseur
+  d'apparence — pas la matrice, qui reste la même pour les quatre vues.
 
   **La rotation est un remappage de coordonnées, jamais un changement de signe.**
   Une rotation en `(−y, x)` rendrait la profondeur signée, demanderait un biais et
@@ -189,19 +196,25 @@ Le sens des dépendances ne s'inverse jamais.
 ```
 lozengine             surface publique, boucle, assemblage      tous les internes
 internal/geometrie    projection, matrices, conversions         aucune
-internal/scene        grille, entités, couches, caméra          geometrie
-internal/tri          culling, clé, tri topologique             geometrie, scene
-rendu                 structures Quad et Rendu, publiques       geometrie
+internal/scene        grille, entités, couches, caméra          geometrie, rendu
+internal/tri          culling, clé, tri topologique             geometrie, scene, rendu
+rendu                 structures Quad et Rendu, publiques       aucune
 internal/raster       rastériseur logiciel, écriture PNG        rendu
 internal/apparence    interface fournisseur, atlas, animation   geometrie, rendu
 internal/backend/…    fenêtre, entrées, présentation            rendu
 internal/audio        mixeur et sorties système                 aucune
-internal/visionneuse  scènes scriptées, rejeu, images           rendu, raster
+internal/visionneuse  scènes scriptées, rejeu, images           tous les précédents
 cmd/visionneuse       commande de rejeu                         visionneuse
 ```
 
+`scene` et `tri` atteignent `rendu` parce que l'un décrit des entités qui portent
+une teinte et des drapeaux, et que l'autre produit la liste de quads : sans cela, le
+noyau ne pourrait pas rendre ce que son critère de fin lui demande. Cela ne leur
+ouvre rien d'autre — `rendu` n'a lui-même aucune dépendance.
+
 La visionneuse n'est pas le moteur : c'est l'outillage qui le rend jugeable sans
-écran. Rien ne dépend d'elle, et elle ne s'adresse qu'à `rendu` et `raster`.
+écran. Rien ne dépend d'elle, et c'est pourquoi elle atteint tout le reste — un
+scénario de non-régression construit une scène, la fait trier, puis la rastérise.
 
 Le paquet racine est le seul à tout connaître, et rien ne dépend de lui.
 
