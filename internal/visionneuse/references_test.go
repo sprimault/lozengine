@@ -81,15 +81,7 @@ func comparer(t *testing.T, nom string, tampon *raster.Tampon) {
 			nom, tampon.Largeur, tampon.Hauteur, reference.Largeur, reference.Hauteur)
 	}
 
-	ecarts, premier := 0, -1
-	for i := range tampon.Pixels {
-		if tampon.Pixels[i] != reference.Pixels[i] {
-			ecarts++
-			if premier < 0 {
-				premier = i
-			}
-		}
-	}
+	ecarts, premier := ecartsPixels(tampon.Pixels, reference.Pixels)
 	if ecarts == 0 {
 		return
 	}
@@ -98,6 +90,60 @@ func comparer(t *testing.T, nom string, tampon *raster.Tampon) {
 	t.Errorf("%s : %d pixels diffèrent, le premier en (%d, %d) — %v au lieu de %v%s",
 		nom, ecarts, x, y, tampon.Pixels[premier], reference.Pixels[premier],
 		deposer(t, nom, tampon, reference))
+}
+
+// ecartsPixels compte les pixels qui diffèrent et rend l'index du premier, ou -1
+// quand les deux suites sont identiques.
+//
+// Sorti de comparer pour être éprouvable, et pour une raison qui vaut plus que le
+// rangement : c'est le contrôle dont les sept images de référence dépendent, et rien
+// ne disait qu'il savait échouer. Une comparaison qui rendrait toujours zéro laisse
+// la suite verte en ne gardant plus rien.
+func ecartsPixels(obtenu, attendu []rendu.Couleur) (nombre, premier int) {
+	premier = -1
+	for i := range obtenu {
+		if obtenu[i] != attendu[i] {
+			nombre++
+			if premier < 0 {
+				premier = i
+			}
+		}
+	}
+	return nombre, premier
+}
+
+// TestEcartsPixelsSaitEchouer donne à la comparaison des suites volontairement
+// fausses, et vérifie qu'elle les voit.
+//
+// Le dernier cas relie cette fonction à l'aller-retour PNG : un seul cran d'écart
+// compte comme un écart, donc une référence à alpha partiel ferait rougir la suite
+// sans qu'aucun défaut existe. C'est ce qui oblige les scénarios à rendre des images
+// opaques.
+func TestEcartsPixelsSaitEchouer(t *testing.T) {
+	bleu := rendu.Couleur{B: 255, A: 255}
+	rouge := rendu.Couleur{R: 255, A: 255}
+
+	cas := []struct {
+		nom             string
+		obtenu, attendu []rendu.Couleur
+		nombre, premier int
+	}{
+		{"identiques", []rendu.Couleur{bleu, bleu}, []rendu.Couleur{bleu, bleu}, 0, -1},
+		{"le second faux", []rendu.Couleur{bleu, rouge}, []rendu.Couleur{bleu, bleu}, 1, 1},
+		{"le premier faux", []rendu.Couleur{rouge, bleu}, []rendu.Couleur{bleu, bleu}, 1, 0},
+		{"les deux faux", []rendu.Couleur{rouge, rouge}, []rendu.Couleur{bleu, bleu}, 2, 0},
+		{"un seul cran", []rendu.Couleur{{R: 1, A: 2}}, []rendu.Couleur{{A: 2}}, 1, 0},
+	}
+
+	for _, c := range cas {
+		t.Run(c.nom, func(t *testing.T) {
+			nombre, premier := ecartsPixels(c.obtenu, c.attendu)
+			if nombre != c.nombre || premier != c.premier {
+				t.Errorf("%d écarts dès l'index %d, attendu %d dès %d",
+					nombre, premier, c.nombre, c.premier)
+			}
+		})
+	}
 }
 
 // deposer écrit le rendu obtenu et la carte des écarts, et rend la phrase qui dit où

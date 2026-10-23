@@ -19,6 +19,12 @@ import (
 // standard fait la conversion depuis image.RGBA, qui l'est. Ne pas la refaire à la
 // main : la division par l'alpha est exactement l'endroit où deux arrondis
 // divergent, et une référence versionnée n'a pas à dépendre du nôtre.
+//
+// L'aller-retour n'est donc pas l'identité : écrire puis recharger un pixel dont
+// l'alpha est partiel lui coûte jusqu'à un cran par composante. Mesuré sur les
+// 32 896 couples prémultipliés valides, un tiers le perdent, et jamais plus d'un
+// cran. Un tampon opaque, lui, revient exact — c'est ce dont la suite de
+// non-régression dépend, et pourquoi ses scénarios rendent des images opaques.
 func (t *Tampon) EcrirePNG(w io.Writer) error {
 	img := image.NewRGBA(image.Rect(0, 0, int(t.Largeur), int(t.Hauteur)))
 	for i, c := range t.Pixels {
