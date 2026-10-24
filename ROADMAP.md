@@ -3,7 +3,7 @@
 Moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance. Rendu
 logiciel. Cibles : Windows, Linux et le navigateur en WebAssembly.
 
-État : jalon 0 franchi, jalon 1 en cours. Le moteur décrit une scène, en ordonne le
+État : jalon 1 franchi, jalon 2 pas encore ouvert. Le moteur décrit une scène, en ordonne le
 dessin et la rend hors écran, où sa suite de non-régression compare chaque image à une
 référence. Seule la projection est publiée, et il n'a pas de fenêtre.
 
