@@ -3,7 +3,11 @@
 
 package raster
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sprimault/lozengine/rendu"
+)
 
 // TestAjouterRendLIndex vérifie que l'index rendu est bien celui qu'un quad doit
 // porter pour désigner la planche qu'on vient d'ajouter.
@@ -24,16 +28,16 @@ func TestAjouterRendLIndex(t *testing.T) {
 	}
 }
 
-// TestAjouterAuDela vérifie le refus de la planche qui déborderait du champ que la
-// clé de tri réserve à la planche. L'atlas est rempli de planches vides : c'est le
-// compte qui est éprouvé, pas les pixels.
+// TestAjouterAuDela vérifie le refus de la planche qu'un quad ne saurait plus
+// désigner. L'atlas est rempli de planches vides : c'est le compte qui est éprouvé,
+// pas les pixels.
 func TestAjouterAuDela(t *testing.T) {
-	a := Atlas{Planches: make([]Planche, planchesMax)}
+	a := Atlas{Planches: make([]Planche, rendu.PlanchesMax)}
 
 	if _, err := a.Ajouter(NouvellePlanche(8, 8)); err == nil {
-		t.Errorf("planche acceptée au-delà de %d", planchesMax)
+		t.Errorf("planche acceptée au-delà de %d", rendu.PlanchesMax)
 	}
-	if len(a.Planches) != planchesMax {
-		t.Errorf("planches rangées : %d, attendu %d", len(a.Planches), planchesMax)
+	if len(a.Planches) != rendu.PlanchesMax {
+		t.Errorf("planches rangées : %d, attendu %d", len(a.Planches), rendu.PlanchesMax)
 	}
 }

@@ -25,6 +25,20 @@ const (
 	Aplat
 )
 
+// PlanchesMax est le nombre de planches qu'un atlas peut porter, donc la plus grande
+// valeur que le champ Planche d'un [Quad] puisse désigner.
+//
+// Elle vit ici parce que deux paquets doivent la respecter sans pouvoir s'atteindre :
+// celui qui range les planches, qui refuse la mille vingt-cinquième au chargement, et
+// celui qui compose l'ordre de dessin, dont un champ ne distingue pas au-delà. Ce
+// dernier est la raison du chiffre, mais c'est à l'un et à l'autre de le tenir.
+//
+// **Seule la limite sort, jamais la répartition.** Un quad ne porte pas sa clé de
+// tri, et l'agencement de ses champs n'a pas à devenir irrévocable en traversant la
+// frontière d'un autre langage. Ce qui se publie ici est une contrainte d'usage — un
+// hôte qui construit un atlas doit la connaître —, pas un détail de format.
+const PlanchesMax = 1 << 10
+
 // Quad est la primitive unique du moteur : un rectangle de planche posé dans le
 // tampon, déjà placé à l'écran, rangé dans l'ordre de dessin, et retenu — ceux qui
 // sortaient du tampon ont été retirés en amont.
@@ -43,8 +57,7 @@ const (
 // documentation résume en « champ non exporté » : les huit champs nommés en
 // occupent dix-neuf. D'où trois limites, que le chargement signale
 // quand il peut mais que le chemin de rendu ne vérifie jamais : un tampon de
-// 32 767 pixels de côté, une planche de 65 535, et 1 024 planches, ce dernier
-// chiffre venant des dix bits que la clé de tri réserve à la planche.
+// 32 767 pixels de côté, une planche de 65 535, et [PlanchesMax] planches.
 //
 // La valeur zéro ne dessine rien, ce qui est l'échec sûr : une structure remplie
 // de zéros par un hôte reste invisible au lieu de peindre n'importe quoi.

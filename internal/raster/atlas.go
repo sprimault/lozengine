@@ -3,12 +3,11 @@
 
 package raster
 
-import "fmt"
+import (
+	"fmt"
 
-// planchesMax est le nombre de planches que la clé de tri sait distinguer : dix
-// bits lui sont réservés. Au-delà, deux quads de planches différentes cesseraient
-// de se grouper, et le rastériseur changerait de source à chaque quad.
-const planchesMax = 1 << 10
+	"github.com/sprimault/lozengine/rendu"
+)
 
 // Atlas est la suite des planches qu'un quad désigne par index.
 //
@@ -27,11 +26,13 @@ type Atlas struct {
 // Le blit, lui, ne peut ni encoder ni s'en plaindre — il ne renvoie pas d'erreur et
 // n'alloue pas.
 //
-// L'erreur au-delà de la limite arrive ici pour la même raison : un index qui
-// déborde du champ de la clé se lirait comme une autre planche.
+// L'erreur au-delà de [rendu.PlanchesMax] arrive ici pour la même raison : un index
+// que l'ordre de dessin ne sait plus distinguer se lirait comme une autre planche.
+// Refuser au chargement vaut mieux que ramener au plafond à l'image, ce qui
+// rangerait deux planches ensemble sans rien dire.
 func (a *Atlas) Ajouter(p Planche) (uint16, error) {
-	if len(a.Planches) >= planchesMax {
-		return 0, fmt.Errorf("ajout d'une planche : %d au plus, limite des dix bits que la clé de tri leur réserve", planchesMax)
+	if len(a.Planches) >= rendu.PlanchesMax {
+		return 0, fmt.Errorf("ajout d'une planche : %d au plus, ce qu'un quad sait désigner", rendu.PlanchesMax)
 	}
 
 	p.encoder()

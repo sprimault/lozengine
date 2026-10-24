@@ -3,7 +3,24 @@
 
 package tri
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sprimault/lozengine/rendu"
+)
+
+// TestPlafondDePlancheConcorde vérifie que ce que la clé sait distinguer et ce qu'un
+// atlas accepte sont le même nombre.
+//
+// Les deux plafonds vivent dans des paquets qui ne peuvent pas s'atteindre — l'un
+// range les planches, l'autre compose l'ordre de dessin —, et ce cas est le seul lien
+// entre eux. Élargir le champ de la clé sans toucher à l'atlas laisserait des planches
+// qu'aucun quad ne désignerait ; le rétrécir ferait ranger deux planches ensemble.
+func TestPlafondDePlancheConcorde(t *testing.T) {
+	if PlancheMax != rendu.PlanchesMax-1 {
+		t.Errorf("la clé distingue %d planches, un atlas en accepte %d", PlancheMax+1, rendu.PlanchesMax)
+	}
+}
 
 // TestOrdreDesChamps vérifie la propriété qui tient tout le reste : un champ plus fort
 // l'emporte sur tous les suivants réunis.
