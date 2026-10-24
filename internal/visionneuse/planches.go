@@ -32,6 +32,27 @@ func plancheMarquee(cote uint16) raster.Planche {
 	return p
 }
 
+// plancheBordee dessine un rectangle plein cerné d'un bord sombre d'un pixel.
+//
+// Le bord est ce qui rend l'ordre de dessin lisible : deux aplats de même teinte qui
+// se recouvrent ne montrent pas lequel est devant, deux rectangles bordés le montrent
+// à l'endroit exact où l'un mange le contour de l'autre.
+func plancheBordee(largeur, hauteur uint16, c rendu.Couleur) raster.Planche {
+	bord := rendu.Couleur{R: c.R / 3, V: c.V / 3, B: c.B / 3, A: 255}
+	p := raster.NouvellePlanche(largeur, hauteur)
+
+	for y := range int(hauteur) {
+		for x := range int(largeur) {
+			teinte := c
+			if x == 0 || y == 0 || x == int(largeur)-1 || y == int(hauteur)-1 {
+				teinte = bord
+			}
+			p.Pixels[y*int(largeur)+x] = teinte
+		}
+	}
+	return p
+}
+
 // atlasDUnePlanche range une seule planche et rend l'atlas.
 func atlasDUnePlanche(p raster.Planche) (*raster.Atlas, error) {
 	var atlas raster.Atlas
