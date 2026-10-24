@@ -161,36 +161,39 @@ func TestHabillerNeTouchePasLaPosition(t *testing.T) {
 	}
 }
 
-// TestDecorParCouche vérifie qu'une cellule se relit où elle a été posée, et qu'une
-// couche n'existe qu'une fois qu'on y a posé quelque chose.
-func TestDecorParCouche(t *testing.T) {
+// TestDecorParStrate vérifie qu'une cellule empile sans effacer, et qu'une strate
+// n'existe qu'une fois qu'on y a posé quelque chose.
+//
+// C'est le besoin qui a donné les strates : garer un véhicule sur une chaussée sans
+// perdre la chaussée, ni le passage piéton peint dessus. Un moteur qui n'offre qu'une
+// chose par cellule oblige le jeu à choisir laquelle des trois il garde.
+func TestDecorParStrate(t *testing.T) {
 	s := scenePourTest(t, 1)
 
-	if n := s.Couches(); n != 0 {
-		t.Errorf("%d couches sur une scène neuve, attendu aucune", n)
+	if n := s.Strates(); n != 0 {
+		t.Errorf("%d strates sur une scène neuve, attendu aucune", n)
 	}
 
 	sol := plein()
 	sol.Planche = 1
 	dessus := plein()
 	dessus.Planche = 2
-	dessus.Couche = 3
 
-	if !s.PoserCellule(2, 3, sol) || !s.PoserCellule(2, 3, dessus) {
+	if !s.PoserCellule(2, 3, 0, sol) || !s.PoserCellule(2, 3, 3, dessus) {
 		t.Fatal("pose refusée dans les bornes")
 	}
 
 	if got := s.Cellule(2, 3, 0).Planche; got != 1 {
-		t.Errorf("couche 0 : planche %d, attendu 1", got)
+		t.Errorf("strate 0 : planche %d, attendu 1 — la pose du dessus l'a effacée", got)
 	}
 	if got := s.Cellule(2, 3, 3).Planche; got != 2 {
-		t.Errorf("couche 3 : planche %d, attendu 2", got)
+		t.Errorf("strate 3 : planche %d, attendu 2", got)
 	}
 	if got := s.Cellule(2, 3, 1); got != (Aspect{}) {
-		t.Errorf("couche intermédiaire non posée : %v, attendu rien", got)
+		t.Errorf("strate intermédiaire non posée : %v, attendu rien", got)
 	}
-	if n := s.Couches(); n != 4 {
-		t.Errorf("%d couches, attendu 4 — les rangs jusqu'à la plus haute posée", n)
+	if n := s.Strates(); n != 4 {
+		t.Errorf("%d strates, attendu 4 — les rangs jusqu'à la plus haute posée", n)
 	}
 }
 
@@ -199,18 +202,18 @@ func TestDecorParCouche(t *testing.T) {
 // forme dont le sommet vient de sortir a encore son corps à l'image.
 func TestCelluleHorsBornes(t *testing.T) {
 	s := scenePourTest(t, 1)
-	s.PoserCellule(0, 0, plein())
+	s.PoserCellule(0, 0, 0, plein())
 
 	for _, c := range [][2]int{{-1, 0}, {0, -1}, {8, 0}, {0, 8}, {-5, 99}} {
 		if got := s.Cellule(c[0], c[1], 0); got != (Aspect{}) {
 			t.Errorf("cellule (%d, %d) rend %v, attendu rien", c[0], c[1], got)
 		}
 	}
-	if s.PoserCellule(8, 0, plein()) {
+	if s.PoserCellule(8, 0, 0, plein()) {
 		t.Error("pose acceptée hors grille")
 	}
-	if s.PoserCellule(0, 0, Aspect{Couche: couchesMax, Largeur: 1, Hauteur: 1}) {
-		t.Error("pose acceptée au-delà des couches que la clé distingue")
+	if s.PoserCellule(0, 0, stratesMax, plein()) {
+		t.Error("pose acceptée au-delà des strates qu'une cellule empile")
 	}
 }
 

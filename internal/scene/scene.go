@@ -18,12 +18,24 @@ import (
 // prévisible, et faux.
 const coteMax = 32768
 
-// couchesMax est le nombre de couches que la clé de tri sait distinguer, quatre bits
-// lui étant réservés.
+// stratesMax est le nombre de choses qu'une cellule peut empiler.
 //
-// Ce n'est pas décider combien de couches un jeu emploie, c'est dire ce que le format
-// porte : au-delà, deux couches différentes cesseraient de se départager.
-const couchesMax = 16
+// Une strate n'est pas une couche. La couche d'un aspect est un rang global que la clé
+// de tri place au-dessus de tout — ce qu'une interface emploiera —, là où une strate ne
+// départage que ce qui occupe la même cellule : une chaussée, son marquage, le véhicule
+// garé dessus. Les confondre ferait passer tous les véhicules d'une carte devant toutes
+// les créatures, quelle que soit leur profondeur.
+//
+// L'empilement est l'usage courant du genre — un sol, la voirie peinte dessus, les
+// plantations, les véhicules —, donc seize laisse de la marge sans en promettre trop :
+// un décor qui en empile davantage sur une seule cellule décrit autre chose qu'un
+// décor.
+//
+// Chaque strate ouverte coûte une tranche de la taille de la carte, soit environ cinq
+// mégaoctets sur cinq cents cellules de côté. Une strate creuse — quelques véhicules
+// sur une grande carte — la paie donc pleine, ce qui est à reconsidérer le jour où une
+// mesure le demande, pas avant.
+const stratesMax = 16
 
 // entitesParDefaut est la capacité qu'une scène prend quand l'appelant n'en demande
 // aucune — au-dessus de ce qu'un jeu de horde emploie, pour deux cents kilooctets.
@@ -62,8 +74,8 @@ type Scene struct {
 	ages    []uint32 // rang de poignée → génération courante
 	libres  []uint32 // les rangs qu'un retrait a rendus
 
-	// Le décor : une tranche par couche, allouée à la première pose sur celle-ci. Un
-	// jeu qui n'emploie qu'une couche ne paie que celle-là.
+	// Le décor : une tranche par strate, allouée à la première pose sur celle-ci. Un
+	// jeu qui n'en empile qu'une ne paie que celle-là.
 	decor [][]Aspect
 
 	// La vue. Le point visé est gardé en cellules plutôt qu'en pixels, parce qu'une
@@ -207,47 +219,67 @@ func (s *Scene) Habiller(p Poignee, a Aspect) bool {
 // la copier, et c'est ce qui lui évite d'allouer à chaque image.
 func (s *Scene) Entites() []Entite { return s.entites }
 
-// PoserCellule pose un aspect sur une cellule de la grille, à la couche qu'il porte,
-// et rend faux si la cellule ou la couche sort des bornes.
+// Identites rend, dans le même ordre qu'[Scene.Entites], un numéro par entité qui ne
+// change jamais tant qu'elle vit.
 //
-// Une couche s'alloue à sa première pose, donc un jeu qui n'en emploie qu'une ne paie
-// que celle-là. Un aspect de largeur ou de hauteur nulle vide la cellule.
-func (s *Scene) PoserCellule(x, y int, a Aspect) bool {
-	if x < 0 || y < 0 || x >= s.largeur || y >= s.hauteur || int(a.Couche) >= couchesMax {
+// La place d'une entité, elle, change : un retrait comble le trou avec la dernière.
+// Un ordre de dessin qui se départagerait sur la place changerait donc parce qu'une
+// **troisième** entité est morte ailleurs, et deux images de suite ne montreraient pas
+// la même chose. C'est ce que le tri emploie pour départager ce que la profondeur ne
+// sépare pas.
+func (s *Scene) Identites() []uint32 { return s.places }
+
+// PoserCellule pose un aspect sur une cellule de la grille, à la strate donnée, et
+// rend faux si la cellule ou la strate sort des bornes.
+//
+// La strate dit ce qui s'empile sur une même cellule sans l'effacer — une chaussée, le
+// passage piéton peint dessus, le véhicule qui s'y gare. Sans elle il faudrait choisir
+// lequel des trois la cellule porte, et un objet posé effacerait le sol sous lui. C'est
+// la façon dont un jeu isométrique pose son décor, et un moteur qui ne l'offre pas
+// oblige chacun à la réinventer.
+//
+// Elle ne range qu'entre choses d'une même cellule : à l'image, une strate haute ne
+// passe pas devant ce qui est plus proche, elle passe devant ce qu'elle recouvre. Le
+// rang global, celui qu'une interface emploiera, est la couche de l'aspect.
+//
+// Une strate s'alloue à sa première pose. Un aspect de largeur ou de hauteur nulle
+// vide la cellule.
+func (s *Scene) PoserCellule(x, y int, strate uint8, a Aspect) bool {
+	if x < 0 || y < 0 || x >= s.largeur || y >= s.hauteur || int(strate) >= stratesMax {
 		return false
 	}
 
-	couche := int(a.Couche)
-	for len(s.decor) <= couche {
+	rang := int(strate)
+	for len(s.decor) <= rang {
 		s.decor = append(s.decor, nil)
 	}
-	if s.decor[couche] == nil {
-		s.decor[couche] = make([]Aspect, s.largeur*s.hauteur)
+	if s.decor[rang] == nil {
+		s.decor[rang] = make([]Aspect, s.largeur*s.hauteur)
 	}
 
-	s.decor[couche][y*s.largeur+x] = a
+	s.decor[rang][y*s.largeur+x] = a
 	return true
 }
 
 // Cellule rend l'aspect posé sur une cellule, ou sa valeur zéro quand il n'y a rien —
-// ce qui couvre aussi une cellule ou une couche hors bornes.
+// ce qui couvre aussi une cellule ou une strate hors bornes.
 //
-// Le tri l'appelle une fois par cellule visible et par couche, soit quelques milliers
+// Le tri l'appelle une fois par cellule visible et par strate, soit quelques milliers
 // de fois par image : pas de tranche rendue, pas de copie, rien à libérer.
-func (s *Scene) Cellule(x, y int, couche uint8) Aspect {
-	if x < 0 || y < 0 || x >= s.largeur || y >= s.hauteur || int(couche) >= len(s.decor) {
+func (s *Scene) Cellule(x, y int, strate uint8) Aspect {
+	if x < 0 || y < 0 || x >= s.largeur || y >= s.hauteur || int(strate) >= len(s.decor) {
 		return Aspect{}
 	}
-	if s.decor[couche] == nil {
+	if s.decor[strate] == nil {
 		return Aspect{}
 	}
 
-	return s.decor[couche][y*s.largeur+x]
+	return s.decor[strate][y*s.largeur+x]
 }
 
-// Couches rend le nombre de couches qu'une pose a ouvertes, et donc la borne du
+// Strates rend le nombre de strates qu'une pose a ouvertes, et donc la borne du
 // parcours que le tri a à faire.
-func (s *Scene) Couches() int { return len(s.decor) }
+func (s *Scene) Strates() int { return len(s.decor) }
 
 // place rend la position d'une entité dans la tranche, et dit si la poignée vaut
 // encore.

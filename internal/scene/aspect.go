@@ -45,6 +45,10 @@ type Aspect struct {
 	// couche range ce qui doit passer devant tout le reste, une interface par exemple ;
 	// l'étage sépare les niveaux d'un décor. Combien un jeu en emploie ne regarde que
 	// lui — la clé sait en distinguer seize et soixante-quatre.
+	//
+	// Ni l'une ni l'autre n'est la strate de [Scene.PoserCellule], qui dit seulement
+	// ce qui s'empile sur une même cellule. Une couche passe devant toute l'image, une
+	// strate ne passe devant que ce qu'elle recouvre.
 	Couche uint8
 	Etage  uint8
 }

@@ -132,6 +132,47 @@ func TestIndexNumeroteDansUneMemeProfondeur(t *testing.T) {
 	}
 }
 
+// TestOrdreTientQuandUneTroisiemeDisparait couvre le défaut pour lequel le départage
+// existe, et aucun autre cas ne peut le faire échouer.
+//
+// Retirer une entité comble son trou avec la dernière : l'ordre de la tranche change
+// sans que personne n'ait touché aux deux autres. Si l'index stable suivait cet ordre,
+// deux choses de même profondeur se relaieraient au premier plan dès qu'une troisième
+// meurt ailleurs — et ce scintillement ne se relie pas à sa cause quand on le voit.
+func TestOrdreTientQuandUneTroisiemeDisparait(t *testing.T) {
+	s := scenePourTest(t, 32, 8)
+
+	// Posée en premier pour que son retrait déplace les deux suivantes. Sa
+	// profondeur diffère, donc elle ne se mêle pas à leur départage.
+	jetable, _ := s.Poser(scene.Entite{X: 20, Y: 20, Aspect: figure()})
+
+	// Même profondeur — la somme des deux axes vaut 28 — et deux abscisses écran
+	// opposées. Même aspect, sans quoi la planche trancherait avant l'index.
+	s.Poser(scene.Entite{X: 16, Y: 12, Aspect: figure()})
+	s.Poser(scene.Entite{X: 12, Y: 16, Aspect: figure()})
+
+	trieur := Nouveau(s)
+
+	image := trieur.Image()
+	if len(image) != 3 {
+		t.Fatalf("%d quads, attendu 3", len(image))
+	}
+	if image[0].X > image[1].X {
+		t.Errorf("abscisses %d puis %d : les deux d'une même profondeur ne vont pas de gauche à droite", image[0].X, image[1].X)
+	}
+	avant := [2]int16{image[0].X, image[1].X}
+
+	s.Retirer(jetable)
+
+	image = trieur.Image()
+	if len(image) != 2 {
+		t.Fatalf("%d quads après le retrait, attendu 2", len(image))
+	}
+	if image[0].X != avant[0] || image[1].X != avant[1] {
+		t.Errorf("ordre %d, %d après le retrait, attendu %d, %d", image[0].X, image[1].X, avant[0], avant[1])
+	}
+}
+
 // TestDecorReleveParFenetre vérifie que le coût du décor suit la vue et non la carte.
 //
 // Sans cela, une carte de cinq cents cellules de côté en projetterait deux cent
@@ -142,7 +183,7 @@ func TestDecorReleveParFenetre(t *testing.T) {
 	s := scenePourTest(t, cote, 1)
 	for v := range cote {
 		for u := range cote {
-			s.PoserCellule(u, v, figure())
+			s.PoserCellule(u, v, 0, figure())
 		}
 	}
 
@@ -164,7 +205,7 @@ func TestImageNAlloueApresLaPremiere(t *testing.T) {
 	}
 	for v := range 64 {
 		for u := range 64 {
-			s.PoserCellule(u, v, figure())
+			s.PoserCellule(u, v, 0, figure())
 		}
 	}
 
@@ -185,7 +226,7 @@ func TestLesQuatreOrientationsRendentAutantDeQuads(t *testing.T) {
 	s := scenePourTest(t, 24, 1)
 	for v := range 24 {
 		for u := range 24 {
-			s.PoserCellule(u, v, figure())
+			s.PoserCellule(u, v, 0, figure())
 		}
 	}
 
