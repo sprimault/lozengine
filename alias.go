@@ -37,7 +37,7 @@ const (
 // Blanc rend la teinte neutre, celle qui laisse la source intacte.
 //
 // Une fonction et non un alias : seuls les types se republient sans enveloppe, et
-// celle-ci disparaît à l'inlining.
+// celle-ci ne coûte rien — le compilateur la remplace par son corps.
 func Blanc() Couleur { return rendu.Blanc() }
 
 // Matrice convertit entre les cellules du monde et les pixels de l'écran, dans les

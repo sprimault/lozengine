@@ -34,10 +34,11 @@ type Matrice struct {
 	// de fraction et se ramène au pixel par un seul décalage.
 	a, b, c, d, etage int32
 
-	// L'inverse, calculée à la construction parce que le culling l'appelle à chaque
-	// image et que son calcul est une division. En entiers comme l'aller : c'est
-	// elle qui décide quelles cellules sont relevées, donc un arrondi variant d'une
-	// architecture à l'autre y changerait l'image et non seulement un chiffre.
+	// L'inverse, calculée à la construction parce qu'on s'en sert à chaque image pour
+	// savoir quelles cellules l'écran peut montrer, et que son calcul est une
+	// division. En entiers comme l'aller : c'est elle qui décide quelles cellules sont
+	// relevées, donc un arrondi variant d'une architecture à l'autre y changerait
+	// l'image et non seulement un chiffre.
 	ia, ib, ic, id int64
 
 	// La plus grande entrée que l'inverse accepte avant que le produit par un de ses

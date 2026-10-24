@@ -55,9 +55,9 @@ func TestImageOrdonneParProfondeur(t *testing.T) {
 	}
 }
 
-// TestCullingEcarteHorsImage vérifie que ce qui ne touche pas la vue n'entre pas dans
-// la liste, et que ce qui dépasse d'un bord y entre encore.
-func TestCullingEcarteHorsImage(t *testing.T) {
+// TestCeQuiSortDeLImageEstRetire vérifie que ce qui ne touche pas la vue n'entre pas
+// dans la liste, et que ce qui dépasse d'un bord y entre encore.
+func TestCeQuiSortDeLImageEstRetire(t *testing.T) {
 	s := scenePourTest(t, 400, 8)
 
 	proche := figure()
@@ -89,7 +89,7 @@ func TestIndexAttribueParProfondeur(t *testing.T) {
 
 	// Un quart de cellule d'écart donne une profondeur distincte à chacune — c'est
 	// l'unité du champ — tout en les gardant assez groupées pour que la vue les
-	// montre toutes, le culling écartant sinon la moitié du cas.
+	// montre toutes — la moitié du cas serait sinon retirée comme hors de l'image.
 	s := scenePourTest(t, 4096, n)
 	for i := range n {
 		if _, ok := s.Poser(scene.Entite{X: float64(i) * 0.25, Aspect: figure()}); !ok {

@@ -19,9 +19,9 @@ const (
 	// SourceX et SourceY sont alors ignorés.
 	//
 	// Sans lui, un panneau d'interface ou un fondu au noir demanderait d'étirer
-	// un texel, c'est-à-dire la mise à l'échelle fractionnaire que le moteur
-	// s'interdit. Le quad reste la primitive unique, et c'est son chemin le plus
-	// court.
+	// un pixel de planche sur toute une surface, c'est-à-dire la mise à l'échelle
+	// fractionnaire que le moteur s'interdit. Le quad reste la primitive unique,
+	// et c'est son chemin le plus court.
 	Aplat
 )
 
