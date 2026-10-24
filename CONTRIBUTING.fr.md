@@ -82,8 +82,10 @@ Les conventions de code et la doctrine de test sont dans
 - **Les fonctions du chemin de rendu ne renvoient pas d'erreur.** Les erreurs se
   produisent au chargement, pas à l'image.
 - **Rien de ce qui relève du jeu n'est codé en dur** : nombre de directions,
-  taille de tuile, ratio de projection, nombre de couches. Tout vient du
-  paramétrage ou du fournisseur d'apparence.
+  taille de tuile, ratio de projection, nombre de couches **employées**. Tout vient
+  du paramétrage ou du fournisseur d'apparence. Les plafonds du format n'en relèvent
+  pas : borner ce que la clé de tri distingue dit ce qu'elle porte, et ne décide pas
+  combien de couches un jeu emploie.
 - **Aucune constante de ratio hors d'un constructeur de matrice.** Pas de
   division par deux disséminée dans le code.
 - Toute modification du tri, du rastériseur, de la projection ou de l'occlusion
