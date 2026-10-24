@@ -50,8 +50,8 @@ Le moteur ne rend toujours pas de jeu : ni scène, ni ordre de dessin, ni fenêt
 ### Ajouté
 
 - `Matrice` convertit entre les cellules du monde et les pixels de l'écran, dans les
-  deux sens, par `Dimetrique`, `Isometrique`, `Grille` ou `Brute`. Le calcul est
-  entier, donc une même scène rend les mêmes pixels d'une machine à l'autre.
+  deux sens, et rend au passage de quoi ordonner un point. Quatre constructeurs, et
+  un calcul entier : une même scène rend les mêmes pixels d'une machine à l'autre.
 
 ***
 
@@ -59,9 +59,9 @@ The engine still renders no game: no scene, no draw order, no window.
 
 ### Added
 
-- `Matrice` converts between world cells and screen pixels, both ways, through
-  `Dimetrique`, `Isometrique`, `Grille` or `Brute`. The arithmetic is integer, so one
-  and the same scene renders the same pixels from one machine to the next.
+- `Matrice` converts between world cells and screen pixels, both ways, and also
+  returns what orders a point. Four constructors, integer arithmetic: one and the
+  same scene renders the same pixels from one machine to the next.
 
 ## [0.1.1] — 2026-10-23
 
