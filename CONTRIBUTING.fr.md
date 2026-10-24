@@ -40,7 +40,8 @@ qui est hors périmètre.
 
 Une seule cible y échappe, et elle ne met rien dans le moteur : la bibliothèque
 native du dernier jalon réclame cgo et un compilateur C sur la machine de
-compilation, parce que le runtime Go l'impose pour s'accrocher à l'ABI C.
+compilation, parce que le runtime Go l'impose pour s'accrocher à la convention d'appel
+du C, qu'on nomme son ABI.
 
 ## Ce qui se discute avant d'être écrit
 

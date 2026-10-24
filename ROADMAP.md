@@ -19,8 +19,8 @@ fenêtre.
 
 ### 1 · Noyau isométrique
 
-Géométrie et projection paramétrable, modèle de scène, culling, clé de tri, tri
-topologique des volumes multi-cellules.
+Géométrie et projection paramétrable, modèle de scène, retrait de ce qui sort de
+l'image, clé de tri, départage de ce que la profondeur laisse à égalité.
 
 La projection étant une matrice, la grille carrée vue de dessus est un constructeur de
 plus, pas un second moteur : le dimétrique reste le sujet, le reste vient avec.
@@ -131,7 +131,8 @@ compile et passe la suite sans autre installation qu'une chaîne Go.
 
 ### 11 · Interopérabilité
 
-Bibliothèque native consommable depuis Rust, C++ et tout langage parlant l'ABI C, en
+Bibliothèque native consommable depuis Rust, C++ et tout langage sachant appeler du C —
+cette convention d'appel, qu'on nomme ABI, étant le terrain commun de presque tous. En
 `c-shared` et `c-archive`, avec en-tête généré et exemples minimaux.
 
 Le noyau seul est exposé, jamais la fenêtre ni la boucle : un jeu hôte possède les

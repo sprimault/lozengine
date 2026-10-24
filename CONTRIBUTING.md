@@ -38,7 +38,8 @@ scope.
 
 One target escapes this, and it puts nothing into the engine: the native library
 of the last milestone requires cgo and a C compiler on the build machine,
-because the Go runtime demands it to attach to the C ABI.
+because the Go runtime demands it to attach to the C calling convention, known as its
+ABI.
 
 ## What gets discussed before it gets written
 
