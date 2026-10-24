@@ -27,8 +27,39 @@ func TestProfondeurCompteEnQuarts(t *testing.T) {
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
-			if _, _, p := m.Projeter(c.x, c.y, 0); p != c.attendu {
+			if _, _, p, _ := m.Projeter(c.x, c.y, 0); p != c.attendu {
 				t.Errorf("profondeur %d, attendu %d", p, c.attendu)
+			}
+		})
+	}
+}
+
+// TestHauteurCompteEnQuarts vérifie l'unité du champ que la clé de tri réserve à la
+// hauteur, et les deux bouts où elle s'arrête.
+//
+// Ce que ce cas est seul à pouvoir faire échouer : une hauteur recalculée ailleurs,
+// depuis le nombre d'origine. Elle y perdrait la conversion saturée, donc rendrait un
+// résultat différent selon la machine, et sortirait d'un second arrondi qui peut
+// tomber de l'autre côté d'un quart.
+func TestHauteurCompteEnQuarts(t *testing.T) {
+	m := Dimetrique(32, 16)
+
+	cas := []struct {
+		nom     string
+		z       float64
+		attendu uint16
+	}{
+		{"le sol", 0, 0},
+		{"un quart de cellule", 0.25, 1},
+		{"une cellule", 1, 4},
+		{"trois cellules", 3, 12},
+		{"sous le sol, ramenée au sol", -2, 0},
+		{"au-delà du champ, saturée", 1e6, math.MaxUint16},
+	}
+	for _, c := range cas {
+		t.Run(c.nom, func(t *testing.T) {
+			if _, _, _, h := m.Projeter(0, 0, c.z); h != c.attendu {
+				t.Errorf("hauteur %d, attendu %d", h, c.attendu)
 			}
 		})
 	}
@@ -70,7 +101,7 @@ func TestInverserExactSurLesPuissancesDeDeux(t *testing.T) {
 	m := Dimetrique(32, 16)
 
 	for _, p := range [][2]float64{{0, 0}, {3, 5}, {1, 1}, {100, 250}, {-4, 7}} {
-		ex, ey, _ := m.Projeter(p[0], p[1], 0)
+		ex, ey, _, _ := m.Projeter(p[0], p[1], 0)
 		x, y := m.Inverser(ex, ey)
 
 		if x != p[0] || y != p[1] {
@@ -86,7 +117,7 @@ func TestInverserExactSurLesPuissancesDeDeux(t *testing.T) {
 // non par l'inexactitude des coefficients de l'inverse. Réduire inverseBits le ferait
 // rougir, et c'est la seule chose qui le garde.
 func TestAllerRetourTolerance(t *testing.T) {
-	const quantum = 0.06
+	const quantum = 0.05
 
 	cas := []struct {
 		nom string
@@ -102,7 +133,7 @@ func TestAllerRetourTolerance(t *testing.T) {
 
 			for i := 0; i < 4000; i++ {
 				ax, ay := float64(i)*0.37, float64(i)*0.61
-				ex, ey, _ := c.m.Projeter(ax, ay, 0)
+				ex, ey, _, _ := c.m.Projeter(ax, ay, 0)
 				rx, ry := c.m.Inverser(ex, ey)
 
 				pire = max(pire, math.Abs(rx-ax), math.Abs(ry-ay))

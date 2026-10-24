@@ -28,7 +28,7 @@ func TestConstructeursPosentLeurRatio(t *testing.T) {
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
-			ex, ey, _ := c.m.Projeter(c.x, c.y, 0)
+			ex, ey, _, _ := c.m.Projeter(c.x, c.y, 0)
 
 			if ex != c.ex || ey != c.ey {
 				t.Errorf("(%g, %g) → (%d, %d), attendu (%d, %d)", c.x, c.y, ex, ey, c.ex, c.ey)
@@ -52,7 +52,7 @@ func TestEtage(t *testing.T) {
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
-			_, ey, _ := c.m.Projeter(0, 0, 1)
+			_, ey, _, _ := c.m.Projeter(0, 0, 1)
 
 			if ey != c.attendu {
 				t.Errorf("z = 1 monte à %d, attendu %d", ey, c.attendu)
@@ -68,7 +68,7 @@ func TestAvecEtageLaisseLOriginale(t *testing.T) {
 	m := Dimetrique(32, 16)
 	m.AvecEtage(8)
 
-	if _, ey, _ := m.Projeter(0, 0, 1); ey != -16 {
+	if _, ey, _, _ := m.Projeter(0, 0, 1); ey != -16 {
 		t.Errorf("l'originale monte de %d, attendu -16", ey)
 	}
 }
@@ -79,8 +79,8 @@ func TestAvecEtageLaisseLOriginale(t *testing.T) {
 func TestMatriceZero(t *testing.T) {
 	var m Matrice
 
-	if ex, ey, p := m.Projeter(3, 5, 2); ex != 0 || ey != 0 || p == 0 {
-		t.Errorf("projeté (%d, %d) profondeur %d, attendu l'origine et une profondeur non nulle", ex, ey, p)
+	if ex, ey, p, h := m.Projeter(3, 5, 2); ex != 0 || ey != 0 || p == 0 || h == 0 {
+		t.Errorf("projeté (%d, %d), profondeur %d, hauteur %d — attendu l'origine, et les deux dernières non nulles", ex, ey, p, h)
 	}
 	if x, y := m.Inverser(100, 100); x != 0 || y != 0 {
 		t.Errorf("inversé (%g, %g), attendu l'origine", x, y)
