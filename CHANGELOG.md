@@ -45,6 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.2.0] — 2026-10-24 — Jalon 1 · Noyau isométrique
+
 Le moteur a désormais une scène et un ordre de dessin, mais rien n'en sort encore :
 seule la projection s'atteint de l'extérieur, et il n'y a ni fenêtre, ni boucle.
 

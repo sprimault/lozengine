@@ -107,7 +107,7 @@ principal.
 
 ## État
 
-**Jalon 1 en cours.** Le moteur décrit une scène, en ordonne le dessin et la rend hors
+**Jalon 1 franchi.** Le moteur décrit une scène, en ordonne le dessin et la rend hors
 écran, où sa suite de non-régression compare chaque image à une référence. Mais rien de
 tout cela ne s'atteint encore de l'extérieur — seule la projection est publiée —, il
 n'a pas de fenêtre, et rien n'y suffit à écrire un jeu.

@@ -107,7 +107,7 @@ loop: a host game already has its own and will not give up its main thread.
 
 ## Status
 
-**Milestone 1 in progress.** The engine describes a scene, orders its drawing and
+**Milestone 1 reached.** The engine describes a scene, orders its drawing and
 renders it off-screen, where its regression suite compares every frame against a
 reference. But none of that is reachable from the outside yet — only the projection is
 published —, it has no window, and nothing in it is enough to write a game.
