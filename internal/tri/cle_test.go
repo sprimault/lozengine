@@ -70,7 +70,7 @@ func TestComposerRameneAuPlafond(t *testing.T) {
 	}
 }
 
-// TestIndexSeRelitEtSeChange vérifie le seul champ que le tri topologique touche :
+// TestIndexSeRelitEtSeChange vérifie le seul champ que le départage touche :
 // l'ajuster ne doit déranger aucun autre.
 func TestIndexSeRelitEtSeChange(t *testing.T) {
 	c := Composer(3, 7, 1234, 567, 89, 12)

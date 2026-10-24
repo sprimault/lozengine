@@ -157,7 +157,7 @@ func TestCellulesMaxMajore(t *testing.T) {
 	majorant := m.CellulesMax(largeur, hauteur)
 
 	// Le relevé réel, pour quelques positions de vue : l'englobant en cellules des
-	// quatre coins du tampon, comme le culling le calculera.
+	// quatre coins du tampon, comme le relevé des cellules visibles le calculera.
 	for _, origine := range [][2]int32{{0, 0}, {7, 3}, {1000, -500}, {-13, 9999}} {
 		minX, minY := math.MaxFloat64, math.MaxFloat64
 		maxX, maxY := -math.MaxFloat64, -math.MaxFloat64

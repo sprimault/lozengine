@@ -68,21 +68,21 @@ func Composer(couche, etage uint8, profondeur uint32, hauteur uint16, planche, i
 		Cle(min(uint64(index), IndexMax))
 }
 
-// Index rend l'index stable, le seul champ que le tri topologique ajuste.
+// Index rend l'index stable, le seul champ que le départage ajuste.
 func (c Cle) Index() uint16 { return uint16(c) & IndexMax }
 
 // AvecIndex rend la même clé portant un autre index stable.
 //
-// C'est par là que passe tout ce qu'un ordre partiel a décidé : la clé reste la seule
-// vérité de l'ordre de dessin, et un départage qui vivrait ailleurs se perdrait au
-// moment du rangement.
+// C'est par là que passe tout ce que le départage a décidé : la clé reste la seule
+// vérité de l'ordre de dessin, et un rang qui vivrait ailleurs se perdrait au moment
+// du rangement.
 func (c Cle) AvecIndex(index uint16) Cle {
 	return c&^IndexMax | Cle(min(uint64(index), IndexMax))
 }
 
 // Profondeur rend la somme des deux axes du monde, en quarts de cellule.
 //
-// Elle sert au tri topologique, qui n'ordonne que des choses d'une même profondeur :
+// Elle sert au départage, qui n'ordonne que des choses d'une même profondeur :
 // au-delà, la clé a déjà tranché et il n'a rien à dire.
 func (c Cle) Profondeur() uint32 {
 	return uint32(c>>decalageProfondeur) & ProfondeurMax

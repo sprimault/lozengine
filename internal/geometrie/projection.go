@@ -36,10 +36,11 @@ func (m Matrice) Projeter(x, y, z float64) (ex, ey int32, profondeur uint32, hau
 // Inverser rend le point du monde qui tombe sur un pixel de l'écran.
 //
 // Elle prend des pixels entiers et rend des cellules flottantes, ce que ses deux
-// usages demandent : le culling lui donne les coins du tampon et ne garde que la
-// partie entière de ce qu'elle rend, la désignation au pointeur lui donnera la
-// position d'un curseur. Aucun type de coordonnée en virgule fixe n'a donc à
-// traverser cette frontière.
+// usages demandent. Le premier lui donne les quatre coins de l'image pour savoir
+// quelles cellules celle-ci peut montrer, et ne garde que la partie entière de ce
+// qu'elle rend ; le second, la désignation au pointeur, lui donnera la position d'un
+// curseur. Aucun type de coordonnée en virgule fixe n'a donc à traverser cette
+// frontière.
 //
 // L'aller-retour admet un quantum, et il vient du pixel et non de la matrice :
 // projeter arrondit au pixel entier, donc revenir au monde ne peut pas distinguer
@@ -60,10 +61,11 @@ func (m Matrice) Inverser(ex, ey int32) (x, y float64) {
 // CellulesMax borne le nombre de cellules qu'un rectangle d'écran peut couvrir,
 // quelle que soit la position de la vue.
 //
-// Elle existe pour dimensionner un relevé qui n'alloue jamais : le culling a besoin
-// d'un majorant que la position de la caméra ne change pas, et celui-ci ne dépend
-// que du rectangle et de la matrice, fixes tous les deux pour la durée d'une partie.
-// C'est une signature que seul un moteur sans allocation par image réclame.
+// Elle existe pour dimensionner un relevé qui n'alloue jamais : celui qui retire ce
+// qui sort de l'image a besoin d'un majorant que la position de la caméra ne change
+// pas, et celui-ci ne dépend que du rectangle et de la matrice, fixes tous les deux
+// pour la durée d'une partie. C'est une signature que seul un moteur sans allocation
+// par image réclame.
 //
 // Le losange qu'un rectangle découpe s'étend, sur chacun des deux axes du monde, de
 // la largeur rapportée à l'empreinte d'une cellule plus la hauteur rapportée à la
