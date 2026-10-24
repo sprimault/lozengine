@@ -53,6 +53,8 @@ seule la projection s'atteint de l'extérieur, et il n'y a ni fenêtre, ni boucl
 - `Matrice` convertit entre les cellules du monde et les pixels de l'écran, dans les
   deux sens, et rend au passage de quoi ordonner un point. Quatre constructeurs, et
   un calcul entier : une même scène rend les mêmes pixels d'une machine à l'autre.
+- `PlanchesMax` dit combien de planches un atlas peut porter, ce que la godoc de
+  `Quad` annonçait sans le nommer.
 
 ***
 
@@ -64,6 +66,8 @@ the projection is reachable from the outside, and there is still no window, no l
 - `Matrice` converts between world cells and screen pixels, both ways, and also
   returns what orders a point. Four constructors, integer arithmetic: one and the
   same scene renders the same pixels from one machine to the next.
+- `PlanchesMax` states how many sheets an atlas can hold, which `Quad`'s doc comment
+  announced without naming it.
 
 ## [0.1.1] — 2026-10-23
 
