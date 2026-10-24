@@ -19,9 +19,10 @@ La projection est une matrice affine paramétrable, gardée avec son inverse. Le
 dimétrique est le sujet du moteur, mais l'isométrie vraie et la grille carrée vue
 de dessus sont des constructeurs de plus, pas un second chemin de rendu.
 
-La règle de dépendance se prend au mot là où elle compte. **Géométrie, scène,
-tri, structures et rastériseur n'emploient que la bibliothèque standard**, tests
-compris, et un contrôle le vérifie paquet par paquet. La fenêtre, les entrées et
+La règle de dépendance se prend au mot là où elle compte. **Géométrie, scène, tri,
+structures et rastériseur — celui qui peint les pixels un à un, là où une carte
+graphique le ferait — n'emploient que la bibliothèque standard**, tests compris, et
+un contrôle le vérifie paquet par paquet. La fenêtre, les entrées et
 le son passent par `syscall` sous Windows et par les protocoles X11 et
 PulseAudio écrits sur socket sous Linux, jamais par le chargement d'une
 bibliothèque C. Le rendu est donc logiciel, en résolution interne basse remontée
@@ -37,9 +38,9 @@ zéro-dépendance qui ouvre cette liste, et une dépendance cgo la refermerait a
 de l'élargir : `go build` ne suffirait plus.
 
 Le navigateur est la troisième cible, par WebAssembly, et c'est lui qui donnera
-Android et iOS. macOS, iOS et Android **natifs** restent fermés, par l'ABI et non
-par arbitrage de coût — le hors-périmètre de [`ROADMAP.md`](ROADMAP.md) en donne le
-motif.
+Android et iOS. macOS, iOS et Android **natifs** restent fermés par la façon dont on
+y appelle le système — la convention d'appel, qu'on nomme ABI — et non par arbitrage
+de coût : le hors-périmètre de [`ROADMAP.md`](ROADMAP.md) en donne le motif.
 
 Deux paquets périphériques font exception, sous licence permissive et par
 décision inscrite : le rendu de polices et la sortie audio. Les réécrire

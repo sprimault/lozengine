@@ -20,7 +20,8 @@ is what the engine is for, but true isometric and a plain top-down square grid
 are one more constructor, not a second render path.
 
 The dependency rule is meant literally where it matters. **Geometry, scene,
-sort, structures and rasteriser use the standard library and nothing else**,
+sort, structures and rasteriser — the one painting pixels one by one, where a
+graphics card would do it — use the standard library and nothing else**,
 tests included, and a check enforces it package by package. Window, input and
 sound go through `syscall` on Windows and through the X11 and PulseAudio
 protocols written straight onto a socket on Linux, never by loading a C library.
@@ -38,8 +39,9 @@ a cgo dependency would close it rather than widen it: `go build` would no longer
 be enough.
 
 The browser is the third target, through WebAssembly, and it is what will bring
-Android and iOS. Native macOS, iOS and Android stay closed, by ABI rather than by
-cost — the out-of-scope section of [`ROADMAP.md`](ROADMAP.md) (French) gives the
+Android and iOS. Native macOS, iOS and Android stay closed by the way one calls the
+system there — the calling convention, known as an ABI — rather than by cost: the
+out-of-scope section of [`ROADMAP.md`](ROADMAP.md) (French) gives the
 reason.
 
 Two peripheral packages are the exception, permissively licensed and admitted by
