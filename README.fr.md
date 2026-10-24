@@ -89,8 +89,8 @@ frontière.
 
 Le moteur ne connaît aucune notion de jeu — ni joueur, ni inventaire, ni score —
 et ne code en dur rien qui en relève : le nombre de directions d'une apparence,
-la taille d'une tuile, le ratio de projection et le nombre de couches viennent
-tous du paramétrage ou du fournisseur d'apparence.
+la taille d'une tuile et le ratio de la projection viennent du paramétrage ou du
+fournisseur d'apparence.
 
 Trois exclusions suivent de la règle de dépendance, et elles sont assumées :
 
@@ -106,10 +106,10 @@ principal.
 
 ## État
 
-**Jalon 1 en cours.** Le moteur rend hors écran, compare ses images à des références
-sans ouvrir de fenêtre, et sait convertir entre les cellules du monde et les pixels de
-l'écran ; il n'a encore ni scène, ni ordre de dessin, ni fenêtre, et rien n'y suffit à
-écrire un jeu.
+**Jalon 1 en cours.** Le moteur décrit une scène, en ordonne le dessin et la rend hors
+écran, où sa suite de non-régression compare chaque image à une référence. Mais rien de
+tout cela ne s'atteint encore de l'extérieur — seule la projection est publiée —, il
+n'a pas de fenêtre, et rien n'y suffit à écrire un jeu.
 
 Une version marque chaque jalon franchi, mais **aucune signature n'est figée** :
 elles peuvent changer à chaque mineure jusqu'au jalon 9, où la validation du

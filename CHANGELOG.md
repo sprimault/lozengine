@@ -45,7 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
-Le moteur ne rend toujours pas de jeu : ni scène, ni ordre de dessin, ni fenêtre.
+Le moteur a désormais une scène et un ordre de dessin, mais rien n'en sort encore :
+seule la projection s'atteint de l'extérieur, et il n'y a ni fenêtre, ni boucle.
 
 ### Ajouté
 
@@ -55,7 +56,8 @@ Le moteur ne rend toujours pas de jeu : ni scène, ni ordre de dessin, ni fenêt
 
 ***
 
-The engine still renders no game: no scene, no draw order, no window.
+The engine now has a scene and a draw order, but nothing of them comes out yet: only
+the projection is reachable from the outside, and there is still no window, no loop.
 
 ### Added
 

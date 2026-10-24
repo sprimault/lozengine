@@ -89,8 +89,8 @@ the boundary.
 
 The engine knows nothing about games — no player, no inventory, no score — and
 hardcodes nothing that belongs to one: the number of directions an appearance
-has, the tile size, the projection ratio and the number of layers all come from
-configuration or from the appearance provider.
+has, the tile size and the projection ratio come from configuration or from the
+appearance provider.
 
 Three exclusions follow from the dependency rule, and they are deliberate:
 
@@ -105,10 +105,10 @@ loop: a host game already has its own and will not give up its main thread.
 
 ## Status
 
-**Milestone 1 in progress.** The engine renders off-screen, compares its images
-against references without opening a window, and can convert between world cells
-and screen pixels; it has no scene, no draw order and no window yet, and nothing in
-it is enough to write a game.
+**Milestone 1 in progress.** The engine describes a scene, orders its drawing and
+renders it off-screen, where its regression suite compares every frame against a
+reference. But none of that is reachable from the outside yet — only the projection is
+published —, it has no window, and nothing in it is enough to write a game.
 
 A release marks every milestone reached, but **no signature is frozen**: they may
 change with every minor until milestone 9, where validation by a second game

@@ -81,8 +81,10 @@ Code conventions and the testing doctrine are in [`docs/go.md`](docs/go.md)
 - **Functions on the render path return no error.** Errors happen at load time,
   not per frame.
 - **Nothing that belongs to a game is hardcoded**: number of directions, tile
-  size, projection ratio, number of layers. It all comes from configuration or
-  from the appearance provider.
+  size, projection ratio, number of layers **used**. It all comes from configuration
+  or from the appearance provider. The format's ceilings are another matter:
+  bounding what the sort key can tell apart states what it carries, and does not
+  decide how many layers a game uses.
 - **No ratio constant outside a matrix constructor.** No stray division by two
   scattered through the code.
 - Any change to the sort, the rasteriser, the projection or the occlusion comes
