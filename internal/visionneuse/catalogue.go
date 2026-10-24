@@ -11,6 +11,7 @@ var catalogue = map[string]func() Scenario{
 	"bords":   Bords,
 	"melange": Melange,
 	"mire":    Mire,
+	"noyau":   Noyau,
 	"ordre":   Ordre,
 }
 
