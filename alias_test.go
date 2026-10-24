@@ -60,9 +60,9 @@ func TestConstructeursRepublies(t *testing.T) {
 func TestMatriceSUtiliseDepuisLaRacine(t *testing.T) {
 	m := Dimetrique(32, 16).AvecEtage(8)
 
-	ex, ey, profondeur := m.Projeter(1, 1, 1)
-	if ex != 0 || ey != 8 || profondeur != 8 {
-		t.Errorf("projeté (%d, %d) profondeur %d, attendu (0, 8) et 8", ex, ey, profondeur)
+	ex, ey, profondeur, hauteur := m.Projeter(1, 1, 1)
+	if ex != 0 || ey != 8 || profondeur != 8 || hauteur != 4 {
+		t.Errorf("projeté (%d, %d), profondeur %d, hauteur %d — attendu (0, 8), 8 et 4", ex, ey, profondeur, hauteur)
 	}
 
 	if x, y := m.Inverser(ex, ey); x != 0.5 || y != 0.5 {

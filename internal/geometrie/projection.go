@@ -5,14 +5,15 @@ package geometrie
 
 import "math"
 
-// Projeter rend le pixel absolu où tombe un point du monde, et la profondeur sur
-// laquelle la clé de tri l'ordonnera.
+// Projeter rend le pixel absolu où tombe un point du monde, et les deux grandeurs sur
+// lesquelles la clé de tri l'ordonnera : sa profondeur et sa hauteur.
 //
-// Trois valeurs pour un seul arrondi, et c'est la raison de leur réunion : le pixel
-// se compte en seize-millièmes de cellule, la profondeur en quarts, et deux
-// conversions indépendantes depuis le même flottant peuvent tomber de part et d'autre
-// d'un quart. La divergence réordonnerait deux quads sans que rien ne le signale.
-// L'appelant qui n'a que faire de la profondeur l'ignore, ce qui ne coûte rien.
+// Quatre valeurs pour un seul arrondi, et c'est la raison de leur réunion : le pixel
+// se compte en seize-millièmes de cellule, la profondeur et la hauteur en quarts, et
+// deux conversions indépendantes depuis le même nombre peuvent tomber de part et
+// d'autre d'un quart. La divergence réordonnerait deux quads sans que rien ne le
+// signale. L'appelant qui n'a que faire des deux dernières les ignore, ce qui ne
+// coûte rien.
 //
 // Les pixels sont absolus, et c'est la scène qui retranche l'origine de la vue avant
 // de remplir un Quad. En absolu sur seize bits, la plus grande carte représentable
@@ -23,13 +24,13 @@ import "math"
 // l'ordonnée après la projection du sol, parce que la clé de tri la range dans son
 // propre champ. Les fondre perdrait l'information à l'entrée du pipeline et rendrait
 // le tri irréparable.
-func (m Matrice) Projeter(x, y, z float64) (ex, ey int32, profondeur uint32) {
+func (m Matrice) Projeter(x, y, z float64) (ex, ey int32, profondeur uint32, hauteur uint16) {
 	fx, fy, fz := quantifier(x), quantifier(y), quantifier(z)
 
 	ex = pixel(int64(m.a)*int64(fx) + int64(m.b)*int64(fy))
 	ey = pixel(int64(m.c)*int64(fx) + int64(m.d)*int64(fy) - int64(m.etage)*int64(fz))
 
-	return ex, ey, profondeurDe(fx, fy)
+	return ex, ey, profondeurDe(fx, fy), hauteurDe(fz)
 }
 
 // Inverser rend le point du monde qui tombe sur un pixel de l'écran.
@@ -98,6 +99,30 @@ func profondeurDe(fx, fy int32) uint32 {
 		return math.MaxUint32
 	}
 	return uint32(quarts)
+}
+
+// hauteurDe compte la hauteur au-dessus du sol en quarts de cellule.
+//
+// Seize bits, soit 16 384 cellules de hauteur : la clé de tri réserve à la hauteur son
+// propre champ, à côté de la profondeur et dans la même unité. Elle sort du même
+// arrondi que le pixel, et pour la même raison que la profondeur.
+//
+// Si elle se calculait ailleurs, il faudrait y refaire la conversion saturée qui rend
+// le résultat identique d'une machine à l'autre — celle que quantifier porte, et qui
+// n'a aucune raison d'exister en deux endroits.
+//
+// Non signée : un point sous le sol se range au niveau du sol plutôt que de repasser
+// par-dessus tout le reste, ce qui est la façon visible de se tromper.
+func hauteurDe(fz int32) uint16 {
+	quarts := int64(fz) >> quartBits
+
+	if quarts < 0 {
+		return 0
+	}
+	if quarts > math.MaxUint16 {
+		return math.MaxUint16
+	}
+	return uint16(quarts)
 }
 
 // borner ramène un pixel dans la plage où son produit par un coefficient de
