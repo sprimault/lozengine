@@ -12,9 +12,12 @@ import "github.com/sprimault/lozengine/rendu"
 // l'atlas est une erreur de programmation en amont ; l'index déborde et le
 // programme s'arrête, ce qui vaut mieux qu'une image muette dont on chercherait la
 // cause dans le tri.
-func (t *Tampon) Dessiner(r rendu.Rendu, a *Atlas) {
+//
+// Une fonction et non une méthode : le tampon vit dans [rendu], que l'ABI expose, et
+// Go veut qu'une méthode soit déclarée dans le paquet de son type.
+func Dessiner(t *rendu.Tampon, r rendu.Rendu, a *Atlas) {
 	for _, q := range r {
-		t.quad(q, a)
+		quad(t, q, a)
 	}
 }
 
@@ -25,7 +28,7 @@ func (t *Tampon) Dessiner(r rendu.Rendu, a *Atlas) {
 // test par pixel. La source, elle, n'est pas vérifiée : un rectangle qui dépasse la
 // planche dessine ce qu'il trouve et s'arrête à la dernière ligne, plutôt que de
 // lire la ligne suivante.
-func (t *Tampon) quad(q rendu.Quad, a *Atlas) {
+func quad(t *rendu.Tampon, q rendu.Quad, a *Atlas) {
 	gauche, haut := int(q.X), int(q.Y)
 	x0, y0 := max(gauche, 0), max(haut, 0)
 	x1 := min(gauche+int(q.Largeur), int(t.Largeur))
@@ -35,7 +38,7 @@ func (t *Tampon) quad(q rendu.Quad, a *Atlas) {
 	}
 
 	if q.Drapeaux&rendu.Aplat != 0 {
-		t.aplat(x0, y0, x1, y1, q.Teinte)
+		aplat(t, x0, y0, x1, y1, q.Teinte)
 		return
 	}
 
@@ -103,7 +106,7 @@ func (t *Tampon) quad(q rendu.Quad, a *Atlas) {
 //
 // Il ne touche pas à l'atlas : c'est ce qui permet à un panneau d'interface, à une
 // bande ou à un fondu de se dessiner sans qu'aucune planche existe pour eux.
-func (t *Tampon) aplat(x0, y0, x1, y1 int, c rendu.Couleur) {
+func aplat(t *rendu.Tampon, x0, y0, x1, y1 int, c rendu.Couleur) {
 	if c.A == 0 {
 		return
 	}

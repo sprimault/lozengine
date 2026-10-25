@@ -106,7 +106,7 @@ func BenchmarkQuad(b *testing.B) {
 	a := atlasEssai(b)
 	for _, c := range cas {
 		b.Run(c.nom, func(b *testing.B) {
-			tampon := NouveauTampon(480, 270)
+			tampon := rendu.NouveauTampon(480, 270)
 
 			q := rendu.Quad{X: 100, Y: 100, Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc()}
 			c.regler(&q)
@@ -114,7 +114,7 @@ func BenchmarkQuad(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				tampon.Dessiner(r, a)
+				Dessiner(tampon, r, a)
 			}
 		})
 	}
@@ -133,11 +133,11 @@ func BenchmarkEffacer(b *testing.B) {
 	}
 	for _, c := range cas {
 		b.Run(c.nom, func(b *testing.B) {
-			tampon := NouveauTampon(480, 270)
+			tampon := rendu.NouveauTampon(480, 270)
 
 			b.ResetTimer()
 			for range b.N {
-				tampon.Effacer(c.couleur)
+				Effacer(tampon, c.couleur)
 			}
 			partDImage(b)
 		})
@@ -158,13 +158,13 @@ func BenchmarkAgrandir(b *testing.B) {
 	}
 	for _, c := range cas {
 		b.Run(c.nom, func(b *testing.B) {
-			interne := NouveauTampon(480, 270)
-			interne.Effacer(rendu.Couleur{R: 60, V: 80, B: 60, A: 255})
-			sortie := NouveauTampon(c.largeurSortie, c.hauteurSortie)
+			interne := rendu.NouveauTampon(480, 270)
+			Effacer(interne, rendu.Couleur{R: 60, V: 80, B: 60, A: 255})
+			sortie := rendu.NouveauTampon(c.largeurSortie, c.hauteurSortie)
 
 			b.ResetTimer()
 			for range b.N {
-				interne.Agrandir(sortie, c.facteur, rendu.Couleur{A: 255})
+				Agrandir(interne, sortie, c.facteur, rendu.Couleur{A: 255})
 			}
 			partDImage(b)
 		})
@@ -176,7 +176,7 @@ func BenchmarkAgrandir(b *testing.B) {
 // qui compte — combien d'images par seconde le blit laisse au reste du moteur.
 func BenchmarkImage(b *testing.B) {
 	a := atlasEssai(b)
-	tampon := NouveauTampon(480, 270)
+	tampon := rendu.NouveauTampon(480, 270)
 
 	var r rendu.Rendu
 	for y := -16; y < 270; y += 8 {
@@ -202,7 +202,7 @@ func BenchmarkImage(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		tampon.Dessiner(r, a)
+		Dessiner(tampon, r, a)
 	}
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "images/s")
 	b.ReportMetric(float64(tuiles), "tuiles/image")

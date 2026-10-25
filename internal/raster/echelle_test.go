@@ -10,10 +10,10 @@ import (
 )
 
 // tamponDe rend un tampon rempli des pixels donnés, ligne par ligne.
-func tamponDe(t *testing.T, largeur, hauteur uint16, pixels ...rendu.Couleur) *Tampon {
+func tamponDe(t *testing.T, largeur, hauteur uint16, pixels ...rendu.Couleur) *rendu.Tampon {
 	t.Helper()
 
-	tampon := NouveauTampon(largeur, hauteur)
+	tampon := rendu.NouveauTampon(largeur, hauteur)
 	if len(pixels) != len(tampon.Pixels) {
 		t.Fatalf("tampon de %d×%d : %d pixels donnés", largeur, hauteur, len(pixels))
 	}
@@ -39,10 +39,10 @@ func TestFacteur(t *testing.T) {
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
-			interne := NouveauTampon(c.largeur, c.hauteur)
-			sortie := NouveauTampon(c.largeurSortie, c.hauteurSortie)
+			interne := rendu.NouveauTampon(c.largeur, c.hauteur)
+			sortie := rendu.NouveauTampon(c.largeurSortie, c.hauteurSortie)
 
-			if got := interne.Facteur(sortie); got != c.veut {
+			if got := Facteur(interne, sortie); got != c.veut {
 				t.Errorf("facteur : %d, attendu %d", got, c.veut)
 			}
 		})
@@ -53,9 +53,9 @@ func TestFacteur(t *testing.T) {
 // quatre, et qu'une sortie qui tombe juste ne garde rien du fond.
 func TestAgrandirSansBande(t *testing.T) {
 	interne := tamponDe(t, 2, 2, rouge, vert, bleu, blanc)
-	sortie := NouveauTampon(4, 4)
+	sortie := rendu.NouveauTampon(4, 4)
 
-	interne.Agrandir(sortie, 2, demiRge)
+	Agrandir(interne, sortie, 2, demiRge)
 
 	attendu := [16]rendu.Couleur{
 		rouge, rouge, vert, vert,
@@ -74,9 +74,9 @@ func TestAgrandirSansBande(t *testing.T) {
 // que l'image est bien centrée dedans.
 func TestAgrandirBandes(t *testing.T) {
 	interne := tamponDe(t, 1, 1, rouge)
-	sortie := NouveauTampon(3, 3)
+	sortie := rendu.NouveauTampon(3, 3)
 
-	interne.Agrandir(sortie, 1, bleu)
+	Agrandir(interne, sortie, 1, bleu)
 
 	for i, got := range sortie.Pixels {
 		veut := bleu
@@ -93,9 +93,9 @@ func TestAgrandirBandes(t *testing.T) {
 // de référence qui basculerait d'un pixel d'une version à l'autre ne vaudrait rien.
 func TestAgrandirCentrageImpair(t *testing.T) {
 	interne := tamponDe(t, 1, 1, rouge)
-	sortie := NouveauTampon(5, 2)
+	sortie := rendu.NouveauTampon(5, 2)
 
-	interne.Agrandir(sortie, 2, bleu)
+	Agrandir(interne, sortie, 2, bleu)
 
 	// Deux colonnes de reste : une à gauche, deux à droite.
 	for x := 0; x < 5; x++ {
@@ -118,9 +118,9 @@ func TestAgrandirSortiePlusPetite(t *testing.T) {
 		rouge, vert, bleu, blanc,
 		blanc, bleu, vert, rouge,
 	)
-	sortie := NouveauTampon(2, 2)
+	sortie := rendu.NouveauTampon(2, 2)
 
-	interne.Agrandir(sortie, 1, demiRge)
+	Agrandir(interne, sortie, 1, demiRge)
 
 	attendu := [4]rendu.Couleur{vert, bleu, bleu, vert}
 	for i, veut := range attendu {
@@ -143,9 +143,9 @@ func TestAgrandirSortieMoinsHaute(t *testing.T) {
 		bleu, bleu,
 		blanc, blanc,
 	)
-	sortie := NouveauTampon(2, 2)
+	sortie := rendu.NouveauTampon(2, 2)
 
-	interne.Agrandir(sortie, 1, demiRge)
+	Agrandir(interne, sortie, 1, demiRge)
 
 	// Les deux lignes du milieu, le reste d'un centrage impair allant vers le bas.
 	attendu := [4]rendu.Couleur{vert, vert, bleu, bleu}
@@ -164,9 +164,9 @@ func TestAgrandirBandesEtDecoupage(t *testing.T) {
 		rouge, vert, bleu, blanc,
 		blanc, bleu, vert, rouge,
 	)
-	sortie := NouveauTampon(2, 4)
+	sortie := rendu.NouveauTampon(2, 4)
 
-	interne.Agrandir(sortie, 1, demiRge)
+	Agrandir(interne, sortie, 1, demiRge)
 
 	attendu := [8]rendu.Couleur{
 		demiRge, demiRge,
@@ -184,9 +184,9 @@ func TestAgrandirBandesEtDecoupage(t *testing.T) {
 // TestAgrandirRienATenir vérifie qu'une sortie dans laquelle l'image ne tient pas du
 // tout n'est pas laissée à moitié peinte : tout y est fond.
 func TestAgrandirRienATenir(t *testing.T) {
-	sortie := NouveauTampon(2, 2)
+	sortie := rendu.NouveauTampon(2, 2)
 
-	NouveauTampon(0, 0).Agrandir(sortie, 4, bleu)
+	Agrandir(rendu.NouveauTampon(0, 0), sortie, 4, bleu)
 
 	for i, got := range sortie.Pixels {
 		if got != bleu {
@@ -199,9 +199,9 @@ func TestAgrandirRienATenir(t *testing.T) {
 // facteur un est une recopie.
 func TestAgrandirMemeTaille(t *testing.T) {
 	interne := tamponDe(t, 2, 1, rouge, vert)
-	sortie := NouveauTampon(2, 1)
+	sortie := rendu.NouveauTampon(2, 1)
 
-	interne.Agrandir(sortie, 1, bleu)
+	Agrandir(interne, sortie, 1, bleu)
 
 	if sortie.Pixels[0] != rouge || sortie.Pixels[1] != vert {
 		t.Errorf("recopie : %v", sortie.Pixels)
@@ -213,9 +213,9 @@ func TestAgrandirMemeTaille(t *testing.T) {
 func TestAgrandirFacteurInvalide(t *testing.T) {
 	for _, facteur := range []int{0, -3} {
 		interne := tamponDe(t, 1, 1, rouge)
-		sortie := NouveauTampon(1, 1)
+		sortie := rendu.NouveauTampon(1, 1)
 
-		interne.Agrandir(sortie, facteur, bleu)
+		Agrandir(interne, sortie, facteur, bleu)
 
 		if sortie.Pixels[0] != rouge {
 			t.Errorf("facteur %d : %v, attendu %v", facteur, sortie.Pixels[0], rouge)
@@ -226,10 +226,10 @@ func TestAgrandirFacteurInvalide(t *testing.T) {
 // TestAgrandirNAlloueRien vérifie que la dernière opération de l'image reste elle
 // aussi hors du chemin d'allocation, bandes comprises.
 func TestAgrandirNAlloueRien(t *testing.T) {
-	interne := NouveauTampon(32, 16)
-	sortie := NouveauTampon(100, 60)
+	interne := rendu.NouveauTampon(32, 16)
+	sortie := rendu.NouveauTampon(100, 60)
 
-	if n := testing.AllocsPerRun(10, func() { interne.Agrandir(sortie, 3, bleu) }); n != 0 {
+	if n := testing.AllocsPerRun(10, func() { Agrandir(interne, sortie, 3, bleu) }); n != 0 {
 		t.Errorf("allocations : %v, attendu aucune", n)
 	}
 }

@@ -47,6 +47,8 @@ notes de publication.
 
 ### Ajouté
 
+- `Tampon` est l'image dans laquelle le moteur dessine, et un hôte peut l'allouer
+  lui-même : `NouveauTampon` et `BorneTampon` viennent avec.
 - `windows/386` entre dans les cibles vérifiées à la compilation, la famille Windows
   étant annoncée sur ses trois architectures. Cette cible **compile**, rien de plus.
 
@@ -54,6 +56,8 @@ notes de publication.
 
 ### Added
 
+- `Tampon` is the image the engine draws into, and a host may allocate it itself:
+  `NouveauTampon` and `BorneTampon` come with it.
 - `windows/386` joins the targets verified at build time, the Windows family being
   announced for all three of its architectures. That target **compiles**, nothing more.
 

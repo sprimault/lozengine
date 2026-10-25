@@ -9,6 +9,11 @@
 // ferait pour nous. Le dessin d'un quad s'appelle un blit dans le même esprit — une
 // recopie de pixels d'une planche vers le tampon, sans rotation ni étirement.
 //
+// Le tampon lui-même vit dans [github.com/sprimault/lozengine/rendu], parce qu'un
+// hôte en remplit les champs. Les opérations de ce paquet le prennent donc en premier
+// argument au lieu d'être ses méthodes : Go veut qu'une méthode soit déclarée dans le
+// paquet de son type.
+//
 // Il consomme un rendu déjà placé et rangé dans l'ordre de dessin, dont les quads
 // hors tampon ont été retirés : il ne décide d'aucun ordre.
 // S'il devait trier, projeter ou consulter la scène, la frontière serait mal

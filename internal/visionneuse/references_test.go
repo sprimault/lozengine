@@ -63,7 +63,7 @@ func TestReferences(t *testing.T) {
 }
 
 // comparer confronte un tampon à l'image de référence du même nom.
-func comparer(t *testing.T, nom string, tampon *raster.Tampon) {
+func comparer(t *testing.T, nom string, tampon *rendu.Tampon) {
 	t.Helper()
 
 	fichier, err := os.Open(filepath.Join(referencesDir, nom))
@@ -155,10 +155,10 @@ func TestEcartsPixelsSaitEchouer(t *testing.T) {
 // preuve. Un dépôt qui échoue n'aggrave donc pas l'échec, il le rend seulement moins
 // lisible — et c'est tout ce qu'on peut faire de mieux ici, puisque le test a déjà
 // quelque chose à rapporter.
-func deposer(t *testing.T, nom string, tampon *raster.Tampon, reference raster.Planche) string {
+func deposer(t *testing.T, nom string, tampon *rendu.Tampon, reference raster.Planche) string {
 	t.Helper()
 
-	ecart := raster.NouveauTampon(tampon.Largeur, tampon.Hauteur)
+	ecart := rendu.NouveauTampon(tampon.Largeur, tampon.Hauteur)
 	for i := range ecart.Pixels {
 		ecart.Pixels[i] = rendu.Couleur{R: 0, V: 0, B: 0, A: 255}
 		if tampon.Pixels[i] != reference.Pixels[i] {
@@ -166,7 +166,7 @@ func deposer(t *testing.T, nom string, tampon *raster.Tampon, reference raster.P
 		}
 	}
 
-	for suffixe, image := range map[string]*raster.Tampon{"rendu": tampon, "ecart": ecart} {
+	for suffixe, image := range map[string]*rendu.Tampon{"rendu": tampon, "ecart": ecart} {
 		chemin := filepath.Join(echecsDir, suffixe+"-"+nom)
 		if err := os.MkdirAll(echecsDir, 0o755); err != nil {
 			return ""
@@ -176,7 +176,7 @@ func deposer(t *testing.T, nom string, tampon *raster.Tampon, reference raster.P
 		if err != nil {
 			return ""
 		}
-		if err := image.EcrirePNG(fichier); err != nil {
+		if err := raster.EcrirePNG(image, fichier); err != nil {
 			fichier.Close()
 			return ""
 		}

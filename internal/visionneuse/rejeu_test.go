@@ -36,7 +36,7 @@ func scenarioEssai() Scenario {
 }
 
 // memesPixels dit si deux tampons portent exactement les mêmes pixels.
-func memesPixels(a, b *raster.Tampon) bool {
+func memesPixels(a, b *rendu.Tampon) bool {
 	if a.Largeur != b.Largeur || a.Hauteur != b.Hauteur {
 		return false
 	}
@@ -49,8 +49,8 @@ func memesPixels(a, b *raster.Tampon) bool {
 }
 
 // copiePixels garde les pixels d'un tampon, que l'image suivante réécrira.
-func copiePixels(t *raster.Tampon) *raster.Tampon {
-	copie := raster.NouveauTampon(t.Largeur, t.Hauteur)
+func copiePixels(t *rendu.Tampon) *rendu.Tampon {
+	copie := rendu.NouveauTampon(t.Largeur, t.Hauteur)
 	copy(copie.Pixels, t.Pixels)
 	return copie
 }

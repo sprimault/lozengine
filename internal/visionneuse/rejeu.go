@@ -17,8 +17,8 @@ import (
 type Rejeu struct {
 	scenario Scenario
 	atlas    *raster.Atlas
-	tampon   *raster.Tampon
-	sortie   *raster.Tampon
+	tampon   *rendu.Tampon
+	sortie   *rendu.Tampon
 	quads    rendu.Rendu
 }
 
@@ -38,7 +38,7 @@ func NouveauRejeu(s Scenario) (*Rejeu, error) {
 	return &Rejeu{
 		scenario: s,
 		atlas:    atlas,
-		tampon:   raster.NouveauTampon(s.Largeur, s.Hauteur),
+		tampon:   rendu.NouveauTampon(s.Largeur, s.Hauteur),
 	}, nil
 }
 
@@ -48,10 +48,10 @@ func NouveauRejeu(s Scenario) (*Rejeu, error) {
 // l'écrire se fait avant l'image suivante. C'est cette image-là que la suite de
 // références compare, jamais une image agrandie — l'échelle est un habillage, pas un
 // résultat de rendu.
-func (r *Rejeu) Image(numero int, e Entrees) *raster.Tampon {
+func (r *Rejeu) Image(numero int, e Entrees) *rendu.Tampon {
 	r.quads = r.scenario.Quads(numero, e, r.quads[:0])
-	r.tampon.Effacer(r.scenario.Fond)
-	r.tampon.Dessiner(r.quads, r.atlas)
+	raster.Effacer(r.tampon, r.scenario.Fond)
+	raster.Dessiner(r.tampon, r.quads, r.atlas)
 	return r.tampon
 }
 
@@ -72,14 +72,14 @@ func (r *Rejeu) Ecrire(repertoire string, numero, facteur int) error {
 		// distinguait de celle qu'on avait demandée.
 		large := int(r.tampon.Largeur) * facteur
 		haut := int(r.tampon.Hauteur) * facteur
-		if large > raster.BorneTampon || haut > raster.BorneTampon {
-			return fmt.Errorf("facteur %d : l'image ferait %d×%d, au-delà des %d de côté qu'un tampon porte", facteur, large, haut, raster.BorneTampon)
+		if large > rendu.BorneTampon || haut > rendu.BorneTampon {
+			return fmt.Errorf("facteur %d : l'image ferait %d×%d, au-delà des %d de côté qu'un tampon porte", facteur, large, haut, rendu.BorneTampon)
 		}
 
 		if r.sortie == nil || int(r.sortie.Largeur) != large || int(r.sortie.Hauteur) != haut {
-			r.sortie = raster.NouveauTampon(uint16(large), uint16(haut))
+			r.sortie = rendu.NouveauTampon(uint16(large), uint16(haut))
 		}
-		r.tampon.Agrandir(r.sortie, facteur, r.scenario.Fond)
+		raster.Agrandir(r.tampon, r.sortie, facteur, r.scenario.Fond)
 		source = r.sortie
 	}
 
@@ -88,7 +88,7 @@ func (r *Rejeu) Ecrire(repertoire string, numero, facteur int) error {
 	if err != nil {
 		return fmt.Errorf("création de %s : %w", chemin, err)
 	}
-	if err := source.EcrirePNG(fichier); err != nil {
+	if err := raster.EcrirePNG(source, fichier); err != nil {
 		fichier.Close()
 		return fmt.Errorf("%s : %w", chemin, err)
 	}
