@@ -24,7 +24,7 @@ func TestProduit(t *testing.T) {
 		{200, 51, 40},
 	}
 	for _, c := range cas {
-		if got := produit(c.a, c.b); got != c.veut {
+		if got := product(c.a, c.b); got != c.veut {
 			t.Errorf("produit(%d, %d) = %d, attendu %d", c.a, c.b, got, c.veut)
 		}
 	}
@@ -47,7 +47,7 @@ func TestModuler(t *testing.T) {
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
-			if got := moduler(c.src, c.teinte); got != c.veut {
+			if got := modulate(c.src, c.teinte); got != c.veut {
 				t.Errorf("moduler : %v, attendu %v", got, c.veut)
 			}
 		})
@@ -58,7 +58,7 @@ func TestModuler(t *testing.T) {
 // opaque, celle dont tout le reste du rastériseur dépend.
 func TestMelanger(t *testing.T) {
 	dst := rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
-	melanger(&dst, rendu.Couleur{R: 128, A: 128})
+	blend(&dst, rendu.Couleur{R: 128, A: 128})
 
 	if veut := (rendu.Couleur{R: 255, V: 127, B: 127, A: 255}); dst != veut {
 		t.Errorf("mélange : %v, attendu %v", dst, veut)

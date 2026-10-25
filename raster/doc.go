@@ -12,11 +12,11 @@
 //
 // **Les deux moitiés vivent ensemble parce qu'elles ne se séparent pas.** Un jeu
 // construit ses planches, donc il lit leurs champs ; mais le dessin emploie l'encodage
-// des lignes qu'[Atlas.Ajouter] calcule, lequel reste privé. Les mettre dans deux
-// paquets aurait obligé à publier ce détail d'optimisation dans [Planche], que l'ABI
+// des lignes qu'[Atlas.Add] calcule, lequel reste privé. Les mettre dans deux
+// paquets aurait obligé à publier ce détail d'optimisation dans [Sheet], que l'ABI
 // exposera un jour.
 //
-// Pour écrire un jeu en Go, le paquet racine republie [Planche], [Atlas], [Rectangle]
+// Pour écrire un jeu en Go, le paquet racine republie [Sheet], [Atlas], [Rectangle]
 // et les deux chargeurs — pas les fonctions de dessin, dont la boucle se charge.
 //
 // Le tampon lui-même vit dans [github.com/sprimault/lozengine/rendu], parce qu'un

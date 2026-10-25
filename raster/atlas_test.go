@@ -15,7 +15,7 @@ func TestAjouterRendLIndex(t *testing.T) {
 	var a Atlas
 
 	for attendu := uint16(0); attendu < 3; attendu++ {
-		index, err := a.Ajouter(NouvellePlanche(8, 8))
+		index, err := a.Add(NewSheet(8, 8))
 		if err != nil {
 			t.Fatalf("ajout : %v", err)
 		}
@@ -23,8 +23,8 @@ func TestAjouterRendLIndex(t *testing.T) {
 			t.Errorf("index : %d, attendu %d", index, attendu)
 		}
 	}
-	if len(a.Planches) != 3 {
-		t.Errorf("planches rangées : %d, attendu 3", len(a.Planches))
+	if len(a.Sheets) != 3 {
+		t.Errorf("planches rangées : %d, attendu 3", len(a.Sheets))
 	}
 }
 
@@ -32,12 +32,12 @@ func TestAjouterRendLIndex(t *testing.T) {
 // désigner. L'atlas est rempli de planches vides : c'est le compte qui est éprouvé,
 // pas les pixels.
 func TestAjouterAuDela(t *testing.T) {
-	a := Atlas{Planches: make([]Planche, rendu.PlanchesMax)}
+	a := Atlas{Sheets: make([]Sheet, rendu.PlanchesMax)}
 
-	if _, err := a.Ajouter(NouvellePlanche(8, 8)); err == nil {
+	if _, err := a.Add(NewSheet(8, 8)); err == nil {
 		t.Errorf("planche acceptée au-delà de %d", rendu.PlanchesMax)
 	}
-	if len(a.Planches) != rendu.PlanchesMax {
-		t.Errorf("planches rangées : %d, attendu %d", len(a.Planches), rendu.PlanchesMax)
+	if len(a.Sheets) != rendu.PlanchesMax {
+		t.Errorf("planches rangées : %d, attendu %d", len(a.Sheets), rendu.PlanchesMax)
 	}
 }

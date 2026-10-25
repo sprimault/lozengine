@@ -46,8 +46,8 @@ func Mire() Scenario {
 
 		Atlas: func() (*raster.Atlas, error) {
 			var atlas raster.Atlas
-			for _, p := range []raster.Planche{plancheTuile(), planchePion()} {
-				if _, err := atlas.Ajouter(p); err != nil {
+			for _, p := range []raster.Sheet{plancheTuile(), planchePion()} {
+				if _, err := atlas.Add(p); err != nil {
 					return nil, err
 				}
 			}
@@ -101,8 +101,8 @@ func positionPion(e Entrees) (x, y int, ok bool) {
 }
 
 // plancheTuile dessine un losange 32×16 blanc au bord adouci, que la teinte colore.
-func plancheTuile() raster.Planche {
-	p := raster.NouvellePlanche(32, 16)
+func plancheTuile() raster.Sheet {
+	p := raster.NewSheet(32, 16)
 	for y := range 16 {
 		rang := y
 		if y >= 8 {
@@ -122,8 +122,8 @@ func plancheTuile() raster.Planche {
 }
 
 // planchePion dessine un carré de 8 au contour translucide.
-func planchePion() raster.Planche {
-	p := raster.NouvellePlanche(8, 8)
+func planchePion() raster.Sheet {
+	p := raster.NewSheet(8, 8)
 	for y := range 8 {
 		for x := range 8 {
 			couleur := rendu.Couleur{R: 255, V: 255, B: 255, A: 255}

@@ -8,10 +8,10 @@ import "testing"
 // TestNouvellePlanche vérifie les dimensions et la taille du tableau de pixels,
 // dont le rastériseur dépendra sans les revérifier.
 func TestNouvellePlanche(t *testing.T) {
-	p := NouvellePlanche(32, 16)
+	p := NewSheet(32, 16)
 
-	if p.Largeur != 32 || p.Hauteur != 16 {
-		t.Errorf("dimensions : %d×%d", p.Largeur, p.Hauteur)
+	if p.Width != 32 || p.Height != 16 {
+		t.Errorf("dimensions : %d×%d", p.Width, p.Height)
 	}
 	if len(p.Pixels) != 32*16 {
 		t.Errorf("pixels : %d, attendu %d", len(p.Pixels), 32*16)
@@ -24,8 +24,8 @@ func TestNouvellePlanche(t *testing.T) {
 // TestDecouperGrille vérifie l'ordre des cases, de gauche à droite puis de haut en
 // bas, sur lequel un fournisseur d'apparence numérote ses directions.
 func TestDecouperGrille(t *testing.T) {
-	p := NouvellePlanche(96, 32)
-	if err := p.DecouperGrille(32, 16); err != nil {
+	p := NewSheet(96, 32)
+	if err := p.CutGrid(32, 16); err != nil {
 		t.Fatalf("découpe : %v", err)
 	}
 
@@ -58,8 +58,8 @@ func TestDecouperGrilleRefusee(t *testing.T) {
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
-			p := NouvellePlanche(96, 32)
-			if err := p.DecouperGrille(c.largeur, c.hauteur); err == nil {
+			p := NewSheet(96, 32)
+			if err := p.CutGrid(c.largeur, c.hauteur); err == nil {
 				t.Errorf("découpe %d×%d acceptée", c.largeur, c.hauteur)
 			}
 		})

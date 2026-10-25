@@ -5,7 +5,7 @@ package raster
 
 import "github.com/sprimault/lozengine/rendu"
 
-// Effacer remet tout le tampon à une couleur, transparente comprise.
+// Clear remet tout le tampon à une couleur, transparente comprise.
 //
 // C'est la première opération de chaque image, et elle n'alloue rien : le tampon se
 // réutilise d'une image à la suivante. Le cas transparent passe par clear, que le
@@ -18,16 +18,16 @@ import "github.com/sprimault/lozengine/rendu"
 //
 // Une fonction et non une méthode : le tampon vit dans [rendu], que l'ABI expose, et
 // Go veut qu'une méthode soit déclarée dans le paquet de son type.
-func Effacer(t *rendu.Tampon, c rendu.Couleur) {
-	remplir(t.Pixels, c)
+func Clear(t *rendu.Tampon, c rendu.Couleur) {
+	fill(t.Pixels, c)
 }
 
-// remplir écrit une couleur sur toute une tranche de pixels.
+// fill écrit une couleur sur toute une tranche de pixels.
 //
 // Le doublement vaut pour une tranche d'un seul tenant et de bonne taille. Sur des
 // segments courts et nombreux — les bandes latérales d'une image mise à l'échelle —
 // le coût d'appel de copy l'emporte, et l'appelant recopie plutôt une ligne modèle.
-func remplir(pixels []rendu.Couleur, c rendu.Couleur) {
+func fill(pixels []rendu.Couleur, c rendu.Couleur) {
 	if c == (rendu.Couleur{}) {
 		clear(pixels)
 		return

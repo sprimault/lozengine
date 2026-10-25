@@ -27,7 +27,7 @@ func TestEffacer(t *testing.T) {
 				tampon.Pixels[i] = blanc
 			}
 
-			Effacer(tampon, c.couleur)
+			Clear(tampon, c.couleur)
 
 			for i, got := range tampon.Pixels {
 				if got != c.couleur {
@@ -41,7 +41,7 @@ func TestEffacer(t *testing.T) {
 // TestEffacerTamponVide vérifie qu'un tampon sans pixel s'efface sans déborder : le
 // doublement part du premier pixel, qui n'existe pas ici.
 func TestEffacerTamponVide(t *testing.T) {
-	Effacer(rendu.NouveauTampon(0, 0), blanc)
+	Clear(rendu.NouveauTampon(0, 0), blanc)
 }
 
 // TestEffacerRecouvreUnDessin vérifie qu'une image ne garde rien de la précédente,
@@ -50,8 +50,8 @@ func TestEffacerRecouvreUnDessin(t *testing.T) {
 	a := atlasDe(t, 1, 1, rouge)
 	tampon := rendu.NouveauTampon(2, 2)
 
-	Dessiner(tampon, rendu.Rendu{quadDe(0, 0, 1, 1)}, a)
-	Effacer(tampon, rendu.Couleur{})
+	Draw(tampon, rendu.Rendu{quadDe(0, 0, 1, 1)}, a)
+	Clear(tampon, rendu.Couleur{})
 
 	if n := peints(tampon); n != 0 {
 		t.Errorf("pixels restants : %d, attendu aucun", n)
@@ -63,7 +63,7 @@ func TestEffacerRecouvreUnDessin(t *testing.T) {
 func TestEffacerNAlloueRien(t *testing.T) {
 	tampon := rendu.NouveauTampon(64, 64)
 
-	if n := testing.AllocsPerRun(10, func() { Effacer(tampon, blanc) }); n != 0 {
+	if n := testing.AllocsPerRun(10, func() { Clear(tampon, blanc) }); n != 0 {
 		t.Errorf("allocations : %v, attendu aucune", n)
 	}
 }

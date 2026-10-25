@@ -14,7 +14,7 @@ import (
 	"github.com/sprimault/lozengine/rendu"
 )
 
-// ChargerPlanche lit un PNG et rend une planche en alpha prémultiplié.
+// LoadSheet lit un PNG et rend une planche en alpha prémultiplié.
 //
 // Un io.Reader et non un chemin : la même fonction sert au fichier, à la ressource
 // embarquée et à l'archive. Le confort d'un chemin appartient au paquet racine.
@@ -23,30 +23,30 @@ import (
 // prémultiplication, que le PNG ne fait pas, la palette, les niveaux de gris, et
 // une image dont l'origine n'est pas en (0, 0), ce qu'une sous-image produit. Le
 // coût est une copie au chargement, jamais à l'image.
-func ChargerPlanche(r io.Reader) (Planche, error) {
+func LoadSheet(r io.Reader) (Sheet, error) {
 	source, err := png.Decode(r)
 	if err != nil {
-		return Planche{}, fmt.Errorf("décodage du PNG : %w", err)
+		return Sheet{}, fmt.Errorf("décodage du PNG : %w", err)
 	}
 
-	taille := source.Bounds()
-	if taille.Dx() > math.MaxUint16 || taille.Dy() > math.MaxUint16 {
-		return Planche{}, fmt.Errorf("planche de %d×%d : %d pixels de côté au plus, un quad n'en désignant la source que sur seize bits",
-			taille.Dx(), taille.Dy(), math.MaxUint16)
+	size := source.Bounds()
+	if size.Dx() > math.MaxUint16 || size.Dy() > math.MaxUint16 {
+		return Sheet{}, fmt.Errorf("planche de %d×%d : %d pixels de côté au plus, un quad n'en désignant la source que sur seize bits",
+			size.Dx(), size.Dy(), math.MaxUint16)
 	}
 
-	rgba := image.NewRGBA(image.Rect(0, 0, taille.Dx(), taille.Dy()))
-	draw.Draw(rgba, rgba.Bounds(), source, taille.Min, draw.Src)
+	rgba := image.NewRGBA(image.Rect(0, 0, size.Dx(), size.Dy()))
+	draw.Draw(rgba, rgba.Bounds(), source, size.Min, draw.Src)
 
-	planche := NouvellePlanche(uint16(taille.Dx()), uint16(taille.Dy()))
-	for i := range planche.Pixels {
+	sheet := NewSheet(uint16(size.Dx()), uint16(size.Dy()))
+	for i := range sheet.Pixels {
 		o := i * 4
-		planche.Pixels[i] = rendu.Couleur{
+		sheet.Pixels[i] = rendu.Couleur{
 			R: rgba.Pix[o],
 			V: rgba.Pix[o+1],
 			B: rgba.Pix[o+2],
 			A: rgba.Pix[o+3],
 		}
 	}
-	return planche, nil
+	return sheet, nil
 }

@@ -49,11 +49,10 @@ notes de publication.
 
 - `Input` dit ce que le clavier tient à une image et ce qui vient d'être enfoncé, par
   `Held` et `JustPressed`. Une `Key` désigne une place, pas un caractère.
-- Les planches se chargent depuis le paquet racine : `OuvrirPlanche` par chemin,
-  `ChargerPlanche` par lecteur, plus `Planche`, `Atlas`, `Rectangle` et
-  `NouvellePlanche`.
+- Les planches se chargent depuis le paquet racine : `OpenSheet` par chemin,
+  `LoadSheet` par lecteur, plus `Sheet`, `Atlas`, `Rectangle` et `NewSheet`.
 - `geometry`, `scene` et `raster` sont publics : les champs et les méthodes de
-  `Matrix`, `Scene`, `Entite`, `Aspect` et `Planche` se lisent dans leur
+  `Matrix`, `Scene`, `Entite`, `Aspect` et `Sheet` se lisent dans leur
   documentation.
 - `CoteMax` et `StratesMax` disent la plus grande grille possible et le nombre de
   choses qu'une cellule empile.
@@ -72,10 +71,10 @@ notes de publication.
 
 - `Input` states which keys a frame holds and which were just pressed, through `Held`
   and `JustPressed`. A `Key` names a place, not a character.
-- Sheets are loaded from the root package: `OuvrirPlanche` by path, `ChargerPlanche`
-  by reader, plus `Planche`, `Atlas`, `Rectangle` and `NouvellePlanche`.
+- Sheets are loaded from the root package: `OpenSheet` by path, `LoadSheet` by reader,
+  plus `Sheet`, `Atlas`, `Rectangle` and `NewSheet`.
 - `geometry`, `scene` and `raster` are public: the fields and methods of `Matrix`,
-  `Scene`, `Entite`, `Aspect` and `Planche` can be read in their documentation.
+  `Scene`, `Entite`, `Aspect` and `Sheet` can be read in their documentation.
 - `CoteMax` and `StratesMax` state the largest possible grid and how many things a
   cell stacks.
 - A scene is described from the root package: `NouvelleScene`, `Scene`, `Entite`,

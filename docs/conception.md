@@ -228,7 +228,7 @@ l'importer depuis un autre module.
 
 **`raster` est sorti en entier, faute de découpe possible.** Un jeu construit ses
 planches et son atlas, donc leurs champs doivent se lire ; mais le rastériseur emploie
-deux méthodes privées de `Planche` — l'encodage des lignes qui lui donne des segments
+deux méthodes privées de `Sheet` — l'encodage des lignes qui lui donne des segments
 à traiter en bloc —, et laisser le dessin derrière aurait obligé à publier le détail de
 cette optimisation dans un type que l'ABI exposera. Les cinq fonctions de dessin sont
 donc publiques ; ce sont celles que le jalon 11 exposera de toute façon, et le paquet

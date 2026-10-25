@@ -131,17 +131,17 @@ type Input = input.Input
 // touche nommée W est celle marquée Z sur un clavier français.
 type Key = input.Key
 
-// Planche est une page de pixels dans laquelle les quads puisent, ligne par ligne et
-// sans remplissage : le pixel (x, y) est à l'index y×Largeur + x.
+// Sheet est une page de pixels dans laquelle les quads puisent, ligne par ligne et
+// sans remplissage : le pixel (x, y) est à l'index y×Width + x.
 //
 // Ses composantes sont prémultipliées, comme celles de [Couleur]. Son champ Rectangles
-// porte la découpe, que [Planche.DecouperGrille] remplit ou qu'on écrit à la main ;
-// vide, la planche vaut pour elle-même.
-type Planche = raster.Planche
+// porte la découpe, que [Sheet.CutGrid] remplit ou qu'on écrit à la main ; vide, la
+// planche vaut pour elle-même.
+type Sheet = raster.Sheet
 
 // Atlas est la suite des planches qu'un quad désigne par index.
 //
-// [Atlas.Ajouter] est le seul passage obligé avant qu'un quad puisse désigner une
+// [Atlas.Add] est le seul passage obligé avant qu'un quad puisse désigner une
 // planche : c'est là qu'elle est préparée pour le dessin, donc l'oubli n'est pas
 // possible.
 type Atlas = raster.Atlas
@@ -152,21 +152,20 @@ type Atlas = raster.Atlas
 // construit des quads.
 type Rectangle = raster.Rectangle
 
-// NouvellePlanche rend une planche transparente aux dimensions demandées, à remplir
-// pixel par pixel.
+// NewSheet rend une planche transparente aux dimensions demandées, à remplir pixel
+// par pixel.
 //
 // C'est la seule façon d'obtenir une planche sans fichier : la retenir obligerait un
 // jeu à encoder un PNG en mémoire pour dessiner un aplat.
-func NouvellePlanche(largeur, hauteur uint16) Planche {
-	return raster.NouvellePlanche(largeur, hauteur)
+func NewSheet(width, height uint16) Sheet {
+	return raster.NewSheet(width, height)
 }
 
-// ChargerPlanche lit un PNG depuis un lecteur et rend une planche en alpha
-// prémultiplié.
+// LoadSheet lit un PNG depuis un lecteur et rend une planche en alpha prémultiplié.
 //
 // Un lecteur et non un chemin, ce qui sert aussi bien un fichier qu'une ressource
-// embarquée par go:embed ou une archive. Pour un chemin, [OuvrirPlanche].
-func ChargerPlanche(r io.Reader) (Planche, error) { return raster.ChargerPlanche(r) }
+// embarquée par go:embed ou une archive. Pour un chemin, [OpenSheet].
+func LoadSheet(r io.Reader) (Sheet, error) { return raster.LoadSheet(r) }
 
 // Scene porte une grille de décor, des entités qui s'y déplacent, et la vue par
 // laquelle on les regarde.

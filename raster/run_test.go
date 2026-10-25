@@ -11,12 +11,12 @@ import (
 
 // ligneDAlphas construit une planche d'une seule ligne dont les alphas sont donnés,
 // et l'encode. Les composantes de couleur ne jouent aucun rôle dans le classement.
-func ligneDAlphas(alphas ...uint8) Planche {
-	p := NouvellePlanche(uint16(len(alphas)), 1)
+func ligneDAlphas(alphas ...uint8) Sheet {
+	p := NewSheet(uint16(len(alphas)), 1)
 	for i, a := range alphas {
 		p.Pixels[i] = rendu.Couleur{R: a, V: a, B: a, A: a}
 	}
-	p.encoder()
+	p.encode()
 	return p
 }
 
@@ -26,30 +26,30 @@ func TestEncoderClasseLesLignes(t *testing.T) {
 	cas := []struct {
 		nom    string
 		alphas []uint8
-		veut   []sequence
+		veut   []run
 	}{
-		{"ligne vide", []uint8{0, 0, 0}, []sequence{{3, saut}}},
-		{"ligne opaque", []uint8{255, 255}, []sequence{{2, copie}}},
-		{"ligne en demi-teinte", []uint8{128, 200}, []sequence{{2, melange}}},
+		{"ligne vide", []uint8{0, 0, 0}, []run{{3, transparent}}},
+		{"ligne opaque", []uint8{255, 255}, []run{{2, opaque}}},
+		{"ligne en demi-teinte", []uint8{128, 200}, []run{{2, translucent}}},
 		{
 			"sprite : marges, corps, bord adouci",
 			[]uint8{0, 0, 60, 255, 255, 255, 60, 0},
-			[]sequence{{2, saut}, {1, melange}, {3, copie}, {1, melange}, {1, saut}},
+			[]run{{2, transparent}, {1, translucent}, {3, opaque}, {1, translucent}, {1, transparent}},
 		},
 		{
 			"alternance, le pire cas",
 			[]uint8{0, 255, 0, 255},
-			[]sequence{{1, saut}, {1, copie}, {1, saut}, {1, copie}},
+			[]run{{1, transparent}, {1, opaque}, {1, transparent}, {1, opaque}},
 		},
-		{"alpha 254 n'est pas opaque", []uint8{254}, []sequence{{1, melange}}},
-		{"alpha 1 n'est pas transparent", []uint8{1}, []sequence{{1, melange}}},
+		{"alpha 254 n'est pas opaque", []uint8{254}, []run{{1, translucent}}},
+		{"alpha 1 n'est pas transparent", []uint8{1}, []run{{1, translucent}}},
 	}
 
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
 			p := ligneDAlphas(c.alphas...)
 
-			got := p.sequencesDe(0)
+			got := p.runsOf(0)
 			if len(got) != len(c.veut) {
 				t.Fatalf("séquences : %v, attendu %v", got, c.veut)
 			}
@@ -66,19 +66,19 @@ func TestEncoderClasseLesLignes(t *testing.T) {
 // vérifier : les séquences d'une ligne la couvrent exactement, ce qui autorise à
 // déduire la colonne de départ en avançant plutôt qu'à la stocker.
 func TestEncoderPaveChaqueLigne(t *testing.T) {
-	p := NouvellePlanche(5, 3)
+	p := NewSheet(5, 3)
 	for i := range p.Pixels {
 		p.Pixels[i] = rendu.Couleur{A: uint8(i % 3 * 127)}
 	}
-	p.encoder()
+	p.encode()
 
-	for y := uint16(0); y < p.Hauteur; y++ {
+	for y := uint16(0); y < p.Height; y++ {
 		total := 0
-		for _, s := range p.sequencesDe(y) {
-			total += int(s.nombre)
+		for _, s := range p.runsOf(y) {
+			total += int(s.count)
 		}
-		if total != int(p.Largeur) {
-			t.Errorf("ligne %d : %d pixels couverts, attendu %d", y, total, p.Largeur)
+		if total != int(p.Width) {
+			t.Errorf("ligne %d : %d pixels couverts, attendu %d", y, total, p.Width)
 		}
 	}
 }
@@ -86,17 +86,17 @@ func TestEncoderPaveChaqueLigne(t *testing.T) {
 // TestEncoderSeparelesLignes vérifie qu'une ligne ne déborde pas sur la suivante :
 // deux lignes identiques et uniformes doivent rendre deux séquences, pas une.
 func TestEncoderSepareLesLignes(t *testing.T) {
-	p := NouvellePlanche(4, 2)
+	p := NewSheet(4, 2)
 	for i := range p.Pixels {
 		p.Pixels[i] = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
 	}
-	p.encoder()
+	p.encode()
 
-	if len(p.sequences) != 2 {
-		t.Errorf("séquences : %v, attendu une par ligne", p.sequences)
+	if len(p.runs) != 2 {
+		t.Errorf("séquences : %v, attendu une par ligne", p.runs)
 	}
-	for y := uint16(0); y < p.Hauteur; y++ {
-		if got := p.sequencesDe(y); len(got) != 1 || got[0] != (sequence{4, copie}) {
+	for y := uint16(0); y < p.Height; y++ {
+		if got := p.runsOf(y); len(got) != 1 || got[0] != (run{4, opaque}) {
 			t.Errorf("ligne %d : %v", y, got)
 		}
 	}
@@ -105,14 +105,14 @@ func TestEncoderSepareLesLignes(t *testing.T) {
 // TestEncoderPlancheVide vérifie qu'une planche sans hauteur s'encode sans borne
 // fausse : le tableau de bornes en porte toujours une de plus que de lignes.
 func TestEncoderPlancheVide(t *testing.T) {
-	p := NouvellePlanche(0, 0)
-	p.encoder()
+	p := NewSheet(0, 0)
+	p.encode()
 
-	if len(p.lignes) != 1 || p.lignes[0] != 0 {
-		t.Errorf("bornes : %v", p.lignes)
+	if len(p.rows) != 1 || p.rows[0] != 0 {
+		t.Errorf("bornes : %v", p.rows)
 	}
-	if len(p.sequences) != 0 {
-		t.Errorf("séquences : %v, attendu aucune", p.sequences)
+	if len(p.runs) != 0 {
+		t.Errorf("séquences : %v, attendu aucune", p.runs)
 	}
 }
 
@@ -121,16 +121,16 @@ func TestEncoderPlancheVide(t *testing.T) {
 func TestAjouterEncode(t *testing.T) {
 	var a Atlas
 
-	p := NouvellePlanche(2, 1)
+	p := NewSheet(2, 1)
 	p.Pixels[0] = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
 
-	index, err := a.Ajouter(p)
+	index, err := a.Add(p)
 	if err != nil {
 		t.Fatalf("ajout : %v", err)
 	}
 
-	rangee := a.Planches[index]
-	if got := rangee.sequencesDe(0); len(got) != 2 {
+	rangee := a.Sheets[index]
+	if got := rangee.runsOf(0); len(got) != 2 {
 		t.Errorf("séquences de la planche rangée : %v, attendu une copie puis un saut", got)
 	}
 }

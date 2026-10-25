@@ -15,10 +15,10 @@ import (
 // c'est ce qui autorise ici une structure Go ordinaire là où le quad, lui, est
 // contraint.
 type Atlas struct {
-	Planches []Planche
+	Sheets []Sheet
 }
 
-// Ajouter encode les lignes de la planche, la range, et rend l'index qui la
+// Add encode les lignes de la planche, la range, et rend l'index qui la
 // désigne dans un quad.
 //
 // L'encodage a lieu ici parce que c'est le seul passage obligé : une planche
@@ -30,12 +30,12 @@ type Atlas struct {
 // que l'ordre de dessin ne sait plus distinguer se lirait comme une autre planche.
 // Refuser au chargement vaut mieux que ramener au plafond à l'image, ce qui
 // rangerait deux planches ensemble sans rien dire.
-func (a *Atlas) Ajouter(p Planche) (uint16, error) {
-	if len(a.Planches) >= rendu.PlanchesMax {
+func (a *Atlas) Add(p Sheet) (uint16, error) {
+	if len(a.Sheets) >= rendu.PlanchesMax {
 		return 0, fmt.Errorf("ajout d'une planche : %d au plus, ce qu'un quad sait désigner", rendu.PlanchesMax)
 	}
 
-	p.encoder()
-	a.Planches = append(a.Planches, p)
-	return uint16(len(a.Planches) - 1), nil
+	p.encode()
+	a.Sheets = append(a.Sheets, p)
+	return uint16(len(a.Sheets) - 1), nil
 }

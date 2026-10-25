@@ -134,20 +134,20 @@ func TestInputRepublished(t *testing.T) {
 // atteignables depuis ici. C'est précisément ce qu'un alias vers un paquet interne ne
 // donnait pas.
 func TestPlanchesSUtilisentDepuisLaRacine(t *testing.T) {
-	planche := NouvellePlanche(64, 32)
-	if err := planche.DecouperGrille(32, 16); err != nil {
+	sheet := NewSheet(64, 32)
+	if err := sheet.CutGrid(32, 16); err != nil {
 		t.Fatalf("découpe : %v", err)
 	}
 
-	if n := len(planche.Rectangles); n != 4 {
+	if n := len(sheet.Rectangles); n != 4 {
 		t.Fatalf("%d rectangles, attendu 4", n)
 	}
-	if got := planche.Rectangles[3]; got != (Rectangle{X: 32, Y: 16, Largeur: 32, Hauteur: 16}) {
+	if got := sheet.Rectangles[3]; got != (Rectangle{X: 32, Y: 16, Width: 32, Height: 16}) {
 		t.Errorf("dernière case %+v", got)
 	}
 
 	var atlas Atlas
-	index, err := atlas.Ajouter(planche)
+	index, err := atlas.Add(sheet)
 	if err != nil {
 		t.Fatalf("ajout à l'atlas : %v", err)
 	}

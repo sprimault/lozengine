@@ -72,13 +72,13 @@ func comparer(t *testing.T, nom string, tampon *rendu.Tampon) {
 	}
 	defer fichier.Close()
 
-	reference, err := raster.ChargerPlanche(fichier)
+	reference, err := raster.LoadSheet(fichier)
 	if err != nil {
 		t.Fatalf("%s : %v", nom, err)
 	}
-	if reference.Largeur != tampon.Largeur || reference.Hauteur != tampon.Hauteur {
+	if reference.Width != tampon.Largeur || reference.Height != tampon.Hauteur {
 		t.Fatalf("%s : rendu %d×%d, référence %d×%d",
-			nom, tampon.Largeur, tampon.Hauteur, reference.Largeur, reference.Hauteur)
+			nom, tampon.Largeur, tampon.Hauteur, reference.Width, reference.Height)
 	}
 
 	ecarts, premier := ecartsPixels(tampon.Pixels, reference.Pixels)
@@ -155,7 +155,7 @@ func TestEcartsPixelsSaitEchouer(t *testing.T) {
 // preuve. Un dépôt qui échoue n'aggrave donc pas l'échec, il le rend seulement moins
 // lisible — et c'est tout ce qu'on peut faire de mieux ici, puisque le test a déjà
 // quelque chose à rapporter.
-func deposer(t *testing.T, nom string, tampon *rendu.Tampon, reference raster.Planche) string {
+func deposer(t *testing.T, nom string, tampon *rendu.Tampon, reference raster.Sheet) string {
 	t.Helper()
 
 	ecart := rendu.NouveauTampon(tampon.Largeur, tampon.Hauteur)
@@ -176,7 +176,7 @@ func deposer(t *testing.T, nom string, tampon *rendu.Tampon, reference raster.Pl
 		if err != nil {
 			return ""
 		}
-		if err := raster.EcrirePNG(image, fichier); err != nil {
+		if err := raster.WritePNG(image, fichier); err != nil {
 			fichier.Close()
 			return ""
 		}

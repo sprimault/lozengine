@@ -64,14 +64,14 @@ func Noyau() Scenario {
 
 		Atlas: func() (*raster.Atlas, error) {
 			var atlas raster.Atlas
-			planches := []raster.Planche{
+			planches := []raster.Sheet{
 				plancheBordee(tuileL, tuileH, rendu.Couleur{R: 96, V: 112, B: 88, A: 255}),
 				plancheBordee(tuileL, tuileH, rendu.Couleur{R: 64, V: 80, B: 64, A: 255}),
 				plancheBordee(tuileL/2, tuileH*2, rendu.Couleur{R: 176, V: 144, B: 96, A: 255}),
 				plancheBordee(tuileL/3, tuileH*3/2, rendu.Couleur{R: 208, V: 96, B: 96, A: 255}),
 			}
 			for _, p := range planches {
-				if _, err := atlas.Ajouter(p); err != nil {
+				if _, err := atlas.Add(p); err != nil {
 					return nil, err
 				}
 			}

@@ -12,7 +12,7 @@ import (
 	"github.com/sprimault/lozengine/rendu"
 )
 
-// EcrirePNG écrit le tampon en PNG.
+// WritePNG écrit le tampon en PNG.
 //
 // C'est ce qui rend la suite de non-régression exécutable sans écran : une scène
 // scriptée, un rendu, une image, et une comparaison au pixel avec une référence.
@@ -27,7 +27,7 @@ import (
 // 32 896 couples prémultipliés valides, un tiers le perdent, et jamais plus d'un
 // cran. Un tampon opaque, lui, revient exact — c'est ce dont la suite de
 // non-régression dépend, et pourquoi ses scénarios rendent des images opaques.
-func EcrirePNG(t *rendu.Tampon, w io.Writer) error {
+func WritePNG(t *rendu.Tampon, w io.Writer) error {
 	img := image.NewRGBA(image.Rect(0, 0, int(t.Largeur), int(t.Hauteur)))
 	for i, c := range t.Pixels {
 		o := i * 4
