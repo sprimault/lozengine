@@ -26,12 +26,12 @@ import (
 func LoadSheet(r io.Reader) (Sheet, error) {
 	source, err := png.Decode(r)
 	if err != nil {
-		return Sheet{}, fmt.Errorf("décodage du PNG : %w", err)
+		return Sheet{}, fmt.Errorf("decoding PNG: %w", err)
 	}
 
 	size := source.Bounds()
 	if size.Dx() > math.MaxUint16 || size.Dy() > math.MaxUint16 {
-		return Sheet{}, fmt.Errorf("planche de %d×%d : %d pixels de côté au plus, un quad n'en désignant la source que sur seize bits",
+		return Sheet{}, fmt.Errorf("sheet of %d×%d: %d pixels per side at most, a quad addressing its source in sixteen bits only",
 			size.Dx(), size.Dy(), math.MaxUint16)
 	}
 

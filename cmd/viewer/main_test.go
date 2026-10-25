@@ -31,7 +31,7 @@ func TestReadInputLinesMissingFile(t *testing.T) {
 	if err == nil {
 		t.Fatal("un fichier absent devrait échouer")
 	}
-	if !strings.Contains(err.Error(), "ouverture des entrées") {
+	if !strings.Contains(err.Error(), "opening inputs") {
 		t.Errorf("erreur : %v, attendu le contexte de l'ouverture", err)
 	}
 }
@@ -64,7 +64,7 @@ func TestRunUnknownScenario(t *testing.T) {
 	if err == nil {
 		t.Fatal("un scénario inconnu devrait échouer")
 	}
-	if !strings.Contains(err.Error(), "connus :") {
+	if !strings.Contains(err.Error(), "known:") {
 		t.Errorf("erreur : %v, attendu la liste des scénarios", err)
 	}
 }

@@ -34,7 +34,7 @@ func ReadInputLines(r io.Reader) ([]InputLine, error) {
 		lines = append(lines, InputLine(line))
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("lecture des entrées : %w", err)
+		return nil, fmt.Errorf("reading inputs: %w", err)
 	}
 	return lines, nil
 }

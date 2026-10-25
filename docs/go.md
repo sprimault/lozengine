@@ -6,7 +6,8 @@ décisions d'architecture.
 
 ## Langue
 
-- Commentaires, godoc et messages d'erreur : français.
+- Commentaires, godoc et libellés de cas de test : français. Messages d'erreur : anglais,
+  parce qu'un message se colle dans un rapport de bug.
 - Identifiants, noms de fichiers et de répertoires : français par défaut.
   L'anglais est admis quand c'est le terme technique naturel et sans équivalent
   usuel courant — `atlas`, `sprite`, `buffer`. Ne pas franciser de force ce que

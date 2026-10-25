@@ -12,11 +12,11 @@ import (
 	"github.com/sprimault/lozengine/scene"
 )
 
-// TestConstantesRepubliees vérifie que chaque constante republiée vaut celle du
+// TestConstantsRepublished vérifie que chaque constante republiée vaut celle du
 // noyau. Un bloc const Go répète l'expression précédente quand une ligne n'en
 // porte pas : l'oubli ne se compile pas en erreur, il se compile en valeur
 // fausse.
-func TestConstantesRepubliees(t *testing.T) {
+func TestConstantsRepublished(t *testing.T) {
 	cas := []struct {
 		nom           string
 		racine, noyau Flags
@@ -32,13 +32,13 @@ func TestConstantesRepubliees(t *testing.T) {
 	}
 }
 
-// TestTamponRepublie vérifie que le tampon traverse la surface publique sans
+// TestBufferRepublished vérifie que le tampon traverse la surface publique sans
 // conversion, et que sa borne republiée est bien celle du noyau.
 //
 // L'annotation de type explicite est le test lui-même : elle ne compile que si Tampon
 // désigne le type du noyau. Une enveloppe, ou un type distinct de même forme,
 // obligerait un hôte à convertir l'image à chaque passage de frontière.
-func TestTamponRepublie(t *testing.T) {
+func TestBufferRepublished(t *testing.T) {
 	var racine *Buffer = render.NewBuffer(2, 1)
 
 	if MaxBufferSide != render.MaxBufferSide {
@@ -49,14 +49,14 @@ func TestTamponRepublie(t *testing.T) {
 	}
 }
 
-// TestConstructeursRepublies vérifie que chaque enveloppe rend la matrice du noyau.
+// TestConstructorsRepublished vérifie que chaque enveloppe rend la matrice du noyau.
 //
 // Ce qu'elle est seule à pouvoir attraper : une enveloppe qui appellerait le mauvais
 // constructeur, ou qui échangerait ses deux paramètres, se compilerait sans broncher
 // et ne se verrait qu'à l'image. La comparaison elle-même prouve au passage que
 // Matrice est bien un alias et non un type distinct — deux types différents ne se
 // compareraient pas.
-func TestConstructeursRepublies(t *testing.T) {
+func TestConstructorsRepublished(t *testing.T) {
 	cas := []struct {
 		nom           string
 		racine, noyau Matrix
@@ -73,13 +73,13 @@ func TestConstructeursRepublies(t *testing.T) {
 	}
 }
 
-// TestOrientationsRepubliees vérifie que les quatre quarts de tour valent ceux du
+// TestOrientationsRepublished vérifie que les quatre quarts de tour valent ceux du
 // noyau, et les plafonds de couche et d'étage avec eux.
 //
 // Même piège que pour les drapeaux, plus un second : une ligne qui recopierait la
 // mauvaise constante — QuarterTurn valant le demi-tour — se compile sans broncher et ne se
 // voit qu'à l'image, où elle ressemble à un défaut de caméra.
-func TestOrientationsRepubliees(t *testing.T) {
+func TestOrientationsRepublished(t *testing.T) {
 	cas := []struct {
 		nom           string
 		racine, noyau Orientation
@@ -126,14 +126,14 @@ func TestInputRepublished(t *testing.T) {
 	}
 }
 
-// TestPlanchesSUtilisentDepuisLaRacine suit le chemin complet d'une image de jeu : une
+// TestSheetsUsableFromTheRoot suit le chemin complet d'une image de jeu : une
 // planche, sa découpe en grille, son entrée dans un atlas, et l'index qu'un quad
 // désignera — sans rien importer d'autre que ce paquet.
 //
 // Le rectangle est comparé à un littéral, ce qui ne compile que si ses champs sont
 // atteignables depuis ici. C'est précisément ce qu'un alias vers un paquet interne ne
 // donnait pas.
-func TestPlanchesSUtilisentDepuisLaRacine(t *testing.T) {
+func TestSheetsUsableFromTheRoot(t *testing.T) {
 	sheet := NewSheet(64, 32)
 	if err := sheet.CutGrid(32, 16); err != nil {
 		t.Fatalf("découpe : %v", err)
@@ -156,13 +156,13 @@ func TestPlanchesSUtilisentDepuisLaRacine(t *testing.T) {
 	}
 }
 
-// TestSceneSUtiliseDepuisLaRacine vérifie qu'un jeu décrit une scène entière sans rien
+// TestSceneUsableFromTheRoot vérifie qu'un jeu décrit une scène entière sans rien
 // importer d'autre que ce paquet : grille, entités, décor, caméra.
 //
 // C'est la porte que ce lot ouvre, et le seul cas qui la démontre de bout en bout — un
 // alias manquant, ou un constructeur qui échangerait ses paramètres, ne se verrait
 // nulle part ailleurs.
-func TestSceneSUtiliseDepuisLaRacine(t *testing.T) {
+func TestSceneUsableFromTheRoot(t *testing.T) {
 	s, err := NewScene(16, 16, Dimetric(32, 16), SceneOptions{Entities: 8})
 	if err != nil {
 		t.Fatalf("montage : %v", err)
@@ -196,10 +196,10 @@ func TestSceneSUtiliseDepuisLaRacine(t *testing.T) {
 	}
 }
 
-// TestMatriceSUtiliseDepuisLaRacine vérifie qu'une matrice obtenue de la racine
+// TestMatrixUsableFromTheRoot vérifie qu'une matrice obtenue de la racine
 // s'emploie sans rien importer d'autre : c'est tout ce qu'un consommateur peut en
 // faire au sortir de ce jalon, et le seul cas qui le démontre.
-func TestMatriceSUtiliseDepuisLaRacine(t *testing.T) {
+func TestMatrixUsableFromTheRoot(t *testing.T) {
 	m := Dimetric(32, 16).WithFloorHeight(8)
 
 	ex, ey, profondeur, hauteur := m.Project(1, 1, 1)

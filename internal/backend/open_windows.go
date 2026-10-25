@@ -11,5 +11,5 @@ import "errors"
 // Le contrat, lui, existe dès maintenant : c'est lui que la boucle consomme, et le
 // fixer d'abord évite de le dériver de la première plateforme écrite.
 func Open(o Options) (Window, error) {
-	return nil, errors.New("à implémenter : jalon 2")
+	return nil, errors.New("not implemented yet: milestone 2")
 }

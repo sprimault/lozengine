@@ -54,10 +54,10 @@ func NewSheet(width, height uint16) Sheet {
 // verrait.
 func (p *Sheet) CutGrid(width, height uint16) error {
 	if width == 0 || height == 0 {
-		return fmt.Errorf("découpe en grille : case de %d×%d", width, height)
+		return fmt.Errorf("grid cut: cell of %d×%d", width, height)
 	}
 	if p.Width%width != 0 || p.Height%height != 0 {
-		return fmt.Errorf("découpe en grille : une case de %d×%d ne divise pas une planche de %d×%d",
+		return fmt.Errorf("grid cut: a cell of %d×%d does not divide a sheet of %d×%d",
 			width, height, p.Width, p.Height)
 	}
 
