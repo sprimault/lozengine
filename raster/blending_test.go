@@ -38,16 +38,14 @@ func TestProduct(t *testing.T) {
 // couleur : prémultipliées, les laisser en place rendrait un pixel plus sombre au
 // lieu d'un pixel translucide.
 func TestModulate(t *testing.T) {
-	blanc := render.Color{R: 255, G: 255, B: 255, A: 255}
-
 	cases := []struct {
 		name      string
 		src, tint render.Color
 		want      render.Color
 	}{
-		{"teinte neutre", blanc, blanc, blanc},
-		{"teinte rouge", blanc, render.Color{R: 255, A: 255}, render.Color{R: 255, A: 255}},
-		{"demi-opacité", blanc, render.Color{R: 255, G: 255, B: 255, A: 128}, render.Color{R: 128, G: 128, B: 128, A: 128}},
+		{"teinte neutre", white, white, white},
+		{"teinte rouge", white, render.Color{R: 255, A: 255}, render.Color{R: 255, A: 255}},
+		{"demi-opacité", white, render.Color{R: 255, G: 255, B: 255, A: 128}, render.Color{R: 128, G: 128, B: 128, A: 128}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

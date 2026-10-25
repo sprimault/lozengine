@@ -87,7 +87,7 @@ func TestEncodePavesEachRow(t *testing.T) {
 	}
 }
 
-// TestEncoderSeparelesLignes vérifie qu'une ligne ne déborde pas sur la suivante :
+// TestEncodeSeparatesRows vérifie qu'une ligne ne déborde pas sur la suivante :
 // deux lignes identiques et uniformes doivent rendre deux séquences, pas une.
 func TestEncodeSeparatesRows(t *testing.T) {
 	p := NewSheet(4, 2)

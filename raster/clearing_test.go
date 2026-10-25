@@ -22,18 +22,18 @@ func TestClear(t *testing.T) {
 	}{
 		{"transparent", render.Color{}},
 		{"couleur opaque", render.Color{R: 10, G: 20, B: 30, A: 255}},
-		{"couleur translucide", demiRge},
+		{"couleur translucide", halfRed},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			tampon := render.NewBuffer(4, 3)
-			for i := range tampon.Pixels {
-				tampon.Pixels[i] = blanc
+			buffer := render.NewBuffer(4, 3)
+			for i := range buffer.Pixels {
+				buffer.Pixels[i] = white
 			}
 
-			Clear(tampon, c.color)
+			Clear(buffer, c.color)
 
-			for i, got := range tampon.Pixels {
+			for i, got := range buffer.Pixels {
 				if got != c.color {
 					t.Fatalf("pixel %d : %v, attendu %v", i, got, c.color)
 				}
@@ -45,13 +45,13 @@ func TestClear(t *testing.T) {
 // TestClearEmptyBuffer vérifie qu'un tampon sans pixel s'efface sans déborder : le
 // doublement part du premier pixel, qui n'existe pas ici.
 func TestClearEmptyBuffer(t *testing.T) {
-	Clear(render.NewBuffer(0, 0), blanc)
+	Clear(render.NewBuffer(0, 0), white)
 }
 
 // TestClearCoversADrawing vérifie qu'une image ne garde rien de la précédente,
 // le tampon étant réutilisé d'une image à l'autre.
 func TestClearCoversADrawing(t *testing.T) {
-	a := atlasOf(t, 1, 1, rouge)
+	a := atlasOf(t, 1, 1, red)
 	buffer := render.NewBuffer(2, 2)
 
 	Draw(buffer, render.DrawList{quadOf(0, 0, 1, 1)}, a)
@@ -67,7 +67,7 @@ func TestClearCoversADrawing(t *testing.T) {
 func TestClearDoesNotAllocate(t *testing.T) {
 	buffer := render.NewBuffer(64, 64)
 
-	if n := testing.AllocsPerRun(10, func() { Clear(buffer, blanc) }); n != 0 {
+	if n := testing.AllocsPerRun(10, func() { Clear(buffer, white) }); n != 0 {
 		t.Errorf("allocations : %v, attendu aucune", n)
 	}
 }
