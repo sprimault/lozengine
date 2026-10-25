@@ -35,8 +35,12 @@ Ouvrir une issue **avant** d'écrire du code qui suppose un paquet extérieur. C
 qui se refuse, ce n'est pas la dépendance, c'est celle qu'on découvre à la
 relecture.
 
-Si une fonctionnalité paraît exiger une liaison native, c'est la fonctionnalité
-qui est hors périmètre.
+Le critère porte sur ce que le moteur embarque, pas sur ce qui se charge en
+mémoire : aucune bibliothèque C tierce, aucun compilateur C exigé, rien à
+distribuer à côté du binaire. Appeler `user32` par `syscall` reste dedans — la
+bibliothèque standard charge déjà `kernel32` dès qu'on ouvre un fichier —, et si
+une fonctionnalité du moteur paraît exiger cgo ou un paquet hors de la liste
+close, c'est la fonctionnalité qui est hors périmètre.
 
 Une seule cible y échappe, et elle ne met rien dans le moteur : la bibliothèque
 native du dernier jalon réclame cgo et un compilateur C sur la machine de

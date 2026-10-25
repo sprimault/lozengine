@@ -33,8 +33,12 @@ trade-off for the rest.
 Open an issue **before** writing code that assumes an outside package. What gets
 refused is not the dependency, it is the one discovered at review time.
 
-If a feature seems to require native bindings, it is the feature that is out of
-scope.
+The criterion is about what the engine ships, not about what gets loaded into
+memory: no third-party C library, no C compiler required, nothing to distribute
+alongside the binary. Calling `user32` through `syscall` therefore stays inside —
+the standard library already loads `kernel32` as soon as you open a file — and if
+a feature of the engine seems to require cgo or a package outside the closed
+list, it is the feature that is out of scope.
 
 One target escapes this, and it puts nothing into the engine: the native library
 of the last milestone requires cgo and a C compiler on the build machine,
