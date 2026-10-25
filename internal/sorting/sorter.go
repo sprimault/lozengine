@@ -1,7 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-package tri
+package sorting
 
 import (
 	"math"
@@ -10,7 +10,7 @@ import (
 	"github.com/sprimault/lozengine/scene"
 )
 
-// Trieur transforme une scène en la suite ordonnée des quads d'une image.
+// Sorter transforme une scène en la suite ordonnée des quads d'une image.
 //
 // C'est la frontière du moteur : ce qui sort d'ici ne connaît plus ni grille, ni
 // entité, ni caméra — un rastériseur ou un backend n'a qu'à peindre dans l'ordre reçu.
@@ -18,26 +18,26 @@ import (
 // Ses tampons se montent à la première image et se réemploient ensuite. Une image ne
 // touche donc pas au tas, sauf la première et celles qui suivent un agrandissement de
 // la vue.
-type Trieur struct {
-	scene   *scene.Scene
-	rangeur *Rangeur
+type Sorter struct {
+	scene *scene.Scene
+	radix *Radix
 
 	// Les quads dans l'ordre où ils ont été produits, et de quoi les ranger : une clé
-	// par quad, et l'indice qui dit d'où chaque clé vient. Ranger déplace les
+	// par quad, et l'indice qui dit d'où chaque clé vient. Le rangement déplace les
 	// indices, pas les quads.
-	bruts   []render.Quad
-	cles    []Cle
+	raw     []render.Quad
+	keys    []Key
 	sources []uint32
-	ordres  []ordre
+	ties    []tie
 
-	sortie render.DrawList
+	out render.DrawList
 
 	// La vue de l'image en cours, gardée le temps du relevé pour ne pas la traîner
 	// en paramètre jusqu'au fond.
-	vueX, vueY, vueLargeur, vueHauteur int32
+	viewX, viewY, viewWidth, viewHeight int32
 }
 
-// ordre porte ce qui départage deux choses que la clé laisse à égalité.
+// tie porte ce qui départage deux choses que la clé laisse à égalité.
 //
 // L'abscisse écran d'abord : à profondeur égale, ce qui est à gauche se peint avant.
 // Elle vaut l'axe transverse du monde à un facteur près, et elle est déjà calculée —
@@ -47,77 +47,77 @@ type Trieur struct {
 // Puis une identité qui ne bouge jamais. Sans elle, l'ordre retomberait sur celui de
 // production, lequel change dès qu'une entité est retirée ailleurs : deux sprites
 // superposés se relaieraient au premier plan d'une image à l'autre.
-type ordre struct {
-	abscisse int32
-	identite uint32
+type tie struct {
+	x        int32
+	identity uint32
 
 	// La strate ne sépare que ce qui occupe la même cellule, donc elle vient après
 	// l'abscisse : deux strates d'une cellule la partagent, deux cellules distinctes
 	// d'une même profondeur ne la partagent pas.
-	strate uint8
+	tier uint8
 }
 
-// Nouveau monte un trieur sur une scène.
-func Nouveau(s *scene.Scene) *Trieur {
-	return &Trieur{scene: s, rangeur: NouveauRangeur(0)}
+// New monte un trieur sur une scène.
+func New(s *scene.Scene) *Sorter {
+	return &Sorter{scene: s, radix: NewRadix(0)}
 }
 
-// Image rend la suite ordonnée des quads, valable jusqu'à l'appel suivant.
+// Frame rend la suite ordonnée des quads, valable jusqu'à l'appel suivant.
 //
 // Elle ne rend pas d'erreur, et c'est voulu : une image n'a personne à qui se
 // plaindre. Ce qui peut échouer a échoué au montage de la scène.
-func (t *Trieur) Image() render.DrawList {
-	t.bruts, t.cles, t.sources, t.ordres = t.bruts[:0], t.cles[:0], t.sources[:0], t.ordres[:0]
+func (t *Sorter) Frame() render.DrawList {
+	t.raw, t.keys, t.sources, t.ties = t.raw[:0], t.keys[:0], t.sources[:0], t.ties[:0]
 
-	t.vueX, t.vueY, t.vueLargeur, t.vueHauteur = t.scene.View()
-	if t.vueLargeur <= 0 || t.vueHauteur <= 0 {
-		return t.sortie[:0]
+	t.viewX, t.viewY, t.viewWidth, t.viewHeight = t.scene.View()
+	if t.viewWidth <= 0 || t.viewHeight <= 0 {
+		return t.out[:0]
 	}
 
-	t.releverDecor()
-	t.releverEntites()
+	t.collectDecor()
+	t.collectEntities()
 
-	t.rangeur.Ranger(t.cles, t.sources)
-	t.departager()
+	t.radix.Sort(t.keys, t.sources)
+	t.breakTies()
 
-	return t.assembler()
+	return t.assemble()
 }
 
-// releverEntites parcourt toutes les entités, sans en écarter aucune d'avance.
+// collectEntities parcourt toutes les entités, sans en écarter aucune d'avance.
 //
 // Toutes et non les visibles : une scène en porte quelques milliers et presque toutes
 // sont à l'image, donc les trier d'abord coûterait plus que de les projeter. C'est le
 // décor qui se relève par fenêtre, parce qu'une carte en compte cent fois plus que ce
 // qu'un écran en montre.
-func (t *Trieur) releverEntites() {
+func (t *Sorter) collectEntities() {
 	m := t.scene.Projection()
-	identites := scene.Identities(t.scene)
+	identities := scene.Identities(t.scene)
 
 	for i, e := range scene.Entities(t.scene) {
 		rx, ry := t.scene.Remap(e.X, e.Y)
-		ex, ey, profondeur, hauteur := m.Project(rx, ry, e.Z)
+		ex, ey, depth, height := m.Project(rx, ry, e.Z)
 
 		// Une entité n'est posée sur aucune strate : elle se tient sur le décor, pas
 		// dedans, et la strate zéro la met donc sous tout ce qui s'y empile.
-		t.poser(e.Aspect, ex, ey, profondeur, hauteur, identites[i], 0)
+		t.place(e.Aspect, ex, ey, depth, height, identities[i], 0)
 	}
 }
 
-// releverDecor parcourt les cellules que la vue peut montrer, couche par couche.
-func (t *Trieur) releverDecor() {
-	strates := t.scene.Tiers()
-	if strates == 0 {
+// collectDecor parcourt les cellules que la vue peut montrer, couche par couche.
+func (t *Sorter) collectDecor() {
+	tiers := t.scene.Tiers()
+	if tiers == 0 {
 		return
 	}
 
 	m := t.scene.Projection()
-	largeur, _ := t.scene.Dimensions()
-	u0, v0, u1, v1 := t.fenetre()
+	width, _ := t.scene.Dimensions()
+	u0, v0, u1, v1 := t.window()
 
-	for strate := range strates {
+	for tier := range tiers {
 		for v := v0; v <= v1; v++ {
 			for u := u0; u <= u1; u++ {
-				a := t.scene.Cell(u, v, uint8(strate))
+				a := t.scene.Cell(u, v, uint8(tier))
 				if a.Width == 0 || a.Height == 0 {
 					continue
 				}
@@ -126,17 +126,17 @@ func (t *Trieur) releverDecor() {
 				// sienne : c'est ce qui met une créature et la case qu'elle foule sur
 				// le même point de comparaison.
 				rx, ry := t.scene.Remap(float64(u)+0.5, float64(v)+0.5)
-				ex, ey, profondeur, hauteur := m.Project(rx, ry, 0)
+				ex, ey, depth, height := m.Project(rx, ry, 0)
 
 				// Le rang de la cellule ne bouge jamais, contrairement à la place
 				// d'une entité : c'est l'identité que le départage lui demande.
-				t.poser(a, ex, ey, profondeur, hauteur, uint32(v*largeur+u), uint8(strate))
+				t.place(a, ex, ey, depth, height, uint32(v*width+u), uint8(tier))
 			}
 		}
 	}
 }
 
-// fenetre rend l'intervalle de cellules que la vue peut montrer, bornes comprises.
+// window rend l'intervalle de cellules que la vue peut montrer, bornes comprises.
 //
 // La vue est un rectangle à l'écran, donc un losange dans le monde : ce qu'on balaie
 // est son englobant, soit environ le double de ce qui sera peint. Le coût ne dépend
@@ -144,27 +144,27 @@ func (t *Trieur) releverDecor() {
 //
 // Une cellule de marge de chaque côté, parce qu'une image est posée par son pied et
 // s'étend vers le haut : celle dont le pied vient de sortir y a encore son corps.
-func (t *Trieur) fenetre() (u0, v0, u1, v1 int) {
+func (t *Sorter) window() (u0, v0, u1, v1 int) {
 	m := t.scene.Projection()
-	largeur, hauteur := t.scene.Dimensions()
+	width, height := t.scene.Dimensions()
 
 	minU, minV := math.MaxFloat64, math.MaxFloat64
 	maxU, maxV := -math.MaxFloat64, -math.MaxFloat64
 
-	for _, coin := range [4][2]int32{{0, 0}, {t.vueLargeur, 0}, {0, t.vueHauteur}, {t.vueLargeur, t.vueHauteur}} {
-		rx, ry := m.Unproject(t.vueX+coin[0], t.vueY+coin[1])
+	for _, corner := range [4][2]int32{{0, 0}, {t.viewWidth, 0}, {0, t.viewHeight}, {t.viewWidth, t.viewHeight}} {
+		rx, ry := m.Unproject(t.viewX+corner[0], t.viewY+corner[1])
 		x, y := t.scene.Unremap(rx, ry)
 
 		minU, maxU = math.Min(minU, x), math.Max(maxU, x)
 		minV, maxV = math.Min(minV, y), math.Max(maxV, y)
 	}
 
-	u0, u1 = max(0, int(minU)-1), min(largeur-1, int(maxU)+1)
-	v0, v1 = max(0, int(minV)-1), min(hauteur-1, int(maxV)+1)
+	u0, u1 = max(0, int(minU)-1), min(width-1, int(maxU)+1)
+	v0, v1 = max(0, int(minV)-1), min(height-1, int(maxV)+1)
 	return u0, v0, u1, v1
 }
 
-// poser écarte ce qui ne touche pas l'image, et compose le quad et la clé du reste.
+// place écarte ce qui ne touche pas l'image, et compose le quad et la clé du reste.
 //
 // Les coordonnées reçues sont déjà relatives à la vue, et le test se fait en trente-
 // deux bits — avant la réduction à seize que le quad impose. C'est ce qui rend le
@@ -174,23 +174,23 @@ func (t *Trieur) fenetre() (u0, v0, u1, v1 int) {
 //
 // L'ancre est le pied de l'image, centré horizontalement. Elle deviendra surchargeable
 // par le fournisseur d'apparence, jamais par appel.
-func (t *Trieur) poser(a scene.Aspect, absolueX, absolueY int32, profondeur uint32, hauteur uint16, identite uint32, strate uint8) {
+func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32, height uint16, identity uint32, tier uint8) {
 	if a.Width == 0 || a.Height == 0 {
 		return
 	}
 
-	ex, ey := absolueX-t.vueX, absolueY-t.vueY
-	largeur, haut := int32(a.Width), int32(a.Height)
-	x, y := ex-largeur/2, ey-haut
+	ex, ey := absoluteX-t.viewX, absoluteY-t.viewY
+	w, h := int32(a.Width), int32(a.Height)
+	x, y := ex-w/2, ey-h
 
-	if x+largeur <= 0 || x >= t.vueLargeur || y+haut <= 0 || y >= t.vueHauteur {
+	if x+w <= 0 || x >= t.viewWidth || y+h <= 0 || y >= t.viewHeight {
 		return
 	}
 
-	t.sources = append(t.sources, uint32(len(t.bruts)))
-	t.cles = append(t.cles, Composer(a.Layer, a.Floor, profondeur, hauteur, a.Sheet, 0))
-	t.ordres = append(t.ordres, ordre{abscisse: ex, identite: identite, strate: strate})
-	t.bruts = append(t.bruts, render.Quad{
+	t.sources = append(t.sources, uint32(len(t.raw)))
+	t.keys = append(t.keys, Compose(a.Layer, a.Floor, depth, height, a.Sheet, 0))
+	t.ties = append(t.ties, tie{x: ex, identity: identity, tier: tier})
+	t.raw = append(t.raw, render.Quad{
 		X: int16(x), Y: int16(y),
 		SourceX: a.SourceX, SourceY: a.SourceY,
 		Width: a.Width, Height: a.Height,
@@ -200,7 +200,7 @@ func (t *Trieur) poser(a scene.Aspect, absolueX, absolueY int32, profondeur uint
 	})
 }
 
-// departager range ce que la clé laisse à égalité, puis inscrit le résultat dans
+// breakTies range ce que la clé laisse à égalité, puis inscrit le résultat dans
 // l'index stable.
 //
 // **Par groupe et jamais sur toute l'image.** L'index ne porte que mille vingt-quatre
@@ -212,58 +212,58 @@ func (t *Trieur) poser(a scene.Aspect, absolueX, absolueY int32, profondeur uint
 //
 // Les clés d'un groupe étant identiques, seules leurs provenances se déplacent, et une
 // insertion suffit : elle ne coûte que la taille du groupe, pas celle de l'image.
-func (t *Trieur) departager() {
-	debut := 0
+func (t *Sorter) breakTies() {
+	start := 0
 
-	for i := 1; i <= len(t.cles); i++ {
-		if i < len(t.cles) && t.cles[i] == t.cles[debut] {
+	for i := 1; i <= len(t.keys); i++ {
+		if i < len(t.keys) && t.keys[i] == t.keys[start] {
 			continue
 		}
 
-		t.departagerGroupe(debut, i)
-		debut = i
+		t.breakTiesIn(start, i)
+		start = i
 	}
 }
 
-// departagerGroupe ordonne une suite de clés égales et leur donne leurs index.
-func (t *Trieur) departagerGroupe(debut, fin int) {
-	for i := debut + 1; i < fin; i++ {
-		for j := i; j > debut && t.avant(t.sources[j], t.sources[j-1]); j-- {
+// breakTiesIn ordonne une suite de clés égales et leur donne leurs index.
+func (t *Sorter) breakTiesIn(start, end int) {
+	for i := start + 1; i < end; i++ {
+		for j := i; j > start && t.before(t.sources[j], t.sources[j-1]); j-- {
 			t.sources[j], t.sources[j-1] = t.sources[j-1], t.sources[j]
 		}
 	}
 
-	for rang := debut; rang < fin; rang++ {
-		t.cles[rang] = t.cles[rang].AvecIndex(uint16(min(rang-debut, IndexMax)))
+	for rank := start; rank < end; rank++ {
+		t.keys[rank] = t.keys[rank].WithIndex(uint16(min(rank-start, MaxIndex)))
 	}
 }
 
-// avant dit laquelle de deux choses d'une même clé se peint en premier.
+// before dit laquelle de deux choses d'une même clé se peint en premier.
 //
 // L'abscisse écran range de la gauche vers la droite, ce qui est l'ordre naturel d'une
 // même diagonale. L'identité tranche ensuite, et elle seule rend l'ordre reproductible
 // d'une image à l'autre : la place d'une entité change quand une autre est retirée.
-func (t *Trieur) avant(a, b uint32) bool {
-	gauche, droite := t.ordres[a], t.ordres[b]
+func (t *Sorter) before(a, b uint32) bool {
+	left, right := t.ties[a], t.ties[b]
 
-	if gauche.abscisse != droite.abscisse {
-		return gauche.abscisse < droite.abscisse
+	if left.x != right.x {
+		return left.x < right.x
 	}
-	if gauche.strate != droite.strate {
-		return gauche.strate < droite.strate
+	if left.tier != right.tier {
+		return left.tier < right.tier
 	}
-	return gauche.identite < droite.identite
+	return left.identity < right.identity
 }
 
-// assembler recopie les quads dans l'ordre que le rangement a fixé.
-func (t *Trieur) assembler() render.DrawList {
-	if cap(t.sortie) < len(t.sources) {
-		t.sortie = make(render.DrawList, len(t.sources))
+// assemble recopie les quads dans l'ordre que le rangement a fixé.
+func (t *Sorter) assemble() render.DrawList {
+	if cap(t.out) < len(t.sources) {
+		t.out = make(render.DrawList, len(t.sources))
 	}
-	t.sortie = t.sortie[:len(t.sources)]
+	t.out = t.out[:len(t.sources)]
 
-	for rang, source := range t.sources {
-		t.sortie[rang] = t.bruts[source]
+	for rank, source := range t.sources {
+		t.out[rank] = t.raw[source]
 	}
-	return t.sortie
+	return t.out
 }
