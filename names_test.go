@@ -20,26 +20,48 @@ import (
 // french porte les mots qu'un identifiant du dépôt a réellement portés, relevés au
 // moment de les retirer. Ce sont des mots entiers : la comparaison se fait après
 // découpe du camelCase, donc `cas` n'accuse pas `cases` et `vert` n'accuse pas
-// `vertical`.
+// `vertical`. Le pluriel est traité par la comparaison, pas par la liste.
 //
 // Volontairement absents, et c'est le choix qui compte : les mots que l'anglais
-// emploie aussi — `place`, `figure`, `image`, `part` —, et ceux de moins de quatre
-// lettres qu'une découpe pourrait rendre par accident.
+// emploie aussi — `place`, `figure`, `image`, `part`, `procedure` —, et ceux de moins
+// de quatre lettres qu'une découpe pourrait rendre par accident.
+//
+// **La liste s'allonge, et le premier code écrit après elle l'a prouvé.** Le backend
+// Windows est arrivé avec treize noms français de plus, dont deux — `nom` et `cas` —
+// que le relevé d'origine avait nommés sans qu'ils entrent ici, et `fenetres` que le
+// singulier ne couvrait pas. Une liste de mots déjà vus ne protège de rien si on ne
+// l'allonge pas au moment où elle manque.
 var french = map[string]bool{
-	"aplat": true, "apres": true, "avant": true, "avec": true, "blanc": true,
-	"bleu": true, "borne": true, "chemin": true, "clair": true, "coin": true,
-	"couleur": true, "decalage": true, "demi": true, "drapeaux": true,
-	"echecs": true, "ecrit": true, "ecrivain": true, "facteur": true,
-	"fenetre": true, "fichier": true, "gris": true, "haut": true, "haute": true,
-	"hauteur": true, "interne": true, "jetable": true, "largeur": true,
-	"loin": true, "majorant": true, "noyau": true, "numero": true,
-	"octets": true, "ordre": true, "pion": true, "pire": true, "planche": true,
-	"planches": true, "ponderation": true, "pose": true, "premier": true,
-	"proche": true, "profondeur": true, "quarts": true, "racine": true,
-	"regenerer": true, "regler": true, "rien": true, "rouge": true,
-	"sans": true, "somme": true, "sortie": true, "tampon": true,
-	"teinte": true, "tuile": true, "tuiles": true, "vert": true, "veut": true,
-	"voile": true,
+	"aplat": true, "apres": true, "atome": true, "avant": true, "avec": true,
+	"blanc": true, "bleu": true, "borne": true, "cas": true, "chemin": true,
+	"clair": true, "classe": true, "coin": true, "couleur": true,
+	"decalage": true, "demi": true, "dernier": true, "drapeaux": true,
+	"droite": true, "echecs": true, "ecrit": true, "ecrivain": true,
+	"enregistre": true, "enregistrement": true, "facteur": true, "fenetre": true,
+	"fichier": true, "gauche": true, "gris": true, "haut": true, "haute": true,
+	"hauteur": true, "inscrite": true, "interne": true, "jetable": true,
+	"largeur": true, "loin": true, "majorant": true, "nom": true, "noyau": true,
+	"numero": true, "octets": true, "ordre": true, "pion": true, "pire": true,
+	"planche": true, "poignee": true, "pointeur": true, "ponderation": true,
+	"pose": true, "premier": true, "proche": true, "profondeur": true,
+	"quarts": true, "racine": true, "regenerer": true, "regler": true,
+	"rien": true, "rouge": true, "sans": true, "somme": true, "sortie": true,
+	"taille": true, "tampon": true, "teinte": true, "titre": true, "tuile": true,
+	"vert": true, "veut": true, "voile": true,
+}
+
+// isFrench dit si un mot découpé est de la liste, au singulier comme au pluriel.
+//
+// Le pluriel se traite ici et non dans la liste, parce que l'y écrire deux fois est
+// la façon sûre d'en oublier un : `fenetre` y était, `fenetres` non, et c'est passé.
+// Retirer un `s` final n'ouvre pas de faux positif sur les mots anglais du dépôt —
+// `cases` donne `case`, `windows` donne `window`, aucun des deux n'étant dans la
+// liste.
+func isFrench(word string) bool {
+	if french[word] {
+		return true
+	}
+	return strings.HasSuffix(word, "s") && french[strings.TrimSuffix(word, "s")]
 }
 
 // TestIdentifiersAreNotFrench refuse tout identifiant du dépôt portant un mot de
@@ -118,6 +140,36 @@ var tampon int
 	}
 }
 
+// TestIsFrench garde le trou par lequel le backend Windows est passé : la liste portait
+// `fenetre` et l'identifiant s'appelait `fenetres`.
+//
+// Les deux cas anglais comptent autant que les français : si retirer un `s` final
+// ouvrait des faux positifs, le contrôle deviendrait pénible et finirait désarmé.
+func TestIsFrench(t *testing.T) {
+	cases := []struct {
+		word string
+		want bool
+	}{
+		{"fenetre", true},
+		{"fenetres", true},
+		{"tuiles", true},
+		{"nom", true},
+		{"cas", true},
+		{"cases", false},
+		{"windows", false},
+		{"procedure", false},
+		{"rows", false},
+		{"vertical", false},
+	}
+	for _, c := range cases {
+		t.Run(c.word, func(t *testing.T) {
+			if got := isFrench(c.word); got != c.want {
+				t.Errorf("isFrench(%q) rend %v, attendu %v", c.word, got, c.want)
+			}
+		})
+	}
+}
+
 // TestWords vérifie la découpe dont dépend la comparaison par mot entier : sans elle,
 // `cases` porterait `cas` et `vertical` porterait `vert`.
 func TestWords(t *testing.T) {
@@ -164,7 +216,7 @@ func frenchIdentifiers(fset *token.FileSet, file *ast.File) []finding {
 			return true
 		}
 		for _, word := range words(identifier.Name) {
-			if french[word] {
+			if isFrench(word) {
 				found = append(found, finding{
 					position: fset.Position(identifier.Pos()).String(),
 					name:     identifier.Name,

@@ -1,0 +1,182 @@
+// Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+// La fenêtre Windows : ce qu'elle retient des messages du système, et les cinq
+// réponses qu'elle doit à la boucle.
+//
+// Tout s'emploie depuis le thread qui a créé la fenêtre, ce que Windows impose pour la
+// file de messages. C'est aussi ce que la boucle fait, puisqu'un hôte ne cède pas son
+// thread principal : les champs n'ont donc pas de verrou, et en mettre un laisserait
+// croire qu'un autre thread est permis.
+
+package backend
+
+import (
+	"sync"
+	"unsafe"
+
+	"github.com/sprimault/lozengine/input"
+	"github.com/sprimault/lozengine/render"
+)
+
+// windows relie une poignée de fenêtre à son état, pour que la procédure de fenêtre
+// retrouve l'instance que le système ne lui passe pas.
+//
+// Une table et non `GWLP_USERDATA`, qui serait la voie canonique en C : un pointeur Go
+// ne peut pas être gardé dans de la mémoire que Go ne gère pas, et le système
+// conserverait celui-ci aussi longtemps que la fenêtre vit. Le verrou protège la table
+// seule, la procédure pouvant être appelée pendant `CreateWindowExW`, c'est-à-dire
+// avant que l'appel ait rendu la poignée.
+var windows = struct {
+	sync.Mutex
+	byHandle map[uintptr]*window
+}{
+	byHandle: make(map[uintptr]*window),
+}
+
+// window est une fenêtre ouverte et ce que le système en a dit depuis la dernière
+// image.
+type window struct {
+	hwnd uintptr
+	dc   uintptr
+
+	// state accumule ce que le clavier a fait. Le décodage des messages de touches
+	// vient avec le lot qui lit le clavier ; ce qui est déjà câblé est l'oubli au
+	// départ du focus, parce que sans lui une touche tenue le reste pour toujours.
+	state input.State
+
+	// closed retient que la fenêtre ne présentera plus rien. Il ne se relève jamais.
+	closed bool
+
+	// minimized suit `wmSize`, et dernierW et dernierH gardent la dernière taille
+	// utile connue.
+	minimized bool
+	lastW     uint16
+	lastH     uint16
+}
+
+// windowProc est la procédure de fenêtre, appelée par le système pour chaque message.
+//
+// Elle ne traite que ce dont la boucle a besoin et passe tout le reste à
+// `DefWindowProcW`. Un cycle de vie ordinaire apporte une trentaine de messages
+// distincts, dont certains que le système enregistre dynamiquement : chercher à les
+// connaître tous serait sans fin et sans objet.
+func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
+	w := byHandle(hwnd)
+	if w == nil {
+		ret, _, _ := defWindowProcW.Call(hwnd, uintptr(msg), wParam, lParam)
+		return ret
+	}
+
+	switch msg {
+	case wmClose:
+		// La fermeture demandée par le joueur n'est pas la destruction : on note, et
+		// c'est la boucle qui décide quand s'arrêter.
+		w.closed = true
+		return 0
+
+	case wmDestroy:
+		w.closed = true
+		return 0
+
+	case wmSize:
+		w.minimized = wParam == sizeMinimized
+		if !w.minimized {
+			if width, height := clientSize(hwnd); width != 0 && height != 0 {
+				w.lastW, w.lastH = width, height
+			}
+		}
+		return 0
+
+	case wmKillFocus:
+		// Le relâchement d'une touche tenue est perdu, pas différé : la fenêtre ne
+		// reçoit plus rien après ce message, et relire l'état du système ne rattrape
+		// rien puisqu'il dit encore « enfoncée ». Oublier est la seule parade, sans
+		// quoi le personnage marcherait tout seul au retour.
+		w.state.Forget()
+		return 0
+	}
+
+	ret, _, _ := defWindowProcW.Call(hwnd, uintptr(msg), wParam, lParam)
+	return ret
+}
+
+// byHandle retrouve la fenêtre d'une poignée, ou nil si le système parle d'une
+// fenêtre que nous ne tenons pas encore.
+func byHandle(hwnd uintptr) *window {
+	windows.Lock()
+	defer windows.Unlock()
+	return windows.byHandle[hwnd]
+}
+
+// Input vide la file des messages puis rend ce que le clavier dit au pas qui commence.
+//
+// C'est ici que la pompe tourne, parce que c'est le premier appel d'un pas : la boucle
+// lit les entrées, met à jour, puis présente. Pomper ailleurs ferait répondre la
+// fenêtre en retard d'une image.
+func (w *window) Input() input.Input {
+	var m message
+	for {
+		ret, _, _ := peekMessageW.Call(uintptr(unsafe.Pointer(&m)), 0, 0, 0, pmRemove)
+		if ret == 0 {
+			break
+		}
+		translateMessage.Call(uintptr(unsafe.Pointer(&m)))
+		dispatchMessageW.Call(uintptr(unsafe.Pointer(&m)))
+	}
+	return w.state.Frame()
+}
+
+// Present pose le tampon à l'écran, tel quel.
+//
+// Le corps vient avec le lot qui écrit la présentation par DIB. Ce qu'il ne devra pas
+// oublier, et que la sonde a relevé : sur une fenêtre réduite, l'appel rend un succès
+// sans rien peindre, donc il ne dira jamais qu'il n'a pas eu lieu.
+func (w *window) Present(t *render.Buffer) {
+}
+
+// Size rend les dimensions de la zone utile, en pixels.
+//
+// Jamais zéro tant qu'une taille a été connue : une fenêtre réduite a une zone utile
+// nulle, et la boucle en tirerait un facteur d'agrandissement par division par zéro.
+// Le backend sait qu'elle est réduite, la boucle n'a pas à l'apprendre — elle
+// présentera dans le vide, ce qui ne coûte rien et ne casse rien.
+func (w *window) Size() (width, height uint16) {
+	if w.minimized {
+		return w.lastW, w.lastH
+	}
+	width, height = clientSize(w.hwnd)
+	if width == 0 || height == 0 {
+		return w.lastW, w.lastH
+	}
+	return width, height
+}
+
+// Closed dit que la fenêtre ne présentera plus rien.
+func (w *window) Closed() bool {
+	return w.closed
+}
+
+// Close rend au système ce qu'Open a pris. Appeler deux fois est sans effet.
+func (w *window) Close() {
+	// L'état se pose d'abord : une fenêtre fermée ne présentera plus rien, et c'est
+	// vrai au second appel comme au premier. Court-circuiter avant laisserait
+	// `Closed` mentir, ce qu'un cas de test a montré sur ce code même.
+	w.closed = true
+
+	if w.hwnd == 0 {
+		return
+	}
+
+	if w.dc != 0 {
+		releaseDC.Call(w.hwnd, w.dc)
+		w.dc = 0
+	}
+	destroyWindow.Call(w.hwnd)
+
+	windows.Lock()
+	delete(windows.byHandle, w.hwnd)
+	windows.Unlock()
+
+	w.hwnd = 0
+}
