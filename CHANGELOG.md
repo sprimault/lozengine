@@ -74,6 +74,9 @@ notes de publication.
   boucle : `NewEngine`, puis un `Step` par image et `Frame` pour l'image obtenue.
 - `State` fabrique des entrées sans clavier, de quoi éprouver la méthode d'un jeu sans
   ouvrir de fenêtre.
+- `Options.Bars` est la couleur des bandes qui entourent l'image quand la fenêtre ne
+  tombe pas sur un multiple exact de la résolution interne. Elle vaut le noir opaque et
+  ne suit donc pas le fond du monde, qu'un jeu peut vouloir clair.
 
 ### Modifié
 
@@ -113,6 +116,9 @@ notes de publication.
   its own loop: `NewEngine`, then one `Step` per frame and `Frame` for the image.
 - `State` builds inputs without a keyboard, enough to exercise a game's method
   without opening a window.
+- `Options.Bars` is the colour of the bars surrounding the image when the window is not
+  an exact multiple of the internal resolution. It is opaque black, so it does not
+  follow the world's background, which a game may want light.
 
 ### Changed
 

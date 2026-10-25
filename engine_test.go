@@ -98,6 +98,26 @@ func TestNewEngineDefaults(t *testing.T) {
 	}
 }
 
+// TestBarsDefaultApartFromTheBackground vérifie que les bandes ne prennent pas la
+// couleur du fond du monde quand le jeu ne demande rien pour elles.
+//
+// C'est le cas qui garde la raison d'être du champ, et il est le seul à pouvoir le
+// faire : si le défaut recopiait Background, un jeu au ciel clair obtiendrait des bandes
+// claires sans les avoir demandées, et séparer les deux champs n'aurait servi à rien.
+// fit reçoit la couleur, il ne la choisit pas, donc son propre cas ne dirait rien.
+func TestBarsDefaultApartFromTheBackground(t *testing.T) {
+	sky := Color{R: 120, G: 180, B: 230, A: 255}
+	o := Options{Background: sky}.withDefaults()
+
+	if o.Background != sky {
+		t.Errorf("fond : %v, attendu %v — le défaut a écrasé ce que le jeu demandait",
+			o.Background, sky)
+	}
+	if want := (Color{A: 255}); o.Bars != want {
+		t.Errorf("bandes : %v, attendu %v — elles ont suivi le fond du monde", o.Bars, want)
+	}
+}
+
 // TestNewEngineFramesTheViewOnce vérifie les deux moitiés d'une même règle : la scène
 // possède l'origine de la vue, et le moteur la pose seulement si personne ne l'a fait.
 func TestNewEngineFramesTheViewOnce(t *testing.T) {
