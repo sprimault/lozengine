@@ -35,7 +35,7 @@ func WritePNG(t *render.Buffer, w io.Writer) error {
 	}
 
 	if err := png.Encode(w, img); err != nil {
-		return fmt.Errorf("écriture du PNG : %w", err)
+		return fmt.Errorf("writing PNG: %w", err)
 	}
 	return nil
 }

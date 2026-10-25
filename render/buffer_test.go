@@ -5,11 +5,11 @@ package render
 
 import "testing"
 
-// TestNouveauTamponRefuseAuDelaDeLaBorne couvre celle des trois limites du quad que
+// TestNewBufferRefusesBeyondTheLimit couvre celle des trois limites du quad que
 // rien ne tenait. Les deux autres se voient — une planche trop grande ou trop
 // nombreuse est refusée au chargement — alors que celle-ci n'a aucune forme visible :
 // la part inatteignable du tampon reçoit les quads lointains repliés.
-func TestNouveauTamponRefuseAuDelaDeLaBorne(t *testing.T) {
+func TestNewBufferRefusesBeyondTheLimit(t *testing.T) {
 	cas := []struct {
 		nom              string
 		largeur, hauteur uint16
@@ -30,10 +30,10 @@ func TestNouveauTamponRefuseAuDelaDeLaBorne(t *testing.T) {
 	}
 }
 
-// TestNouveauTamponAccepteLaBorne vérifie que la garde s'arrête à la borne au lieu de
+// TestNewBufferAcceptsTheLimit vérifie que la garde s'arrête à la borne au lieu de
 // la manger. Un hors-par-un ici retirerait une colonne au plus grand tampon possible,
 // et aucun autre cas ne le verrait.
-func TestNouveauTamponAccepteLaBorne(t *testing.T) {
+func TestNewBufferAcceptsTheLimit(t *testing.T) {
 	tampon := NewBuffer(MaxBufferSide, 1)
 
 	if len(tampon.Pixels) != MaxBufferSide {
@@ -41,9 +41,9 @@ func TestNouveauTamponAccepteLaBorne(t *testing.T) {
 	}
 }
 
-// TestNouveauTamponTransparent vérifie que l'image part transparente : un hôte qui
+// TestNewBufferIsTransparent vérifie que l'image part transparente : un hôte qui
 // n'écrit rien reçoit une valeur zéro, et c'est sur elle que le rastériseur efface.
-func TestNouveauTamponTransparent(t *testing.T) {
+func TestNewBufferIsTransparent(t *testing.T) {
 	tampon := NewBuffer(2, 2)
 
 	if len(tampon.Pixels) != 4 {

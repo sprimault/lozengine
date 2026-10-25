@@ -163,12 +163,12 @@ et deux textes à tenir d'accord finiraient par diverger.
 
 ## Langue
 
-**Les identifiants sont en français par défaut** — répertoires, fichiers,
-paquets, types, fonctions, champs. L'anglais est admis quand c'est le terme
-technique naturel et sans équivalent usuel courant : `atlas`, `sprite`,
-`buffer`. Ne pas franciser de force ce que personne n'appelle autrement.
+**Les identifiants sont en anglais** — répertoires, fichiers, paquets, types,
+fonctions, champs, locales, noms de tests. Les messages d'erreur aussi : un message se
+colle dans un rapport de bug, là qu'un commentaire se lit avec le code.
 
-**La documentation est en français** : godoc, commentaires, messages d'erreur.
+**La documentation est en français** : godoc, commentaires, et les libellés de cas de
+test, qui sont des phrases et non des identifiants.
 
 Sont bilingues les documents qui s'adressent à quelqu'un ne connaissant pas
 encore le projet — le README, ce guide, la politique de sécurité et le journal

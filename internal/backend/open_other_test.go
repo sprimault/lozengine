@@ -31,7 +31,7 @@ func TestOpenFallsBackWithoutWindow(t *testing.T) {
 	if !strings.Contains(err.Error(), runtime.GOOS) {
 		t.Errorf("le message ne nomme pas la plateforme : %v", err)
 	}
-	if !strings.Contains(err.Error(), "jalon") {
+	if !strings.Contains(err.Error(), "milestone") {
 		t.Errorf("le message ne nomme pas le jalon qui l'écrira : %v", err)
 	}
 }

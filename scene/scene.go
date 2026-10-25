@@ -87,10 +87,10 @@ type Scene struct {
 // chemin d'une image n'en rend, parce qu'une image n'a nulle part où la mettre.
 func New(width, height int, projection geometry.Matrix, o Options) (*Scene, error) {
 	if width <= 0 || height <= 0 {
-		return nil, fmt.Errorf("grille de %d×%d : les deux côtés sont obligatoires", width, height)
+		return nil, fmt.Errorf("grid of %d×%d: both sides are required", width, height)
 	}
 	if width > render.MaxSide || height > render.MaxSide {
-		return nil, fmt.Errorf("grille de %d×%d : %d cellules de côté au plus, ce que la clé de tri sait ordonner", width, height, render.MaxSide)
+		return nil, fmt.Errorf("grid of %d×%d: %d cells per side at most, what the sort key can order", width, height, render.MaxSide)
 	}
 
 	capacity := o.Entities
@@ -98,7 +98,7 @@ func New(width, height int, projection geometry.Matrix, o Options) (*Scene, erro
 		capacity = defaultEntities
 	}
 	if capacity < 0 || capacity > maxRank {
-		return nil, fmt.Errorf("capacité de %d entités : %d au plus", capacity, maxRank)
+		return nil, fmt.Errorf("capacity of %d entities: %d at most", capacity, maxRank)
 	}
 
 	return &Scene{

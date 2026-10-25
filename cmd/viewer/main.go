@@ -44,7 +44,7 @@ func main() {
 func run(name, dir, path string, factor, frames int) error {
 	scenario, ok := viewer.ByName(name)
 	if !ok {
-		return fmt.Errorf("scénario %q inconnu, connus : %s", name, strings.Join(viewer.Names(), ", "))
+		return fmt.Errorf("unknown scenario %q, known: %s", name, strings.Join(viewer.Names(), ", "))
 	}
 	if frames > 0 {
 		scenario.Frames = frames
@@ -75,7 +75,7 @@ func readInputLines(path string) ([]viewer.InputLine, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("ouverture des entrées : %w", err)
+		return nil, fmt.Errorf("opening inputs: %w", err)
 	}
 	defer file.Close()
 

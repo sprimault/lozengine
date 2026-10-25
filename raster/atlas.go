@@ -32,7 +32,7 @@ type Atlas struct {
 // rangerait deux planches ensemble sans rien dire.
 func (a *Atlas) Add(p Sheet) (uint16, error) {
 	if len(a.Sheets) >= render.MaxSheets {
-		return 0, fmt.Errorf("ajout d'une planche : %d au plus, ce qu'un quad sait désigner", render.MaxSheets)
+		return 0, fmt.Errorf("adding a sheet: %d at most, what a quad can address", render.MaxSheets)
 	}
 
 	p.encode()

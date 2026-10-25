@@ -22,5 +22,5 @@ import (
 // le 6 Wayland et DRM/KMS. macOS, iOS et Android natifs restent hors périmètre, et le
 // navigateur est ce qui les couvre.
 func Open(o Options) (Window, error) {
-	return nil, errors.New("aucune fenêtre sur " + runtime.GOOS + " : X11 vient au jalon 3, le navigateur au jalon 5")
+	return nil, errors.New("no window on " + runtime.GOOS + ": X11 comes at milestone 3, the browser at milestone 5")
 }

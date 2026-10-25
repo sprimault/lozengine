@@ -28,12 +28,12 @@ type Replay struct {
 // avant la première image. Passé ce point, plus rien n'échoue jusqu'à l'écriture.
 func NewReplay(s Scenario) (*Replay, error) {
 	if s.Atlas == nil || s.Quads == nil {
-		return nil, fmt.Errorf("scénario %q : Atlas et Quads sont obligatoires", s.Name)
+		return nil, fmt.Errorf("scenario %q: Atlas and Quads are required", s.Name)
 	}
 
 	atlas, err := s.Atlas()
 	if err != nil {
-		return nil, fmt.Errorf("atlas du scénario %q : %w", s.Name, err)
+		return nil, fmt.Errorf("atlas of scenario %q: %w", s.Name, err)
 	}
 	return &Replay{
 		scenario: s,
@@ -62,7 +62,7 @@ func (r *Replay) Frame(number int, e InputLine) *render.Buffer {
 // des noms dans un répertoire comme dans une visionneuse d'images.
 func (r *Replay) Write(dir string, number, factor int) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return fmt.Errorf("création de %s : %w", dir, err)
+		return fmt.Errorf("creating %s: %w", dir, err)
 	}
 
 	source := r.buffer
@@ -73,7 +73,7 @@ func (r *Replay) Write(dir string, number, factor int) error {
 		wide := int(r.buffer.Width) * factor
 		high := int(r.buffer.Height) * factor
 		if wide > render.MaxBufferSide || high > render.MaxBufferSide {
-			return fmt.Errorf("facteur %d : l'image ferait %d×%d, au-delà des %d de côté qu'un tampon porte", factor, wide, high, render.MaxBufferSide)
+			return fmt.Errorf("factor %d: the image would be %d×%d, beyond the %d per side a buffer holds", factor, wide, high, render.MaxBufferSide)
 		}
 
 		if r.out == nil || int(r.out.Width) != wide || int(r.out.Height) != high {
@@ -86,14 +86,14 @@ func (r *Replay) Write(dir string, number, factor int) error {
 	path := filepath.Join(dir, fmt.Sprintf("%s-%04d.png", r.scenario.Name, number))
 	file, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("création de %s : %w", path, err)
+		return fmt.Errorf("creating %s: %w", path, err)
 	}
 	if err := raster.WritePNG(source, file); err != nil {
 		file.Close()
-		return fmt.Errorf("%s : %w", path, err)
+		return fmt.Errorf("%s: %w", path, err)
 	}
 	if err := file.Close(); err != nil {
-		return fmt.Errorf("fermeture de %s : %w", path, err)
+		return fmt.Errorf("closing %s: %w", path, err)
 	}
 	return nil
 }

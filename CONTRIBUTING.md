@@ -162,12 +162,12 @@ say, and two texts to keep in agreement would end up diverging.
 
 ## Language
 
-**Identifiers are in French by default** — directories, files, packages, types,
-functions, fields. English is allowed where it is the natural technical term
-with no common equivalent: `atlas`, `sprite`, `buffer`. Do not force a French
-word onto something nobody calls anything else.
+**Identifiers are in English** — directories, files, packages, types, functions,
+fields, locals, test names. So are error messages: a message gets pasted into a bug
+report, whereas a comment is read alongside the code.
 
-**Documentation is in French**: godoc, comments, error messages.
+**Documentation is in French**: godoc, comments, and test case labels, which are
+sentences rather than identifiers.
 
 Bilingual are the documents addressed to someone who does not know the project
 yet — the README, this guide, the security policy and the changelog — as well as

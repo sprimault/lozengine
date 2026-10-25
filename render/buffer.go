@@ -39,7 +39,7 @@ type Buffer struct {
 // les quads lointains arriveraient repliés au milieu de l'image.
 func NewBuffer(width, height uint16) *Buffer {
 	if width > MaxBufferSide || height > MaxBufferSide {
-		panic(fmt.Sprintf("tampon de %d×%d : %d de côté au plus, la plus grande coordonnée qu'un quad désigne", width, height, MaxBufferSide))
+		panic(fmt.Sprintf("buffer of %d×%d: %d per side at most, the largest coordinate a quad addresses", width, height, MaxBufferSide))
 	}
 
 	return &Buffer{

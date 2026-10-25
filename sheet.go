@@ -21,13 +21,13 @@ import (
 func OpenSheet(path string) (Sheet, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return Sheet{}, fmt.Errorf("ouverture de la planche : %w", err)
+		return Sheet{}, fmt.Errorf("opening the sheet: %w", err)
 	}
 	defer file.Close()
 
 	sheet, err := raster.LoadSheet(file)
 	if err != nil {
-		return Sheet{}, fmt.Errorf("%s : %w", path, err)
+		return Sheet{}, fmt.Errorf("%s: %w", path, err)
 	}
 	return sheet, nil
 }
