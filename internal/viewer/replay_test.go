@@ -89,11 +89,11 @@ func TestFrameIndependentOfThePrevious(t *testing.T) {
 		t.Fatalf("rejeu : %v", err)
 	}
 
-	avant := copyPixels(replay.Frame(5, ""))
+	before := copyPixels(replay.Frame(5, ""))
 	replay.Frame(2, "")
-	apres := replay.Frame(5, "")
+	after := replay.Frame(5, "")
 
-	if !samePixels(avant, apres) {
+	if !samePixels(before, after) {
 		t.Error("l'image 5 diffère selon ce qui a été rendu avant")
 	}
 }
@@ -106,10 +106,10 @@ func TestFrameFollowsTheInput(t *testing.T) {
 		t.Fatalf("rejeu : %v", err)
 	}
 
-	sans := copyPixels(replay.Frame(0, ""))
-	avec := replay.Frame(0, "pion 60 30")
+	without := copyPixels(replay.Frame(0, ""))
+	with := replay.Frame(0, "pion 60 30")
 
-	if samePixels(sans, avec) {
+	if samePixels(without, with) {
 		t.Error("l'entrée « pion 60 30 » n'a rien changé")
 	}
 }
@@ -159,13 +159,13 @@ func TestWriteUpscales(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	interne := replay.Frame(0, "")
+	inner := replay.Frame(0, "")
 	if err := replay.Write(dir, 0, 3); err != nil {
 		t.Fatalf("écriture : %v", err)
 	}
 
-	if interne.Width != 4 || interne.Height != 2 {
-		t.Errorf("tampon interne : %d×%d, attendu 4×2", interne.Width, interne.Height)
+	if inner.Width != 4 || inner.Height != 2 {
+		t.Errorf("tampon interne : %d×%d, attendu 4×2", inner.Width, inner.Height)
 	}
 
 	file, err := os.Open(filepath.Join(dir, "essai-0000.png"))

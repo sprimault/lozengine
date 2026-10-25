@@ -32,7 +32,7 @@ func Edges() Scenario {
 			return atlasOfOneSheet(markedSheet(side))
 		},
 
-		Quads: func(numero int, e InputLine, reserve render.DrawList) render.DrawList {
+		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {
 			positions := [][2]int{
 				{-4, -4}, {width - 4, -4}, {-4, height - 4}, {width - 4, height - 4},
 				{20, -4}, {20, height - 4}, {-4, 12}, {width - 4, 12},

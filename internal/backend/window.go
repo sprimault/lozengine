@@ -5,7 +5,7 @@
 //
 // Il y a un backend par famille de plateformes — les appels système de Windows, le
 // protocole X11, le canvas du navigateur — et tous remplissent le même contrat, celui
-// de [Fenetre]. Rien d'autre ne les distingue vu d'en haut, ce qui est la condition
+// de [Window]. Rien d'autre ne les distingue vu d'en haut, ce qui est la condition
 // pour que la boucle ne connaisse aucune plateforme.
 //
 // **Un backend ne trie ni ne projette.** Il reçoit un tampon déjà peint et le présente
@@ -24,7 +24,7 @@ import (
 	"github.com/sprimault/lozengine/render"
 )
 
-// Fenetre est ce qu'une famille de plateformes doit savoir faire, et rien de plus.
+// Window est ce qu'une famille de plateformes doit savoir faire, et rien de plus.
 //
 // Cinq méthodes, parce que la boucle n'a besoin que de cela : lire le clavier,
 // présenter une image, savoir dans quoi elle présente, savoir si on lui a demandé de

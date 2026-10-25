@@ -15,10 +15,10 @@ import (
 // de dessin se lise : un losange de sol, une borne haute qui dépasse sur la cellule
 // derrière elle, et une figure étroite qui se glisse entre les deux.
 const (
-	plancheSolClair = iota
-	plancheSolSombre
-	plancheBorne
-	plancheFigure
+	lightGroundSheet = iota
+	darkGroundSheet
+	pillarSheet
+	figureSheet
 )
 
 // La grille du scénario et la vue qui la montre entière.
@@ -27,12 +27,12 @@ const (
 // côté à tuile 32×16 couvrent 256 pixels de large et 128 de haut, auxquels s'ajoutent
 // la hauteur des bornes et la marge d'un étage.
 const (
-	coteGrille = 8
-	tuileL     = 32
-	tuileH     = 16
+	gridSide = 8
+	tileW    = 32
+	tileH    = 16
 
-	largeurNoyau = coteGrille*tuileL + tuileL
-	hauteurNoyau = coteGrille*tuileH + 4*tuileH
+	coreWidth  = gridSide*tileW + tileW
+	coreHeight = gridSide*tileH + 4*tileH
 )
 
 // Core rend le scénario qui éprouve le chemin complet du moteur : une scène décrite,
@@ -57,20 +57,20 @@ const (
 func Core() Scenario {
 	return Scenario{
 		Name:       "core",
-		Width:      largeurNoyau,
-		Height:     hauteurNoyau,
+		Width:      coreWidth,
+		Height:     coreHeight,
 		Frames:     4,
 		Background: render.Color{R: 18, G: 18, B: 24, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
 			var atlas raster.Atlas
-			planches := []raster.Sheet{
-				borderedSheet(tuileL, tuileH, render.Color{R: 96, G: 112, B: 88, A: 255}),
-				borderedSheet(tuileL, tuileH, render.Color{R: 64, G: 80, B: 64, A: 255}),
-				borderedSheet(tuileL/2, tuileH*2, render.Color{R: 176, G: 144, B: 96, A: 255}),
-				borderedSheet(tuileL/3, tuileH*3/2, render.Color{R: 208, G: 96, B: 96, A: 255}),
+			sheets := []raster.Sheet{
+				borderedSheet(tileW, tileH, render.Color{R: 96, G: 112, B: 88, A: 255}),
+				borderedSheet(tileW, tileH, render.Color{R: 64, G: 80, B: 64, A: 255}),
+				borderedSheet(tileW/2, tileH*2, render.Color{R: 176, G: 144, B: 96, A: 255}),
+				borderedSheet(tileW/3, tileH*3/2, render.Color{R: 208, G: 96, B: 96, A: 255}),
 			}
-			for _, p := range planches {
+			for _, p := range sheets {
 				if _, err := atlas.Add(p); err != nil {
 					return nil, err
 				}
@@ -90,22 +90,22 @@ func Core() Scenario {
 // coreScene monte la scène à neuf, ce que la pureté exigée d'un scénario demande :
 // une image doit pouvoir se rendre seule, deux fois, et donner les mêmes pixels.
 func coreScene() *scene.Scene {
-	s, err := scene.New(coteGrille, coteGrille, geometry.Dimetric(tuileL, tuileH), scene.Options{Entities: 8})
+	s, err := scene.New(gridSide, gridSide, geometry.Dimetric(tileW, tileH), scene.Options{Entities: 8})
 	if err != nil {
 		panic(err)
 	}
-	s.Focus(coteGrille/2, coteGrille/2, largeurNoyau, hauteurNoyau)
+	s.Focus(gridSide/2, gridSide/2, coreWidth, coreHeight)
 
 	// Le sol, en damier pour que chaque cellule se distingue de ses voisines : un
 	// décalage d'une cellule à la projection se verrait, là où un sol uni le cacherait.
-	for v := range coteGrille {
-		for u := range coteGrille {
-			planche := uint16(plancheSolClair)
+	for v := range gridSide {
+		for u := range gridSide {
+			sheet := uint16(lightGroundSheet)
 			if (u+v)%2 == 1 {
-				planche = plancheSolSombre
+				sheet = darkGroundSheet
 			}
 			s.PlaceCell(u, v, 0, scene.Aspect{
-				Sheet: planche, Width: tuileL, Height: tuileH, Tint: render.White(),
+				Sheet: sheet, Width: tileW, Height: tileH, Tint: render.White(),
 			})
 		}
 	}
@@ -113,15 +113,15 @@ func coreScene() *scene.Scene {
 	// Trois bornes en strate 1, posées sur le sol sans l'effacer. Leur disposition est
 	// asymétrique pour qu'un quart de tour se voie : en ligne, une rotation de cent
 	// quatre-vingts degrés rendrait la même image.
-	borne := scene.Aspect{
-		Sheet: plancheBorne, Width: tuileL / 2, Height: tuileH * 2, Tint: render.White(),
+	pillar := scene.Aspect{
+		Sheet: pillarSheet, Width: tileW / 2, Height: tileH * 2, Tint: render.White(),
 	}
 	for _, c := range [][2]int{{1, 1}, {2, 1}, {1, 5}} {
-		s.PlaceCell(c[0], c[1], 1, borne)
+		s.PlaceCell(c[0], c[1], 1, pillar)
 	}
 
 	figure := scene.Aspect{
-		Sheet: plancheFigure, Width: tuileL / 3, Height: tuileH * 3 / 2, Tint: render.White(),
+		Sheet: figureSheet, Width: tileW / 3, Height: tileH * 3 / 2, Tint: render.White(),
 	}
 
 	// Une figure derrière les bornes, une devant : c'est le couple qui montre que
@@ -134,9 +134,9 @@ func coreScene() *scene.Scene {
 
 	// Un étage au-dessus, qui passe devant tout l'étage du sol quelle que soit sa
 	// profondeur, et que sa hauteur monte à l'écran.
-	haute := figure
-	haute.Floor = 1
-	s.Place(scene.Entity{X: 5.5, Y: 5.5, Z: 1, Aspect: haute})
+	tall := figure
+	tall.Floor = 1
+	s.Place(scene.Entity{X: 5.5, Y: 5.5, Z: 1, Aspect: tall})
 
 	return s
 }

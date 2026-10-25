@@ -31,7 +31,7 @@ type Scenario struct {
 	Frames        int
 	Background    render.Color
 	Atlas         func() (*raster.Atlas, error)
-	Quads         func(numero int, e InputLine, reserve render.DrawList) render.DrawList
+	Quads         func(frame int, e InputLine, reserve render.DrawList) render.DrawList
 
 	// References désigne les images que la suite de non-régression compare. Vide,
 	// elles le sont toutes — ce qui convient aux scénarios courts, faits pour tenir
