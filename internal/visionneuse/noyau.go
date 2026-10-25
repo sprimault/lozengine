@@ -4,11 +4,11 @@
 package visionneuse
 
 import (
-	"github.com/sprimault/lozengine/internal/geometrie"
+	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/internal/raster"
-	"github.com/sprimault/lozengine/internal/scene"
 	"github.com/sprimault/lozengine/internal/tri"
 	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/scene"
 )
 
 // Les planches du scénario, et leurs tailles. Trois formes distinctes pour que l'ordre

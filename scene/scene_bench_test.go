@@ -6,7 +6,7 @@ package scene
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/geometrie"
+	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/rendu"
 )
 

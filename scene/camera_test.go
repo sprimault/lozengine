@@ -6,7 +6,7 @@ package scene
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/geometrie"
+	"github.com/sprimault/lozengine/geometrie"
 )
 
 // rectanglePourTest monte une scène dont les deux côtés diffèrent.

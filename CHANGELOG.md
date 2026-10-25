@@ -47,6 +47,10 @@ notes de publication.
 
 ### Ajouté
 
+- `geometrie` et `scene` sont publics : les champs et les méthodes de `Matrice`,
+  `Scene`, `Entite` et `Aspect` se lisent dans leur documentation.
+- `CoteMax` et `StratesMax` disent la plus grande grille possible et le nombre de
+  choses qu'une cellule empile.
 - La scène se décrit depuis le paquet racine : `NouvelleScene`, `Scene`, `Entite`,
   `Aspect`, `Poignee`, `Orientation` et ses quatre quarts de tour, `OptionsScene`.
 - `CoucheMax` et `EtageMax` disent combien de couches et d'étages l'ordre de dessin
@@ -60,6 +64,10 @@ notes de publication.
 
 ### Added
 
+- `geometrie` and `scene` are public: the fields and methods of `Matrice`, `Scene`,
+  `Entite` and `Aspect` can be read in their documentation.
+- `CoteMax` and `StratesMax` state the largest possible grid and how many things a
+  cell stacks.
 - A scene is described from the root package: `NouvelleScene`, `Scene`, `Entite`,
   `Aspect`, `Poignee`, `Orientation` and its four quarter turns, `OptionsScene`.
 - `CoucheMax` and `EtageMax` state how many layers and floors the draw order tells

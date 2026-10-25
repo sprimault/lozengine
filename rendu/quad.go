@@ -57,6 +57,16 @@ const (
 	EtageMax  = 1<<6 - 1
 )
 
+// CoteMax est le plus grand côté qu'une grille de scène puisse avoir, en cellules.
+//
+// Le chiffre n'est pas rond par hasard, et il sort ici pour la même raison que les
+// deux précédentes : l'ordre de dessin compte la profondeur — la somme des deux axes —
+// sur dix-huit bits en quarts de cellule, soit 65 536 cellules de somme, donc la
+// moitié par côté. Au-delà, deux cellules éloignées se replieraient sur la même
+// valeur et s'ordonneraient par leur rang d'insertion : le rendu resterait prévisible,
+// et faux.
+const CoteMax = 32768
+
 // Quad est la primitive unique du moteur : un rectangle de planche posé dans le
 // tampon, déjà placé à l'écran, rangé dans l'ordre de dessin, et retenu — ceux qui
 // sortaient du tampon ont été retirés en amont.

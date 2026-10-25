@@ -6,8 +6,8 @@ package tri
 import (
 	"math"
 
-	"github.com/sprimault/lozengine/internal/scene"
 	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/scene"
 )
 
 // Trieur transforme une scène en la suite ordonnée des quads d'une image.

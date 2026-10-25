@@ -6,19 +6,11 @@ package scene
 import (
 	"fmt"
 
-	"github.com/sprimault/lozengine/internal/geometrie"
+	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/rendu"
 )
 
-// coteMax est le plus grand côté qu'une grille puisse avoir.
-//
-// Le chiffre n'est pas rond par hasard : la clé de tri compte la profondeur — la somme
-// des deux axes — sur dix-huit bits en quarts de cellule, soit 65 536 cellules de
-// somme, donc la moitié par côté. Au-delà, deux cellules éloignées se replieraient sur
-// la même valeur et s'ordonneraient par leur rang d'insertion : le rendu resterait
-// prévisible, et faux.
-const coteMax = 32768
-
-// stratesMax est le nombre de choses qu'une cellule peut empiler.
+// StratesMax est le nombre de choses qu'une cellule peut empiler.
 //
 // Une strate n'est pas une couche. La couche d'un aspect est un rang global que la clé
 // de tri place au-dessus de tout — ce qu'une interface emploiera —, là où une strate ne
@@ -35,7 +27,7 @@ const coteMax = 32768
 // mégaoctets sur cinq cents cellules de côté. Une strate creuse — quelques véhicules
 // sur une grande carte — la paie donc pleine, ce qui est à reconsidérer le jour où une
 // mesure le demande, pas avant.
-const stratesMax = 16
+const StratesMax = 16
 
 // entitesParDefaut est la capacité qu'une scène prend quand l'appelant n'en demande
 // aucune — au-dessus de ce qu'un jeu de horde emploie, pour deux cents kilooctets.
@@ -97,8 +89,8 @@ func Nouvelle(largeur, hauteur int, projection geometrie.Matrice, o Options) (*S
 	if largeur <= 0 || hauteur <= 0 {
 		return nil, fmt.Errorf("grille de %d×%d : les deux côtés sont obligatoires", largeur, hauteur)
 	}
-	if largeur > coteMax || hauteur > coteMax {
-		return nil, fmt.Errorf("grille de %d×%d : %d cellules de côté au plus, ce que la clé de tri sait ordonner", largeur, hauteur, coteMax)
+	if largeur > rendu.CoteMax || hauteur > rendu.CoteMax {
+		return nil, fmt.Errorf("grille de %d×%d : %d cellules de côté au plus, ce que la clé de tri sait ordonner", largeur, hauteur, rendu.CoteMax)
 	}
 
 	capacite := o.Entites
@@ -226,11 +218,15 @@ func (s *Scene) Habiller(p Poignee, a Aspect) bool {
 // la copier, et c'est ce qui lui évite d'allouer à chaque image.
 //
 // **Une fonction et non une méthode, délibérément.** C'est une porte de service pour le
-// tri, pas une opération qu'un jeu appelle : la tranche qu'elle rend est l'état interne
-// de la scène, qu'une écriture depuis l'extérieur désaccorderait des poignées. Le paquet
-// racine republie [Scene] par un alias, qui emporte toutes ses méthodes et aucune de ses
-// fonctions — c'est donc ce qui garde la porte fermée, là où un commentaire ne le
-// ferait pas.
+// tri, pas une opération qu'un jeu appelle, et le paquet racine republie [Scene] par un
+// alias — qui emporte ses méthodes et aucune de ses fonctions. Un jeu qui importe la
+// racine seule ne la voit donc pas.
+//
+// **Pour modifier une entité, c'est [Scene.Deplacer] et [Scene.Habiller]**, jamais la
+// tranche rendue ici. Écrire dedans contourne le contrôle de bornes d'Habiller : une
+// couche trop grande repasserait sous la saturation de la clé, où deux couches
+// distinctes se confondent. Rien d'autre ne casse — la longueur de la tranche n'est pas
+// modifiable de l'extérieur, et changer X, Y ou Z ne fait que ce que Deplacer fait.
 func Entites(s *Scene) []Entite { return s.entites }
 
 // Identites rend, dans le même ordre qu'[Entites], un numéro par entité qui ne change
@@ -262,7 +258,7 @@ func Identites(s *Scene) []uint32 { return s.places }
 // Une strate s'alloue à sa première pose. Un aspect de largeur ou de hauteur nulle
 // vide la cellule.
 func (s *Scene) PoserCellule(x, y int, strate uint8, a Aspect) bool {
-	if x < 0 || y < 0 || x >= s.largeur || y >= s.hauteur || int(strate) >= stratesMax {
+	if x < 0 || y < 0 || x >= s.largeur || y >= s.hauteur || int(strate) >= StratesMax {
 		return false
 	}
 	if !a.tientDansLaCle() {

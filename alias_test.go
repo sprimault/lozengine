@@ -6,9 +6,9 @@ package lozengine
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/geometrie"
-	"github.com/sprimault/lozengine/internal/scene"
+	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/scene"
 )
 
 // TestConstantesRepubliees vérifie que chaque constante republiée vaut celle du
@@ -99,6 +99,12 @@ func TestOrientationsRepubliees(t *testing.T) {
 	}
 	if EtageMax != rendu.EtageMax {
 		t.Errorf("EtageMax republié : %d, attendu %d", EtageMax, rendu.EtageMax)
+	}
+	if CoteMax != rendu.CoteMax {
+		t.Errorf("CoteMax republié : %d, attendu %d", CoteMax, rendu.CoteMax)
+	}
+	if StratesMax != scene.StratesMax {
+		t.Errorf("StratesMax republié : %d, attendu %d", StratesMax, scene.StratesMax)
 	}
 }
 
