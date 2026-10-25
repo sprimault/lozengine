@@ -14,9 +14,9 @@ import (
 	"github.com/sprimault/lozengine/rendu"
 )
 
-// encoder rend le PNG d'une image, pour éprouver le chargement sans fichier sur
+// encodePNG rend le PNG d'une image, pour éprouver le chargement sans fichier sur
 // disque.
-func encoder(t *testing.T, img image.Image) *bytes.Buffer {
+func encodePNG(t *testing.T, img image.Image) *bytes.Buffer {
 	t.Helper()
 
 	var tampon bytes.Buffer
@@ -26,15 +26,15 @@ func encoder(t *testing.T, img image.Image) *bytes.Buffer {
 	return &tampon
 }
 
-// TestChargerPlanchePremultiplie vérifie la conversion que le PNG ne fait pas :
+// TestLoadSheetPremultiplies vérifie la conversion que le PNG ne fait pas :
 // un rouge à demi transparent arrive prémultiplié, seul état dans lequel le
 // mélange se ramène à une multiplication et une addition.
-func TestChargerPlanchePremultiplie(t *testing.T) {
+func TestLoadSheetPremultiplies(t *testing.T) {
 	img := image.NewNRGBA(image.Rect(0, 0, 2, 1))
 	img.SetNRGBA(0, 0, color.NRGBA{R: 255, A: 128})
 	img.SetNRGBA(1, 0, color.NRGBA{R: 255, G: 255, B: 255, A: 255})
 
-	p, err := LoadSheet(encoder(t, img))
+	p, err := LoadSheet(encodePNG(t, img))
 	if err != nil {
 		t.Fatalf("chargement : %v", err)
 	}
@@ -47,45 +47,45 @@ func TestChargerPlanchePremultiplie(t *testing.T) {
 	}
 }
 
-// TestChargerPlancheFormats vérifie que les formats qu'un PNG peut porter arrivent
+// TestLoadSheetFormats vérifie que les formats qu'un PNG peut porter arrivent
 // tous en RVBA : le chargement ne doit pas dépendre de la façon dont l'image a été
 // écrite par un outil de fabrication.
-func TestChargerPlancheFormats(t *testing.T) {
+func TestLoadSheetFormats(t *testing.T) {
 	gris := image.NewGray(image.Rect(0, 0, 1, 1))
 	gris.SetGray(0, 0, color.Gray{Y: 200})
 
 	palette := image.NewPaletted(image.Rect(0, 0, 1, 1), color.Palette{color.NRGBA{R: 10, G: 20, B: 30, A: 255}})
 	palette.SetColorIndex(0, 0, 0)
 
-	cas := []struct {
-		nom  string
+	cases := []struct {
+		name string
 		img  image.Image
-		veut rendu.Couleur
+		want rendu.Couleur
 	}{
 		{"niveaux de gris", gris, rendu.Couleur{R: 200, V: 200, B: 200, A: 255}},
 		{"palette", palette, rendu.Couleur{R: 10, V: 20, B: 30, A: 255}},
 	}
-	for _, c := range cas {
-		t.Run(c.nom, func(t *testing.T) {
-			p, err := LoadSheet(encoder(t, c.img))
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			p, err := LoadSheet(encodePNG(t, c.img))
 			if err != nil {
 				t.Fatalf("chargement : %v", err)
 			}
-			if p.Pixels[0] != c.veut {
-				t.Errorf("pixel : %v, attendu %v", p.Pixels[0], c.veut)
+			if p.Pixels[0] != c.want {
+				t.Errorf("pixel : %v, attendu %v", p.Pixels[0], c.want)
 			}
 		})
 	}
 }
 
-// TestChargerPlancheOrigineDecalee éprouve le cas qu'une sous-image produit : des
+// TestLoadSheetShiftedOrigin éprouve le cas qu'une sous-image produit : des
 // bornes dont l'origine n'est pas en (0, 0). Lire les pixels sans en tenir compte
 // décale toute la planche d'une ligne et d'une colonne.
-func TestChargerPlancheOrigineDecalee(t *testing.T) {
-	entier := image.NewNRGBA(image.Rect(0, 0, 4, 4))
-	entier.SetNRGBA(1, 1, color.NRGBA{G: 255, A: 255})
+func TestLoadSheetShiftedOrigin(t *testing.T) {
+	whole := image.NewNRGBA(image.Rect(0, 0, 4, 4))
+	whole.SetNRGBA(1, 1, color.NRGBA{G: 255, A: 255})
 
-	p, err := LoadSheet(encoder(t, entier.SubImage(image.Rect(1, 1, 3, 3))))
+	p, err := LoadSheet(encodePNG(t, whole.SubImage(image.Rect(1, 1, 3, 3))))
 	if err != nil {
 		t.Fatalf("chargement : %v", err)
 	}
@@ -98,19 +98,19 @@ func TestChargerPlancheOrigineDecalee(t *testing.T) {
 	}
 }
 
-// TestChargerPlancheTropLarge vérifie le refus d'une planche qu'un quad ne saurait
+// TestLoadSheetTooWide vérifie le refus d'une planche qu'un quad ne saurait
 // pas désigner, sa source ne tenant que sur seize bits.
-func TestChargerPlancheTropLarge(t *testing.T) {
+func TestLoadSheetTooWide(t *testing.T) {
 	img := image.NewNRGBA(image.Rect(0, 0, 65536, 1))
 
-	if _, err := LoadSheet(encoder(t, img)); err == nil {
+	if _, err := LoadSheet(encodePNG(t, img)); err == nil {
 		t.Error("planche de 65 536 pixels de côté acceptée")
 	}
 }
 
-// TestChargerPlancheInvalide vérifie que l'erreur de décodage est enveloppée avec
+// TestLoadSheetInvalid vérifie que l'erreur de décodage est enveloppée avec
 // son contexte, et non rendue nue.
-func TestChargerPlancheInvalide(t *testing.T) {
+func TestLoadSheetInvalid(t *testing.T) {
 	_, err := LoadSheet(strings.NewReader("ceci n'est pas un PNG"))
 	if err == nil {
 		t.Fatal("contenu invalide accepté")

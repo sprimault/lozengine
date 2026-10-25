@@ -21,65 +21,65 @@ const (
 	imageA60Hz = 16_666_667
 )
 
-// partDImage rapporte la part d'une image à 60 Hz que l'opération prendrait sur une
+// imagePart rapporte la part d'une image à 60 Hz que l'opération prendrait sur une
 // machine modeste. Le ns/op brut reste rapporté à côté : c'est lui que `benchstat`
 // compare, la pondération n'étant qu'une lecture.
 //
 // Elle n'a de sens que pour ce qui se fait une fois par image. Un banc à l'échelle du
 // quad n'en reçoit pas : ce qu'on y lit est un rapport entre chemins, et un rapport
 // n'a pas besoin d'être pondéré.
-func partDImage(b *testing.B) {
+func imagePart(b *testing.B) {
 	parOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
 	b.ReportMetric(parOp*ponderation*100/imageA60Hz, "%image-pondere")
 }
 
-// tuile rend une tuile de sol en losange 32×16 : coins transparents, corps opaque,
+// tile rend une tile de sol en losange 32×16 : coins transparents, corps opaque,
 // bord à demi transparent. Les trois genres de séquence y sont représentés dans les
 // proportions d'un vrai sprite, ce qui est tout ce qu'on demande à une mire de
 // mesure.
-func tuile() Sheet {
+func tile() Sheet {
 	p := NewSheet(32, 16)
 	for y := 0; y < 16; y++ {
-		hauteur := y
+		height := y
 		if y >= 8 {
-			hauteur = 15 - y
+			height = 15 - y
 		}
-		demi := (hauteur + 1) * 2
+		demi := (height + 1) * 2
 
 		for x := 16 - demi; x < 16+demi; x++ {
-			couleur := rendu.Couleur{R: 90, V: 110, B: 90, A: 255}
+			color := rendu.Couleur{R: 90, V: 110, B: 90, A: 255}
 			if x == 16-demi || x == 16+demi-1 {
-				couleur = rendu.Couleur{R: 45, V: 55, B: 45, A: 128}
+				color = rendu.Couleur{R: 45, V: 55, B: 45, A: 128}
 			}
-			p.Pixels[y*32+x] = couleur
+			p.Pixels[y*32+x] = color
 		}
 	}
 	return p
 }
 
-// personnage rend une silhouette debout de 16×24, marges comprises : c'est la
+// character rend une silhouette debout de 16×24, marges comprises : c'est la
 // deuxième forme que le moteur dessine par milliers.
-func personnage() Sheet {
+func character() Sheet {
 	p := NewSheet(16, 24)
 	for y := 2; y < 24; y++ {
 		for x := 4; x < 12; x++ {
-			couleur := rendu.Couleur{R: 160, V: 140, B: 120, A: 255}
+			color := rendu.Couleur{R: 160, V: 140, B: 120, A: 255}
 			if x == 4 || x == 11 {
-				couleur = rendu.Couleur{R: 80, V: 70, B: 60, A: 128}
+				color = rendu.Couleur{R: 80, V: 70, B: 60, A: 128}
 			}
-			p.Pixels[y*16+x] = couleur
+			p.Pixels[y*16+x] = color
 		}
 	}
 	return p
 }
 
-// atlasEssai range les deux formes et rend l'atlas, la tuile en 0 et le personnage
+// testAtlas range les deux formes et rend l'atlas, la tuile en 0 et le personnage
 // en 1.
-func atlasEssai(b *testing.B) *Atlas {
+func testAtlas(b *testing.B) *Atlas {
 	b.Helper()
 
 	var a Atlas
-	for _, p := range []Sheet{tuile(), personnage()} {
+	for _, p := range []Sheet{tile(), character()} {
 		if _, err := a.Add(p); err != nil {
 			b.Fatalf("ajout : %v", err)
 		}
@@ -91,8 +91,8 @@ func atlasEssai(b *testing.B) *Atlas {
 // lignes sont ce qui dira si une optimisation a servi : la copie est le cas qu'il
 // faut garder rapide, le miroir celui qui perd la copie en bloc.
 func BenchmarkQuad(b *testing.B) {
-	cas := []struct {
-		nom    string
+	cases := []struct {
+		name   string
 		regler func(*rendu.Quad)
 	}{
 		{"copie", func(*rendu.Quad) {}},
@@ -103,10 +103,10 @@ func BenchmarkQuad(b *testing.B) {
 		{"aplat", func(q *rendu.Quad) { q.Drapeaux = rendu.Aplat }},
 	}
 
-	a := atlasEssai(b)
-	for _, c := range cas {
-		b.Run(c.nom, func(b *testing.B) {
-			tampon := rendu.NouveauTampon(480, 270)
+	a := testAtlas(b)
+	for _, c := range cases {
+		b.Run(c.name, func(b *testing.B) {
+			buffer := rendu.NouveauTampon(480, 270)
 
 			q := rendu.Quad{X: 100, Y: 100, Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc()}
 			c.regler(&q)
@@ -114,69 +114,69 @@ func BenchmarkQuad(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				Draw(tampon, r, a)
+				Draw(buffer, r, a)
 			}
 		})
 	}
 }
 
-// BenchmarkEffacer mesure la première opération de chaque image, à la résolution
+// BenchmarkClear mesure la première opération de chaque image, à la résolution
 // interne. Elle se compare au blit qui la suit : une remise à zéro qui coûterait
 // autant que le dessin serait le premier endroit à regarder.
-func BenchmarkEffacer(b *testing.B) {
-	cas := []struct {
-		nom     string
-		couleur rendu.Couleur
+func BenchmarkClear(b *testing.B) {
+	cases := []struct {
+		name  string
+		color rendu.Couleur
 	}{
 		{"transparent", rendu.Couleur{}},
 		{"couleur", rendu.Couleur{R: 20, V: 30, B: 40, A: 255}},
 	}
-	for _, c := range cas {
-		b.Run(c.nom, func(b *testing.B) {
-			tampon := rendu.NouveauTampon(480, 270)
+	for _, c := range cases {
+		b.Run(c.name, func(b *testing.B) {
+			buffer := rendu.NouveauTampon(480, 270)
 
 			b.ResetTimer()
 			for range b.N {
-				Clear(tampon, c.couleur)
+				Clear(buffer, c.color)
 			}
-			partDImage(b)
+			imagePart(b)
 		})
 	}
 }
 
-// BenchmarkAgrandir mesure la dernière opération de l'image, celle qu'un backend sans
+// BenchmarkUpscale mesure la dernière opération de l'image, celle qu'un backend sans
 // mise à l'échelle matérielle doit faire lui-même. Les deux tailles de sortie séparent
 // ce que coûtent les bandes de ce que coûte l'agrandissement.
-func BenchmarkAgrandir(b *testing.B) {
-	cas := []struct {
-		nom                          string
-		largeurSortie, hauteurSortie uint16
-		facteur                      int
+func BenchmarkUpscale(b *testing.B) {
+	cases := []struct {
+		name                string
+		outWidth, outHeight uint16
+		factor              int
 	}{
 		{"sans bande, facteur 4", 1920, 1080, 4},
 		{"avec bandes, facteur 3", 1920, 1080, 3},
 	}
-	for _, c := range cas {
-		b.Run(c.nom, func(b *testing.B) {
-			interne := rendu.NouveauTampon(480, 270)
-			Clear(interne, rendu.Couleur{R: 60, V: 80, B: 60, A: 255})
-			sortie := rendu.NouveauTampon(c.largeurSortie, c.hauteurSortie)
+	for _, c := range cases {
+		b.Run(c.name, func(b *testing.B) {
+			inner := rendu.NouveauTampon(480, 270)
+			Clear(inner, rendu.Couleur{R: 60, V: 80, B: 60, A: 255})
+			out := rendu.NouveauTampon(c.outWidth, c.outHeight)
 
 			b.ResetTimer()
 			for range b.N {
-				Upscale(interne, sortie, c.facteur, rendu.Couleur{A: 255})
+				Upscale(inner, out, c.factor, rendu.Couleur{A: 255})
 			}
-			partDImage(b)
+			imagePart(b)
 		})
 	}
 }
 
-// BenchmarkImage mesure une image entière : un sol qui couvre la résolution interne
+// BenchmarkFrame mesure une image entière : un sol qui couvre la résolution interne
 // et deux cents personnages dessus. C'est le seul chiffre qui réponde à la question
 // qui compte — combien d'images par seconde le blit laisse au reste du moteur.
-func BenchmarkImage(b *testing.B) {
-	a := atlasEssai(b)
-	tampon := rendu.NouveauTampon(480, 270)
+func BenchmarkFrame(b *testing.B) {
+	a := testAtlas(b)
+	buffer := rendu.NouveauTampon(480, 270)
 
 	var r rendu.Rendu
 	for y := -16; y < 270; y += 8 {
@@ -202,9 +202,9 @@ func BenchmarkImage(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		Draw(tampon, r, a)
+		Draw(buffer, r, a)
 	}
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "images/s")
 	b.ReportMetric(float64(tuiles), "tuiles/image")
-	partDImage(b)
+	imagePart(b)
 }
