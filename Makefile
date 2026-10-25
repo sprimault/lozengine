@@ -13,11 +13,25 @@ export CGO_ENABLED := 0
 
 -include makefile.local
 
-.PHONY: build test bench cover depot fmt vet deps entetes frontiere cross check \
+.PHONY: build example test bench cover depot fmt vet deps entetes frontiere cross check \
         references notes titre clean
 
 build:
 	go build ./...
+
+# Les exemples ouvrent une fenêtre, donc rien ne les lance en intégration continue.
+# Ils entrent en revanche dans `./...`, si bien que `build` et `cross` les compilent :
+# un exemple qui ne compile plus fait rougir `check`.
+#
+# `make example` lance le plus petit, celui qui tient le critère des trente lignes ;
+# `make example EXAMPLE=walk` en choisit un autre. Passer par là plutôt que par un
+# `go run` tapé directement, pour la raison qui vaut pour PKG et RUN ci-dessous : une
+# commande go hors du Makefile perd ses réglages, et l'oubli ne se voit pas dans la
+# sortie.
+EXAMPLE ?= hello
+
+example:
+	go run ./examples/$(EXAMPLE)
 
 # PKG et RUN restreignent la portée sans sortir du Makefile : une commande go
 # tapée directement perd les réglages du poste, et l'oubli ne se voit pas dans
