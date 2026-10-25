@@ -101,7 +101,7 @@ quatre à la fois :
   plus grand lieu concevable » se vérifie ; « largement suffisant » non.
 
 ```go
-// Cle est l'ordre de dessin d'un quad, réduit à un entier comparable.
+// Key est l'ordre de dessin d'un quad, réduit à un entier comparable.
 //
 // Composée du bit fort au bit faible : couche 4 bits, étage 6, profondeur en
 // quarts de cellule 18, hauteur 16, planche 10, index stable 10. L'ordre des
@@ -119,7 +119,7 @@ quatre à la fois :
 // N a x+y au plus égal à 2N. Au-delà, deux cellules éloignées se replient sur la
 // même valeur et s'ordonnent par leur index stable, c'est-à-dire par leur ordre
 // d'insertion : le rendu resterait déterministe, et faux.
-type Cle uint64
+type Key uint64
 ```
 
 Un fichier peut commencer par un commentaire qui dit son rôle, séparé du
@@ -127,7 +127,8 @@ commentaire de paquet par une ligne vide — sans quoi il en deviendrait la godo
 
 ## Erreurs
 
-- Erreurs enveloppées avec `%w` et un contexte utile, en français.
+- Erreurs enveloppées avec `%w` et un contexte utile, en anglais et sans espace avant
+  les deux-points — `grid of %d×%d: both sides are required`.
 - Pas de `panic` dans le code de bibliothèque, sauf violation d'un invariant de
   programmation documenté comme tel.
 - **Les fonctions du chemin de rendu ne renvoient pas d'erreur.** Les erreurs se
@@ -136,7 +137,7 @@ commentaire de paquet par une ligne vide — sans quoi il en deviendrait la godo
 ## Performance
 
 Le chemin de rendu tourne soixante fois par seconde sur des milliers de quads.
-Dans `tri`, `raster` et les backends :
+Dans `sorting`, `raster` et les backends :
 
 - Pas d'allocation par image. Les tampons sont réutilisés et remis à zéro par
   une remise à longueur nulle, jamais réalloués.
@@ -175,10 +176,10 @@ Un défaut de rendu qui n'a pas laissé de scénario derrière lui reviendra.
 
 ### Tests unitaires
 
-- `geometrie` : aller-retour monde vers écran et retour, sur le dimétrique,
+- `geometry` : aller-retour monde vers écran et retour, sur le dimétrique,
   l'isométrie vraie et un ratio arbitraire. La même suite doit passer sur les
   trois.
-- `tri` : ordre attendu sur des scènes construites à la main, et détection des
+- `sorting` : ordre attendu sur des scènes construites à la main, et détection des
   cycles.
 - Tables de cas, sans bibliothèque d'assertions — la règle de dépendance vaut
   aussi pour les tests.
@@ -194,7 +195,7 @@ types changeant de direction sur la même image sans pic.
 
 ## Dépendances
 
-**Le cœur du moteur n'a aucune dépendance.** `geometry`, `scene`, `tri`, `render`
+**Le cœur du moteur n'a aucune dépendance.** `geometry`, `scene`, `sorting`, `render`
 et `raster` n'emploient que la bibliothèque standard, sans cgo — tests compris.
 C'est là que la promesse se joue, et `make deps` la vérifie paquet par paquet.
 

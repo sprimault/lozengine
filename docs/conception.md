@@ -209,7 +209,7 @@ internal/viewer       scènes scriptées, rejeu, images           tous les préc
 cmd/viewer            commande de rejeu                         viewer
 ```
 
-`scene` et `tri` atteignent `render` parce que l'un décrit des entités qui portent
+`scene` et `sorting` atteignent `render` parce que l'un décrit des entités qui portent
 une teinte et des drapeaux, et que l'autre produit la liste de quads : sans cela, le
 noyau ne pourrait pas rendre ce que son critère de fin lui demande. Cela ne leur
 ouvre rien d'autre — `render` n'a lui-même aucune dépendance.
@@ -264,7 +264,7 @@ désigne le même type, sans conversion ni copie — ce qui est indispensable po
 structures qu'un hôte reçoit par milliers à chaque image, et qui doivent garder
 leur disposition compatible C jusqu'à la frontière.
 
-`scene` et `tri` ne connaissent aucun backend. `raster` et `backend` ne
+`scene` et `sorting` ne connaissent aucun backend. `raster` et `backend` ne
 connaissent pas `scene` : ils consomment une `DrawList` déjà triée. Si un backend a
 besoin de trier, de projeter ou de consulter la scène, la frontière est mal
 placée, et le correctif est dans le noyau.
@@ -311,7 +311,7 @@ c'est qu'un défaut manque quelque part.
 
 ## Dépendances
 
-**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `tri`, `render` et
+**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `sorting`, `render` et
 `raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. C'est
 là que la promesse se joue, et le contrôle la vérifie paquet par paquet plutôt
 que globalement.
