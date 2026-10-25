@@ -20,7 +20,7 @@ func TestTargetWithoutVeil(t *testing.T) {
 	}
 
 	with := copyPixels(replay.Frame(0, ""))
-	without := replay.Frame(0, "sans-voile")
+	without := replay.Frame(0, "no-veil")
 
 	if samePixels(with, without) {
 		t.Fatal("la directive ne change rien à l'image")

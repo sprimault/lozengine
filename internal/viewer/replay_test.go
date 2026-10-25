@@ -111,10 +111,10 @@ func TestFrameFollowsTheInput(t *testing.T) {
 	}
 
 	without := copyPixels(replay.Frame(0, ""))
-	with := replay.Frame(0, "pion 60 30")
+	with := replay.Frame(0, "pawn 60 30")
 
 	if samePixels(without, with) {
-		t.Error("l'entrée « pion 60 30 » n'a rien changé")
+		t.Error("l'entrée « pawn 60 30 » n'a rien changé")
 	}
 }
 
