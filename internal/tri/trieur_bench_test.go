@@ -6,7 +6,7 @@ package tri
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/rendu"
 	"github.com/sprimault/lozengine/scene"
 )
@@ -41,7 +41,7 @@ func partDImage(b *testing.B) {
 func scenePourBanc(b *testing.B, cote, entites, strates int) *scene.Scene {
 	b.Helper()
 
-	s, err := scene.Nouvelle(cote, cote, geometrie.Dimetrique(32, 16), scene.Options{Entites: entites + 1})
+	s, err := scene.Nouvelle(cote, cote, geometry.Dimetric(32, 16), scene.Options{Entites: entites + 1})
 	if err != nil {
 		b.Fatalf("montage : %v", err)
 	}

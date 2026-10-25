@@ -107,7 +107,7 @@ func (s *Scene) Etendue() (largeur, hauteur int) {
 // certains veulent buter sur le bord, d'autres montrer le vide autour.
 func (s *Scene) recadrer() {
 	rx, ry := s.Remapper(s.cibleX, s.cibleY)
-	ex, ey, _, _ := s.projection.Projeter(rx, ry, 0)
+	ex, ey, _, _ := s.projection.Project(rx, ry, 0)
 
 	s.vueX = ex - s.vueLargeur/2
 	s.vueY = ey - s.vueHauteur/2

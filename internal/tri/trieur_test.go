@@ -6,7 +6,7 @@ package tri
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/rendu"
 	"github.com/sprimault/lozengine/scene"
 )
@@ -15,7 +15,7 @@ import (
 func scenePourTest(t *testing.T, cote, capacite int) *scene.Scene {
 	t.Helper()
 
-	s, err := scene.Nouvelle(cote, cote, geometrie.Dimetrique(32, 16), scene.Options{Entites: capacite})
+	s, err := scene.Nouvelle(cote, cote, geometry.Dimetric(32, 16), scene.Options{Entites: capacite})
 	if err != nil {
 		t.Fatalf("montage : %v", err)
 	}

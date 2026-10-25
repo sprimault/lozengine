@@ -196,12 +196,12 @@ Le sens des dépendances ne s'inverse jamais.
 
 ```
 lozengine             surface publique, boucle, assemblage      tous les internes
-geometrie             projection, matrices, conversions         aucune
-scene                 grille, entités, couches, caméra          geometrie, rendu
-internal/tri          retrait hors image, clé, départage        geometrie, scene, rendu
+geometry             projection, matrices, conversions         aucune
+scene                 grille, entités, couches, caméra          geometry, rendu
+internal/tri          retrait hors image, clé, départage        geometry, scene, rendu
 rendu                 structures Quad et Rendu, publiques       aucune
 raster                planches, atlas, rastériseur, PNG         rendu
-internal/apparence    interface fournisseur, animation          geometrie, rendu
+internal/apparence    interface fournisseur, animation          geometry, rendu
 input                 touches, état du clavier                  aucune
 internal/backend/…    contrat de fenêtre, familles, présentation  input, rendu
 internal/audio        mixeur et sorties système                 aucune
@@ -222,7 +222,7 @@ Le paquet racine est le seul à tout connaître, et rien ne dépend de lui.
 
 **Un paquet sort d'`internal/` quand un consommateur doit lire la documentation de ses
 types, et c'est une décision, pas un rangement.** Quatre y sont : `rendu`,
-`geometrie`, `scene` et `raster`. Le reste — le tri, les backends, la visionneuse —
+`geometry`, `scene` et `raster`. Le reste — le tri, les backends, la visionneuse —
 n'a aucune raison d'être lu par qui écrit un jeu, et le compilateur Go interdit de
 l'importer depuis un autre module.
 
@@ -241,7 +241,7 @@ ni teinte, ni planche —, ce qui a sorti `rendu` au jalon 0. La même chose vau
 méthodes, et personne ne l'avait vu : le 25 octobre 2026, `go doc -all` ne montrait
 aucune des quatre méthodes de `Matrice`, alors que la `0.2.0` l'annonçait comme la
 surface du jalon 1 et que sa propre godoc disait « s'emploie par ses méthodes ».
-`geometrie` et `scene` sont sortis de là.
+`geometry` et `scene` sont sortis de là.
 
 **Ce que cela retire, et qu'il faut savoir.** La règle précédente voulait que la
 surface publique se réduise à ce que le paquet racine republie, publier demandant de
@@ -311,7 +311,7 @@ c'est qu'un défaut manque quelque part.
 
 ## Dépendances
 
-**Le cœur du moteur n'en a aucune.** `geometrie`, `scene`, `tri`, `rendu` et
+**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `tri`, `rendu` et
 `raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. C'est
 là que la promesse se joue, et le contrôle la vérifie paquet par paquet plutôt
 que globalement.

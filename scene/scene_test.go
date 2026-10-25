@@ -6,7 +6,7 @@ package scene
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/rendu"
 )
 
@@ -15,7 +15,7 @@ import (
 func scenePourTest(t *testing.T, capacite int) *Scene {
 	t.Helper()
 
-	s, err := Nouvelle(8, 8, geometrie.Dimetrique(32, 16), Options{Entites: capacite})
+	s, err := Nouvelle(8, 8, geometry.Dimetric(32, 16), Options{Entites: capacite})
 	if err != nil {
 		t.Fatalf("montage : %v", err)
 	}
@@ -43,7 +43,7 @@ func TestNouvelleRefuse(t *testing.T) {
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
-			if _, err := Nouvelle(c.largeur, c.hauteur, geometrie.Dimetrique(32, 16), c.o); err == nil {
+			if _, err := Nouvelle(c.largeur, c.hauteur, geometry.Dimetric(32, 16), c.o); err == nil {
 				t.Error("scène acceptée")
 			}
 		})
@@ -53,7 +53,7 @@ func TestNouvelleRefuse(t *testing.T) {
 // TestNouvelleAccepteLaBorne vérifie que la garde s'arrête là où la clé de tri cesse
 // de distinguer, et pas une cellule avant.
 func TestNouvelleAccepteLaBorne(t *testing.T) {
-	s, err := Nouvelle(rendu.CoteMax, 1, geometrie.Dimetrique(32, 16), Options{Entites: 1})
+	s, err := Nouvelle(rendu.CoteMax, 1, geometry.Dimetric(32, 16), Options{Entites: 1})
 	if err != nil {
 		t.Fatalf("grille de %d de côté refusée : %v", rendu.CoteMax, err)
 	}

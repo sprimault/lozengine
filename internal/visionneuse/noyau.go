@@ -4,7 +4,7 @@
 package visionneuse
 
 import (
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/internal/tri"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/rendu"
@@ -90,7 +90,7 @@ func Noyau() Scenario {
 // sceneDuNoyau monte la scène à neuf, ce que la pureté exigée d'un scénario demande :
 // une image doit pouvoir se rendre seule, deux fois, et donner les mêmes pixels.
 func sceneDuNoyau() *scene.Scene {
-	s, err := scene.Nouvelle(coteGrille, coteGrille, geometrie.Dimetrique(tuileL, tuileH), scene.Options{Entites: 8})
+	s, err := scene.Nouvelle(coteGrille, coteGrille, geometry.Dimetric(tuileL, tuileH), scene.Options{Entites: 8})
 	if err != nil {
 		panic(err)
 	}

@@ -52,8 +52,8 @@ notes de publication.
 - Les planches se chargent depuis le paquet racine : `OuvrirPlanche` par chemin,
   `ChargerPlanche` par lecteur, plus `Planche`, `Atlas`, `Rectangle` et
   `NouvellePlanche`.
-- `geometrie`, `scene` et `raster` sont publics : les champs et les méthodes de
-  `Matrice`, `Scene`, `Entite`, `Aspect` et `Planche` se lisent dans leur
+- `geometry`, `scene` et `raster` sont publics : les champs et les méthodes de
+  `Matrix`, `Scene`, `Entite`, `Aspect` et `Planche` se lisent dans leur
   documentation.
 - `CoteMax` et `StratesMax` disent la plus grande grille possible et le nombre de
   choses qu'une cellule empile.
@@ -74,7 +74,7 @@ notes de publication.
   and `JustPressed`. A `Key` names a place, not a character.
 - Sheets are loaded from the root package: `OuvrirPlanche` by path, `ChargerPlanche`
   by reader, plus `Planche`, `Atlas`, `Rectangle` and `NouvellePlanche`.
-- `geometrie`, `scene` and `raster` are public: the fields and methods of `Matrice`,
+- `geometry`, `scene` and `raster` are public: the fields and methods of `Matrix`,
   `Scene`, `Entite`, `Aspect` and `Planche` can be read in their documentation.
 - `CoteMax` and `StratesMax` state the largest possible grid and how many things a
   cell stacks.

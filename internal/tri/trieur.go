@@ -95,7 +95,7 @@ func (t *Trieur) releverEntites() {
 
 	for i, e := range scene.Entites(t.scene) {
 		rx, ry := t.scene.Remapper(e.X, e.Y)
-		ex, ey, profondeur, hauteur := m.Projeter(rx, ry, e.Z)
+		ex, ey, profondeur, hauteur := m.Project(rx, ry, e.Z)
 
 		// Une entité n'est posée sur aucune strate : elle se tient sur le décor, pas
 		// dedans, et la strate zéro la met donc sous tout ce qui s'y empile.
@@ -126,7 +126,7 @@ func (t *Trieur) releverDecor() {
 				// sienne : c'est ce qui met une créature et la case qu'elle foule sur
 				// le même point de comparaison.
 				rx, ry := t.scene.Remapper(float64(u)+0.5, float64(v)+0.5)
-				ex, ey, profondeur, hauteur := m.Projeter(rx, ry, 0)
+				ex, ey, profondeur, hauteur := m.Project(rx, ry, 0)
 
 				// Le rang de la cellule ne bouge jamais, contrairement à la place
 				// d'une entité : c'est l'identité que le départage lui demande.
@@ -152,7 +152,7 @@ func (t *Trieur) fenetre() (u0, v0, u1, v1 int) {
 	maxU, maxV := -math.MaxFloat64, -math.MaxFloat64
 
 	for _, coin := range [4][2]int32{{0, 0}, {t.vueLargeur, 0}, {0, t.vueHauteur}, {t.vueLargeur, t.vueHauteur}} {
-		rx, ry := m.Inverser(t.vueX+coin[0], t.vueY+coin[1])
+		rx, ry := m.Unproject(t.vueX+coin[0], t.vueY+coin[1])
 		x, y := t.scene.Deremapper(rx, ry)
 
 		minU, maxU = math.Min(minU, x), math.Max(maxU, x)
