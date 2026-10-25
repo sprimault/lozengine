@@ -197,6 +197,12 @@ types changeant de direction sur la même image sans pic.
 et `raster` n'emploient que la bibliothèque standard, sans cgo — tests compris.
 C'est là que la promesse se joue, et `make deps` la vérifie paquet par paquet.
 
+**Le critère porte sur ce que le moteur embarque, pas sur ce qui se charge en
+mémoire** : aucune bibliothèque C tierce, aucun compilateur C exigé, rien à
+distribuer à côté du binaire. Appeler `user32` par `syscall` reste donc dedans —
+`os.Open` charge déjà `kernel32` sur toute machine Windows —, là où Cocoa en sort,
+faute de s'atteindre sans cgo ni dépendance de plus.
+
 Ailleurs, une **liste close de deux entrées**, et aucune autre :
 
 | Dépendance | Licence | Pour | À partir du |
@@ -235,8 +241,9 @@ l'importe.
 - **`x/sys`, `x/sync`, `x/text`** — chacun a son équivalent standard dans la table
   ci-dessous, et l'écart se comble en quelques heures. L'arbitrage du coût tombe
   du mauvais côté.
-- **`purego`** — il supprime cgo, pas la dépendance à une bibliothèque C. Il
-  déplace le problème au lieu de le résoudre.
+- **`purego`** — une ligne de `require` dans un `go.mod` qu'on tient vide, pour ce
+  que `syscall` fait déjà partout où le moteur va. Là où il servirait vraiment,
+  c'est-à-dire Cocoa, c'est la plateforme qui est hors périmètre.
 - **`jezek/xgb`** — un client X11 tout fait. Il échoue sur le sujet : c'est le
   travail que le moteur revendique, et les semaines qu'il coûte sont assumées.
 
@@ -244,8 +251,8 @@ l'importe.
 
 | Besoin | Ce qu'on fait à la place |
 | --- | --- |
-| Fenêtre et entrées Windows | appels système directs sur `user32` et `gdi32` |
-| Présentation Windows | `StretchDIBits`, qui prend en charge la mise à l'échelle entière, donc sans passe supplémentaire côté moteur |
+| Fenêtre et entrées Windows | `syscall` sur `user32` et `gdi32`, les modules que le système fournit lui-même |
+| Présentation Windows | `SetDIBitsToDevice`, qui recopie sans étirer — l'agrandissement entier et ses bandes sont déjà faits par le moteur |
 | Fenêtre et entrées Linux | protocole X11 écrit sur socket |
 | Authentification X11 | lecture du fichier d'autorisation, cookie magique |
 | Transfert d'image X11 | `PutImage`, mémoire partagée quand elle est là |
@@ -254,8 +261,8 @@ l'importe.
 | Décodage PNG | `image/png` de la bibliothèque standard |
 | Comparaison d'images en test | code du dépôt, pas de bibliothèque d'assertions |
 
-Si une fonctionnalité paraît exiger une liaison native, c'est la fonctionnalité
-qui est hors périmètre.
+Si une fonctionnalité du moteur paraît exiger cgo ou un paquet hors de cette
+liste, c'est la fonctionnalité qui est hors périmètre.
 
 ## Version minimale de Go
 

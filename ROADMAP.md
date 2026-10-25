@@ -57,9 +57,9 @@ Fin : un décor à deux niveaux se traverse sans perdre le personnage.
 ### 5 · Backend web
 
 Client WebAssembly : canvas, entrées, présentation. Le rendu logiciel s'y transporte tel
-quel — le tampon part en `putImageData`, qui ne met rien à l'échelle, et l'agrandissement
-entier revient à `image-rendering: pixelated` sur un canvas dimensionné par CSS, comme il
-revient à `StretchDIBits` sous Windows.
+quel — le moteur agrandit lui-même, bandes comprises, et le tampon part en
+`putImageData`, qui ne met rien à l'échelle. C'est le contrat des cinq familles de
+backends : présenter les pixels tels quels, et n'étirer jamais.
 
 `syscall/js` étant dans la bibliothèque standard, la cible n'ouvre pas la liste close.
 Elle demande en revanche de livrer `wasm_exec.js`, le fichier de liaison fourni avec la
@@ -153,10 +153,10 @@ Fin : un exemple Rust et un exemple C++ affichent une scène rendue par le moteu
   d'entrée s'obtient par `dlsym`, et Apple n'expose aucune ABI d'appel système stable ;
   Go lui-même refuse de lier pour iOS sans cgo ; Android n'a pas de X11, SurfaceFlinger
   parle un protocole non documenté, et l'`ANativeWindow` du NDK comme JNI sont des
-  bibliothèques C. Tout chemin charge donc une bibliothèque C, ce que la règle de
-  dépendance interdit — `purego` aussi bien que cgo. Le jalon 5 couvre ces trois
-  systèmes par le navigateur, et la frontière backend les garde atteignables si la
-  contrainte change.
+  bibliothèques C. Tout chemin y demande donc cgo, et avec lui un compilateur C, ou
+  bien une dépendance de plus pour s'en passer — et la règle de dépendance refuse les
+  deux, `purego` aussi bien que cgo. Le jalon 5 couvre ces trois systèmes par le
+  navigateur, et la frontière backend les garde atteignables si la contrainte change.
 - **Accélération GPU.** Exclue par la règle de dépendance. Le rendu est logiciel, en
   résolution interne basse mise à l'échelle par un facteur entier.
 - **Moteur de jeu généraliste.** Le moteur rend une scène et lit des entrées. Ni
@@ -169,8 +169,10 @@ Fin : un exemple Rust et un exemple C++ affichent une scène rendue par le moteu
 **Le cœur du moteur n'a aucune dépendance, sur aucune plateforme.** Géométrie, scène,
 tri, structures et rastériseur n'emploient que la bibliothèque standard, tests compris,
 et un contrôle le vérifie paquet par paquet. La fenêtre, les entrées et le son passent
-par des appels système directs et par des protocoles écrits sur socket, jamais par le
-chargement d'une bibliothèque C.
+par les modules que le système fournit lui-même — `syscall` sous Windows — et par des
+protocoles écrits sur socket sous Linux. Le critère est que le moteur n'embarque aucune
+bibliothèque C tierce, n'exige aucun compilateur C et ne distribue rien à côté de son
+binaire : `go.mod` vide, `CGO_ENABLED=0`.
 
 Deux paquets périphériques font exception, sous licence permissive et par décision
 inscrite : le rendu de polices au jalon 4, la sortie audio au jalon 7. Les réécrire

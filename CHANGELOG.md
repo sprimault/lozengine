@@ -45,6 +45,18 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `windows/386` entre dans les cibles vérifiées à la compilation, la famille Windows
+  étant annoncée sur ses trois architectures. Cette cible **compile**, rien de plus.
+
+***
+
+### Added
+
+- `windows/386` joins the targets verified at build time, the Windows family being
+  announced for all three of its architectures. That target **compiles**, nothing more.
+
 ## [0.2.0] — 2026-10-24 — Jalon 1 · Noyau isométrique
 
 Le moteur a désormais une scène et un ordre de dessin, mais rien n'en sort encore :

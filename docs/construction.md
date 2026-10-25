@@ -99,10 +99,11 @@ la variable `CIBLES`, ce qui attrape l'usage d'une API absente d'un système ou
 d'une architecture.
 
 **`CIBLES` est la liste des promesses tenues, pas celle du possible.** Elle porte
-les sept couples que les `README` annoncent — `windows/amd64`, `windows/arm64`,
-`linux/amd64`, `linux/arm64`, `linux/arm`, `linux/386` et `js/wasm` —, et « compile »
-est tout ce qu'elle prouve : « tourne » et « reste vert en intégration continue »
-sont deux autres promesses, et elles ne valent que pour `amd64`. D'autres couples
+les huit couples que les `README` annoncent — `windows/amd64`, `windows/arm64`,
+`windows/386`, `linux/amd64`, `linux/arm64`, `linux/arm`, `linux/386` et
+`js/wasm` —, et « compile » est tout ce qu'elle prouve : « tourne » et « reste vert
+en intégration continue » sont deux autres promesses, et elles ne valent que pour
+`amd64`. D'autres couples
 compilent aussi, `linux/riscv64` et les cibles Apple comprises ; ils n'entrent ici
 que si un `README` les annonce, faute de quoi la cible vérifierait plus que ce que le
 dépôt promet et personne ne saurait lequel des deux croire.

@@ -24,18 +24,18 @@ structures et rastériseur — celui qui peint les pixels un à un, là où une 
 graphique le ferait — n'emploient que la bibliothèque standard**, tests compris, et
 un contrôle le vérifie paquet par paquet. La fenêtre, les entrées et
 le son passent par `syscall` sous Windows et par les protocoles X11 et
-PulseAudio écrits sur socket sous Linux, jamais par le chargement d'une
-bibliothèque C. Le rendu est donc logiciel, en résolution interne basse remontée
-vers la fenêtre par un facteur entier.
+PulseAudio écrits sur socket sous Linux : **aucune bibliothèque C tierce, aucun
+compilateur C, un `go.mod` vide**. Le rendu est donc logiciel, en résolution
+interne basse remontée vers la fenêtre par un facteur entier.
 
 **Les plateformes, et ce que chacune promet.** Compile, tourne, ou reste vert en
 intégration continue : trois promesses différentes, et seule celle qui est tenue
 est annoncée. Windows et Linux en `amd64` — la suite de tests y passe en
-intégration continue, à chaque lot. `windows/arm64`, `linux/arm64`, `linux/arm`,
-`linux/386` et `js/wasm` — ils **compilent**, ce que `make check` vérifie, et rien
-de plus tant que le parc ne contient ni Raspberry Pi, ni téléphone. C'est le
-zéro-dépendance qui ouvre cette liste, et une dépendance cgo la refermerait au lieu
-de l'élargir : `go build` ne suffirait plus.
+intégration continue, à chaque lot. `windows/arm64`, `windows/386`, `linux/arm64`,
+`linux/arm`, `linux/386` et `js/wasm` — ils **compilent**, ce que `make check`
+vérifie, et rien de plus tant que le parc ne contient ni Raspberry Pi, ni
+téléphone. C'est le zéro-dépendance qui ouvre cette liste, et une dépendance cgo
+la refermerait au lieu de l'élargir : `go build` ne suffirait plus.
 
 Le navigateur est la troisième cible, par WebAssembly, et c'est lui qui donnera
 Android et iOS. macOS, iOS et Android **natifs** restent fermés par la façon dont on
@@ -69,15 +69,15 @@ quad et par image, ce qui rendrait cette exposition inutilisable.
 
 Un seul paquet à importer, et deux façons de s'en servir.
 
-Pour écrire un jeu en Go, le moteur tient la fenêtre, la boucle à pas fixe et les
-entrées : il ne reste qu'une méthode à écrire. Pas de méthode de dessin, parce que
+Pour écrire un jeu en Go, le moteur tiendra la fenêtre, la boucle à pas fixe et les
+entrées : il ne restera qu'une méthode à écrire. Pas de méthode de dessin, parce que
 l'ordre vient de la clé de tri ; pas de méthode de mise en page, parce que
 l'échelle vient du facteur entier. C'est ce que rapporte une scène décrite plutôt
 que dessinée.
 
 Pour intégrer le moteur dans un jeu qui a déjà sa boucle, les mêmes opérations
-s'appellent une par une, sans que rien ne réclame de fenêtre ni de thread. La
-boucle fournie ajoute du confort, jamais de capacité : tout ce qu'elle permet se
+s'appelleront une par une, sans que rien ne réclame de fenêtre ni de thread. La
+première porte ajoute du confort, jamais de capacité : tout ce qu'elle permet se
 fait aussi en pilotant le moteur à la main.
 
 Tout le reste vit sous `internal/`, que le compilateur interdit d'importer depuis
@@ -143,7 +143,7 @@ make clean
 
 `make check` enchaîne le formatage, `go vet`, le contrôle d'absence de
 dépendance externe, la mention de licence, l'étanchéité de la frontière, la
-compilation croisée vers les sept couples annoncés, puis les tests.
+compilation croisée vers les huit couples annoncés, puis les tests.
 
 Le contrôle d'étanchéité est celui qui garde l'architecture : aucun paquet du
 noyau ne doit importer `syscall`, `net` ou un backend, ni directement ni à

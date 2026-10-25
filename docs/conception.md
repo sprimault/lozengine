@@ -144,8 +144,9 @@ racine carrée d'IEEE-754 sont à arrondi correct.
   jamais par une fonction appelée pendant le rendu.
 
 Les deux dernières viennent de l'exposition du noyau aux langages parlant l'ABI
-C, et elles s'appliquent bien avant que cette exposition existe. Une chaîne dans
-`Quad` imposerait une conversion par quad et par image, ce qui la rendrait
+C — la convention par laquelle un langage en appelle un autre —, et elles
+s'appliquent bien avant que cette exposition existe. Une chaîne dans `Quad`
+imposerait une conversion par quad et par image, ce qui la rendrait
 inutilisable ; un appel entrant depuis un autre langage coûte des centaines de
 nanosecondes, ce qu'un chemin parcouru des milliers de fois par image ne peut
 pas absorber.
@@ -308,19 +309,25 @@ candidature doit passer pour y entrer.
 
 Conséquences assumées, qui ne se rediscutent pas :
 
-- Accès système par appel direct : appels système documentés sous Windows,
-  protocole X11 écrit sur socket sous Linux. Jamais de chargement de
-  bibliothèque C, sur aucune plateforme.
+- Accès système par les modules que le système fournit lui-même : `syscall` sous
+  Windows, protocole X11 écrit sur socket sous Linux. Le critère n'est pas qu'aucune
+  bibliothèque ne se charge — `os.Open` charge déjà `kernel32` sur toute machine
+  Windows, donc le moteur le fait depuis qu'il lit un PNG —, c'est que **le moteur
+  n'embarque aucune bibliothèque C tierce, n'exige aucun compilateur C et ne
+  distribue rien à côté de son binaire**. `go.mod` vide, `CGO_ENABLED=0` : appeler
+  `user32` est du même ordre qu'ouvrir un fichier.
 - Pas de carte graphique, donc rendu logiciel en résolution interne basse.
 - macOS, iOS et Android natifs fermés par l'ABI, et non par arbitrage de coût :
   Cocoa ne s'atteint que par l'ABI Objective-C, dont le point d'entrée s'obtient
   par `dlsym` ; Go refuse de lier pour iOS sans cgo ; le NDK et JNI sont des
-  bibliothèques C. Tout chemin en charge une, ce que la règle interdit. Le backend
-  web y donne accès dans un navigateur, et la frontière backend les garde
-  atteignables si la contrainte change.
+  bibliothèques C. Tout chemin y demande donc cgo, et avec lui un compilateur C,
+  ou bien une dépendance de plus pour s'en passer — et le critère ci-dessus refuse
+  les deux. C'est là qu'il mord, là où une interdiction de charger quoi que ce soit
+  aurait fermé Windows avec eux. Le backend web y donne accès dans un navigateur,
+  et la frontière backend les garde atteignables si la contrainte change.
 
-Si une fonctionnalité paraît exiger une liaison native, c'est la fonctionnalité
-qui est hors périmètre.
+Si une fonctionnalité du moteur paraît exiger cgo ou un paquet hors de la liste
+close, c'est la fonctionnalité qui est hors périmètre.
 
 Une seule exception, et elle ne concerne pas le moteur : produire une
 bibliothèque native en `c-shared` ou `c-archive` réclame cgo et un compilateur C

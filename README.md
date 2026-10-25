@@ -24,19 +24,19 @@ sort, structures and rasteriser — the one painting pixels one by one, where a
 graphics card would do it — use the standard library and nothing else**,
 tests included, and a check enforces it package by package. Window, input and
 sound go through `syscall` on Windows and through the X11 and PulseAudio
-protocols written straight onto a socket on Linux, never by loading a C library.
-Rendering is therefore software, at a low internal resolution scaled up to the
-window by an integer factor.
+protocols written straight onto a socket on Linux: **no third-party C library, no
+C compiler, an empty `go.mod`**. Rendering is therefore software, at a low
+internal resolution scaled up to the window by an integer factor.
 
 **The platforms, and what each one promises.** Compiles, runs, or stays green in
 continuous integration: three different promises, and only the one actually kept
 is announced. Windows and Linux on `amd64` — the test suite passes there in
-continuous integration, on every batch. `windows/arm64`, `linux/arm64`,
-`linux/arm`, `linux/386` and `js/wasm` — they **compile**, which `make check`
-verifies, and nothing more as long as the hardware at hand holds neither a
-Raspberry Pi nor a phone. It is the zero-dependency rule that opens this list, and
-a cgo dependency would close it rather than widen it: `go build` would no longer
-be enough.
+continuous integration, on every batch. `windows/arm64`, `windows/386`,
+`linux/arm64`, `linux/arm`, `linux/386` and `js/wasm` — they **compile**, which
+`make check` verifies, and nothing more as long as the hardware at hand holds
+neither a Raspberry Pi nor a phone. It is the zero-dependency rule that opens
+this list, and a cgo dependency would close it rather than widen it: `go build`
+would no longer be enough.
 
 The browser is the third target, through WebAssembly, and it is what will bring
 Android and iOS. Native macOS, iOS and Android stay closed by the way one calls the
@@ -71,15 +71,15 @@ would make that exposure unusable.
 
 One package to import, and two ways to use it.
 
-To write a game in Go, the engine owns the window, the fixed-step loop and the
-input: one method is all you write. No draw method, because the order comes from
-the sort key; no layout method, because the scale comes from the integer factor.
-That is what a scene described rather than drawn buys you.
+To write a game in Go, the engine will own the window, the fixed-step loop and the
+input: one method will be all you write. No draw method, because the order comes
+from the sort key; no layout method, because the scale comes from the integer
+factor. That is what a scene described rather than drawn buys you.
 
 To embed the engine in a game that already has its own loop, the same operations
-are called one by one, and nothing claims a window or a thread. The loop that
-comes with it adds convenience, never capability: everything it allows can also
-be done by driving the engine by hand.
+will be called one by one, and nothing will claim a window or a thread. The first
+door adds convenience, never capability: everything it allows can also be done by
+driving the engine by hand.
 
 Everything else lives under `internal/`, which the compiler forbids importing
 from another module — with one exception, `rendu`, whose structures the ABI will
@@ -142,7 +142,7 @@ make clean
 ```
 
 `make check` chains formatting, `go vet`, the check for external dependencies,
-the licence header, the boundary check, cross-compilation to the seven announced
+the licence header, the boundary check, cross-compilation to the eight announced
 pairs, then the tests.
 
 The boundary check is the one that guards the architecture: no core package may

@@ -239,13 +239,14 @@ frontiere:
 # permet — une dépendance cgo retirerait des cibles au lieu d'en ajouter, puisque
 # `go build` ne suffirait plus. `js/wasm` y figure parce qu'il porte le backend du
 # jalon 5 et que `syscall/js` est dans la bibliothèque standard, donc la cible n'ouvre
-# pas la liste close.
+# pas la liste close. `windows/386` parce que la famille Windows est annoncée sur les
+# trois architectures, et qu'une annonce sans cible compilée n'est gardée par rien.
 #
 # `linux/riscv64`, `freebsd/amd64` et les cibles Apple compilent aussi, mesuré le
 # 5 octobre 2026. Elles ne sont pas ici parce qu'aucun README ne les annonce : cette
 # liste est celle des promesses tenues, pas celle du possible.
-CIBLES = windows/amd64 windows/arm64 linux/amd64 linux/arm64 linux/arm linux/386 \
-         js/wasm
+CIBLES = windows/amd64 windows/arm64 windows/386 linux/amd64 linux/arm64 \
+         linux/arm linux/386 js/wasm
 
 cross:
 	@for cible in $(CIBLES); do \
