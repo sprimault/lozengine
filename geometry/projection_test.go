@@ -192,3 +192,37 @@ func TestUnprojectClampsItsInput(t *testing.T) {
 		t.Errorf("l'entrée extrême rend %g, la borne %g", far, bound)
 	}
 }
+
+// TestUnprojectGivesAScreenDirection garde la promesse que la godoc fait à un jeu : la
+// matrice étant sans translation, l'inverse d'un vecteur d'écran est le vecteur de
+// monde correspondant.
+//
+// C'est ce qui permet à une touche « haut » de monter à l'écran sans deviner la
+// combinaison des deux axes — et deviner est facile à rater, puisque les axes du monde
+// sont les diagonales de l'image. Le cas reprojette la direction rendue et exige de
+// retrouver le vecteur demandé.
+func TestUnprojectGivesAScreenDirection(t *testing.T) {
+	cases := []struct {
+		name   string
+		ex, ey int32
+	}{
+		{"vers le haut", 0, -32},
+		{"vers le bas", 0, 32},
+		{"vers la gauche", -32, 0},
+		{"vers la droite", 32, 0},
+	}
+
+	for _, m := range []Matrix{Isometric(32), Dimetric(32, 16), Grid(16)} {
+		for _, c := range cases {
+			t.Run(c.name, func(t *testing.T) {
+				dx, dy := m.Unproject(c.ex, c.ey)
+
+				ex, ey, _, _ := m.Project(dx, dy, 0)
+				if ex != c.ex || ey != c.ey {
+					t.Errorf("la direction (%g, %g) se reprojette en (%d, %d), attendu (%d, %d)",
+						dx, dy, ex, ey, c.ex, c.ey)
+				}
+			})
+		}
+	}
+}

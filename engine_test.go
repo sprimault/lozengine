@@ -1,0 +1,228 @@
+// Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
+// L'étape éprouvée sans fenêtre et sans horloge, ce qui est exactement sa raison
+// d'être : si elle demandait l'une ou l'autre, un hôte ne pourrait pas la piloter et
+// la suite de non-régression ne pourrait pas la juger.
+
+package lozengine
+
+import (
+	"testing"
+	"time"
+
+	"github.com/sprimault/lozengine/render"
+)
+
+// scenario monte une scène minimale et son atlas d'une planche unie, de quoi faire une
+// image dont on peut compter les pixels.
+func scenario(t *testing.T) (*Scene, *Atlas) {
+	t.Helper()
+
+	s, err := NewScene(8, 8, Grid(16), SceneOptions{})
+	if err != nil {
+		t.Fatalf("montage de la scène : %v", err)
+	}
+
+	sheet := NewSheet(16, 16)
+	for i := range sheet.Pixels {
+		sheet.Pixels[i] = Color{R: 255, G: 255, B: 255, A: 255}
+	}
+
+	var atlas Atlas
+	if _, err := atlas.Add(sheet); err != nil {
+		t.Fatalf("ajout de la planche : %v", err)
+	}
+	return s, &atlas
+}
+
+// compteur est un jeu qui ne fait que compter ses pas, pour vérifier que l'étape
+// l'appelle une fois et une seule.
+type compteur struct {
+	pas int
+	vu  Input
+}
+
+func (c *compteur) Step(in Input) {
+	c.pas++
+	c.vu = in
+}
+
+// TestNewEngineRefuses vérifie que tout ce qui peut échouer échoue au montage, parce
+// qu'un pas ne rend pas d'erreur : il n'y a personne à qui se plaindre soixante fois
+// par seconde.
+func TestNewEngineRefuses(t *testing.T) {
+	s, atlas := scenario(t)
+
+	cases := []struct {
+		name  string
+		scene *Scene
+		o     Options
+	}{
+		{"sans scène", nil, Options{Atlas: atlas}},
+		{"sans atlas", s, Options{}},
+		{"largeur négative", s, Options{Atlas: atlas, Width: -1}},
+		{"hauteur au-delà de la borne", s, Options{Atlas: atlas, Height: MaxBufferSide + 1}},
+		{"pas négatif", s, Options{Atlas: atlas, Tick: -time.Second}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if _, err := NewEngine(c.scene, c.o); err == nil {
+				t.Error("montage accepté")
+			}
+		})
+	}
+}
+
+// TestNewEngineDefaults vérifie les défauts que l'invariant des options promet : ce
+// qui n'est pas renseigné en a un, et un jeu qui ne règle rien obtient une image
+// utilisable.
+func TestNewEngineDefaults(t *testing.T) {
+	s, atlas := scenario(t)
+
+	e, err := NewEngine(s, Options{Atlas: atlas})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+
+	frame := e.Frame()
+	if frame.Width != defaultWidth || frame.Height != defaultHeight {
+		t.Errorf("résolution interne : %d×%d, attendu %d×%d",
+			frame.Width, frame.Height, defaultWidth, defaultHeight)
+	}
+	if e.Tick() != defaultTick {
+		t.Errorf("pas : %v, attendu %v", e.Tick(), defaultTick)
+	}
+	if e.background != (Color{A: 255}) {
+		t.Errorf("fond : %v, attendu un noir opaque", e.background)
+	}
+}
+
+// TestNewEngineFramesTheViewOnce vérifie les deux moitiés d'une même règle : la scène
+// possède l'origine de la vue, et le moteur la pose seulement si personne ne l'a fait.
+func TestNewEngineFramesTheViewOnce(t *testing.T) {
+	t.Run("vue vide, le moteur la pose", func(t *testing.T) {
+		s, atlas := scenario(t)
+
+		if _, err := NewEngine(s, Options{Atlas: atlas, Width: 64, Height: 32}); err != nil {
+			t.Fatalf("montage : %v", err)
+		}
+		if _, _, width, height := s.View(); width != 64 || height != 32 {
+			t.Errorf("vue : %d×%d, attendu 64×32", width, height)
+		}
+	})
+
+	t.Run("vue déjà cadrée, le moteur n'y touche pas", func(t *testing.T) {
+		s, atlas := scenario(t)
+		s.Focus(1, 1, 40, 20)
+
+		if _, err := NewEngine(s, Options{Atlas: atlas, Width: 64, Height: 32}); err != nil {
+			t.Fatalf("montage : %v", err)
+		}
+		if _, _, width, height := s.View(); width != 40 || height != 20 {
+			t.Errorf("vue : %d×%d, attendu 40×20 — le cadrage du jeu a été reprise", width, height)
+		}
+	})
+}
+
+// TestStepCallsTheGameOnce vérifie que l'étape appelle le jeu une fois par pas, et lui
+// passe les entrées qu'elle a reçues.
+//
+// Une seule fois, parce que le front montant des touches s'arme à la lecture : deux
+// appels par pas rendraient la seconde lecture vide et le jeu ne verrait plus rien
+// venir.
+func TestStepCallsTheGameOnce(t *testing.T) {
+	s, atlas := scenario(t)
+	e, err := NewEngine(s, Options{Atlas: atlas, Width: 32, Height: 32})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+
+	// Les entrées se fabriquent sans clavier, par le même type qu'un jeu emploie
+	// pour éprouver sa propre méthode.
+	var state State
+	state.Press(KeyW)
+	in := state.Frame()
+
+	g := &compteur{}
+	e.Step(g, in)
+
+	if g.pas != 1 {
+		t.Errorf("pas joués : %d, attendu 1", g.pas)
+	}
+	if !g.vu.Held(KeyW) {
+		t.Error("les entrées ne sont pas arrivées au jeu")
+	}
+}
+
+// TestStepWithoutGame vérifie qu'un hôte peut faire une image sans jeu : il met la
+// scène à jour lui-même, et l'étape ne doit pas l'exiger.
+func TestStepWithoutGame(t *testing.T) {
+	s, atlas := scenario(t)
+	e, err := NewEngine(s, Options{Atlas: atlas, Width: 32, Height: 32})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+
+	e.Step(nil, Input{})
+}
+
+// TestStepDrawsWhatTheSceneDescribes est le cas qui relie les trois étages : le jeu
+// décrit, le tri ordonne, le rastériseur peint.
+//
+// Ce qu'il est seul à pouvoir attraper : un étage débranché. Chacun a ses propres
+// tests, et ils passeraient tous si l'étape oubliait d'appeler le tri ou de peindre.
+func TestStepDrawsWhatTheSceneDescribes(t *testing.T) {
+	s, atlas := scenario(t)
+	e, err := NewEngine(s, Options{Atlas: atlas, Width: 64, Height: 64})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+
+	// Rien posé : l'image est du fond, et rien d'autre.
+	e.Step(nil, Input{})
+	if n := peints(e.Frame(), Color{A: 255}); n != 0 {
+		t.Fatalf("%d pixels peints sur une scène vide", n)
+	}
+
+	// Une entité au centre de la vue, avec la planche unie de l'atlas.
+	if _, ok := s.Place(Entity{
+		X: 4, Y: 4,
+		Aspect: Aspect{Width: 16, Height: 16, Tint: White()},
+	}); !ok {
+		t.Fatal("la pose a été refusée")
+	}
+
+	e.Step(nil, Input{})
+	if n := peints(e.Frame(), Color{A: 255}); n == 0 {
+		t.Error("l'entité posée n'a rien peint")
+	}
+}
+
+// TestStepDoesNotAllocateAfterTheFirst vérifie la propriété dont le budget d'une image
+// dépend : passé la première, un pas ne touche plus au tas.
+func TestStepDoesNotAllocateAfterTheFirst(t *testing.T) {
+	s, atlas := scenario(t)
+	e, err := NewEngine(s, Options{Atlas: atlas, Width: 64, Height: 64})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+	s.Place(Entity{X: 4, Y: 4, Aspect: Aspect{Width: 16, Height: 16, Tint: White()}})
+
+	e.Step(nil, Input{})
+
+	if n := testing.AllocsPerRun(10, func() { e.Step(nil, Input{}) }); n != 0 {
+		t.Errorf("allocations : %v, attendu aucune", n)
+	}
+}
+
+// peints compte les pixels qui diffèrent du fond.
+func peints(b *render.Buffer, background Color) int {
+	n := 0
+	for _, p := range b.Pixels {
+		if p != background {
+			n++
+		}
+	}
+	return n
+}

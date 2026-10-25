@@ -67,6 +67,13 @@ notes de publication.
 - Les touches se nomment : lettres, chiffres, flèches, modificateurs distingués à
   gauche et à droite, fonctions et navigation. Un nom désigne une place, donc `KeyW`
   reste la touche au-dessus de `KeyS` quelle que soit la disposition du joueur.
+- **Un jeu s'écrit** : `Run` ouvre une fenêtre et tient la boucle à pas fixe, le jeu
+  n'écrivant qu'une méthode, `Game.Step`. `Options` porte le titre, la résolution
+  interne, le pas, le fond et l'atlas, et tout sauf l'atlas a un défaut.
+- `Engine` est la même capacité sans fenêtre ni horloge, pour un hôte qui garde sa
+  boucle : `NewEngine`, puis un `Step` par image et `Frame` pour l'image obtenue.
+- `State` fabrique des entrées sans clavier, de quoi éprouver la méthode d'un jeu sans
+  ouvrir de fenêtre.
 
 ### Modifié
 
@@ -99,6 +106,13 @@ notes de publication.
 - Keys have names: letters, digits, arrows, modifiers told apart left and right,
   function and navigation keys. A name states a place, so `KeyW` stays the key above
   `KeyS` whatever the player's layout.
+- **A game can be written**: `Run` opens a window and holds the fixed-step loop, the
+  game writing a single method, `Game.Step`. `Options` carries the title, internal
+  resolution, step, background and atlas, and all but the atlas have a default.
+- `Engine` is the same capability without a window or a clock, for a host that keeps
+  its own loop: `NewEngine`, then one `Step` per frame and `Frame` for the image.
+- `State` builds inputs without a keyboard, enough to exercise a game's method
+  without opening a window.
 
 ### Changed
 
