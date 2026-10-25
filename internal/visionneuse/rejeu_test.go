@@ -20,11 +20,11 @@ func scenarioEssai() Scenario {
 	return Scenario{
 		Nom: "essai", Largeur: 4, Hauteur: 2, Images: 3,
 		Atlas: func() (*raster.Atlas, error) {
-			p := raster.NouvellePlanche(1, 1)
+			p := raster.NewSheet(1, 1)
 			p.Pixels[0] = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
 
 			var atlas raster.Atlas
-			_, err := atlas.Ajouter(p)
+			_, err := atlas.Add(p)
 			return &atlas, err
 		},
 		Quads: func(numero int, e Entrees, reserve rendu.Rendu) rendu.Rendu {
@@ -141,12 +141,12 @@ func TestRejouerEcritDesImagesNumerotees(t *testing.T) {
 	}
 	defer premier.Close()
 
-	p, err := raster.ChargerPlanche(premier)
+	p, err := raster.LoadSheet(premier)
 	if err != nil {
 		t.Fatalf("rechargement : %v", err)
 	}
-	if p.Largeur != 4 || p.Hauteur != 2 {
-		t.Errorf("dimensions : %d×%d, attendu 4×2", p.Largeur, p.Hauteur)
+	if p.Width != 4 || p.Height != 2 {
+		t.Errorf("dimensions : %d×%d, attendu 4×2", p.Width, p.Height)
 	}
 }
 
@@ -174,12 +174,12 @@ func TestEcrireAgrandit(t *testing.T) {
 	}
 	defer fichier.Close()
 
-	p, err := raster.ChargerPlanche(fichier)
+	p, err := raster.LoadSheet(fichier)
 	if err != nil {
 		t.Fatalf("rechargement : %v", err)
 	}
-	if p.Largeur != 12 || p.Hauteur != 6 {
-		t.Errorf("dimensions : %d×%d, attendu 12×6", p.Largeur, p.Hauteur)
+	if p.Width != 12 || p.Height != 6 {
+		t.Errorf("dimensions : %d×%d, attendu 12×6", p.Width, p.Height)
 	}
 }
 

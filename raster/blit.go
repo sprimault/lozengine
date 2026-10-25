@@ -5,7 +5,7 @@ package raster
 
 import "github.com/sprimault/lozengine/rendu"
 
-// Dessiner peint les quads dans l'ordre du tableau, sans rien allouer.
+// Draw peint les quads dans l'ordre du tableau, sans rien allouer.
 //
 // L'ordre est la seule vérité du résultat : le rastériseur ne trie pas, ne projette
 // pas et ne consulte aucune scène. Un quad qui désigne une planche absente de
@@ -15,7 +15,7 @@ import "github.com/sprimault/lozengine/rendu"
 //
 // Une fonction et non une méthode : le tampon vit dans [rendu], que l'ABI expose, et
 // Go veut qu'une méthode soit déclarée dans le paquet de son type.
-func Dessiner(t *rendu.Tampon, r rendu.Rendu, a *Atlas) {
+func Draw(t *rendu.Tampon, r rendu.Rendu, a *Atlas) {
 	for _, q := range r {
 		quad(t, q, a)
 	}
@@ -29,84 +29,84 @@ func Dessiner(t *rendu.Tampon, r rendu.Rendu, a *Atlas) {
 // planche dessine ce qu'il trouve et s'arrête à la dernière ligne, plutôt que de
 // lire la ligne suivante.
 func quad(t *rendu.Tampon, q rendu.Quad, a *Atlas) {
-	gauche, haut := int(q.X), int(q.Y)
-	x0, y0 := max(gauche, 0), max(haut, 0)
-	x1 := min(gauche+int(q.Largeur), int(t.Largeur))
-	y1 := min(haut+int(q.Hauteur), int(t.Hauteur))
+	left, top := int(q.X), int(q.Y)
+	x0, y0 := max(left, 0), max(top, 0)
+	x1 := min(left+int(q.Largeur), int(t.Largeur))
+	y1 := min(top+int(q.Hauteur), int(t.Hauteur))
 	if x0 >= x1 || y0 >= y1 {
 		return
 	}
 
 	if q.Drapeaux&rendu.Aplat != 0 {
-		aplat(t, x0, y0, x1, y1, q.Teinte)
+		fillRect(t, x0, y0, x1, y1, q.Teinte)
 		return
 	}
 
-	p := &a.Planches[q.Planche]
-	neutre := q.Teinte == rendu.Blanc()
-	miroirX := q.Drapeaux&rendu.MiroirX != 0
-	sourceX, fin := int(q.SourceX), int(q.SourceX)+int(q.Largeur)
+	p := &a.Sheets[q.Planche]
+	neutral := q.Teinte == rendu.Blanc()
+	mirrorX := q.Drapeaux&rendu.MiroirX != 0
+	sourceX, end := int(q.SourceX), int(q.SourceX)+int(q.Largeur)
 
 	for y := y0; y < y1; y++ {
-		ligne := y - haut
+		row := y - top
 		if q.Drapeaux&rendu.MiroirY != 0 {
-			ligne = int(q.Hauteur) - 1 - ligne
+			row = int(q.Hauteur) - 1 - row
 		}
-		source := int(q.SourceY) + ligne
-		if source >= int(p.Hauteur) {
+		source := int(q.SourceY) + row
+		if source >= int(p.Height) {
 			continue
 		}
 
 		dst := t.Pixels[y*int(t.Largeur) : (y+1)*int(t.Largeur)]
-		src := p.Pixels[source*int(p.Largeur) : (source+1)*int(p.Largeur)]
+		src := p.Pixels[source*int(p.Width) : (source+1)*int(p.Width)]
 
-		colonne := 0
-		for _, s := range p.sequencesDe(uint16(source)) {
-			debut := colonne
-			colonne += int(s.nombre)
-			if s.genre == saut {
+		column := 0
+		for _, s := range p.runsOf(uint16(source)) {
+			start := column
+			column += int(s.count)
+			if s.kind == transparent {
 				continue
 			}
 
-			sa, sb := max(debut, sourceX), min(colonne, fin)
+			sa, sb := max(start, sourceX), min(column, end)
 			if sa >= sb {
 				continue
 			}
 
-			if miroirX {
+			if mirrorX {
 				for sx := sa; sx < sb; sx++ {
-					x := gauche + int(q.Largeur) - 1 - (sx - sourceX)
+					x := left + int(q.Largeur) - 1 - (sx - sourceX)
 					if x < x0 || x >= x1 {
 						continue
 					}
-					poser(&dst[x], src[sx], q.Teinte, neutre)
+					put(&dst[x], src[sx], q.Teinte, neutral)
 				}
 				continue
 			}
 
-			da := max(gauche+sa-sourceX, x0)
-			db := min(gauche+sb-sourceX, x1)
+			da := max(left+sa-sourceX, x0)
+			db := min(left+sb-sourceX, x1)
 			if da >= db {
 				continue
 			}
-			depart := sourceX + da - gauche
+			from := sourceX + da - left
 
-			if s.genre == copie && neutre {
-				copy(dst[da:db], src[depart:depart+db-da])
+			if s.kind == opaque && neutral {
+				copy(dst[da:db], src[from:from+db-da])
 				continue
 			}
 			for i := 0; i < db-da; i++ {
-				poser(&dst[da+i], src[depart+i], q.Teinte, neutre)
+				put(&dst[da+i], src[from+i], q.Teinte, neutral)
 			}
 		}
 	}
 }
 
-// aplat peint un rectangle déjà découpé en une seule couleur.
+// fillRect peint un rectangle déjà découpé en une seule couleur.
 //
 // Il ne touche pas à l'atlas : c'est ce qui permet à un panneau d'interface, à une
 // bande ou à un fondu de se dessiner sans qu'aucune planche existe pour eux.
-func aplat(t *rendu.Tampon, x0, y0, x1, y1 int, c rendu.Couleur) {
+func fillRect(t *rendu.Tampon, x0, y0, x1, y1 int, c rendu.Couleur) {
 	if c.A == 0 {
 		return
 	}
@@ -119,7 +119,7 @@ func aplat(t *rendu.Tampon, x0, y0, x1, y1 int, c rendu.Couleur) {
 			continue
 		}
 		for x := x0; x < x1; x++ {
-			melanger(&dst[x], c)
+			blend(&dst[x], c)
 		}
 	}
 }

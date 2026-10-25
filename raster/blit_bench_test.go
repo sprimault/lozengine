@@ -37,8 +37,8 @@ func partDImage(b *testing.B) {
 // bord à demi transparent. Les trois genres de séquence y sont représentés dans les
 // proportions d'un vrai sprite, ce qui est tout ce qu'on demande à une mire de
 // mesure.
-func tuile() Planche {
-	p := NouvellePlanche(32, 16)
+func tuile() Sheet {
+	p := NewSheet(32, 16)
 	for y := 0; y < 16; y++ {
 		hauteur := y
 		if y >= 8 {
@@ -59,8 +59,8 @@ func tuile() Planche {
 
 // personnage rend une silhouette debout de 16×24, marges comprises : c'est la
 // deuxième forme que le moteur dessine par milliers.
-func personnage() Planche {
-	p := NouvellePlanche(16, 24)
+func personnage() Sheet {
+	p := NewSheet(16, 24)
 	for y := 2; y < 24; y++ {
 		for x := 4; x < 12; x++ {
 			couleur := rendu.Couleur{R: 160, V: 140, B: 120, A: 255}
@@ -79,8 +79,8 @@ func atlasEssai(b *testing.B) *Atlas {
 	b.Helper()
 
 	var a Atlas
-	for _, p := range []Planche{tuile(), personnage()} {
-		if _, err := a.Ajouter(p); err != nil {
+	for _, p := range []Sheet{tuile(), personnage()} {
+		if _, err := a.Add(p); err != nil {
 			b.Fatalf("ajout : %v", err)
 		}
 	}
@@ -114,7 +114,7 @@ func BenchmarkQuad(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				Dessiner(tampon, r, a)
+				Draw(tampon, r, a)
 			}
 		})
 	}
@@ -137,7 +137,7 @@ func BenchmarkEffacer(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				Effacer(tampon, c.couleur)
+				Clear(tampon, c.couleur)
 			}
 			partDImage(b)
 		})
@@ -159,12 +159,12 @@ func BenchmarkAgrandir(b *testing.B) {
 	for _, c := range cas {
 		b.Run(c.nom, func(b *testing.B) {
 			interne := rendu.NouveauTampon(480, 270)
-			Effacer(interne, rendu.Couleur{R: 60, V: 80, B: 60, A: 255})
+			Clear(interne, rendu.Couleur{R: 60, V: 80, B: 60, A: 255})
 			sortie := rendu.NouveauTampon(c.largeurSortie, c.hauteurSortie)
 
 			b.ResetTimer()
 			for range b.N {
-				Agrandir(interne, sortie, c.facteur, rendu.Couleur{A: 255})
+				Upscale(interne, sortie, c.facteur, rendu.Couleur{A: 255})
 			}
 			partDImage(b)
 		})
@@ -202,7 +202,7 @@ func BenchmarkImage(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		Dessiner(tampon, r, a)
+		Draw(tampon, r, a)
 	}
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "images/s")
 	b.ReportMetric(float64(tuiles), "tuiles/image")

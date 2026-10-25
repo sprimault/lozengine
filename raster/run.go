@@ -3,24 +3,24 @@
 
 package raster
 
-// genre dit ce que le blit a à faire d'une suite de pixels.
-type genre uint8
+// kind dit ce que le blit a à faire d'une suite de pixels.
+type kind uint8
 
 const (
-	saut    genre = iota // entièrement transparents : rien à écrire
-	copie                // entièrement opaques : le tampon se remplace
-	melange              // partiellement transparents : un mélange par pixel
+	transparent kind = iota // entièrement transparents : rien à écrire
+	opaque                  // entièrement opaques : le tampon se remplace
+	translucent             // partiellement transparents : un mélange par pixel
 )
 
-// sequence est une suite de pixels consécutifs de même genre dans une ligne.
+// run est une suite de pixels consécutifs de même genre dans une ligne.
 //
 // Elle ne porte pas sa colonne de départ : les séquences d'une ligne la pavent
 // exactement, de la première colonne à la dernière, si bien que la position se
 // déduit en avançant. Une donnée redondante finirait par diverger de celle qu'on
 // déduit, et c'est ce pavage que le blit tient pour acquis.
-type sequence struct {
-	nombre uint16
-	genre  genre
+type run struct {
+	count uint16
+	kind  kind
 }
 
 // encoder calcule les séquences de chaque ligne de la planche.
@@ -34,41 +34,41 @@ type sequence struct {
 // Le coût est une allocation par planche, au chargement. Le pire cas — un pixel
 // sur deux à demi transparent — rend une séquence par pixel et ne fait perdre que
 // la mémoire ; aucune planche de ce genre ne se dessine.
-func (p *Planche) encoder() {
-	p.lignes = make([]uint32, int(p.Hauteur)+1)
-	p.sequences = make([]sequence, 0, int(p.Hauteur))
+func (p *Sheet) encode() {
+	p.rows = make([]uint32, int(p.Height)+1)
+	p.runs = make([]run, 0, int(p.Height))
 
-	for y := 0; y < int(p.Hauteur); y++ {
-		p.lignes[y] = uint32(len(p.sequences))
+	for y := 0; y < int(p.Height); y++ {
+		p.rows[y] = uint32(len(p.runs))
 
-		ligne := p.Pixels[y*int(p.Largeur) : (y+1)*int(p.Largeur)]
-		for x := 0; x < len(ligne); {
-			g := genreDe(ligne[x].A)
+		row := p.Pixels[y*int(p.Width) : (y+1)*int(p.Width)]
+		for x := 0; x < len(row); {
+			k := kindOf(row[x].A)
 			n := 1
-			for x+n < len(ligne) && genreDe(ligne[x+n].A) == g {
+			for x+n < len(row) && kindOf(row[x+n].A) == k {
 				n++
 			}
-			p.sequences = append(p.sequences, sequence{uint16(n), g})
+			p.runs = append(p.runs, run{uint16(n), k})
 			x += n
 		}
 	}
-	p.lignes[p.Hauteur] = uint32(len(p.sequences))
+	p.rows[p.Height] = uint32(len(p.runs))
 }
 
-// genreDe classe un pixel par son alpha. Les deux extrêmes sont les cas rapides,
+// kindOf classe un pixel par son alpha. Les deux extrêmes sont les cas rapides,
 // et ce sont eux qu'une planche porte presque partout.
-func genreDe(alpha uint8) genre {
+func kindOf(alpha uint8) kind {
 	switch alpha {
 	case 0:
-		return saut
+		return transparent
 	case 255:
-		return copie
+		return opaque
 	default:
-		return melange
+		return translucent
 	}
 }
 
-// sequencesDe rend les séquences d'une ligne.
-func (p *Planche) sequencesDe(y uint16) []sequence {
-	return p.sequences[p.lignes[y]:p.lignes[y+1]]
+// runsOf rend les séquences d'une ligne.
+func (p *Sheet) runsOf(y uint16) []run {
+	return p.runs[p.rows[y]:p.rows[y+1]]
 }

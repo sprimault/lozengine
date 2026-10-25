@@ -50,8 +50,8 @@ func NouveauRejeu(s Scenario) (*Rejeu, error) {
 // résultat de rendu.
 func (r *Rejeu) Image(numero int, e Entrees) *rendu.Tampon {
 	r.quads = r.scenario.Quads(numero, e, r.quads[:0])
-	raster.Effacer(r.tampon, r.scenario.Fond)
-	raster.Dessiner(r.tampon, r.quads, r.atlas)
+	raster.Clear(r.tampon, r.scenario.Fond)
+	raster.Draw(r.tampon, r.quads, r.atlas)
 	return r.tampon
 }
 
@@ -79,7 +79,7 @@ func (r *Rejeu) Ecrire(repertoire string, numero, facteur int) error {
 		if r.sortie == nil || int(r.sortie.Largeur) != large || int(r.sortie.Hauteur) != haut {
 			r.sortie = rendu.NouveauTampon(uint16(large), uint16(haut))
 		}
-		raster.Agrandir(r.tampon, r.sortie, facteur, r.scenario.Fond)
+		raster.Upscale(r.tampon, r.sortie, facteur, r.scenario.Fond)
 		source = r.sortie
 	}
 
@@ -88,7 +88,7 @@ func (r *Rejeu) Ecrire(repertoire string, numero, facteur int) error {
 	if err != nil {
 		return fmt.Errorf("création de %s : %w", chemin, err)
 	}
-	if err := raster.EcrirePNG(source, fichier); err != nil {
+	if err := raster.WritePNG(source, fichier); err != nil {
 		fichier.Close()
 		return fmt.Errorf("%s : %w", chemin, err)
 	}

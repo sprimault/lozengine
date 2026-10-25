@@ -8,4 +8,4 @@ package raster
 // Il ne voyage pas jusqu'au rastériseur : un quad porte déjà sa source, et
 // l'indirection coûterait une lecture de plus par quad. La découpe sert à qui
 // construit des quads — fournisseur d'apparence, scène scriptée, texte.
-type Rectangle struct{ X, Y, Largeur, Hauteur uint16 }
+type Rectangle struct{ X, Y, Width, Height uint16 }

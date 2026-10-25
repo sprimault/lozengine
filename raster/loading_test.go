@@ -34,7 +34,7 @@ func TestChargerPlanchePremultiplie(t *testing.T) {
 	img.SetNRGBA(0, 0, color.NRGBA{R: 255, A: 128})
 	img.SetNRGBA(1, 0, color.NRGBA{R: 255, G: 255, B: 255, A: 255})
 
-	p, err := ChargerPlanche(encoder(t, img))
+	p, err := LoadSheet(encoder(t, img))
 	if err != nil {
 		t.Fatalf("chargement : %v", err)
 	}
@@ -67,7 +67,7 @@ func TestChargerPlancheFormats(t *testing.T) {
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
-			p, err := ChargerPlanche(encoder(t, c.img))
+			p, err := LoadSheet(encoder(t, c.img))
 			if err != nil {
 				t.Fatalf("chargement : %v", err)
 			}
@@ -85,13 +85,13 @@ func TestChargerPlancheOrigineDecalee(t *testing.T) {
 	entier := image.NewNRGBA(image.Rect(0, 0, 4, 4))
 	entier.SetNRGBA(1, 1, color.NRGBA{G: 255, A: 255})
 
-	p, err := ChargerPlanche(encoder(t, entier.SubImage(image.Rect(1, 1, 3, 3))))
+	p, err := LoadSheet(encoder(t, entier.SubImage(image.Rect(1, 1, 3, 3))))
 	if err != nil {
 		t.Fatalf("chargement : %v", err)
 	}
 
-	if p.Largeur != 2 || p.Hauteur != 2 {
-		t.Fatalf("dimensions : %d×%d, attendu 2×2", p.Largeur, p.Hauteur)
+	if p.Width != 2 || p.Height != 2 {
+		t.Fatalf("dimensions : %d×%d, attendu 2×2", p.Width, p.Height)
 	}
 	if veut := (rendu.Couleur{V: 255, A: 255}); p.Pixels[0] != veut {
 		t.Errorf("premier pixel : %v, attendu %v", p.Pixels[0], veut)
@@ -103,7 +103,7 @@ func TestChargerPlancheOrigineDecalee(t *testing.T) {
 func TestChargerPlancheTropLarge(t *testing.T) {
 	img := image.NewNRGBA(image.Rect(0, 0, 65536, 1))
 
-	if _, err := ChargerPlanche(encoder(t, img)); err == nil {
+	if _, err := LoadSheet(encoder(t, img)); err == nil {
 		t.Error("planche de 65 536 pixels de côté acceptée")
 	}
 }
@@ -111,7 +111,7 @@ func TestChargerPlancheTropLarge(t *testing.T) {
 // TestChargerPlancheInvalide vérifie que l'erreur de décodage est enveloppée avec
 // son contexte, et non rendue nue.
 func TestChargerPlancheInvalide(t *testing.T) {
-	_, err := ChargerPlanche(strings.NewReader("ceci n'est pas un PNG"))
+	_, err := LoadSheet(strings.NewReader("ceci n'est pas un PNG"))
 	if err == nil {
 		t.Fatal("contenu invalide accepté")
 	}

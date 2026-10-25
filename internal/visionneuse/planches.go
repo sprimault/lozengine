@@ -14,8 +14,8 @@ import (
 //
 // C'est ce qui rend une image de référence utile. Un carré uni cache une inversion
 // d'axe, un miroir posé par erreur ou une source lue à l'envers ; celui-ci les montre.
-func plancheMarquee(cote uint16) raster.Planche {
-	p := raster.NouvellePlanche(cote, cote)
+func plancheMarquee(cote uint16) raster.Sheet {
+	p := raster.NewSheet(cote, cote)
 
 	for y := range int(cote) {
 		for x := range int(cote) {
@@ -37,9 +37,9 @@ func plancheMarquee(cote uint16) raster.Planche {
 // Le bord est ce qui rend l'ordre de dessin lisible : deux aplats de même teinte qui
 // se recouvrent ne montrent pas lequel est devant, deux rectangles bordés le montrent
 // à l'endroit exact où l'un mange le contour de l'autre.
-func plancheBordee(largeur, hauteur uint16, c rendu.Couleur) raster.Planche {
+func plancheBordee(largeur, hauteur uint16, c rendu.Couleur) raster.Sheet {
 	bord := rendu.Couleur{R: c.R / 3, V: c.V / 3, B: c.B / 3, A: 255}
-	p := raster.NouvellePlanche(largeur, hauteur)
+	p := raster.NewSheet(largeur, hauteur)
 
 	for y := range int(hauteur) {
 		for x := range int(largeur) {
@@ -54,9 +54,9 @@ func plancheBordee(largeur, hauteur uint16, c rendu.Couleur) raster.Planche {
 }
 
 // atlasDUnePlanche range une seule planche et rend l'atlas.
-func atlasDUnePlanche(p raster.Planche) (*raster.Atlas, error) {
+func atlasDUnePlanche(p raster.Sheet) (*raster.Atlas, error) {
 	var atlas raster.Atlas
-	if _, err := atlas.Ajouter(p); err != nil {
+	if _, err := atlas.Add(p); err != nil {
 		return nil, err
 	}
 	return &atlas, nil

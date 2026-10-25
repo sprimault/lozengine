@@ -29,16 +29,16 @@ func TestEcrirePNGAllerRetour(t *testing.T) {
 	tampon.Pixels[3] = rendu.Couleur{B: 64, A: 255}
 
 	var fichier bytes.Buffer
-	if err := EcrirePNG(tampon, &fichier); err != nil {
+	if err := WritePNG(tampon, &fichier); err != nil {
 		t.Fatalf("écriture : %v", err)
 	}
 
-	p, err := ChargerPlanche(&fichier)
+	p, err := LoadSheet(&fichier)
 	if err != nil {
 		t.Fatalf("rechargement : %v", err)
 	}
-	if p.Largeur != 2 || p.Hauteur != 2 {
-		t.Fatalf("dimensions : %d×%d, attendu 2×2", p.Largeur, p.Hauteur)
+	if p.Width != 2 || p.Height != 2 {
+		t.Fatalf("dimensions : %d×%d, attendu 2×2", p.Width, p.Height)
 	}
 	for i, veut := range tampon.Pixels {
 		if p.Pixels[i] != veut {
@@ -76,10 +76,10 @@ func TestEcrirePNGAlphaPartielPerdUnCran(t *testing.T) {
 			tampon.Pixels[0] = c.pose
 
 			var fichier bytes.Buffer
-			if err := EcrirePNG(tampon, &fichier); err != nil {
+			if err := WritePNG(tampon, &fichier); err != nil {
 				t.Fatalf("écriture : %v", err)
 			}
-			p, err := ChargerPlanche(&fichier)
+			p, err := LoadSheet(&fichier)
 			if err != nil {
 				t.Fatalf("rechargement : %v", err)
 			}
@@ -95,14 +95,14 @@ func TestEcrirePNGAlphaPartielPerdUnCran(t *testing.T) {
 // toutes les images de référence.
 func TestEcrirePNGOpaque(t *testing.T) {
 	tampon := rendu.NouveauTampon(3, 1)
-	Effacer(tampon, rendu.Couleur{R: 10, V: 20, B: 30, A: 255})
+	Clear(tampon, rendu.Couleur{R: 10, V: 20, B: 30, A: 255})
 
 	var fichier bytes.Buffer
-	if err := EcrirePNG(tampon, &fichier); err != nil {
+	if err := WritePNG(tampon, &fichier); err != nil {
 		t.Fatalf("écriture : %v", err)
 	}
 
-	p, err := ChargerPlanche(&fichier)
+	p, err := LoadSheet(&fichier)
 	if err != nil {
 		t.Fatalf("rechargement : %v", err)
 	}
@@ -117,7 +117,7 @@ func TestEcrirePNGOpaque(t *testing.T) {
 // et non nue : c'est au chargement et à l'écriture que les erreurs ont le droit
 // d'exister, donc elles doivent se lire.
 func TestEcrirePNGEnPanne(t *testing.T) {
-	err := EcrirePNG(rendu.NouveauTampon(1, 1), ecrivainEnPanne{})
+	err := WritePNG(rendu.NouveauTampon(1, 1), ecrivainEnPanne{})
 	if err == nil {
 		t.Fatal("écrivain en panne accepté")
 	}
