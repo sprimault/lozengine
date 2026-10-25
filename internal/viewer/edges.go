@@ -1,6 +1,11 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le scénario du découpage : huit quads qui débordent des bords et des coins, deux
+// entièrement dehors. C'est celui qui casse en silence — un décalage d'un pixel ne se
+// voit pas à l'œil, et les deux quads dehors sont là pour qu'un index hors bornes se
+// manifeste au lieu de peindre au hasard.
+
 package viewer
 
 import (

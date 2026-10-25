@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Les plafonds que la clé et la surface publique doivent annoncer du même nombre —
+// deux déclarations qui divergeraient sans que rien ne le dise —, et la propriété qui
+// tient tout le reste : un champ plus fort l'emporte sur tous les suivants réunis.
+
 package sorting
 
 import (

@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le catalogue des scénarios, par leurs noms. C'est la seule liste : la commande et la
+// suite de non-régression la parcourent toutes deux, donc un scénario ajouté ici entre
+// dans les deux sans qu'on y pense.
+
 package viewer
 
 import "sort"

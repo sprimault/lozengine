@@ -1,6 +1,11 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'assemblage d'une image, du relevé de la scène à la suite de quads : ce qui sort
+// d'ici ne connaît plus ni grille, ni entité, ni caméra. C'est aussi là que vit le
+// départage des clés égales, qui est la seule part de l'ordre qu'un calcul ne donne
+// pas.
+
 package sorting
 
 import (

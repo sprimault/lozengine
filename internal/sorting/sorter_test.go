@@ -1,6 +1,11 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce qui doit tenir d'une image à la suivante : l'ordre par profondeur, le retrait de
+// ce qui ne touche pas la vue, et l'index de départage qui ne bouge pas quand une
+// entité voisine disparaît — ce dernier défaut ne se voit qu'à l'image, où il
+// ressemble à un défaut de tri.
+
 package sorting
 
 import (

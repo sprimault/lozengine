@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le scénario de la composition : une échelle d'opacités, deux aplats translucides qui
+// se recouvrent, et un bord translucide posé sur une couleur. Il existe parce qu'un
+// arrondi qui dérive d'un cran ne se voit nulle part ailleurs.
+
 package viewer
 
 import (

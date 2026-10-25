@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le déterminisme dont tout le reste dépend — deux rejeux de la même image rendent les
+// mêmes pixels, et une image ne dépend pas de celle qui la précède —, puis les noms de
+// fichiers écrits et le refus d'un agrandissement qui déborde.
+
 package viewer
 
 import (

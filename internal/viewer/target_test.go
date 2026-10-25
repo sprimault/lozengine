@@ -1,6 +1,11 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La seule directive d'entrée qu'un scénario interprète, et ce qu'elle doit changer à
+// l'image : le voile est un aplat sombre à alpha partiel, donc le retirer ne peut
+// qu'éclaircir — une comparaison qui ne vérifierait que la différence passerait aussi
+// sur un voile posé à l'envers.
+
 package viewer
 
 import "testing"

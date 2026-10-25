@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'ouverture sous Windows, dont le corps vient au lot suivant : le contrat existe
+// avant la première plateforme écrite, pour ne pas se dériver d'elle.
+
 package backend
 
 import "errors"

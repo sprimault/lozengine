@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le rejeu d'un scénario : ce qui se monte une fois, ce qui se refait par image, et
+// l'écriture des PNG numérotés. Tout ce qui peut échouer échoue au montage, pour que
+// le chemin d'une image n'ait plus d'erreur à rendre.
+
 package viewer
 
 import (

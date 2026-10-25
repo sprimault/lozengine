@@ -1,6 +1,11 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le rangement des clés par paquets d'un octet, et la stabilité dont il dépend deux
+// fois : une passe qui défait l'ordre des précédentes rend un résultat qui n'est même
+// plus ordonné, et deux clés égales qui échangent leur place font scintiller deux
+// sprites superposés.
+
 package sorting
 
 // passBits et passes découpent une clé de soixante-quatre bits en tranches d'un

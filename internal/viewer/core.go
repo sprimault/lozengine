@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le seul scénario qui passe par le noyau entier — grille, décor, entités, caméra,
+// puis tri — là où les autres posent leurs quads à la main. C'est lui qui éprouve
+// l'ordre que le moteur décide, et non celui qu'un tableau lui dicte.
+
 package viewer
 
 import (
