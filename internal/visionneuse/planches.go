@@ -5,7 +5,7 @@ package visionneuse
 
 import (
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // plancheMarquee dessine un carré blanc dont aucun quart de tour ni aucun miroir ne
@@ -19,12 +19,12 @@ func plancheMarquee(cote uint16) raster.Sheet {
 
 	for y := range int(cote) {
 		for x := range int(cote) {
-			couleur := rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+			couleur := render.Color{R: 255, G: 255, B: 255, A: 255}
 			switch {
 			case x < 2 && y < 2:
-				couleur = rendu.Couleur{R: 40, V: 40, B: 40, A: 255}
+				couleur = render.Color{R: 40, G: 40, B: 40, A: 255}
 			case x == int(cote)-1:
-				couleur = rendu.Couleur{R: 128, V: 32, B: 32, A: 128}
+				couleur = render.Color{R: 128, G: 32, B: 32, A: 128}
 			}
 			p.Pixels[y*int(cote)+x] = couleur
 		}
@@ -37,8 +37,8 @@ func plancheMarquee(cote uint16) raster.Sheet {
 // Le bord est ce qui rend l'ordre de dessin lisible : deux aplats de même teinte qui
 // se recouvrent ne montrent pas lequel est devant, deux rectangles bordés le montrent
 // à l'endroit exact où l'un mange le contour de l'autre.
-func plancheBordee(largeur, hauteur uint16, c rendu.Couleur) raster.Sheet {
-	bord := rendu.Couleur{R: c.R / 3, V: c.V / 3, B: c.B / 3, A: 255}
+func plancheBordee(largeur, hauteur uint16, c render.Color) raster.Sheet {
+	bord := render.Color{R: c.R / 3, G: c.G / 3, B: c.B / 3, A: 255}
 	p := raster.NewSheet(largeur, hauteur)
 
 	for y := range int(hauteur) {

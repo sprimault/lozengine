@@ -9,63 +9,63 @@ import (
 	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/input"
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
 
 // Quad est la primitive unique du moteur : un rectangle de planche posé dans le
 // tampon, déjà placé à l'écran et rangé dans l'ordre de dessin. Sa disposition est
 // compatible C.
-type Quad = rendu.Quad
+type Quad = render.Quad
 
-// Rendu est la suite ordonnée des quads d'une image : l'ordre du tableau est
+// DrawList est la suite ordonnée des quads d'une image : l'ordre du tableau est
 // l'ordre de dessin.
-type Rendu = rendu.Rendu
+type DrawList = render.DrawList
 
-// Tampon est l'image dans laquelle le moteur écrit : des pixels contigus, ligne par
+// Buffer est l'image dans laquelle le moteur écrit : des pixels contigus, ligne par
 // ligne, prémultipliés comme ceux d'une planche.
 //
 // Un hôte peut l'allouer lui-même et laisser le moteur écrire dedans, ce qui évite
 // d'avoir à négocier qui possède cette mémoire.
-type Tampon = rendu.Tampon
+type Buffer = render.Buffer
 
-// BorneTampon est le plus grand côté qu'un tampon puisse avoir : la plus grande
+// MaxBufferSide est le plus grand côté qu'un tampon puisse avoir : la plus grande
 // coordonnée qu'un [Quad] sait désigner.
-const BorneTampon = rendu.BorneTampon
+const MaxBufferSide = render.MaxBufferSide
 
-// NouveauTampon rend un tampon transparent aux dimensions demandées, et panique
-// au-delà de [BorneTampon] de côté — une taille pareille signale un calcul fautif en
+// NewBuffer rend un tampon transparent aux dimensions demandées, et panique
+// au-delà de [MaxBufferSide] de côté — une taille pareille signale un calcul fautif en
 // amont plutôt qu'une donnée du jeu.
 //
-// Une fonction et non un alias, pour la raison qui vaut pour [Blanc].
-func NouveauTampon(largeur, hauteur uint16) *Tampon { return rendu.NouveauTampon(largeur, hauteur) }
+// Une fonction et non un alias, pour la raison qui vaut pour [White].
+func NewBuffer(width, height uint16) *Buffer { return render.NewBuffer(width, height) }
 
-// Couleur est une couleur RVBA sur quatre octets, à alpha prémultiplié.
-type Couleur = rendu.Couleur
+// Color est une couleur RVBA sur quatre octets, à alpha prémultiplié.
+type Color = render.Color
 
-// Drapeaux porte les variantes de dessin d'un quad, un bit par variante.
-type Drapeaux = rendu.Drapeaux
+// Flags porte les variantes de dessin d'un quad, un bit par variante.
+type Flags = render.Flags
 
 const (
-	// MiroirX lit la source de droite à gauche.
-	MiroirX = rendu.MiroirX
+	// MirrorX lit la source de droite à gauche.
+	MirrorX = render.MirrorX
 
-	// MiroirY lit la source de bas en haut.
-	MiroirY = rendu.MiroirY
+	// MirrorY lit la source de bas en haut.
+	MirrorY = render.MirrorY
 
-	// Aplat peint le rectangle en Teinte sans lire aucune source.
-	Aplat = rendu.Aplat
+	// Flat peint le rectangle en Teinte sans lire aucune source.
+	Flat = render.Flat
 )
 
-// CoucheMax et EtageMax sont les plus grandes valeurs qu'une couche et un étage
+// MaxLayer et MaxFloor sont les plus grandes valeurs qu'une couche et un étage
 // puissent porter : seize couches et soixante-quatre étages.
 //
 // Combien un jeu en emploie ne regarde que lui ; ce sont les bornes au-delà desquelles
 // l'ordre de dessin ne distinguerait plus deux choses, et une pose qui les dépasse est
 // refusée au lieu d'être ramenée au plafond en silence.
 const (
-	CoucheMax = rendu.CoucheMax
-	EtageMax  = rendu.EtageMax
+	MaxLayer = render.MaxLayer
+	MaxFloor = render.MaxFloor
 )
 
 // MaxSide est le plus grand côté qu'une grille de scène puisse avoir, en cellules, et
@@ -74,17 +74,17 @@ const (
 // [NewScene] et [Scene.PlaceCell] refusent au-delà. Les lire évite d'avoir à essayer
 // pour le savoir.
 const (
-	MaxSide  = rendu.CoteMax
+	MaxSide  = render.MaxSide
 	MaxTiers = scene.MaxTiers
 )
 
-// Blanc rend la teinte neutre, celle qui laisse la source intacte.
+// White rend la teinte neutre, celle qui laisse la source intacte.
 //
 // Une fonction et non un alias : seuls les types se republient sans enveloppe, et
 // celle-ci ne coûte rien — le compilateur la remplace par son corps.
-func Blanc() Couleur { return rendu.Blanc() }
+func White() Color { return render.White() }
 
-// Matrice convertit entre les cellules du monde et les pixels de l'écran, dans les
+// Matrix convertit entre les cellules du monde et les pixels de l'écran, dans les
 // deux sens, et garde l'inverse qu'elle a calculée une fois.
 //
 // Le calcul est entier de bout en bout, ce qui fait qu'une même scène rend les mêmes
@@ -94,30 +94,30 @@ func Blanc() Couleur { return rendu.Blanc() }
 // architectures ne pratiquent pas toutes.
 //
 // Une matrice s'obtient d'un des quatre constructeurs qui suivent, republiés en
-// fonctions pour la raison qui vaut pour [Blanc], et s'emploie par ses méthodes.
+// fonctions pour la raison qui vaut pour [White], et s'emploie par ses méthodes.
 // L'ordre de dessin n'en vient pas : c'est la clé de tri qui le porte.
-type Matrice = geometry.Matrix
+type Matrix = geometry.Matrix
 
-// Dimetrique rend la projection d'une cellule en losange au ratio libre, celle d'un
+// Dimetric rend la projection d'une cellule en losange au ratio libre, celle d'un
 // rendu isométrique de jeu : une cellule de 32 sur 16 avance de seize pixels vers le
 // côté et de huit vers le bas.
 //
 // C'est le constructeur du cas courant, et le seul qui laisse la hauteur libre.
-func Dimetrique(largeur, hauteur int) Matrice { return geometry.Dimetric(largeur, hauteur) }
+func Dimetric(width, height int) Matrix { return geometry.Dimetric(width, height) }
 
-// Isometrique rend la projection de l'isométrie vraie, dont la hauteur ne se choisit
+// Isometric rend la projection de l'isométrie vraie, dont la hauteur ne se choisit
 // pas : elle vaut la largeur divisée par racine de trois, soit dix-huit pixels et
 // demi pour une largeur de trente-deux là où le dimétrique courant en prend seize.
-func Isometrique(largeur int) Matrice { return geometry.Isometric(largeur) }
+func Isometric(width int) Matrix { return geometry.Isometric(width) }
 
-// Grille rend la projection de la vue de dessus, où une cellule est un carré et non
-// un losange. Les axes n'y tournent pas, ce qu'aucun ratio de [Dimetrique] ne donne.
-func Grille(cote int) Matrice { return geometry.Grid(cote) }
+// Grid rend la projection de la vue de dessus, où une cellule est un carré et non
+// un losange. Les axes n'y tournent pas, ce qu'aucun ratio de [Dimetric] ne donne.
+func Grid(side int) Matrix { return geometry.Grid(side) }
 
-// Brute rend la projection de quatre coefficients donnés, pour ce qu'aucun des trois
+// Raw rend la projection de quatre coefficients donnés, pour ce qu'aucun des trois
 // autres constructeurs n'exprime : l'abscisse écran vaut a·x + b·y et l'ordonnée
 // c·x + d·y. Sans translation, la vue étant cadrée ailleurs.
-func Brute(a, b, c, d float64) Matrice { return geometry.Raw(a, b, c, d) }
+func Raw(a, b, c, d float64) Matrix { return geometry.Raw(a, b, c, d) }
 
 // Input est ce que le clavier dit à une image : les touches tenues, et celles qui
 // viennent d'être enfoncées.
@@ -134,7 +134,7 @@ type Key = input.Key
 // Sheet est une page de pixels dans laquelle les quads puisent, ligne par ligne et
 // sans remplissage : le pixel (x, y) est à l'index y×Width + x.
 //
-// Ses composantes sont prémultipliées, comme celles de [Couleur]. Son champ Rectangles
+// Ses composantes sont prémultipliées, comme celles de [Color]. Son champ Rectangles
 // porte la découpe, que [Sheet.CutGrid] remplit ou qu'on écrit à la main ; vide, la
 // planche vaut pour elle-même.
 type Sheet = raster.Sheet
@@ -192,7 +192,7 @@ type Entity = scene.Entity
 //
 // Sa valeur zéro ne montre rien, et c'est ainsi qu'une cellule vide se reconnaît. Sa
 // teinte, en revanche, se renseigne : la valeur zéro d'une couleur est transparente,
-// donc une chose qu'on veut voir porte [Blanc] ou une teinte explicite.
+// donc une chose qu'on veut voir porte [White] ou une teinte explicite.
 type Aspect = scene.Aspect
 
 // Handle désigne une entité posée, et lui reste fidèle quand le retrait d'une autre la
@@ -228,6 +228,6 @@ type SceneOptions = scene.Options
 //
 // C'est le seul moment où une scène rend une erreur. Passé ce point, plus rien sur le
 // chemin d'une image n'en rend, parce qu'une image n'a nulle part où la mettre.
-func NewScene(width, height int, projection Matrice, o SceneOptions) (*Scene, error) {
+func NewScene(width, height int, projection Matrix, o SceneOptions) (*Scene, error) {
 	return scene.New(width, height, projection, o)
 }

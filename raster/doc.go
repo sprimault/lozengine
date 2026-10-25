@@ -19,7 +19,7 @@
 // Pour écrire un jeu en Go, le paquet racine republie [Sheet], [Atlas], [Rectangle]
 // et les deux chargeurs — pas les fonctions de dessin, dont la boucle se charge.
 //
-// Le tampon lui-même vit dans [github.com/sprimault/lozengine/rendu], parce qu'un
+// Le tampon lui-même vit dans [github.com/sprimault/lozengine/render], parce qu'un
 // hôte en remplit les champs. Les opérations de ce paquet le prennent donc en premier
 // argument au lieu d'être ses méthodes : Go veut qu'une méthode soit déclarée dans le
 // paquet de son type.

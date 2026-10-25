@@ -5,7 +5,7 @@ package visionneuse
 
 import (
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Scenario décrit une scène scriptée, ses images et ce qu'il faut pour les rendre.
@@ -29,9 +29,9 @@ type Scenario struct {
 	Nom              string
 	Largeur, Hauteur uint16
 	Images           int
-	Fond             rendu.Couleur
+	Fond             render.Color
 	Atlas            func() (*raster.Atlas, error)
-	Quads            func(numero int, e Entrees, reserve rendu.Rendu) rendu.Rendu
+	Quads            func(numero int, e Entrees, reserve render.DrawList) render.DrawList
 
 	// References désigne les images que la suite de non-régression compare. Vide,
 	// elles le sont toutes — ce qui convient aux scénarios courts, faits pour tenir

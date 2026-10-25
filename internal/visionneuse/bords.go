@@ -5,7 +5,7 @@ package visionneuse
 
 import (
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Bords éprouve le découpage : huit quads débordent des quatre bords et des quatre
@@ -26,13 +26,13 @@ func Bords() Scenario {
 		Largeur: largeur,
 		Hauteur: hauteur,
 		Images:  1,
-		Fond:    rendu.Couleur{R: 20, V: 24, B: 32, A: 255},
+		Fond:    render.Color{R: 20, G: 24, B: 32, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
 			return atlasDUnePlanche(plancheMarquee(cote))
 		},
 
-		Quads: func(numero int, e Entrees, reserve rendu.Rendu) rendu.Rendu {
+		Quads: func(numero int, e Entrees, reserve render.DrawList) render.DrawList {
 			positions := [][2]int{
 				{-4, -4}, {largeur - 4, -4}, {-4, hauteur - 4}, {largeur - 4, hauteur - 4},
 				{20, -4}, {20, hauteur - 4}, {-4, 12}, {largeur - 4, 12},
@@ -41,9 +41,9 @@ func Bords() Scenario {
 
 			quads := reserve
 			for _, p := range positions {
-				quads = append(quads, rendu.Quad{
-					X: int16(p[0]), Y: int16(p[1]), Largeur: cote, Hauteur: cote,
-					Teinte: rendu.Blanc(),
+				quads = append(quads, render.Quad{
+					X: int16(p[0]), Y: int16(p[1]), Width: cote, Height: cote,
+					Tint: render.White(),
 				})
 			}
 			return quads

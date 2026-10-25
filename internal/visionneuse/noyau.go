@@ -7,7 +7,7 @@ import (
 	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/internal/tri"
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
 
@@ -60,15 +60,15 @@ func Noyau() Scenario {
 		Largeur: largeurNoyau,
 		Hauteur: hauteurNoyau,
 		Images:  4,
-		Fond:    rendu.Couleur{R: 18, V: 18, B: 24, A: 255},
+		Fond:    render.Color{R: 18, G: 18, B: 24, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
 			var atlas raster.Atlas
 			planches := []raster.Sheet{
-				plancheBordee(tuileL, tuileH, rendu.Couleur{R: 96, V: 112, B: 88, A: 255}),
-				plancheBordee(tuileL, tuileH, rendu.Couleur{R: 64, V: 80, B: 64, A: 255}),
-				plancheBordee(tuileL/2, tuileH*2, rendu.Couleur{R: 176, V: 144, B: 96, A: 255}),
-				plancheBordee(tuileL/3, tuileH*3/2, rendu.Couleur{R: 208, V: 96, B: 96, A: 255}),
+				plancheBordee(tuileL, tuileH, render.Color{R: 96, G: 112, B: 88, A: 255}),
+				plancheBordee(tuileL, tuileH, render.Color{R: 64, G: 80, B: 64, A: 255}),
+				plancheBordee(tuileL/2, tuileH*2, render.Color{R: 176, G: 144, B: 96, A: 255}),
+				plancheBordee(tuileL/3, tuileH*3/2, render.Color{R: 208, G: 96, B: 96, A: 255}),
 			}
 			for _, p := range planches {
 				if _, err := atlas.Add(p); err != nil {
@@ -78,7 +78,7 @@ func Noyau() Scenario {
 			return &atlas, nil
 		},
 
-		Quads: func(numero int, _ Entrees, reserve rendu.Rendu) rendu.Rendu {
+		Quads: func(numero int, _ Entrees, reserve render.DrawList) render.DrawList {
 			s := sceneDuNoyau()
 			s.Orient(scene.Orientation(numero))
 
@@ -105,7 +105,7 @@ func sceneDuNoyau() *scene.Scene {
 				planche = plancheSolSombre
 			}
 			s.PlaceCell(u, v, 0, scene.Aspect{
-				Sheet: planche, Width: tuileL, Height: tuileH, Tint: rendu.Blanc(),
+				Sheet: planche, Width: tuileL, Height: tuileH, Tint: render.White(),
 			})
 		}
 	}
@@ -114,14 +114,14 @@ func sceneDuNoyau() *scene.Scene {
 	// asymétrique pour qu'un quart de tour se voie : en ligne, une rotation de cent
 	// quatre-vingts degrés rendrait la même image.
 	borne := scene.Aspect{
-		Sheet: plancheBorne, Width: tuileL / 2, Height: tuileH * 2, Tint: rendu.Blanc(),
+		Sheet: plancheBorne, Width: tuileL / 2, Height: tuileH * 2, Tint: render.White(),
 	}
 	for _, c := range [][2]int{{1, 1}, {2, 1}, {1, 5}} {
 		s.PlaceCell(c[0], c[1], 1, borne)
 	}
 
 	figure := scene.Aspect{
-		Sheet: plancheFigure, Width: tuileL / 3, Height: tuileH * 3 / 2, Tint: rendu.Blanc(),
+		Sheet: plancheFigure, Width: tuileL / 3, Height: tuileH * 3 / 2, Tint: render.White(),
 	}
 
 	// Une figure derrière les bornes, une devant : c'est le couple qui montre que

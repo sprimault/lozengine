@@ -6,7 +6,7 @@ package raster
 import (
 	"fmt"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Atlas est la suite des planches qu'un quad désigne par index.
@@ -26,13 +26,13 @@ type Atlas struct {
 // Le blit, lui, ne peut ni encoder ni s'en plaindre — il ne renvoie pas d'erreur et
 // n'alloue pas.
 //
-// L'erreur au-delà de [rendu.PlanchesMax] arrive ici pour la même raison : un index
+// L'erreur au-delà de [render.MaxSheets] arrive ici pour la même raison : un index
 // que l'ordre de dessin ne sait plus distinguer se lirait comme une autre planche.
 // Refuser au chargement vaut mieux que ramener au plafond à l'image, ce qui
 // rangerait deux planches ensemble sans rien dire.
 func (a *Atlas) Add(p Sheet) (uint16, error) {
-	if len(a.Sheets) >= rendu.PlanchesMax {
-		return 0, fmt.Errorf("ajout d'une planche : %d au plus, ce qu'un quad sait désigner", rendu.PlanchesMax)
+	if len(a.Sheets) >= render.MaxSheets {
+		return 0, fmt.Errorf("ajout d'une planche : %d au plus, ce qu'un quad sait désigner", render.MaxSheets)
 	}
 
 	p.encode()

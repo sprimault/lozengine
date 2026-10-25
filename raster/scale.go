@@ -3,7 +3,7 @@
 
 package raster
 
-import "github.com/sprimault/lozengine/rendu"
+import "github.com/sprimault/lozengine/render"
 
 // ScaleFactor rend le plus grand facteur entier qui fait tenir le tampon dans la sortie,
 // et jamais moins de 1.
@@ -12,14 +12,14 @@ import "github.com/sprimault/lozengine/rendu"
 // l'agrandissement plutôt que d'afficher des pixels de sept pixels de côté sur un
 // écran 4K. Le choix lui appartient, [Upscale] prenant le facteur en paramètre.
 //
-// Une fonction et non une méthode : le tampon vit dans [rendu], que l'ABI expose, et
+// Une fonction et non une méthode : le tampon vit dans [render], que l'ABI expose, et
 // Go veut qu'une méthode soit déclarée dans le paquet de son type. Vaut pour
 // [Upscale] comme pour celle-ci.
-func ScaleFactor(t, out *rendu.Tampon) int {
-	if t.Largeur == 0 || t.Hauteur == 0 {
+func ScaleFactor(t, out *render.Buffer) int {
+	if t.Width == 0 || t.Height == 0 {
 		return 1
 	}
-	return max(min(int(out.Largeur)/int(t.Largeur), int(out.Hauteur)/int(t.Hauteur)), 1)
+	return max(min(int(out.Width)/int(t.Width), int(out.Height)/int(t.Height)), 1)
 }
 
 // Upscale recopie le tampon dans la sortie, centré, au facteur entier donné, en
@@ -36,23 +36,23 @@ func ScaleFactor(t, out *rendu.Tampon) int {
 // Une sortie plus petite que le tampon ne fait pas échouer l'appel : le facteur
 // tombe à 1 et l'image se découpe, toujours centrée. Un redimensionnement de fenêtre
 // n'a pas à être un cas d'erreur.
-func Upscale(t, out *rendu.Tampon, factor int, background rendu.Couleur) {
+func Upscale(t, out *render.Buffer, factor int, background render.Color) {
 	if factor < 1 {
 		factor = 1
 	}
 
-	scaledW, scaledH := int(t.Largeur)*factor, int(t.Hauteur)*factor
-	if factor == 1 && t.Largeur == out.Largeur && t.Hauteur == out.Hauteur {
+	scaledW, scaledH := int(t.Width)*factor, int(t.Height)*factor
+	if factor == 1 && t.Width == out.Width && t.Height == out.Height {
 		copy(out.Pixels, t.Pixels)
 		return
 	}
 
-	offsetX := (int(out.Largeur) - scaledW) / 2
-	offsetY := (int(out.Hauteur) - scaledH) / 2
+	offsetX := (int(out.Width) - scaledW) / 2
+	offsetY := (int(out.Height) - scaledH) / 2
 	leftBound := max(offsetX, 0)
-	rightBound := min(offsetX+scaledW, int(out.Largeur))
+	rightBound := min(offsetX+scaledW, int(out.Width))
 	topBound := max(offsetY, 0)
-	bottomBound := min(offsetY+scaledH, int(out.Hauteur))
+	bottomBound := min(offsetY+scaledH, int(out.Height))
 
 	if leftBound >= rightBound || topBound >= bottomBound {
 		fill(out.Pixels, background)
@@ -61,19 +61,19 @@ func Upscale(t, out *rendu.Tampon, factor int, background rendu.Couleur) {
 
 	// Rien à peindre autour quand la sortie tombe juste, ni quand elle est plus
 	// petite : deux comparaisons plutôt qu'une sortie entière réécrite.
-	if scaledW < int(out.Largeur) || scaledH < int(out.Hauteur) {
+	if scaledW < int(out.Width) || scaledH < int(out.Height) {
 		paintBars(out, leftBound, topBound, rightBound, bottomBound, background)
 	}
 
-	for sy := 0; sy < int(t.Hauteur); sy++ {
+	for sy := 0; sy < int(t.Height); sy++ {
 		first := max(offsetY+sy*factor, 0)
-		last := min(offsetY+(sy+1)*factor, int(out.Hauteur))
+		last := min(offsetY+(sy+1)*factor, int(out.Height))
 		if first >= last {
 			continue
 		}
 
-		src := t.Pixels[sy*int(t.Largeur) : (sy+1)*int(t.Largeur)]
-		dst := out.Pixels[first*int(out.Largeur) : (first+1)*int(out.Largeur)]
+		src := t.Pixels[sy*int(t.Width) : (sy+1)*int(t.Width)]
+		dst := out.Pixels[first*int(out.Width) : (first+1)*int(out.Width)]
 
 		for sx := range src {
 			a := max(offsetX+sx*factor, leftBound)
@@ -85,7 +85,7 @@ func Upscale(t, out *rendu.Tampon, factor int, background rendu.Couleur) {
 
 		// Les lignes suivantes du même pixel source sont la première, à l'identique.
 		for y := first + 1; y < last; y++ {
-			row := out.Pixels[y*int(out.Largeur) : (y+1)*int(out.Largeur)]
+			row := out.Pixels[y*int(out.Width) : (y+1)*int(out.Width)]
 			copy(row[leftBound:rightBound], dst[leftBound:rightBound])
 		}
 	}
@@ -101,8 +101,8 @@ func Upscale(t, out *rendu.Tampon, factor int, background rendu.Couleur) {
 //
 // Les bandes latérales se recopient d'une ligne modèle au lieu de se remplir chacune :
 // sur des segments courts, le coût d'appel de copy dépasse ce qu'il écrit.
-func paintBars(t *rendu.Tampon, x0, y0, x1, y1 int, background rendu.Couleur) {
-	width := int(t.Largeur)
+func paintBars(t *render.Buffer, x0, y0, x1, y1 int, background render.Color) {
+	width := int(t.Width)
 
 	fill(t.Pixels[:y0*width], background)
 	fill(t.Pixels[y1*width:], background)

@@ -6,13 +6,13 @@ package raster
 import (
 	"fmt"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Sheet est une page de pixels dans laquelle les quads puisent, ligne par ligne
 // et sans remplissage : le pixel (x, y) est à l'index y×Largeur + x.
 //
-// Ses composantes sont prémultipliées, comme celles de [rendu.Couleur] : le
+// Ses composantes sont prémultipliées, comme celles de [render.Color] : le
 // mélange d'un pixel se ramène ainsi à une multiplication et une addition, et la
 // conversion depuis un format qui ne l'est pas a lieu au chargement.
 //
@@ -25,7 +25,7 @@ import (
 // autres, sans que personne ait à y penser.
 type Sheet struct {
 	Width, Height uint16
-	Pixels        []rendu.Couleur
+	Pixels        []render.Color
 	Rectangles    []Rectangle
 
 	runs []run
@@ -41,7 +41,7 @@ func NewSheet(width, height uint16) Sheet {
 	return Sheet{
 		Width:  width,
 		Height: height,
-		Pixels: make([]rendu.Couleur, int(width)*int(height)),
+		Pixels: make([]render.Color, int(width)*int(height)),
 	}
 }
 

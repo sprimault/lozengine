@@ -6,7 +6,7 @@ package tri
 import (
 	"math"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
 
@@ -25,12 +25,12 @@ type Trieur struct {
 	// Les quads dans l'ordre où ils ont été produits, et de quoi les ranger : une clé
 	// par quad, et l'indice qui dit d'où chaque clé vient. Ranger déplace les
 	// indices, pas les quads.
-	bruts   []rendu.Quad
+	bruts   []render.Quad
 	cles    []Cle
 	sources []uint32
 	ordres  []ordre
 
-	sortie rendu.Rendu
+	sortie render.DrawList
 
 	// La vue de l'image en cours, gardée le temps du relevé pour ne pas la traîner
 	// en paramètre jusqu'au fond.
@@ -66,7 +66,7 @@ func Nouveau(s *scene.Scene) *Trieur {
 //
 // Elle ne rend pas d'erreur, et c'est voulu : une image n'a personne à qui se
 // plaindre. Ce qui peut échouer a échoué au montage de la scène.
-func (t *Trieur) Image() rendu.Rendu {
+func (t *Trieur) Image() render.DrawList {
 	t.bruts, t.cles, t.sources, t.ordres = t.bruts[:0], t.cles[:0], t.sources[:0], t.ordres[:0]
 
 	t.vueX, t.vueY, t.vueLargeur, t.vueHauteur = t.scene.View()
@@ -190,13 +190,13 @@ func (t *Trieur) poser(a scene.Aspect, absolueX, absolueY int32, profondeur uint
 	t.sources = append(t.sources, uint32(len(t.bruts)))
 	t.cles = append(t.cles, Composer(a.Layer, a.Floor, profondeur, hauteur, a.Sheet, 0))
 	t.ordres = append(t.ordres, ordre{abscisse: ex, identite: identite, strate: strate})
-	t.bruts = append(t.bruts, rendu.Quad{
+	t.bruts = append(t.bruts, render.Quad{
 		X: int16(x), Y: int16(y),
 		SourceX: a.SourceX, SourceY: a.SourceY,
-		Largeur: a.Width, Hauteur: a.Height,
-		Planche:  a.Sheet,
-		Teinte:   a.Tint,
-		Drapeaux: a.Flags,
+		Width: a.Width, Height: a.Height,
+		Sheet: a.Sheet,
+		Tint:  a.Tint,
+		Flags: a.Flags,
 	})
 }
 
@@ -256,9 +256,9 @@ func (t *Trieur) avant(a, b uint32) bool {
 }
 
 // assembler recopie les quads dans l'ordre que le rangement a fixé.
-func (t *Trieur) assembler() rendu.Rendu {
+func (t *Trieur) assembler() render.DrawList {
 	if cap(t.sortie) < len(t.sources) {
-		t.sortie = make(rendu.Rendu, len(t.sources))
+		t.sortie = make(render.DrawList, len(t.sources))
 	}
 	t.sortie = t.sortie[:len(t.sources)]
 

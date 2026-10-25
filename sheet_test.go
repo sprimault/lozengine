@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // writePNG écrit un PNG opaque de deux pixels de côté au chemin donné.
@@ -20,8 +20,8 @@ import (
 func writePNG(t *testing.T, path string) {
 	t.Helper()
 
-	buffer := rendu.NouveauTampon(2, 2)
-	raster.Clear(buffer, Blanc())
+	buffer := render.NewBuffer(2, 2)
+	raster.Clear(buffer, White())
 
 	file, err := os.Create(path)
 	if err != nil {

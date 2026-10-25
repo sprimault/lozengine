@@ -5,7 +5,7 @@ package visionneuse
 
 import (
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Ordre éprouve l'ordre de dessin et les miroirs : trois quads en escalier, deux
@@ -27,41 +27,41 @@ func Ordre() Scenario {
 		Largeur: largeur,
 		Hauteur: hauteur,
 		Images:  1,
-		Fond:    rendu.Couleur{R: 24, V: 20, B: 20, A: 255},
+		Fond:    render.Color{R: 24, G: 20, B: 20, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
 			return atlasDUnePlanche(plancheMarquee(cote))
 		},
 
-		Quads: func(numero int, e Entrees, reserve rendu.Rendu) rendu.Rendu {
+		Quads: func(numero int, e Entrees, reserve render.DrawList) render.DrawList {
 			quads := reserve
 
 			// Escalier : chacun recouvre le précédent d'un quart.
-			for i, teinte := range []rendu.Couleur{
-				{R: 220, V: 60, B: 60, A: 255},
-				{R: 60, V: 220, B: 60, A: 255},
-				{R: 60, V: 60, B: 220, A: 255},
+			for i, teinte := range []render.Color{
+				{R: 220, G: 60, B: 60, A: 255},
+				{R: 60, G: 220, B: 60, A: 255},
+				{R: 60, G: 60, B: 220, A: 255},
 			} {
-				quads = append(quads, rendu.Quad{
-					X: int16(2 + i*6), Y: int16(2 + i*4), Largeur: cote, Hauteur: cote,
-					Teinte: teinte,
+				quads = append(quads, render.Quad{
+					X: int16(2 + i*6), Y: int16(2 + i*4), Width: cote, Height: cote,
+					Tint: teinte,
 				})
 			}
 
 			// Superposés : le second gagne, entièrement.
 			quads = append(quads,
-				rendu.Quad{X: 30, Y: 2, Largeur: cote, Hauteur: cote,
-					Teinte: rendu.Couleur{R: 220, V: 220, B: 60, A: 255}},
-				rendu.Quad{X: 30, Y: 2, Largeur: cote, Hauteur: cote,
-					Teinte: rendu.Couleur{R: 60, V: 200, B: 200, A: 255}},
+				render.Quad{X: 30, Y: 2, Width: cote, Height: cote,
+					Tint: render.Color{R: 220, G: 220, B: 60, A: 255}},
+				render.Quad{X: 30, Y: 2, Width: cote, Height: cote,
+					Tint: render.Color{R: 60, G: 200, B: 200, A: 255}},
 			)
 
-			for i, drapeaux := range []rendu.Drapeaux{
-				0, rendu.MiroirX, rendu.MiroirY, rendu.MiroirX | rendu.MiroirY,
+			for i, drapeaux := range []render.Flags{
+				0, render.MirrorX, render.MirrorY, render.MirrorX | render.MirrorY,
 			} {
-				quads = append(quads, rendu.Quad{
-					X: int16(2 + i*11), Y: 20, Largeur: cote, Hauteur: cote,
-					Teinte: rendu.Blanc(), Drapeaux: drapeaux,
+				quads = append(quads, render.Quad{
+					X: int16(2 + i*11), Y: 20, Width: cote, Height: cote,
+					Tint: render.White(), Flags: drapeaux,
 				})
 			}
 			return quads

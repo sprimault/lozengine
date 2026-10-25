@@ -78,7 +78,7 @@ tentante, et elle interroge les deux plateformes, parce qu'un import placé sous
 contrainte de construction ne se voit pas depuis l'autre.
 
 **`make frontiere`** vérifie que le noyau ne touche ni au système ni à un
-backend. Aucun paquet parmi `geometry`, `scene`, `tri`, `rendu`, `raster` et
+backend. Aucun paquet parmi `geometry`, `scene`, `tri`, `render`, `raster` et
 `apparence` ne doit importer `syscall`, `net`, `os/exec` ou un backend — ni
 directement, ni à travers un autre paquet du moteur.
 

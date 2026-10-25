@@ -49,7 +49,7 @@ Le détail est dans [`docs/go.md`](docs/go.md).
 
 ## La frontière qui porte tout
 
-Le noyau produit un `Rendu` : la liste des quads déjà placés, rangés dans l'ordre
+Le noyau produit une `DrawList` : la liste des quads déjà placés, rangés dans l'ordre
 de dessin et groupés par planche, ceux qui sortent de l'écran en ayant été retirés.
 Rien dans cette structure ne connaît Windows, X11 ou un format d'image.
 
@@ -59,7 +59,7 @@ noyau. C'est ce qui permet au rastériseur logiciel et aux backends système de
 consommer exactement la même chose — et donc à la suite de non-régression de
 juger le rendu sans jamais ouvrir de fenêtre.
 
-`Quad` et `Rendu` restent en disposition compatible C : champs de taille fixe,
+`Quad` et `DrawList` restent en disposition compatible C : champs de taille fixe,
 tableau contigu, ni chaîne ni interface, et aucune fonction de rappel dans le
 chemin de rendu. Le noyau est destiné à être consommé depuis Rust, C++ ou tout
 langage parlant l'ABI C ; un `string` dans `Quad` imposerait une conversion par
@@ -81,7 +81,7 @@ première porte ajoute du confort, jamais de capacité : tout ce qu'elle permet 
 fait aussi en pilotant le moteur à la main.
 
 Cinq paquets sont publics parce qu'on doit pouvoir lire la documentation de leurs
-types : `rendu`, `geometry`, `scene`, `raster` et `input`. Tout le reste vit sous
+types : `render`, `geometry`, `scene`, `raster` et `input`. Tout le reste vit sous
 `internal/`,
 que le compilateur interdit d'importer depuis un autre module — un hôte ne peut donc
 pas se lier à un backend en contournant la frontière. Le paquet racine republie

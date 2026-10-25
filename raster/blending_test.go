@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // TestProduct vérifie l'arrondi de la multiplication par un huitième de tour : la
@@ -34,16 +34,16 @@ func TestProduct(t *testing.T) {
 // couleur : prémultipliées, les laisser en place rendrait un pixel plus sombre au
 // lieu d'un pixel translucide.
 func TestModulate(t *testing.T) {
-	blanc := rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+	blanc := render.Color{R: 255, G: 255, B: 255, A: 255}
 
 	cases := []struct {
 		name      string
-		src, tint rendu.Couleur
-		want      rendu.Couleur
+		src, tint render.Color
+		want      render.Color
 	}{
 		{"teinte neutre", blanc, blanc, blanc},
-		{"teinte rouge", blanc, rendu.Couleur{R: 255, A: 255}, rendu.Couleur{R: 255, A: 255}},
-		{"demi-opacité", blanc, rendu.Couleur{R: 255, V: 255, B: 255, A: 128}, rendu.Couleur{R: 128, V: 128, B: 128, A: 128}},
+		{"teinte rouge", blanc, render.Color{R: 255, A: 255}, render.Color{R: 255, A: 255}},
+		{"demi-opacité", blanc, render.Color{R: 255, G: 255, B: 255, A: 128}, render.Color{R: 128, G: 128, B: 128, A: 128}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -57,10 +57,10 @@ func TestModulate(t *testing.T) {
 // TestBlend vérifie la composition d'un pixel à demi transparent sur un fond
 // opaque, celle dont tout le reste du rastériseur dépend.
 func TestBlend(t *testing.T) {
-	dst := rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
-	blend(&dst, rendu.Couleur{R: 128, A: 128})
+	dst := render.Color{R: 255, G: 255, B: 255, A: 255}
+	blend(&dst, render.Color{R: 128, A: 128})
 
-	if want := (rendu.Couleur{R: 255, V: 127, B: 127, A: 255}); dst != want {
+	if want := (render.Color{R: 255, G: 127, B: 127, A: 255}); dst != want {
 		t.Errorf("mélange : %v, attendu %v", dst, want)
 	}
 }

@@ -3,7 +3,7 @@
 
 package raster
 
-import "github.com/sprimault/lozengine/rendu"
+import "github.com/sprimault/lozengine/render"
 
 // Draw peint les quads dans l'ordre du tableau, sans rien allouer.
 //
@@ -13,9 +13,9 @@ import "github.com/sprimault/lozengine/rendu"
 // programme s'arrête, ce qui vaut mieux qu'une image muette dont on chercherait la
 // cause dans le tri.
 //
-// Une fonction et non une méthode : le tampon vit dans [rendu], que l'ABI expose, et
+// Une fonction et non une méthode : le tampon vit dans [render], que l'ABI expose, et
 // Go veut qu'une méthode soit déclarée dans le paquet de son type.
-func Draw(t *rendu.Tampon, r rendu.Rendu, a *Atlas) {
+func Draw(t *render.Buffer, r render.DrawList, a *Atlas) {
 	for _, q := range r {
 		quad(t, q, a)
 	}
@@ -28,36 +28,36 @@ func Draw(t *rendu.Tampon, r rendu.Rendu, a *Atlas) {
 // test par pixel. La source, elle, n'est pas vérifiée : un rectangle qui dépasse la
 // planche dessine ce qu'il trouve et s'arrête à la dernière ligne, plutôt que de
 // lire la ligne suivante.
-func quad(t *rendu.Tampon, q rendu.Quad, a *Atlas) {
+func quad(t *render.Buffer, q render.Quad, a *Atlas) {
 	left, top := int(q.X), int(q.Y)
 	x0, y0 := max(left, 0), max(top, 0)
-	x1 := min(left+int(q.Largeur), int(t.Largeur))
-	y1 := min(top+int(q.Hauteur), int(t.Hauteur))
+	x1 := min(left+int(q.Width), int(t.Width))
+	y1 := min(top+int(q.Height), int(t.Height))
 	if x0 >= x1 || y0 >= y1 {
 		return
 	}
 
-	if q.Drapeaux&rendu.Aplat != 0 {
-		fillRect(t, x0, y0, x1, y1, q.Teinte)
+	if q.Flags&render.Flat != 0 {
+		fillRect(t, x0, y0, x1, y1, q.Tint)
 		return
 	}
 
-	p := &a.Sheets[q.Planche]
-	neutral := q.Teinte == rendu.Blanc()
-	mirrorX := q.Drapeaux&rendu.MiroirX != 0
-	sourceX, end := int(q.SourceX), int(q.SourceX)+int(q.Largeur)
+	p := &a.Sheets[q.Sheet]
+	neutral := q.Tint == render.White()
+	mirrorX := q.Flags&render.MirrorX != 0
+	sourceX, end := int(q.SourceX), int(q.SourceX)+int(q.Width)
 
 	for y := y0; y < y1; y++ {
 		row := y - top
-		if q.Drapeaux&rendu.MiroirY != 0 {
-			row = int(q.Hauteur) - 1 - row
+		if q.Flags&render.MirrorY != 0 {
+			row = int(q.Height) - 1 - row
 		}
 		source := int(q.SourceY) + row
 		if source >= int(p.Height) {
 			continue
 		}
 
-		dst := t.Pixels[y*int(t.Largeur) : (y+1)*int(t.Largeur)]
+		dst := t.Pixels[y*int(t.Width) : (y+1)*int(t.Width)]
 		src := p.Pixels[source*int(p.Width) : (source+1)*int(p.Width)]
 
 		column := 0
@@ -75,11 +75,11 @@ func quad(t *rendu.Tampon, q rendu.Quad, a *Atlas) {
 
 			if mirrorX {
 				for sx := sa; sx < sb; sx++ {
-					x := left + int(q.Largeur) - 1 - (sx - sourceX)
+					x := left + int(q.Width) - 1 - (sx - sourceX)
 					if x < x0 || x >= x1 {
 						continue
 					}
-					put(&dst[x], src[sx], q.Teinte, neutral)
+					put(&dst[x], src[sx], q.Tint, neutral)
 				}
 				continue
 			}
@@ -96,7 +96,7 @@ func quad(t *rendu.Tampon, q rendu.Quad, a *Atlas) {
 				continue
 			}
 			for i := 0; i < db-da; i++ {
-				put(&dst[da+i], src[from+i], q.Teinte, neutral)
+				put(&dst[da+i], src[from+i], q.Tint, neutral)
 			}
 		}
 	}
@@ -106,12 +106,12 @@ func quad(t *rendu.Tampon, q rendu.Quad, a *Atlas) {
 //
 // Il ne touche pas à l'atlas : c'est ce qui permet à un panneau d'interface, à une
 // bande ou à un fondu de se dessiner sans qu'aucune planche existe pour eux.
-func fillRect(t *rendu.Tampon, x0, y0, x1, y1 int, c rendu.Couleur) {
+func fillRect(t *render.Buffer, x0, y0, x1, y1 int, c render.Color) {
 	if c.A == 0 {
 		return
 	}
 	for y := y0; y < y1; y++ {
-		dst := t.Pixels[y*int(t.Largeur) : (y+1)*int(t.Largeur)]
+		dst := t.Pixels[y*int(t.Width) : (y+1)*int(t.Width)]
 		if c.A == 255 {
 			for x := x0; x < x1; x++ {
 				dst[x] = c

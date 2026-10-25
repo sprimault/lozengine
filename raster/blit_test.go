@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Les couleurs des cas de dessin, nommées pour que les attentes se lisent en clair :
@@ -14,23 +14,23 @@ import (
 // structures littérales ne disent rien. Les quatre premières sont opaques, donc
 // recopiées telles quelles par le rastériseur.
 var (
-	rouge = rendu.Couleur{R: 255, A: 255}
-	vert  = rendu.Couleur{V: 255, A: 255}
-	bleu  = rendu.Couleur{B: 255, A: 255}
-	blanc = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+	rouge = render.Color{R: 255, A: 255}
+	vert  = render.Color{G: 255, A: 255}
+	bleu  = render.Color{B: 255, A: 255}
+	blanc = render.Color{R: 255, G: 255, B: 255, A: 255}
 
 	// demiRge est la seule à alpha partiel, et donc la seule dont le mélange se
 	// calcule au lieu de se recopier. Prémultipliée : sa composante égale son alpha.
-	demiRge = rendu.Couleur{R: 128, A: 128}
+	demiRge = render.Color{R: 128, A: 128}
 
 	// rien est la valeur zéro, entièrement transparente, que le dessin doit laisser
 	// passer sans toucher à la destination.
-	rien = rendu.Couleur{}
+	rien = render.Color{}
 )
 
 // atlasOf range une planche remplie des pixels donnés, ligne par ligne, et rend
 // l'atlas dans lequel un quad la désigne par l'index 0.
-func atlasOf(t *testing.T, width, height uint16, pixels ...rendu.Couleur) *Atlas {
+func atlasOf(t *testing.T, width, height uint16, pixels ...render.Color) *Atlas {
 	t.Helper()
 
 	p := NewSheet(width, height)
@@ -47,18 +47,18 @@ func atlasOf(t *testing.T, width, height uint16, pixels ...rendu.Couleur) *Atlas
 }
 
 // quadOf rend un quad à teinte neutre, celle qui laisse la source intacte.
-func quadOf(x, y int16, width, height uint16) rendu.Quad {
-	return rendu.Quad{X: x, Y: y, Largeur: width, Hauteur: height, Teinte: rendu.Blanc()}
+func quadOf(x, y int16, width, height uint16) render.Quad {
+	return render.Quad{X: x, Y: y, Width: width, Height: height, Tint: render.White()}
 }
 
 // pixel rend le pixel du tampon, pour une lecture qui se lit en coordonnées.
-func pixel(t *rendu.Tampon, x, y int) rendu.Couleur {
-	return t.Pixels[y*int(t.Largeur)+x]
+func pixel(t *render.Buffer, x, y int) render.Color {
+	return t.Pixels[y*int(t.Width)+x]
 }
 
 // painted compte les pixels non transparents, ce qui suffit à dire qu'un découpage
 // n'a pas dessiné plus que sa part.
-func painted(t *rendu.Tampon) int {
+func painted(t *render.Buffer) int {
 	n := 0
 	for _, c := range t.Pixels {
 		if c.A != 0 {
@@ -72,11 +72,11 @@ func painted(t *rendu.Tampon) int {
 // gardent l'ordre de la planche.
 func TestDrawPlaces(t *testing.T) {
 	a := atlasOf(t, 2, 2, rouge, vert, bleu, blanc)
-	buffer := rendu.NouveauTampon(4, 4)
+	buffer := render.NewBuffer(4, 4)
 
-	Draw(buffer, rendu.Rendu{quadOf(1, 1, 2, 2)}, a)
+	Draw(buffer, render.DrawList{quadOf(1, 1, 2, 2)}, a)
 
-	want := map[[2]int]rendu.Couleur{
+	want := map[[2]int]render.Color{
 		{1, 1}: rouge, {2, 1}: vert,
 		{1, 2}: bleu, {2, 2}: blanc,
 	}
@@ -96,19 +96,19 @@ func TestDrawClips(t *testing.T) {
 	cases := []struct {
 		name string
 		x, y int16
-		want map[[2]int]rendu.Couleur
+		want map[[2]int]render.Color
 	}{
-		{"coin haut-gauche", -1, -1, map[[2]int]rendu.Couleur{{0, 0}: blanc}},
-		{"coin bas-droit", 3, 3, map[[2]int]rendu.Couleur{{3, 3}: rouge}},
-		{"bord gauche", -1, 0, map[[2]int]rendu.Couleur{{0, 0}: vert, {0, 1}: blanc}},
-		{"bord bas", 0, 3, map[[2]int]rendu.Couleur{{0, 3}: rouge, {1, 3}: vert}},
+		{"coin haut-gauche", -1, -1, map[[2]int]render.Color{{0, 0}: blanc}},
+		{"coin bas-droit", 3, 3, map[[2]int]render.Color{{3, 3}: rouge}},
+		{"bord gauche", -1, 0, map[[2]int]render.Color{{0, 0}: vert, {0, 1}: blanc}},
+		{"bord bas", 0, 3, map[[2]int]render.Color{{0, 3}: rouge, {1, 3}: vert}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			a := atlasOf(t, 2, 2, rouge, vert, bleu, blanc)
-			tampon := rendu.NouveauTampon(4, 4)
+			tampon := render.NewBuffer(4, 4)
 
-			Draw(tampon, rendu.Rendu{quadOf(c.x, c.y, 2, 2)}, a)
+			Draw(tampon, render.DrawList{quadOf(c.x, c.y, 2, 2)}, a)
 
 			for position, veut := range c.want {
 				if got := pixel(tampon, position[0], position[1]); got != veut {
@@ -137,9 +137,9 @@ func TestDrawOffScreen(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			a := atlasOf(t, 2, 2, rouge, vert, bleu, blanc)
-			tampon := rendu.NouveauTampon(4, 4)
+			tampon := render.NewBuffer(4, 4)
 
-			Draw(tampon, rendu.Rendu{quadOf(c.x, c.y, 2, 2)}, a)
+			Draw(tampon, render.DrawList{quadOf(c.x, c.y, 2, 2)}, a)
 
 			if n := painted(tampon); n != 0 {
 				t.Errorf("pixels peints : %d, attendu aucun", n)
@@ -152,12 +152,12 @@ func TestDrawOffScreen(t *testing.T) {
 // tableau est la seule vérité du résultat.
 func TestDrawOrder(t *testing.T) {
 	a := atlasOf(t, 1, 1, blanc)
-	buffer := rendu.NouveauTampon(2, 1)
+	buffer := render.NewBuffer(2, 1)
 
 	premier, second := quadOf(0, 0, 1, 1), quadOf(0, 0, 1, 1)
-	premier.Teinte, second.Teinte = rouge, vert
+	premier.Tint, second.Tint = rouge, vert
 
-	Draw(buffer, rendu.Rendu{premier, second}, a)
+	Draw(buffer, render.DrawList{premier, second}, a)
 
 	if got := pixel(buffer, 0, 0); got != vert {
 		t.Errorf("pixel recouvert : %v, attendu %v", got, vert)
@@ -168,10 +168,10 @@ func TestDrawOrder(t *testing.T) {
 // place : c'est ce que le pré-encodage promet au blit.
 func TestDrawSkipsTransparent(t *testing.T) {
 	a := atlasOf(t, 2, 1, rien, rouge)
-	buffer := rendu.NouveauTampon(2, 1)
+	buffer := render.NewBuffer(2, 1)
 	buffer.Pixels[0], buffer.Pixels[1] = bleu, bleu
 
-	Draw(buffer, rendu.Rendu{quadOf(0, 0, 2, 1)}, a)
+	Draw(buffer, render.DrawList{quadOf(0, 0, 2, 1)}, a)
 
 	if got := pixel(buffer, 0, 0); got != bleu {
 		t.Errorf("fond sous un pixel transparent : %v, attendu %v", got, bleu)
@@ -185,12 +185,12 @@ func TestDrawSkipsTransparent(t *testing.T) {
 // un fond opaque.
 func TestDrawBlends(t *testing.T) {
 	a := atlasOf(t, 1, 1, demiRge)
-	buffer := rendu.NouveauTampon(1, 1)
+	buffer := render.NewBuffer(1, 1)
 	buffer.Pixels[0] = blanc
 
-	Draw(buffer, rendu.Rendu{quadOf(0, 0, 1, 1)}, a)
+	Draw(buffer, render.DrawList{quadOf(0, 0, 1, 1)}, a)
 
-	if veut := (rendu.Couleur{R: 255, V: 127, B: 127, A: 255}); pixel(buffer, 0, 0) != veut {
+	if veut := (render.Color{R: 255, G: 127, B: 127, A: 255}); pixel(buffer, 0, 0) != veut {
 		t.Errorf("mélange : %v, attendu %v", pixel(buffer, 0, 0), veut)
 	}
 }
@@ -200,22 +200,22 @@ func TestDrawBlends(t *testing.T) {
 func TestDrawTint(t *testing.T) {
 	cases := []struct {
 		name string
-		tint rendu.Couleur
-		want rendu.Couleur
+		tint render.Color
+		want render.Color
 	}{
 		{"neutre", blanc, blanc},
 		{"couleur, opaque", rouge, rouge},
-		{"demi-opacité", rendu.Couleur{R: 255, V: 255, B: 255, A: 128}, rendu.Couleur{R: 128, V: 128, B: 128, A: 128}},
+		{"demi-opacité", render.Color{R: 255, G: 255, B: 255, A: 128}, render.Color{R: 128, G: 128, B: 128, A: 128}},
 		{"teinte nulle", rien, rien},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			a := atlasOf(t, 1, 1, blanc)
-			tampon := rendu.NouveauTampon(1, 1)
+			tampon := render.NewBuffer(1, 1)
 
 			q := quadOf(0, 0, 1, 1)
-			q.Teinte = c.tint
-			Draw(tampon, rendu.Rendu{q}, a)
+			q.Tint = c.tint
+			Draw(tampon, render.DrawList{q}, a)
 
 			if got := pixel(tampon, 0, 0); got != c.want {
 				t.Errorf("pixel : %v, attendu %v", got, c.want)
@@ -229,22 +229,22 @@ func TestDrawTint(t *testing.T) {
 func TestDrawMirror(t *testing.T) {
 	cases := []struct {
 		name     string
-		drapeaux rendu.Drapeaux
-		want     [4]rendu.Couleur // rouge, vert, bleu, blanc dans l'ordre du tampon
+		drapeaux render.Flags
+		want     [4]render.Color // rouge, vert, bleu, blanc dans l'ordre du tampon
 	}{
-		{"sans miroir", 0, [4]rendu.Couleur{rouge, vert, bleu, blanc}},
-		{"miroir horizontal", rendu.MiroirX, [4]rendu.Couleur{vert, rouge, blanc, bleu}},
-		{"miroir vertical", rendu.MiroirY, [4]rendu.Couleur{bleu, blanc, rouge, vert}},
-		{"les deux", rendu.MiroirX | rendu.MiroirY, [4]rendu.Couleur{blanc, bleu, vert, rouge}},
+		{"sans miroir", 0, [4]render.Color{rouge, vert, bleu, blanc}},
+		{"miroir horizontal", render.MirrorX, [4]render.Color{vert, rouge, blanc, bleu}},
+		{"miroir vertical", render.MirrorY, [4]render.Color{bleu, blanc, rouge, vert}},
+		{"les deux", render.MirrorX | render.MirrorY, [4]render.Color{blanc, bleu, vert, rouge}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			a := atlasOf(t, 2, 2, rouge, vert, bleu, blanc)
-			tampon := rendu.NouveauTampon(2, 2)
+			tampon := render.NewBuffer(2, 2)
 
 			q := quadOf(0, 0, 2, 2)
-			q.Drapeaux = c.drapeaux
-			Draw(tampon, rendu.Rendu{q}, a)
+			q.Flags = c.drapeaux
+			Draw(tampon, render.DrawList{q}, a)
 
 			for i, veut := range c.want {
 				if tampon.Pixels[i] != veut {
@@ -259,11 +259,11 @@ func TestDrawMirror(t *testing.T) {
 // tampon découpe la droite de la source quand le miroir est posé.
 func TestDrawMirrorClipped(t *testing.T) {
 	a := atlasOf(t, 2, 1, rouge, vert)
-	buffer := rendu.NouveauTampon(2, 1)
+	buffer := render.NewBuffer(2, 1)
 
 	q := quadOf(-1, 0, 2, 1)
-	q.Drapeaux = rendu.MiroirX
-	Draw(buffer, rendu.Rendu{q}, a)
+	q.Flags = render.MirrorX
+	Draw(buffer, render.DrawList{q}, a)
 
 	if got := pixel(buffer, 0, 0); got != rouge {
 		t.Errorf("pixel visible : %v, attendu %v", got, rouge)
@@ -277,11 +277,11 @@ func TestDrawMirrorClipped(t *testing.T) {
 // celui qu'une découpe en grille lui a donné.
 func TestDrawSource(t *testing.T) {
 	a := atlasOf(t, 2, 2, rouge, vert, bleu, blanc)
-	buffer := rendu.NouveauTampon(1, 1)
+	buffer := render.NewBuffer(1, 1)
 
 	q := quadOf(0, 0, 1, 1)
 	q.SourceX, q.SourceY = 1, 1
-	Draw(buffer, rendu.Rendu{q}, a)
+	Draw(buffer, render.DrawList{q}, a)
 
 	if got := pixel(buffer, 0, 0); got != blanc {
 		t.Errorf("pixel : %v, attendu %v", got, blanc)
@@ -292,12 +292,12 @@ func TestDrawSource(t *testing.T) {
 // vide ici — et qu'il se découpe comme les autres.
 func TestDrawFlat(t *testing.T) {
 	var a Atlas
-	buffer := rendu.NouveauTampon(3, 2)
+	buffer := render.NewBuffer(3, 2)
 
 	q := quadOf(1, 0, 5, 1)
-	q.Teinte = vert
-	q.Drapeaux = rendu.Aplat
-	Draw(buffer, rendu.Rendu{q}, &a)
+	q.Tint = vert
+	q.Flags = render.Flat
+	Draw(buffer, render.DrawList{q}, &a)
 
 	for x := 1; x < 3; x++ {
 		if got := pixel(buffer, x, 0); got != vert {
@@ -313,15 +313,15 @@ func TestDrawFlat(t *testing.T) {
 // fond, ce qu'un fondu au noir demande.
 func TestDrawFlatTranslucent(t *testing.T) {
 	var a Atlas
-	buffer := rendu.NouveauTampon(1, 1)
+	buffer := render.NewBuffer(1, 1)
 	buffer.Pixels[0] = blanc
 
 	q := quadOf(0, 0, 1, 1)
-	q.Teinte = demiRge
-	q.Drapeaux = rendu.Aplat
-	Draw(buffer, rendu.Rendu{q}, &a)
+	q.Tint = demiRge
+	q.Flags = render.Flat
+	Draw(buffer, render.DrawList{q}, &a)
 
-	if veut := (rendu.Couleur{R: 255, V: 127, B: 127, A: 255}); pixel(buffer, 0, 0) != veut {
+	if veut := (render.Color{R: 255, G: 127, B: 127, A: 255}); pixel(buffer, 0, 0) != veut {
 		t.Errorf("aplat mélangé : %v, attendu %v", pixel(buffer, 0, 0), veut)
 	}
 }
@@ -330,9 +330,9 @@ func TestDrawFlatTranslucent(t *testing.T) {
 // l'échec sûr sur lequel compte un hôte qui remplit la structure de zéros.
 func TestDrawEmptyQuad(t *testing.T) {
 	a := atlasOf(t, 1, 1, rouge)
-	buffer := rendu.NouveauTampon(2, 2)
+	buffer := render.NewBuffer(2, 2)
 
-	Draw(buffer, rendu.Rendu{{}}, a)
+	Draw(buffer, render.DrawList{{}}, a)
 
 	if n := painted(buffer); n != 0 {
 		t.Errorf("pixels peints : %d, attendu aucun", n)
@@ -344,14 +344,14 @@ func TestDrawEmptyQuad(t *testing.T) {
 // échappe — sans quoi le ramasse-miettes s'invite à soixante hertz.
 func TestDrawDoesNotAllocate(t *testing.T) {
 	a := atlasOf(t, 2, 2, rouge, vert, bleu, demiRge)
-	buffer := rendu.NouveauTampon(8, 8)
+	buffer := render.NewBuffer(8, 8)
 
 	q := quadOf(1, 1, 2, 2)
 	mirror := quadOf(-1, 5, 2, 2)
-	mirror.Drapeaux = rendu.MiroirX | rendu.MiroirY
+	mirror.Flags = render.MirrorX | render.MirrorY
 	aplat := quadOf(4, 4, 3, 3)
-	aplat.Drapeaux = rendu.Aplat
-	r := rendu.Rendu{q, mirror, aplat}
+	aplat.Flags = render.Flat
+	r := render.DrawList{q, mirror, aplat}
 
 	if n := testing.AllocsPerRun(10, func() { Draw(buffer, r, a) }); n != 0 {
 		t.Errorf("allocations par image : %v, attendu aucune", n)
@@ -362,9 +362,9 @@ func TestDrawDoesNotAllocate(t *testing.T) {
 // planche s'arrête à la dernière ligne au lieu de lire la suivante.
 func TestDrawOverflowingSource(t *testing.T) {
 	a := atlasOf(t, 2, 1, rouge, vert)
-	buffer := rendu.NouveauTampon(2, 2)
+	buffer := render.NewBuffer(2, 2)
 
-	Draw(buffer, rendu.Rendu{quadOf(0, 0, 2, 2)}, a)
+	Draw(buffer, render.DrawList{quadOf(0, 0, 2, 2)}, a)
 
 	if got := pixel(buffer, 0, 0); got != rouge {
 		t.Errorf("première ligne : %v, attendu %v", got, rouge)
@@ -382,9 +382,9 @@ func TestDrawOverflowingSource(t *testing.T) {
 // parcourait ce cas : tous lisent une planche à leur propre taille.
 func TestDrawStopsQuadAtItsWidth(t *testing.T) {
 	a := atlasOf(t, 4, 1, rouge, vert, bleu, blanc)
-	buffer := rendu.NouveauTampon(4, 1)
+	buffer := render.NewBuffer(4, 1)
 
-	Draw(buffer, rendu.Rendu{quadOf(0, 0, 2, 1)}, a)
+	Draw(buffer, render.DrawList{quadOf(0, 0, 2, 1)}, a)
 
 	if got := pixel(buffer, 0, 0); got != rouge {
 		t.Errorf("pixel 0 : %v, attendu rouge", got)
@@ -405,12 +405,12 @@ func TestDrawStopsQuadAtItsWidth(t *testing.T) {
 // SourceX non nul.
 func TestDrawMirrorOnPartialSource(t *testing.T) {
 	a := atlasOf(t, 4, 1, rouge, vert, bleu, blanc)
-	buffer := rendu.NouveauTampon(2, 1)
+	buffer := render.NewBuffer(2, 1)
 
 	q := quadOf(0, 0, 2, 1)
 	q.SourceX = 1
-	q.Drapeaux = rendu.MiroirX
-	Draw(buffer, rendu.Rendu{q}, a)
+	q.Flags = render.MirrorX
+	Draw(buffer, render.DrawList{q}, a)
 
 	// La source lue est vert puis bleu ; le miroir la rend dans l'autre sens.
 	if got := pixel(buffer, 0, 0); got != bleu {
@@ -434,10 +434,10 @@ func TestDrawMirrorOnPartialSource(t *testing.T) {
 // quelque chose pour un alpha nul, l'image changerait et ce test le dirait.
 func TestDrawTransparentFlatPaintsNothing(t *testing.T) {
 	a := atlasOf(t, 1, 1, rouge)
-	buffer := rendu.NouveauTampon(2, 2)
+	buffer := render.NewBuffer(2, 2)
 
-	Draw(buffer, rendu.Rendu{{
-		Largeur: 2, Hauteur: 2, Teinte: rien, Drapeaux: rendu.Aplat,
+	Draw(buffer, render.DrawList{{
+		Width: 2, Height: 2, Tint: rien, Flags: render.Flat,
 	}}, a)
 
 	if n := painted(buffer); n != 0 {

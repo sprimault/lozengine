@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/geometry"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // BenchmarkChangeDirection mesure le second critère de contrôle du projet : huit
@@ -35,7 +35,7 @@ func BenchmarkChangeDirection(b *testing.B) {
 	types := make([]Aspect, 6)
 	for i := range types {
 		types[i] = Aspect{
-			Sheet: uint16(i), Width: 12, Height: 24, Tint: rendu.Blanc(),
+			Sheet: uint16(i), Width: 12, Height: 24, Tint: render.White(),
 		}
 	}
 

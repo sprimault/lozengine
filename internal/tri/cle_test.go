@@ -6,7 +6,7 @@ package tri
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // TestPlafondDePlancheConcorde vérifie que ce que la clé sait distinguer et ce qu'un
@@ -17,8 +17,8 @@ import (
 // entre eux. Élargir le champ de la clé sans toucher à l'atlas laisserait des planches
 // qu'aucun quad ne désignerait ; le rétrécir ferait ranger deux planches ensemble.
 func TestPlafondDePlancheConcorde(t *testing.T) {
-	if PlancheMax != rendu.PlanchesMax-1 {
-		t.Errorf("la clé distingue %d planches, un atlas en accepte %d", PlancheMax+1, rendu.PlanchesMax)
+	if PlancheMax != render.MaxSheets-1 {
+		t.Errorf("la clé distingue %d planches, un atlas en accepte %d", PlancheMax+1, render.MaxSheets)
 	}
 }
 
@@ -31,11 +31,11 @@ func TestPlafondDePlancheConcorde(t *testing.T) {
 // couches qu'un jeu croit distinctes, et une pose hors borne serait refusée sans
 // raison apparente.
 func TestPlafondsDeCoucheEtEtageConcordent(t *testing.T) {
-	if got := 1<<bitsCouche - 1; got != rendu.CoucheMax {
-		t.Errorf("la clé distingue %d couches, le moteur en annonce %d", got+1, rendu.CoucheMax+1)
+	if got := 1<<bitsCouche - 1; got != render.MaxLayer {
+		t.Errorf("la clé distingue %d couches, le moteur en annonce %d", got+1, render.MaxLayer+1)
 	}
-	if got := 1<<bitsEtage - 1; got != rendu.EtageMax {
-		t.Errorf("la clé distingue %d étages, le moteur en annonce %d", got+1, rendu.EtageMax+1)
+	if got := 1<<bitsEtage - 1; got != render.MaxFloor {
+		t.Errorf("la clé distingue %d étages, le moteur en annonce %d", got+1, render.MaxFloor+1)
 	}
 }
 
@@ -48,11 +48,11 @@ func TestPlafondsDeCoucheEtEtageConcordent(t *testing.T) {
 // il se vérifie par le calcul plutôt que par un chiffre recopié — qui aurait péri à la
 // première des deux qui bouge.
 func TestPlafondDeCoteTientDansLaProfondeur(t *testing.T) {
-	sommeMax := 2 * (rendu.CoteMax - 1)
+	sommeMax := 2 * (render.MaxSide - 1)
 
 	if quarts := sommeMax * 4; quarts > ProfondeurMax {
 		t.Errorf("une grille de %d de côté donne %d quarts de profondeur, le champ en porte %d",
-			rendu.CoteMax, quarts, ProfondeurMax)
+			render.MaxSide, quarts, ProfondeurMax)
 	}
 }
 
@@ -69,7 +69,7 @@ func TestOrdreDesChamps(t *testing.T) {
 		avant, apres Cle
 	}{
 		{"la couche l'emporte sur tout",
-			Composer(0, rendu.EtageMax, ProfondeurMax, HauteurMax, PlancheMax, IndexMax),
+			Composer(0, render.MaxFloor, ProfondeurMax, HauteurMax, PlancheMax, IndexMax),
 			Composer(1, 0, 0, 0, 0, 0)},
 		{"l'étage l'emporte sur la profondeur",
 			Composer(0, 0, ProfondeurMax, HauteurMax, PlancheMax, IndexMax),
@@ -106,8 +106,8 @@ func TestComposerRameneAuPlafond(t *testing.T) {
 		nom            string
 		trop, plafonne Cle
 	}{
-		{"couche", Composer(rendu.CoucheMax+1, 0, 0, 0, 0, 0), Composer(rendu.CoucheMax, 0, 0, 0, 0, 0)},
-		{"étage", Composer(0, rendu.EtageMax+1, 0, 0, 0, 0), Composer(0, rendu.EtageMax, 0, 0, 0, 0)},
+		{"couche", Composer(render.MaxLayer+1, 0, 0, 0, 0, 0), Composer(render.MaxLayer, 0, 0, 0, 0, 0)},
+		{"étage", Composer(0, render.MaxFloor+1, 0, 0, 0, 0), Composer(0, render.MaxFloor, 0, 0, 0, 0)},
 		{"profondeur", Composer(0, 0, ProfondeurMax+1, 0, 0, 0), Composer(0, 0, ProfondeurMax, 0, 0, 0)},
 		{"planche", Composer(0, 0, 0, 0, PlancheMax+1, 0), Composer(0, 0, 0, 0, PlancheMax, 0)},
 		{"index", Composer(0, 0, 0, 0, 0, IndexMax+1), Composer(0, 0, 0, 0, 0, IndexMax)},

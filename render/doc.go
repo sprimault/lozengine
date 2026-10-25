@@ -10,13 +10,13 @@
 // aux backends système de consommer exactement la même chose, et donc à la suite de
 // non-régression de juger le rendu sans jamais ouvrir de fenêtre.
 //
-// [Quad] et [Rendu] gardent une disposition compatible C : champs de taille fixe,
+// [Quad] et [DrawList] gardent une disposition compatible C : champs de taille fixe,
 // tableau contigu, ni chaîne ni interface ni slice imbriquée. La contrainte vient de
 // ce que ces structures seront un jour lues par du code écrit dans un autre langage,
 // selon la convention d'appel du C, et elle vaut avant même que la bibliothèque
 // native existe — une chaîne dans un quad imposerait une conversion par quad et par
 // image, ce qui rendrait cette exposition inutilisable.
 //
-// Elle ne porte pas sur [Tampon], qui n'est pas de la donnée par quad : un hôte en
+// Elle ne porte pas sur [Buffer], qui n'est pas de la donnée par quad : un hôte en
 // reçoit les dimensions et le pointeur des pixels, une fois par image.
-package rendu
+package render

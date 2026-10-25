@@ -141,7 +141,7 @@ Dans `tri`, `raster` et les backends :
   une remise à longueur nulle, jamais réalloués.
 - Pas d'`interface{}`, pas de réflexion, pas de fermeture appelée par élément.
 - Les tris se font sur des entiers de 64 bits, par paquets, pas par comparateur.
-- `Quad` et `Rendu` gardent une disposition compatible C. La contrainte vient de
+- `Quad` et `DrawList` gardent une disposition compatible C. La contrainte vient de
   l'export vers d'autres langages, et elle vaut avant même que la bibliothèque
   native existe.
 
@@ -193,7 +193,7 @@ types changeant de direction sur la même image sans pic.
 
 ## Dépendances
 
-**Le cœur du moteur n'a aucune dépendance.** `geometrie`, `scene`, `tri`, `rendu`
+**Le cœur du moteur n'a aucune dépendance.** `geometry`, `scene`, `tri`, `render`
 et `raster` n'emploient que la bibliothèque standard, sans cgo — tests compris.
 C'est là que la promesse se joue, et `make deps` la vérifie paquet par paquet.
 

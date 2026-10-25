@@ -3,7 +3,7 @@
 
 package raster
 
-import "github.com/sprimault/lozengine/rendu"
+import "github.com/sprimault/lozengine/render"
 
 // product rend l'arrondi exact de a × b / 255 sans division.
 //
@@ -21,10 +21,10 @@ func product(a, b uint8) uint8 {
 // L'alpha de la teinte agit sur les quatre composantes, celles de couleur étant
 // prémultipliées : les amputer sans toucher l'alpha assombrirait le pixel au lieu
 // de le rendre translucide.
-func modulate(src, tint rendu.Couleur) rendu.Couleur {
-	return rendu.Couleur{
+func modulate(src, tint render.Color) render.Color {
+	return render.Color{
 		R: product(product(src.R, tint.R), tint.A),
-		V: product(product(src.V, tint.V), tint.A),
+		G: product(product(src.G, tint.G), tint.A),
 		B: product(product(src.B, tint.B), tint.A),
 		A: product(src.A, tint.A),
 	}
@@ -34,10 +34,10 @@ func modulate(src, tint rendu.Couleur) rendu.Couleur {
 //
 // C'est la seule opération que le prémultiplié rend aussi courte : source plus
 // destination atténuée, sans division ni multiplication par l'alpha de la source.
-func blend(dst *rendu.Couleur, src rendu.Couleur) {
+func blend(dst *render.Color, src render.Color) {
 	rest := 255 - src.A
 	dst.R = src.R + product(dst.R, rest)
-	dst.V = src.V + product(dst.V, rest)
+	dst.G = src.G + product(dst.G, rest)
 	dst.B = src.B + product(dst.B, rest)
 	dst.A = src.A + product(dst.A, rest)
 }
@@ -47,7 +47,7 @@ func blend(dst *rendu.Couleur, src rendu.Couleur) {
 // Les deux sorties rapides ne sont pas une redite du pré-encodage : une teinte peut
 // rendre transparent un pixel opaque, ou opaque un pixel que la planche donnait
 // déjà tel quel, et le genre de la séquence ne le sait pas.
-func put(dst *rendu.Couleur, src, tint rendu.Couleur, neutral bool) {
+func put(dst *render.Color, src, tint render.Color, neutral bool) {
 	if !neutral {
 		src = modulate(src, tint)
 	}

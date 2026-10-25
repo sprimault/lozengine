@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // alphaRow construit une planche d'une seule ligne dont les alphas sont donnés,
@@ -14,7 +14,7 @@ import (
 func alphaRow(alphas ...uint8) Sheet {
 	p := NewSheet(uint16(len(alphas)), 1)
 	for i, a := range alphas {
-		p.Pixels[i] = rendu.Couleur{R: a, V: a, B: a, A: a}
+		p.Pixels[i] = render.Color{R: a, G: a, B: a, A: a}
 	}
 	p.encode()
 	return p
@@ -68,7 +68,7 @@ func TestEncodeClassifiesRows(t *testing.T) {
 func TestEncodePavesEachRow(t *testing.T) {
 	p := NewSheet(5, 3)
 	for i := range p.Pixels {
-		p.Pixels[i] = rendu.Couleur{A: uint8(i % 3 * 127)}
+		p.Pixels[i] = render.Color{A: uint8(i % 3 * 127)}
 	}
 	p.encode()
 
@@ -88,7 +88,7 @@ func TestEncodePavesEachRow(t *testing.T) {
 func TestEncodeSeparatesRows(t *testing.T) {
 	p := NewSheet(4, 2)
 	for i := range p.Pixels {
-		p.Pixels[i] = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+		p.Pixels[i] = render.Color{R: 255, G: 255, B: 255, A: 255}
 	}
 	p.encode()
 
@@ -122,7 +122,7 @@ func TestAddEncodes(t *testing.T) {
 	var a Atlas
 
 	p := NewSheet(2, 1)
-	p.Pixels[0] = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+	p.Pixels[0] = render.Color{R: 255, G: 255, B: 255, A: 255}
 
 	index, err := a.Add(p)
 	if err != nil {

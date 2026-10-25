@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // scenarioEssai rend un scénario minuscule et rapide, pour ce qui n'a pas besoin de la
@@ -21,23 +21,23 @@ func scenarioEssai() Scenario {
 		Nom: "essai", Largeur: 4, Hauteur: 2, Images: 3,
 		Atlas: func() (*raster.Atlas, error) {
 			p := raster.NewSheet(1, 1)
-			p.Pixels[0] = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+			p.Pixels[0] = render.Color{R: 255, G: 255, B: 255, A: 255}
 
 			var atlas raster.Atlas
 			_, err := atlas.Add(p)
 			return &atlas, err
 		},
-		Quads: func(numero int, e Entrees, reserve rendu.Rendu) rendu.Rendu {
-			return append(reserve, rendu.Quad{
-				X: int16(numero), Largeur: 1, Hauteur: 1, Teinte: rendu.Blanc(),
+		Quads: func(numero int, e Entrees, reserve render.DrawList) render.DrawList {
+			return append(reserve, render.Quad{
+				X: int16(numero), Width: 1, Height: 1, Tint: render.White(),
 			})
 		},
 	}
 }
 
 // memesPixels dit si deux tampons portent exactement les mêmes pixels.
-func memesPixels(a, b *rendu.Tampon) bool {
-	if a.Largeur != b.Largeur || a.Hauteur != b.Hauteur {
+func memesPixels(a, b *render.Buffer) bool {
+	if a.Width != b.Width || a.Height != b.Height {
 		return false
 	}
 	for i := range a.Pixels {
@@ -49,8 +49,8 @@ func memesPixels(a, b *rendu.Tampon) bool {
 }
 
 // copiePixels garde les pixels d'un tampon, que l'image suivante réécrira.
-func copiePixels(t *rendu.Tampon) *rendu.Tampon {
-	copie := rendu.NouveauTampon(t.Largeur, t.Hauteur)
+func copiePixels(t *render.Buffer) *render.Buffer {
+	copie := render.NewBuffer(t.Width, t.Height)
 	copy(copie.Pixels, t.Pixels)
 	return copie
 }
@@ -164,8 +164,8 @@ func TestEcrireAgrandit(t *testing.T) {
 		t.Fatalf("écriture : %v", err)
 	}
 
-	if interne.Largeur != 4 || interne.Hauteur != 2 {
-		t.Errorf("tampon interne : %d×%d, attendu 4×2", interne.Largeur, interne.Hauteur)
+	if interne.Width != 4 || interne.Height != 2 {
+		t.Errorf("tampon interne : %d×%d, attendu 4×2", interne.Width, interne.Height)
 	}
 
 	fichier, err := os.Open(filepath.Join(repertoire, "essai-0000.png"))

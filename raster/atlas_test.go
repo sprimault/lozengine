@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // TestAddReturnsTheIndex vérifie que l'index rendu est bien celui qu'un quad doit
@@ -32,12 +32,12 @@ func TestAddReturnsTheIndex(t *testing.T) {
 // désigner. L'atlas est rempli de planches vides : c'est le compte qui est éprouvé,
 // pas les pixels.
 func TestAddBeyondTheCeiling(t *testing.T) {
-	a := Atlas{Sheets: make([]Sheet, rendu.PlanchesMax)}
+	a := Atlas{Sheets: make([]Sheet, render.MaxSheets)}
 
 	if _, err := a.Add(NewSheet(8, 8)); err == nil {
-		t.Errorf("planche acceptée au-delà de %d", rendu.PlanchesMax)
+		t.Errorf("planche acceptée au-delà de %d", render.MaxSheets)
 	}
-	if len(a.Sheets) != rendu.PlanchesMax {
-		t.Errorf("planches rangées : %d, attendu %d", len(a.Sheets), rendu.PlanchesMax)
+	if len(a.Sheets) != render.MaxSheets {
+		t.Errorf("planches rangées : %d, attendu %d", len(a.Sheets), render.MaxSheets)
 	}
 }
