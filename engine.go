@@ -60,6 +60,20 @@ type Options struct {
 	// vaut donc le noir opaque.
 	Background Color
 
+	// Bars est la couleur des bandes qui entourent l'image dans la fenêtre, quand sa
+	// taille ne tombe pas sur un multiple exact de la résolution interne. Vide, elle
+	// vaut le noir opaque, comme Background.
+	//
+	// Séparée de Background, parce que les deux ne désignent pas la même chose :
+	// Background est la couleur du vide **du monde** — le ciel, le néant sous la
+	// carte —, Bars celle de ce qui entoure l'image **à l'écran** et n'appartient pas
+	// au monde. Les confondre donnerait des bandes bleu clair à un jeu dont le ciel
+	// l'est, et le joueur ne verrait plus où son jeu s'arrête.
+	//
+	// La boucle seule s'en sert : un hôte qui emploie [Engine] présente lui-même et
+	// décide donc lui-même de ce qu'il met autour.
+	Bars Color
+
 	// Atlas porte les planches dans lesquelles les quads puisent. Il est requis :
 	// un quad qui désigne une planche absente arrête le programme, ce que le
 	// rastériseur assume pour que la cause se lise à l'endroit de l'erreur.
@@ -88,6 +102,9 @@ func (o Options) withDefaults() Options {
 	}
 	if o.Background == (Color{}) {
 		o.Background = Color{A: 255}
+	}
+	if o.Bars == (Color{}) {
+		o.Bars = Color{A: 255}
 	}
 	if o.Title == "" {
 		o.Title = "lozengine"

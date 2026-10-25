@@ -83,8 +83,7 @@ func Run(s *Scene, g Game, o Options) error {
 			}
 		}
 		if presented != nil {
-			inner := engine.Frame()
-			raster.Upscale(inner, presented, raster.ScaleFactor(inner, presented), o.Background)
+			fit(engine.Frame(), presented, o.Bars)
 			window.Present(presented)
 		}
 
@@ -94,6 +93,16 @@ func Run(s *Scene, g Game, o Options) error {
 			time.Sleep(wait)
 		}
 	}
+}
+
+// fit écrit l'image interne dans le tampon de la fenêtre, agrandie du plus grand facteur
+// entier qui l'y fait tenir, et peint de bars ce qui reste autour.
+//
+// Séparée de la boucle pour la raison qui a séparé pace : une décision mêlée à une
+// fenêtre ne s'éprouve pas. Celle-ci porte le fait que les bandes ne suivent pas le fond
+// du monde, et rien d'autre ne pourrait le vérifier puisqu'aucun test n'ouvre de fenêtre.
+func fit(inner, out *Buffer, bars Color) {
+	raster.Upscale(inner, out, raster.ScaleFactor(inner, out), bars)
 }
 
 // pace dit combien attendre avant le pas suivant, et quand il tombera.

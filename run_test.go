@@ -1,12 +1,12 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// La cadence de la boucle, éprouvée seule.
+// La cadence de la boucle et la mise à l'échelle vers la fenêtre, éprouvées seules.
 //
-// C'est la seule partie de [Run] qui s'éprouve : le reste est une fenêtre, et aucun
-// test n'en ouvre — l'intégration continue tourne là où rien ne garantit qu'une
-// fenêtre puisse s'ouvrir. La boucle elle-même se vérifie à la main, une fois, comme
-// le dit la règle des plateformes.
+// Ce sont les deux seules parties de [Run] qui s'éprouvent : le reste est une fenêtre,
+// et aucun test n'en ouvre — l'intégration continue tourne là où rien ne garantit
+// qu'une fenêtre puisse s'ouvrir. La boucle elle-même se vérifie à la main, une fois,
+// comme le dit la règle des plateformes.
 //
 // Et c'est ici que vit le défaut : une cadence qui dérive ne se voit pas en lisant le
 // code, elle se voit après trente secondes de jeu.
@@ -17,6 +17,44 @@ import (
 	"testing"
 	"time"
 )
+
+// TestFitPaintsTheBarsWithTheGivenColour vérifie que ce qui entoure l'image porte la
+// couleur des bandes, et que l'image reste centrée et nette.
+//
+// Le cas est construit pour que les bandes existent des deux côtés : une image interne
+// de 4×2 dans une fenêtre de 10×5 donne le facteur 2, donc une image de 8×4 centrée, un
+// pixel de bande à gauche, un à droite et une ligne en bas — le reste d'un centrage
+// impair allant à droite et en bas, ce que la godoc d'Upscale fixe.
+func TestFitPaintsTheBarsWithTheGivenColour(t *testing.T) {
+	white := Color{R: 255, G: 255, B: 255, A: 255}
+	bars := Color{R: 200, A: 255}
+
+	inner := NewBuffer(4, 2)
+	for i := range inner.Pixels {
+		inner.Pixels[i] = white
+	}
+	out := NewBuffer(10, 5)
+
+	fit(inner, out, bars)
+
+	at := func(x, y int) Color { return out.Pixels[y*int(out.Width)+x] }
+	cases := []struct {
+		name string
+		x, y int
+		want Color
+	}{
+		{"la bande de gauche", 0, 0, bars},
+		{"la bande de droite", 9, 0, bars},
+		{"la ligne du bas", 0, 4, bars},
+		{"le centre de l'image", 4, 2, white},
+		{"le premier pixel de l'image", 1, 0, white},
+	}
+	for _, c := range cases {
+		if got := at(c.x, c.y); got != c.want {
+			t.Errorf("%s en (%d, %d) : %v, attendu %v", c.name, c.x, c.y, got, c.want)
+		}
+	}
+}
 
 // TestPaceDoesNotDrift garde la correction qui vaut tout ce lot : la date du pas
 // suivant se calcule en absolu.
