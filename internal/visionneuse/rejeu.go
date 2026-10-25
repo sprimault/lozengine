@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sprimault/lozengine/internal/raster"
+	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/rendu"
 )
 

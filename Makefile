@@ -122,12 +122,12 @@ AUTORISEES = golang\.org/x/image(/.*)?|github\.com/ebitengine/oto/v3(/.*)?
 # frontière système : c'est lui qui rastérise les polices, donc lui qui pourra
 # puiser dans la liste. Deux notions voisines, deux listes — les confondre
 # interdirait à `apparence` ce que la liste existe précisément pour lui permettre.
-# `rendu`, `geometrie` et `scene` vivent hors d'`internal/`, parce qu'un consommateur
+# `rendu`, `geometrie`, `scene` et `raster` vivent hors d'`internal/`, parce qu'un
+# consommateur
 # doit pouvoir lire la documentation de leurs champs et de leurs méthodes — un alias
 # vers un paquet interne n'en montre aucun. Être public ne relâche rien : ils restent
 # le cœur, donc ils n'ont droit à aucune dépendance.
-SANS_DEPENDANCE = rendu geometrie scene internal/tri \
-                  internal/raster
+SANS_DEPENDANCE = rendu geometrie scene raster internal/tri
 
 # La règle du dépôt, rendue exécutable.
 #
@@ -147,7 +147,7 @@ SANS_DEPENDANCE = rendu geometrie scene internal/tri \
 # close** importée dans le cœur sous contrainte de construction. La première boucle la
 # laisse passer puisqu'elle est autorisée ailleurs, et la seconde ne la voyait pas.
 # Éprouvé sur une copie dans `.tmp/`, par un `golang.org/x/image` substitué et importé
-# depuis un fichier `_linux.go` de `internal/raster` : le contrôle passait au vert.
+# depuis un fichier `_linux.go` de `raster` : le contrôle passait au vert.
 #
 # Le filtre du module n'est pas ancré : `-test` fait remonter des pseudo-paquets de
 # la forme `paquet [paquet.test]`, dont le chemin du module ne commence pas la ligne.
@@ -183,8 +183,8 @@ deps:
 
 # Les paquets qui consomment ou produisent un Rendu, et rien d'autre. Le paquet
 # racine en est absent : c'est lui qui assemble, donc il connaît les backends.
-NOYAU = rendu geometrie scene internal/tri \
-        internal/raster internal/apparence
+NOYAU = rendu geometrie scene raster internal/tri \
+        internal/apparence
 
 # Ce qu'aucun d'eux ne doit importer. Les appels directs et les sockets vivent dans
 # un backend, l'audio parle son protocole depuis le sien.

@@ -5,8 +5,8 @@ package visionneuse
 
 import (
 	"github.com/sprimault/lozengine/geometrie"
-	"github.com/sprimault/lozengine/internal/raster"
 	"github.com/sprimault/lozengine/internal/tri"
+	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/rendu"
 	"github.com/sprimault/lozengine/scene"
 )

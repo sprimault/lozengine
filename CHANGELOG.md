@@ -47,8 +47,12 @@ notes de publication.
 
 ### Ajouté
 
-- `geometrie` et `scene` sont publics : les champs et les méthodes de `Matrice`,
-  `Scene`, `Entite` et `Aspect` se lisent dans leur documentation.
+- Les planches se chargent depuis le paquet racine : `OuvrirPlanche` par chemin,
+  `ChargerPlanche` par lecteur, plus `Planche`, `Atlas`, `Rectangle` et
+  `NouvellePlanche`.
+- `geometrie`, `scene` et `raster` sont publics : les champs et les méthodes de
+  `Matrice`, `Scene`, `Entite`, `Aspect` et `Planche` se lisent dans leur
+  documentation.
 - `CoteMax` et `StratesMax` disent la plus grande grille possible et le nombre de
   choses qu'une cellule empile.
 - La scène se décrit depuis le paquet racine : `NouvelleScene`, `Scene`, `Entite`,
@@ -64,8 +68,10 @@ notes de publication.
 
 ### Added
 
-- `geometrie` and `scene` are public: the fields and methods of `Matrice`, `Scene`,
-  `Entite` and `Aspect` can be read in their documentation.
+- Sheets are loaded from the root package: `OuvrirPlanche` by path, `ChargerPlanche`
+  by reader, plus `Planche`, `Atlas`, `Rectangle` and `NouvellePlanche`.
+- `geometrie`, `scene` and `raster` are public: the fields and methods of `Matrice`,
+  `Scene`, `Entite`, `Aspect` and `Planche` can be read in their documentation.
 - `CoteMax` and `StratesMax` state the largest possible grid and how many things a
   cell stacks.
 - A scene is described from the root package: `NouvelleScene`, `Scene`, `Entite`,

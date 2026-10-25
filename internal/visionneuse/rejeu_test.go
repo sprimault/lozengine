@@ -10,7 +10,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/raster"
+	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/rendu"
 )
 

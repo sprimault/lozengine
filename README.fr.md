@@ -80,11 +80,11 @@ s'appelleront une par une, sans que rien ne réclame de fenêtre ni de thread. L
 première porte ajoute du confort, jamais de capacité : tout ce qu'elle permet se
 fait aussi en pilotant le moteur à la main.
 
-Trois paquets sont publics parce qu'on doit pouvoir lire la documentation de leurs
-types : `rendu`, `geometrie` et `scene`. Tout le reste vit sous `internal/`, que le
-compilateur interdit d'importer depuis un autre module — un hôte ne peut donc pas se
-lier à un backend en contournant la frontière. Le paquet racine republie l'essentiel,
-pour qu'un jeu n'ait qu'un seul import à écrire.
+Quatre paquets sont publics parce qu'on doit pouvoir lire la documentation de leurs
+types : `rendu`, `geometrie`, `scene` et `raster`. Tout le reste vit sous `internal/`,
+que le compilateur interdit d'importer depuis un autre module — un hôte ne peut donc
+pas se lier à un backend en contournant la frontière. Le paquet racine republie
+l'essentiel, pour qu'un jeu n'ait qu'un seul import à écrire.
 
 ## Ce qu'il ne fait pas
 
