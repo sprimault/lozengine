@@ -29,29 +29,29 @@ import (
 // Cinq méthodes, parce que la boucle n'a besoin que de cela : lire le clavier,
 // présenter une image, savoir dans quoi elle présente, savoir si on lui a demandé de
 // partir, et partir.
-type Fenetre interface {
-	// Entrees rend l'état du clavier pour le pas qui commence, les touches tenues
+type Window interface {
+	// Input rend l'état du clavier pour le pas qui commence, les touches tenues
 	// comme celles qui viennent d'être enfoncées.
-	Entrees() input.Input
+	Input() input.Input
 
-	// Presenter pose le tampon à l'écran, tel quel.
+	// Present pose le tampon à l'écran, tel quel.
 	//
 	// Sans erreur : le chemin d'une image n'en rend pas, et il n'y a personne à qui
 	// se plaindre soixante fois par seconde. Une présentation qui ne peut pas avoir
 	// lieu — fenêtre minimisée, par exemple — ne fait rien, ce qui est le bon
-	// comportement et non un échec. Ce qui est terminal se lit par Fermee.
-	Presenter(t *render.Buffer)
+	// comportement et non un échec. Ce qui est terminal se lit par Closed.
+	Present(t *render.Buffer)
 
-	// Taille rend les dimensions de la zone utile, en pixels, hors bordures et
+	// Size rend les dimensions de la zone utile, en pixels, hors bordures et
 	// barre de titre. C'est d'elle que la boucle tire le facteur d'agrandissement.
-	Taille() (largeur, hauteur uint16)
+	Size() (width, height uint16)
 
-	// Fermee dit que la fenêtre ne présentera plus rien : le joueur l'a fermée, ou
+	// Closed dit que la fenêtre ne présentera plus rien : le joueur l'a fermée, ou
 	// le système l'a reprise.
-	Fermee() bool
+	Closed() bool
 
-	// Fermer rend au système ce qu'Ouvrir a pris. Appeler deux fois est sans effet.
-	Fermer()
+	// Close rend au système ce qu'Open a pris. Appeler deux fois est sans effet.
+	Close()
 }
 
 // Options porte ce qu'une fenêtre admet de régler à l'ouverture.
@@ -60,6 +60,6 @@ type Fenetre interface {
 // de zéro pixel n'a pas de défaut raisonnable, et le titre d'un jeu n'en a pas non
 // plus. C'est le paquet racine qui pose les siens avant d'appeler.
 type Options struct {
-	Titre            string
-	Largeur, Hauteur uint16
+	Title         string
+	Width, Height uint16
 }

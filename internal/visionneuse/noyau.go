@@ -5,7 +5,7 @@ package visionneuse
 
 import (
 	"github.com/sprimault/lozengine/geometry"
-	"github.com/sprimault/lozengine/internal/tri"
+	"github.com/sprimault/lozengine/internal/sorting"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
@@ -82,7 +82,7 @@ func Noyau() Scenario {
 			s := sceneDuNoyau()
 			s.Orient(scene.Orientation(numero))
 
-			return append(reserve, tri.Nouveau(s).Image()...)
+			return append(reserve, sorting.New(s).Frame()...)
 		},
 	}
 }

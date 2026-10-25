@@ -198,7 +198,7 @@ Le sens des dépendances ne s'inverse jamais.
 lozengine             surface publique, boucle, assemblage      tous les internes
 geometry              projection, matrices, conversions         aucune
 scene                 grille, entités, couches, caméra          geometry, render
-internal/tri          retrait hors image, clé, départage        geometry, scene, render
+internal/sorting      retrait hors image, clé, départage        geometry, scene, render
 render                structures Quad et DrawList, publiques    aucune
 raster                planches, atlas, rastériseur, PNG         render
 internal/apparence    interface fournisseur, animation          geometry, render

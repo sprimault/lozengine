@@ -127,7 +127,7 @@ AUTORISEES = golang\.org/x/image(/.*)?|github\.com/ebitengine/oto/v3(/.*)?
 # doit pouvoir lire la documentation de leurs champs et de leurs méthodes — un alias
 # vers un paquet interne n'en montre aucun. Être public ne relâche rien : ils restent
 # le cœur, donc ils n'ont droit à aucune dépendance.
-SANS_DEPENDANCE = render geometry scene raster input internal/tri
+SANS_DEPENDANCE = render geometry scene raster input internal/sorting
 
 # La règle du dépôt, rendue exécutable.
 #
@@ -183,7 +183,7 @@ deps:
 
 # Les paquets qui consomment ou produisent un Rendu, et rien d'autre. Le paquet
 # racine en est absent : c'est lui qui assemble, donc il connaît les backends.
-NOYAU = render geometry scene raster input internal/tri \
+NOYAU = render geometry scene raster input internal/sorting \
         internal/apparence
 
 # Ce qu'aucun d'eux ne doit importer. Les appels directs et les sockets vivent dans

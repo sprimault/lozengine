@@ -19,13 +19,13 @@ import (
 // dirait seulement « non pris en charge » obligerait à chercher dans la feuille de
 // route ce que le moteur attend encore, et c'est précisément ce qu'on veut éviter à
 // quelqu'un qui essaie le moteur sous Linux aujourd'hui.
-func TestOuvrirReplieSansFenetre(t *testing.T) {
-	fenetre, err := Ouvrir(Options{Titre: "essai", Largeur: 480, Hauteur: 270})
+func TestOpenFallsBackWithoutWindow(t *testing.T) {
+	window, err := Open(Options{Title: "essai", Width: 480, Height: 270})
 
 	if err == nil {
 		t.Fatal("ouverture acceptée sur une plateforme sans backend")
 	}
-	if fenetre != nil {
+	if window != nil {
 		t.Error("une fenêtre est rendue en même temps que l'erreur")
 	}
 	if !strings.Contains(err.Error(), runtime.GOOS) {
