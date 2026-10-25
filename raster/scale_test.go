@@ -56,20 +56,20 @@ func TestScaleFactor(t *testing.T) {
 // TestUpscaleWithoutBars vérifie qu'au facteur deux chaque pixel devient un carré de
 // quatre, et qu'une sortie qui tombe juste ne garde rien du fond.
 func TestUpscaleWithoutBars(t *testing.T) {
-	inner := bufferOf(t, 2, 2, rouge, vert, bleu, blanc)
+	inner := bufferOf(t, 2, 2, red, green, blue, white)
 	out := render.NewBuffer(4, 4)
 
-	Upscale(inner, out, 2, demiRge)
+	Upscale(inner, out, 2, halfRed)
 
 	want := [16]render.Color{
-		rouge, rouge, vert, vert,
-		rouge, rouge, vert, vert,
-		bleu, bleu, blanc, blanc,
-		bleu, bleu, blanc, blanc,
+		red, red, green, green,
+		red, red, green, green,
+		blue, blue, white, white,
+		blue, blue, white, white,
 	}
-	for i, veut := range want {
-		if out.Pixels[i] != veut {
-			t.Errorf("pixel %d : %v, attendu %v", i, out.Pixels[i], veut)
+	for i := range want {
+		if out.Pixels[i] != want[i] {
+			t.Errorf("pixel %d : %v, attendu %v", i, out.Pixels[i], want[i])
 		}
 	}
 }
@@ -77,15 +77,15 @@ func TestUpscaleWithoutBars(t *testing.T) {
 // TestUpscaleBars vérifie que ce qui reste autour de l'image est peint en fond, et
 // que l'image est bien centrée dedans.
 func TestUpscaleBars(t *testing.T) {
-	inner := bufferOf(t, 1, 1, rouge)
+	inner := bufferOf(t, 1, 1, red)
 	out := render.NewBuffer(3, 3)
 
-	Upscale(inner, out, 1, bleu)
+	Upscale(inner, out, 1, blue)
 
 	for i, got := range out.Pixels {
-		want := bleu
+		want := blue
 		if i == 4 {
-			want = rouge
+			want = red
 		}
 		if got != want {
 			t.Errorf("pixel %d : %v, attendu %v", i, got, want)
@@ -96,17 +96,17 @@ func TestUpscaleBars(t *testing.T) {
 // TestUpscaleOddCentering fige le partage du reste : à droite et en bas. Une image
 // de référence qui basculerait d'un pixel d'une version à l'autre ne vaudrait rien.
 func TestUpscaleOddCentering(t *testing.T) {
-	inner := bufferOf(t, 1, 1, rouge)
+	inner := bufferOf(t, 1, 1, red)
 	out := render.NewBuffer(5, 2)
 
-	Upscale(inner, out, 2, bleu)
+	Upscale(inner, out, 2, blue)
 
 	// Deux colonnes de reste : une à gauche, deux à droite.
 	for x := 0; x < 5; x++ {
 		for y := 0; y < 2; y++ {
-			want := bleu
+			want := blue
 			if x == 1 || x == 2 {
-				want = rouge
+				want = red
 			}
 			if got := out.Pixels[y*5+x]; got != want {
 				t.Errorf("pixel (%d, %d) : %v, attendu %v", x, y, got, want)
@@ -119,17 +119,17 @@ func TestUpscaleOddCentering(t *testing.T) {
 // petite que la résolution interne, cas d'un redimensionnement et non d'une erreur.
 func TestUpscaleSmallerOutput(t *testing.T) {
 	inner := bufferOf(t, 4, 2,
-		rouge, vert, bleu, blanc,
-		blanc, bleu, vert, rouge,
+		red, green, blue, white,
+		white, blue, green, red,
 	)
 	out := render.NewBuffer(2, 2)
 
-	Upscale(inner, out, 1, demiRge)
+	Upscale(inner, out, 1, halfRed)
 
-	want := [4]render.Color{vert, bleu, bleu, vert}
-	for i, veut := range want {
-		if out.Pixels[i] != veut {
-			t.Errorf("pixel %d : %v, attendu %v", i, out.Pixels[i], veut)
+	want := [4]render.Color{green, blue, blue, green}
+	for i := range want {
+		if out.Pixels[i] != want[i] {
+			t.Errorf("pixel %d : %v, attendu %v", i, out.Pixels[i], want[i])
 		}
 	}
 }
@@ -137,25 +137,25 @@ func TestUpscaleSmallerOutput(t *testing.T) {
 // TestUpscaleShorterOutput éprouve le découpage sur la hauteur, où le décalage
 // de centrage devient négatif.
 //
-// C'est le pendant vertical de TestAgrandirSortiePlusPetite, qui ne rend négatif que
+// C'est le pendant vertical de [TestUpscaleSmallerOutput], qui ne rend négatif que
 // le décalage horizontal : toutes les sorties du dépôt sont au moins aussi hautes que
 // l'image, donc le clamp qui coupe les lignes du haut n'était parcouru par aucun cas.
 func TestUpscaleShorterOutput(t *testing.T) {
 	inner := bufferOf(t, 2, 4,
-		rouge, rouge,
-		vert, vert,
-		bleu, bleu,
-		blanc, blanc,
+		red, red,
+		green, green,
+		blue, blue,
+		white, white,
 	)
 	out := render.NewBuffer(2, 2)
 
-	Upscale(inner, out, 1, demiRge)
+	Upscale(inner, out, 1, halfRed)
 
 	// Les deux lignes du milieu, le reste d'un centrage impair allant vers le bas.
-	want := [4]render.Color{vert, vert, bleu, bleu}
-	for i, veut := range want {
-		if out.Pixels[i] != veut {
-			t.Errorf("pixel %d : %v, attendu %v", i, out.Pixels[i], veut)
+	want := [4]render.Color{green, green, blue, blue}
+	for i := range want {
+		if out.Pixels[i] != want[i] {
+			t.Errorf("pixel %d : %v, attendu %v", i, out.Pixels[i], want[i])
 		}
 	}
 }
@@ -165,22 +165,22 @@ func TestUpscaleShorterOutput(t *testing.T) {
 // peindre des bandes sur l'autre.
 func TestUpscaleBarsAndClipping(t *testing.T) {
 	inner := bufferOf(t, 4, 2,
-		rouge, vert, bleu, blanc,
-		blanc, bleu, vert, rouge,
+		red, green, blue, white,
+		white, blue, green, red,
 	)
 	out := render.NewBuffer(2, 4)
 
-	Upscale(inner, out, 1, demiRge)
+	Upscale(inner, out, 1, halfRed)
 
 	want := [8]render.Color{
-		demiRge, demiRge,
-		vert, bleu,
-		bleu, vert,
-		demiRge, demiRge,
+		halfRed, halfRed,
+		green, blue,
+		blue, green,
+		halfRed, halfRed,
 	}
-	for i, veut := range want {
-		if out.Pixels[i] != veut {
-			t.Errorf("pixel %d : %v, attendu %v", i, out.Pixels[i], veut)
+	for i := range want {
+		if out.Pixels[i] != want[i] {
+			t.Errorf("pixel %d : %v, attendu %v", i, out.Pixels[i], want[i])
 		}
 	}
 }
@@ -190,11 +190,11 @@ func TestUpscaleBarsAndClipping(t *testing.T) {
 func TestUpscaleNothingFits(t *testing.T) {
 	out := render.NewBuffer(2, 2)
 
-	Upscale(render.NewBuffer(0, 0), out, 4, bleu)
+	Upscale(render.NewBuffer(0, 0), out, 4, blue)
 
 	for i, got := range out.Pixels {
-		if got != bleu {
-			t.Errorf("pixel %d : %v, attendu %v", i, got, bleu)
+		if got != blue {
+			t.Errorf("pixel %d : %v, attendu %v", i, got, blue)
 		}
 	}
 }
@@ -202,12 +202,12 @@ func TestUpscaleNothingFits(t *testing.T) {
 // TestUpscaleSameSize vérifie le chemin rapide : une sortie de même taille au
 // facteur un est une recopie.
 func TestUpscaleSameSize(t *testing.T) {
-	inner := bufferOf(t, 2, 1, rouge, vert)
+	inner := bufferOf(t, 2, 1, red, green)
 	out := render.NewBuffer(2, 1)
 
-	Upscale(inner, out, 1, bleu)
+	Upscale(inner, out, 1, blue)
 
-	if out.Pixels[0] != rouge || out.Pixels[1] != vert {
+	if out.Pixels[0] != red || out.Pixels[1] != green {
 		t.Errorf("recopie : %v", out.Pixels)
 	}
 }
@@ -215,14 +215,14 @@ func TestUpscaleSameSize(t *testing.T) {
 // TestUpscaleInvalidFactor vérifie qu'un facteur nul ou négatif vaut un, plutôt
 // que de rendre une sortie vide sans rien dire.
 func TestUpscaleInvalidFactor(t *testing.T) {
-	for _, facteur := range []int{0, -3} {
-		inner := bufferOf(t, 1, 1, rouge)
-		sortie := render.NewBuffer(1, 1)
+	for _, factor := range []int{0, -3} {
+		inner := bufferOf(t, 1, 1, red)
+		out := render.NewBuffer(1, 1)
 
-		Upscale(inner, sortie, facteur, bleu)
+		Upscale(inner, out, factor, blue)
 
-		if sortie.Pixels[0] != rouge {
-			t.Errorf("facteur %d : %v, attendu %v", facteur, sortie.Pixels[0], rouge)
+		if out.Pixels[0] != red {
+			t.Errorf("facteur %d : %v, attendu %v", factor, out.Pixels[0], red)
 		}
 	}
 }
@@ -233,7 +233,7 @@ func TestUpscaleDoesNotAllocate(t *testing.T) {
 	inner := render.NewBuffer(32, 16)
 	out := render.NewBuffer(100, 60)
 
-	if n := testing.AllocsPerRun(10, func() { Upscale(inner, out, 3, bleu) }); n != 0 {
+	if n := testing.AllocsPerRun(10, func() { Upscale(inner, out, 3, blue) }); n != 0 {
 		t.Errorf("allocations : %v, attendu aucune", n)
 	}
 }

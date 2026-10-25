@@ -32,21 +32,21 @@ func TestWritePNGRoundTrip(t *testing.T) {
 	buffer.Pixels[2] = render.Color{R: 128, A: 128}
 	buffer.Pixels[3] = render.Color{B: 64, A: 255}
 
-	var fichier bytes.Buffer
-	if err := WritePNG(buffer, &fichier); err != nil {
+	var file bytes.Buffer
+	if err := WritePNG(buffer, &file); err != nil {
 		t.Fatalf("écriture : %v", err)
 	}
 
-	p, err := LoadSheet(&fichier)
+	p, err := LoadSheet(&file)
 	if err != nil {
 		t.Fatalf("rechargement : %v", err)
 	}
 	if p.Width != 2 || p.Height != 2 {
 		t.Fatalf("dimensions : %d×%d, attendu 2×2", p.Width, p.Height)
 	}
-	for i, veut := range buffer.Pixels {
-		if p.Pixels[i] != veut {
-			t.Errorf("pixel %d : %v, attendu %v", i, p.Pixels[i], veut)
+	for i, want := range buffer.Pixels {
+		if p.Pixels[i] != want {
+			t.Errorf("pixel %d : %v, attendu %v", i, p.Pixels[i], want)
 		}
 	}
 }
@@ -66,8 +66,8 @@ func TestWritePNGRoundTrip(t *testing.T) {
 // stricte sans qu'aucun défaut existe, et personne ne chercherait la cause ici.
 func TestWritePNGPartialAlphaLosesOneStep(t *testing.T) {
 	cases := []struct {
-		name       string
-		pose, want render.Color
+		name        string
+		given, want render.Color
 	}{
 		{"un demi-cran sous deux", render.Color{R: 1, G: 1, B: 1, A: 2}, render.Color{A: 2}},
 		{"deux sur quatre", render.Color{R: 2, G: 2, B: 2, A: 4}, render.Color{R: 1, G: 1, B: 1, A: 4}},
@@ -76,19 +76,19 @@ func TestWritePNGPartialAlphaLosesOneStep(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			tampon := render.NewBuffer(1, 1)
-			tampon.Pixels[0] = c.pose
+			buffer := render.NewBuffer(1, 1)
+			buffer.Pixels[0] = c.given
 
-			var fichier bytes.Buffer
-			if err := WritePNG(tampon, &fichier); err != nil {
+			var file bytes.Buffer
+			if err := WritePNG(buffer, &file); err != nil {
 				t.Fatalf("écriture : %v", err)
 			}
-			p, err := LoadSheet(&fichier)
+			p, err := LoadSheet(&file)
 			if err != nil {
 				t.Fatalf("rechargement : %v", err)
 			}
 			if p.Pixels[0] != c.want {
-				t.Errorf("%v revient %v, attendu %v", c.pose, p.Pixels[0], c.want)
+				t.Errorf("%v revient %v, attendu %v", c.given, p.Pixels[0], c.want)
 			}
 		})
 	}
@@ -101,12 +101,12 @@ func TestWritePNGOpaque(t *testing.T) {
 	buffer := render.NewBuffer(3, 1)
 	Clear(buffer, render.Color{R: 10, G: 20, B: 30, A: 255})
 
-	var fichier bytes.Buffer
-	if err := WritePNG(buffer, &fichier); err != nil {
+	var file bytes.Buffer
+	if err := WritePNG(buffer, &file); err != nil {
 		t.Fatalf("écriture : %v", err)
 	}
 
-	p, err := LoadSheet(&fichier)
+	p, err := LoadSheet(&file)
 	if err != nil {
 		t.Fatalf("rechargement : %v", err)
 	}

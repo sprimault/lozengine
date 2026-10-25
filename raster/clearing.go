@@ -41,7 +41,7 @@ func fill(pixels []render.Color, c render.Color) {
 	}
 
 	pixels[0] = c
-	for ecrit := 1; ecrit < len(pixels); ecrit *= 2 {
-		copy(pixels[ecrit:], pixels[:ecrit])
+	for written := 1; written < len(pixels); written *= 2 {
+		copy(pixels[written:], pixels[:written])
 	}
 }

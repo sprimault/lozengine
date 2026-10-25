@@ -17,24 +17,24 @@ import (
 // veut savoir est la part d'image qu'elle prendrait sur une machine modeste : les
 // chiffres de ces bancs se lisent donc pondérés, jamais bruts.
 const (
-	// ponderation rapporte la mesure à une machine plus lente, pour ce qui dépend de
+	// weighting rapporte la mesure à une machine plus lente, pour ce qui dépend de
 	// la bande passante mémoire.
-	ponderation = 4
+	weighting = 4
 
-	// imageA60Hz est le budget d'une image, en nanosecondes.
-	imageA60Hz = 16_666_667
+	// frameAt60Hz est le budget d'une image, en nanosecondes.
+	frameAt60Hz = 16_666_667
 )
 
-// imagePart rapporte la part d'une image à 60 Hz que l'opération prendrait sur une
+// framePart rapporte la part d'une image à 60 Hz que l'opération prendrait sur une
 // machine modeste. Le ns/op brut reste rapporté à côté : c'est lui que `benchstat`
 // compare, la pondération n'étant qu'une lecture.
 //
 // Elle n'a de sens que pour ce qui se fait une fois par image. Un banc à l'échelle du
 // quad n'en reçoit pas : ce qu'on y lit est un rapport entre chemins, et un rapport
 // n'a pas besoin d'être pondéré.
-func imagePart(b *testing.B) {
-	parOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
-	b.ReportMetric(parOp*ponderation*100/imageA60Hz, "%image-pondere")
+func framePart(b *testing.B) {
+	perOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
+	b.ReportMetric(perOp*weighting*100/frameAt60Hz, "%image-pondere")
 }
 
 // tile rend une tile de sol en losange 32×16 : coins transparents, corps opaque,
@@ -48,11 +48,11 @@ func tile() Sheet {
 		if y >= 8 {
 			height = 15 - y
 		}
-		demi := (height + 1) * 2
+		half := (height + 1) * 2
 
-		for x := 16 - demi; x < 16+demi; x++ {
+		for x := 16 - half; x < 16+half; x++ {
 			color := render.Color{R: 90, G: 110, B: 90, A: 255}
-			if x == 16-demi || x == 16+demi-1 {
+			if x == 16-half || x == 16+half-1 {
 				color = render.Color{R: 45, G: 55, B: 45, A: 128}
 			}
 			p.Pixels[y*32+x] = color
@@ -97,7 +97,7 @@ func testAtlas(b *testing.B) *Atlas {
 func BenchmarkQuad(b *testing.B) {
 	cases := []struct {
 		name   string
-		regler func(*render.Quad)
+		adjust func(*render.Quad)
 	}{
 		{"copie", func(*render.Quad) {}},
 		{"teinte", func(q *render.Quad) { q.Tint = render.Color{R: 255, G: 160, B: 160, A: 255} }},
@@ -113,7 +113,7 @@ func BenchmarkQuad(b *testing.B) {
 			buffer := render.NewBuffer(480, 270)
 
 			q := render.Quad{X: 100, Y: 100, Width: 32, Height: 16, Tint: render.White()}
-			c.regler(&q)
+			c.adjust(&q)
 			r := render.DrawList{q}
 
 			b.ResetTimer()
@@ -143,7 +143,7 @@ func BenchmarkClear(b *testing.B) {
 			for range b.N {
 				Clear(buffer, c.color)
 			}
-			imagePart(b)
+			framePart(b)
 		})
 	}
 }
@@ -170,7 +170,7 @@ func BenchmarkUpscale(b *testing.B) {
 			for range b.N {
 				Upscale(inner, out, c.factor, render.Color{A: 255})
 			}
-			imagePart(b)
+			framePart(b)
 		})
 	}
 }
@@ -184,18 +184,18 @@ func BenchmarkFrame(b *testing.B) {
 
 	var r render.DrawList
 	for y := -16; y < 270; y += 8 {
-		decalage := 0
+		offset := 0
 		if (y/8)%2 != 0 {
-			decalage = 16
+			offset = 16
 		}
 		for x := -32; x < 480; x += 32 {
 			r = append(r, render.Quad{
-				X: int16(x + decalage), Y: int16(y),
+				X: int16(x + offset), Y: int16(y),
 				Width: 32, Height: 16, Tint: render.White(),
 			})
 		}
 	}
-	tuiles := len(r)
+	tiles := len(r)
 
 	for i := range 200 {
 		r = append(r, render.Quad{
@@ -209,6 +209,6 @@ func BenchmarkFrame(b *testing.B) {
 		Draw(buffer, r, a)
 	}
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "images/s")
-	b.ReportMetric(float64(tuiles), "tuiles/image")
-	imagePart(b)
+	b.ReportMetric(float64(tiles), "tuiles/image")
+	framePart(b)
 }

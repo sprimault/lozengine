@@ -39,9 +39,9 @@ func TestCutGrid(t *testing.T) {
 	if len(p.Rectangles) != len(want) {
 		t.Fatalf("nombre de cases : %d, attendu %d", len(p.Rectangles), len(want))
 	}
-	for i, veut := range want {
-		if p.Rectangles[i] != veut {
-			t.Errorf("case %d : %v, attendu %v", i, p.Rectangles[i], veut)
+	for i := range want {
+		if p.Rectangles[i] != want[i] {
+			t.Errorf("case %d : %v, attendu %v", i, p.Rectangles[i], want[i])
 		}
 	}
 }

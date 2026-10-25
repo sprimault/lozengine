@@ -23,11 +23,11 @@ import (
 func encodePNG(t *testing.T, img image.Image) *bytes.Buffer {
 	t.Helper()
 
-	var tampon bytes.Buffer
-	if err := png.Encode(&tampon, img); err != nil {
+	var buffer bytes.Buffer
+	if err := png.Encode(&buffer, img); err != nil {
 		t.Fatalf("encodage du PNG : %v", err)
 	}
-	return &tampon
+	return &buffer
 }
 
 // TestLoadSheetPremultiplies vérifie la conversion que le PNG ne fait pas :
@@ -43,11 +43,11 @@ func TestLoadSheetPremultiplies(t *testing.T) {
 		t.Fatalf("chargement : %v", err)
 	}
 
-	if veut := (render.Color{R: 128, A: 128}); p.Pixels[0] != veut {
-		t.Errorf("rouge à demi transparent : %v, attendu %v", p.Pixels[0], veut)
+	if want := (render.Color{R: 128, A: 128}); p.Pixels[0] != want {
+		t.Errorf("rouge à demi transparent : %v, attendu %v", p.Pixels[0], want)
 	}
-	if veut := (render.Color{R: 255, G: 255, B: 255, A: 255}); p.Pixels[1] != veut {
-		t.Errorf("blanc opaque : %v, attendu %v", p.Pixels[1], veut)
+	if want := (render.Color{R: 255, G: 255, B: 255, A: 255}); p.Pixels[1] != want {
+		t.Errorf("blanc opaque : %v, attendu %v", p.Pixels[1], want)
 	}
 }
 
@@ -55,8 +55,8 @@ func TestLoadSheetPremultiplies(t *testing.T) {
 // tous en RVBA : le chargement ne doit pas dépendre de la façon dont l'image a été
 // écrite par un outil de fabrication.
 func TestLoadSheetFormats(t *testing.T) {
-	gris := image.NewGray(image.Rect(0, 0, 1, 1))
-	gris.SetGray(0, 0, color.Gray{Y: 200})
+	gray := image.NewGray(image.Rect(0, 0, 1, 1))
+	gray.SetGray(0, 0, color.Gray{Y: 200})
 
 	palette := image.NewPaletted(image.Rect(0, 0, 1, 1), color.Palette{color.NRGBA{R: 10, G: 20, B: 30, A: 255}})
 	palette.SetColorIndex(0, 0, 0)
@@ -66,7 +66,7 @@ func TestLoadSheetFormats(t *testing.T) {
 		img  image.Image
 		want render.Color
 	}{
-		{"niveaux de gris", gris, render.Color{R: 200, G: 200, B: 200, A: 255}},
+		{"niveaux de gris", gray, render.Color{R: 200, G: 200, B: 200, A: 255}},
 		{"palette", palette, render.Color{R: 10, G: 20, B: 30, A: 255}},
 	}
 	for _, c := range cases {
@@ -97,8 +97,8 @@ func TestLoadSheetShiftedOrigin(t *testing.T) {
 	if p.Width != 2 || p.Height != 2 {
 		t.Fatalf("dimensions : %d×%d, attendu 2×2", p.Width, p.Height)
 	}
-	if veut := (render.Color{G: 255, A: 255}); p.Pixels[0] != veut {
-		t.Errorf("premier pixel : %v, attendu %v", p.Pixels[0], veut)
+	if want := (render.Color{G: 255, A: 255}); p.Pixels[0] != want {
+		t.Errorf("premier pixel : %v, attendu %v", p.Pixels[0], want)
 	}
 }
 
