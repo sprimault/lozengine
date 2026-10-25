@@ -69,7 +69,7 @@ func Nouveau(s *scene.Scene) *Trieur {
 func (t *Trieur) Image() rendu.Rendu {
 	t.bruts, t.cles, t.sources, t.ordres = t.bruts[:0], t.cles[:0], t.sources[:0], t.ordres[:0]
 
-	t.vueX, t.vueY, t.vueLargeur, t.vueHauteur = t.scene.Vue()
+	t.vueX, t.vueY, t.vueLargeur, t.vueHauteur = t.scene.View()
 	if t.vueLargeur <= 0 || t.vueHauteur <= 0 {
 		return t.sortie[:0]
 	}
@@ -91,10 +91,10 @@ func (t *Trieur) Image() rendu.Rendu {
 // qu'un écran en montre.
 func (t *Trieur) releverEntites() {
 	m := t.scene.Projection()
-	identites := scene.Identites(t.scene)
+	identites := scene.Identities(t.scene)
 
-	for i, e := range scene.Entites(t.scene) {
-		rx, ry := t.scene.Remapper(e.X, e.Y)
+	for i, e := range scene.Entities(t.scene) {
+		rx, ry := t.scene.Remap(e.X, e.Y)
 		ex, ey, profondeur, hauteur := m.Project(rx, ry, e.Z)
 
 		// Une entité n'est posée sur aucune strate : elle se tient sur le décor, pas
@@ -105,7 +105,7 @@ func (t *Trieur) releverEntites() {
 
 // releverDecor parcourt les cellules que la vue peut montrer, couche par couche.
 func (t *Trieur) releverDecor() {
-	strates := t.scene.Strates()
+	strates := t.scene.Tiers()
 	if strates == 0 {
 		return
 	}
@@ -117,15 +117,15 @@ func (t *Trieur) releverDecor() {
 	for strate := range strates {
 		for v := v0; v <= v1; v++ {
 			for u := u0; u <= u1; u++ {
-				a := t.scene.Cellule(u, v, uint8(strate))
-				if a.Largeur == 0 || a.Hauteur == 0 {
+				a := t.scene.Cell(u, v, uint8(strate))
+				if a.Width == 0 || a.Height == 0 {
 					continue
 				}
 
 				// Le centre de la cellule, comme une entité se tient au centre de la
 				// sienne : c'est ce qui met une créature et la case qu'elle foule sur
 				// le même point de comparaison.
-				rx, ry := t.scene.Remapper(float64(u)+0.5, float64(v)+0.5)
+				rx, ry := t.scene.Remap(float64(u)+0.5, float64(v)+0.5)
 				ex, ey, profondeur, hauteur := m.Project(rx, ry, 0)
 
 				// Le rang de la cellule ne bouge jamais, contrairement à la place
@@ -153,7 +153,7 @@ func (t *Trieur) fenetre() (u0, v0, u1, v1 int) {
 
 	for _, coin := range [4][2]int32{{0, 0}, {t.vueLargeur, 0}, {0, t.vueHauteur}, {t.vueLargeur, t.vueHauteur}} {
 		rx, ry := m.Unproject(t.vueX+coin[0], t.vueY+coin[1])
-		x, y := t.scene.Deremapper(rx, ry)
+		x, y := t.scene.Unremap(rx, ry)
 
 		minU, maxU = math.Min(minU, x), math.Max(maxU, x)
 		minV, maxV = math.Min(minV, y), math.Max(maxV, y)
@@ -175,12 +175,12 @@ func (t *Trieur) fenetre() (u0, v0, u1, v1 int) {
 // L'ancre est le pied de l'image, centré horizontalement. Elle deviendra surchargeable
 // par le fournisseur d'apparence, jamais par appel.
 func (t *Trieur) poser(a scene.Aspect, absolueX, absolueY int32, profondeur uint32, hauteur uint16, identite uint32, strate uint8) {
-	if a.Largeur == 0 || a.Hauteur == 0 {
+	if a.Width == 0 || a.Height == 0 {
 		return
 	}
 
 	ex, ey := absolueX-t.vueX, absolueY-t.vueY
-	largeur, haut := int32(a.Largeur), int32(a.Hauteur)
+	largeur, haut := int32(a.Width), int32(a.Height)
 	x, y := ex-largeur/2, ey-haut
 
 	if x+largeur <= 0 || x >= t.vueLargeur || y+haut <= 0 || y >= t.vueHauteur {
@@ -188,15 +188,15 @@ func (t *Trieur) poser(a scene.Aspect, absolueX, absolueY int32, profondeur uint
 	}
 
 	t.sources = append(t.sources, uint32(len(t.bruts)))
-	t.cles = append(t.cles, Composer(a.Couche, a.Etage, profondeur, hauteur, a.Planche, 0))
+	t.cles = append(t.cles, Composer(a.Layer, a.Floor, profondeur, hauteur, a.Sheet, 0))
 	t.ordres = append(t.ordres, ordre{abscisse: ex, identite: identite, strate: strate})
 	t.bruts = append(t.bruts, rendu.Quad{
 		X: int16(x), Y: int16(y),
 		SourceX: a.SourceX, SourceY: a.SourceY,
-		Largeur: a.Largeur, Hauteur: a.Hauteur,
-		Planche:  a.Planche,
-		Teinte:   a.Teinte,
-		Drapeaux: a.Drapeaux,
+		Largeur: a.Width, Hauteur: a.Height,
+		Planche:  a.Sheet,
+		Teinte:   a.Tint,
+		Drapeaux: a.Flags,
 	})
 }
 

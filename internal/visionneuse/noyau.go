@@ -80,7 +80,7 @@ func Noyau() Scenario {
 
 		Quads: func(numero int, _ Entrees, reserve rendu.Rendu) rendu.Rendu {
 			s := sceneDuNoyau()
-			s.Orienter(scene.Orientation(numero))
+			s.Orient(scene.Orientation(numero))
 
 			return append(reserve, tri.Nouveau(s).Image()...)
 		},
@@ -90,11 +90,11 @@ func Noyau() Scenario {
 // sceneDuNoyau monte la scène à neuf, ce que la pureté exigée d'un scénario demande :
 // une image doit pouvoir se rendre seule, deux fois, et donner les mêmes pixels.
 func sceneDuNoyau() *scene.Scene {
-	s, err := scene.Nouvelle(coteGrille, coteGrille, geometry.Dimetric(tuileL, tuileH), scene.Options{Entites: 8})
+	s, err := scene.New(coteGrille, coteGrille, geometry.Dimetric(tuileL, tuileH), scene.Options{Entities: 8})
 	if err != nil {
 		panic(err)
 	}
-	s.Cadrer(coteGrille/2, coteGrille/2, largeurNoyau, hauteurNoyau)
+	s.Focus(coteGrille/2, coteGrille/2, largeurNoyau, hauteurNoyau)
 
 	// Le sol, en damier pour que chaque cellule se distingue de ses voisines : un
 	// décalage d'une cellule à la projection se verrait, là où un sol uni le cacherait.
@@ -104,8 +104,8 @@ func sceneDuNoyau() *scene.Scene {
 			if (u+v)%2 == 1 {
 				planche = plancheSolSombre
 			}
-			s.PoserCellule(u, v, 0, scene.Aspect{
-				Planche: planche, Largeur: tuileL, Hauteur: tuileH, Teinte: rendu.Blanc(),
+			s.PlaceCell(u, v, 0, scene.Aspect{
+				Sheet: planche, Width: tuileL, Height: tuileH, Tint: rendu.Blanc(),
 			})
 		}
 	}
@@ -114,29 +114,29 @@ func sceneDuNoyau() *scene.Scene {
 	// asymétrique pour qu'un quart de tour se voie : en ligne, une rotation de cent
 	// quatre-vingts degrés rendrait la même image.
 	borne := scene.Aspect{
-		Planche: plancheBorne, Largeur: tuileL / 2, Hauteur: tuileH * 2, Teinte: rendu.Blanc(),
+		Sheet: plancheBorne, Width: tuileL / 2, Height: tuileH * 2, Tint: rendu.Blanc(),
 	}
 	for _, c := range [][2]int{{1, 1}, {2, 1}, {1, 5}} {
-		s.PoserCellule(c[0], c[1], 1, borne)
+		s.PlaceCell(c[0], c[1], 1, borne)
 	}
 
 	figure := scene.Aspect{
-		Planche: plancheFigure, Largeur: tuileL / 3, Hauteur: tuileH * 3 / 2, Teinte: rendu.Blanc(),
+		Sheet: plancheFigure, Width: tuileL / 3, Height: tuileH * 3 / 2, Tint: rendu.Blanc(),
 	}
 
 	// Une figure derrière les bornes, une devant : c'est le couple qui montre que
 	// l'ordre suit la profondeur et non l'ordre de pose.
-	s.Poser(scene.Entite{X: 1.5, Y: 0.5, Aspect: figure})
-	s.Poser(scene.Entite{X: 1.5, Y: 2.5, Aspect: figure})
+	s.Place(scene.Entity{X: 1.5, Y: 0.5, Aspect: figure})
+	s.Place(scene.Entity{X: 1.5, Y: 2.5, Aspect: figure})
 
 	// À cheval sur quatre cellules, ce qu'une position entière ne montrerait pas.
-	s.Poser(scene.Entite{X: 3.5, Y: 3.5, Aspect: figure})
+	s.Place(scene.Entity{X: 3.5, Y: 3.5, Aspect: figure})
 
 	// Un étage au-dessus, qui passe devant tout l'étage du sol quelle que soit sa
 	// profondeur, et que sa hauteur monte à l'écran.
 	haute := figure
-	haute.Etage = 1
-	s.Poser(scene.Entite{X: 5.5, Y: 5.5, Z: 1, Aspect: haute})
+	haute.Floor = 1
+	s.Place(scene.Entity{X: 5.5, Y: 5.5, Z: 1, Aspect: haute})
 
 	return s
 }

@@ -52,12 +52,12 @@ notes de publication.
 - Les planches se chargent depuis le paquet racine : `OpenSheet` par chemin,
   `LoadSheet` par lecteur, plus `Sheet`, `Atlas`, `Rectangle` et `NewSheet`.
 - `geometry`, `scene` et `raster` sont publics : les champs et les méthodes de
-  `Matrix`, `Scene`, `Entite`, `Aspect` et `Sheet` se lisent dans leur
+  `Matrix`, `Scene`, `Entity`, `Aspect` et `Sheet` se lisent dans leur
   documentation.
-- `CoteMax` et `StratesMax` disent la plus grande grille possible et le nombre de
+- `MaxSide` et `MaxTiers` disent la plus grande grille possible et le nombre de
   choses qu'une cellule empile.
-- La scène se décrit depuis le paquet racine : `NouvelleScene`, `Scene`, `Entite`,
-  `Aspect`, `Poignee`, `Orientation` et ses quatre quarts de tour, `OptionsScene`.
+- La scène se décrit depuis le paquet racine : `NewScene`, `Scene`, `Entity`,
+  `Aspect`, `Handle`, `Orientation` et ses quatre quarts de tour, `SceneOptions`.
 - `CoucheMax` et `EtageMax` disent combien de couches et d'étages l'ordre de dessin
   distingue. Une pose qui les dépasse est refusée, au lieu d'être ramenée au plafond.
 - `Tampon` est l'image dans laquelle le moteur dessine, et un hôte peut l'allouer
@@ -74,11 +74,11 @@ notes de publication.
 - Sheets are loaded from the root package: `OpenSheet` by path, `LoadSheet` by reader,
   plus `Sheet`, `Atlas`, `Rectangle` and `NewSheet`.
 - `geometry`, `scene` and `raster` are public: the fields and methods of `Matrix`,
-  `Scene`, `Entite`, `Aspect` and `Sheet` can be read in their documentation.
-- `CoteMax` and `StratesMax` state the largest possible grid and how many things a
+  `Scene`, `Entity`, `Aspect` and `Sheet` can be read in their documentation.
+- `MaxSide` and `MaxTiers` state the largest possible grid and how many things a
   cell stacks.
-- A scene is described from the root package: `NouvelleScene`, `Scene`, `Entite`,
-  `Aspect`, `Poignee`, `Orientation` and its four quarter turns, `OptionsScene`.
+- A scene is described from the root package: `NewScene`, `Scene`, `Entity`,
+  `Aspect`, `Handle`, `Orientation` and its four quarter turns, `SceneOptions`.
 - `CoucheMax` and `EtageMax` state how many layers and floors the draw order tells
   apart. A placement beyond them is refused rather than clamped to the ceiling.
 - `Tampon` is the image the engine draws into, and a host may allocate it itself:

@@ -12,13 +12,13 @@ type Orientation uint8
 
 // Les quatre quarts de tour, dans le sens où la grille pivote sous la vue.
 const (
-	SansRotation Orientation = iota
-	UnQuart
-	DemiTour
-	TroisQuarts
+	NoRotation Orientation = iota
+	QuarterTurn
+	HalfTurn
+	ThreeQuarters
 )
 
-// Orienter fait pivoter la vue d'un quart de tour ou d'un multiple, et recadre sur le
+// Orient fait pivoter la vue d'un quart de tour ou d'un multiple, et recadre sur le
 // point visé.
 //
 // La matrice n'y est pour rien et ne change pas : ce sont les coordonnées du monde qui
@@ -27,88 +27,88 @@ const (
 // de la plage perdue sur le champ que la clé de tri lui réserve. La scène connaissant
 // l'étendue de sa grille, elle peut renverser un axe au lieu de l'inverser, et tout
 // reste positif.
-func (s *Scene) Orienter(o Orientation) {
+func (s *Scene) Orient(o Orientation) {
 	s.orientation = o & 3
-	s.recadrer()
+	s.reframe()
 }
 
 // Orientation rend le quart de tour courant.
 func (s *Scene) Orientation() Orientation { return s.orientation }
 
-// Cadrer centre la vue sur un point du monde, pour un tampon de la taille donnée.
+// Focus centre la vue sur un point du monde, pour un tampon de la taille donnée.
 //
 // La taille vient de l'appelant et n'est jamais supposée ici : la résolution interne
 // est le choix du jeu, et la mise à l'échelle vers une fenêtre appartient au backend.
-func (s *Scene) Cadrer(x, y float64, largeur, hauteur int32) {
-	s.cibleX, s.cibleY = x, y
-	s.vueLargeur, s.vueHauteur = largeur, hauteur
-	s.recadrer()
+func (s *Scene) Focus(x, y float64, width, height int32) {
+	s.focusX, s.focusY = x, y
+	s.viewWidth, s.viewHeight = width, height
+	s.reframe()
 }
 
-// Vue rend l'origine de la vue en pixels absolus, et la taille du tampon.
+// View rend l'origine de la vue en pixels absolus, et la taille du tampon.
 //
 // C'est ce que le tri retranche de chaque point projeté, au moment où il écarte ce qui
 // tombe hors de l'image. Les deux gestes sont le même calcul.
-func (s *Scene) Vue() (x, y, largeur, hauteur int32) {
-	return s.vueX, s.vueY, s.vueLargeur, s.vueHauteur
+func (s *Scene) View() (x, y, width, height int32) {
+	return s.viewX, s.viewY, s.viewWidth, s.viewHeight
 }
 
-// Remapper rend les coordonnées sous lesquelles l'orientation courante présente un
+// Remap rend les coordonnées sous lesquelles l'orientation courante présente un
 // point du monde.
 //
 // Un jeu pose ses entités et son décor dans son repère à lui, une fois pour toutes ;
 // c'est la vue qui tourne. Le remappage renverse un axe autour de l'étendue de la
 // grille plutôt que d'en changer le signe, ce qui garde tout positif.
-func (s *Scene) Remapper(x, y float64) (float64, float64) {
-	largeur, hauteur := float64(s.largeur), float64(s.hauteur)
+func (s *Scene) Remap(x, y float64) (float64, float64) {
+	width, height := float64(s.width), float64(s.height)
 
 	switch s.orientation {
-	case UnQuart:
-		return hauteur - y, x
-	case DemiTour:
-		return largeur - x, hauteur - y
-	case TroisQuarts:
-		return y, largeur - x
+	case QuarterTurn:
+		return height - y, x
+	case HalfTurn:
+		return width - x, height - y
+	case ThreeQuarters:
+		return y, width - x
 	}
 	return x, y
 }
 
-// Deremapper fait le chemin inverse de [Scene.Remapper].
+// Unremap fait le chemin inverse de [Scene.Remap].
 //
 // Le tri en a besoin pour relever le décor : il remonte des coins de l'image vers des
 // coordonnées remappées, et doit retrouver la cellule que le jeu a posée.
-func (s *Scene) Deremapper(x, y float64) (float64, float64) {
-	largeur, hauteur := float64(s.largeur), float64(s.hauteur)
+func (s *Scene) Unremap(x, y float64) (float64, float64) {
+	width, height := float64(s.width), float64(s.height)
 
 	switch s.orientation {
-	case UnQuart:
-		return y, hauteur - x
-	case DemiTour:
-		return largeur - x, hauteur - y
-	case TroisQuarts:
-		return largeur - y, x
+	case QuarterTurn:
+		return y, height - x
+	case HalfTurn:
+		return width - x, height - y
+	case ThreeQuarters:
+		return width - y, x
 	}
 	return x, y
 }
 
-// Etendue rend les côtés de la grille tels que l'orientation courante les présente :
+// Extent rend les côtés de la grille tels que l'orientation courante les présente :
 // un quart de tour les échange.
-func (s *Scene) Etendue() (largeur, hauteur int) {
-	if s.orientation == UnQuart || s.orientation == TroisQuarts {
-		return s.hauteur, s.largeur
+func (s *Scene) Extent() (width, height int) {
+	if s.orientation == QuarterTurn || s.orientation == ThreeQuarters {
+		return s.height, s.width
 	}
-	return s.largeur, s.hauteur
+	return s.width, s.height
 }
 
-// recadrer replace l'origine de la vue après un déplacement ou une rotation.
+// reframe replace l'origine de la vue après un déplacement ou une rotation.
 //
 // Le point visé se retrouve au centre du tampon. Aucune borne n'est appliquée aux
 // bords de la grille : où la caméra s'arrête est une décision de jeu, pas de moteur —
 // certains veulent buter sur le bord, d'autres montrer le vide autour.
-func (s *Scene) recadrer() {
-	rx, ry := s.Remapper(s.cibleX, s.cibleY)
+func (s *Scene) reframe() {
+	rx, ry := s.Remap(s.focusX, s.focusY)
 	ex, ey, _, _ := s.projection.Project(rx, ry, 0)
 
-	s.vueX = ex - s.vueLargeur/2
-	s.vueY = ey - s.vueHauteur/2
+	s.viewX = ex - s.viewWidth/2
+	s.viewY = ey - s.viewHeight/2
 }

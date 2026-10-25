@@ -77,17 +77,17 @@ func TestConstructeursRepublies(t *testing.T) {
 // noyau, et les plafonds de couche et d'étage avec eux.
 //
 // Même piège que pour les drapeaux, plus un second : une ligne qui recopierait la
-// mauvaise constante — UnQuart valant le demi-tour — se compile sans broncher et ne se
+// mauvaise constante — QuarterTurn valant le demi-tour — se compile sans broncher et ne se
 // voit qu'à l'image, où elle ressemble à un défaut de caméra.
 func TestOrientationsRepubliees(t *testing.T) {
 	cas := []struct {
 		nom           string
 		racine, noyau Orientation
 	}{
-		{"SansRotation", SansRotation, scene.SansRotation},
-		{"UnQuart", UnQuart, scene.UnQuart},
-		{"DemiTour", DemiTour, scene.DemiTour},
-		{"TroisQuarts", TroisQuarts, scene.TroisQuarts},
+		{"NoRotation", NoRotation, scene.NoRotation},
+		{"QuarterTurn", QuarterTurn, scene.QuarterTurn},
+		{"HalfTurn", HalfTurn, scene.HalfTurn},
+		{"ThreeQuarters", ThreeQuarters, scene.ThreeQuarters},
 	}
 	for _, c := range cas {
 		if c.racine != c.noyau {
@@ -101,11 +101,11 @@ func TestOrientationsRepubliees(t *testing.T) {
 	if EtageMax != rendu.EtageMax {
 		t.Errorf("EtageMax republié : %d, attendu %d", EtageMax, rendu.EtageMax)
 	}
-	if CoteMax != rendu.CoteMax {
-		t.Errorf("CoteMax republié : %d, attendu %d", CoteMax, rendu.CoteMax)
+	if MaxSide != rendu.CoteMax {
+		t.Errorf("MaxSide republié : %d, attendu %d", MaxSide, rendu.CoteMax)
 	}
-	if StratesMax != scene.StratesMax {
-		t.Errorf("StratesMax republié : %d, attendu %d", StratesMax, scene.StratesMax)
+	if MaxTiers != scene.MaxTiers {
+		t.Errorf("MaxTiers republié : %d, attendu %d", MaxTiers, scene.MaxTiers)
 	}
 }
 
@@ -163,35 +163,35 @@ func TestPlanchesSUtilisentDepuisLaRacine(t *testing.T) {
 // alias manquant, ou un constructeur qui échangerait ses paramètres, ne se verrait
 // nulle part ailleurs.
 func TestSceneSUtiliseDepuisLaRacine(t *testing.T) {
-	s, err := NouvelleScene(16, 16, Dimetrique(32, 16), OptionsScene{Entites: 8})
+	s, err := NewScene(16, 16, Dimetrique(32, 16), SceneOptions{Entities: 8})
 	if err != nil {
 		t.Fatalf("montage : %v", err)
 	}
 
-	p, ok := s.Poser(Entite{X: 2, Y: 3, Aspect: Aspect{Largeur: 32, Hauteur: 16, Teinte: Blanc()}})
+	p, ok := s.Place(Entity{X: 2, Y: 3, Aspect: Aspect{Width: 32, Height: 16, Tint: Blanc()}})
 	if !ok {
 		t.Fatal("entité refusée")
 	}
-	if !s.Deplacer(p, 4, 5, 1) {
+	if !s.Move(p, 4, 5, 1) {
 		t.Fatal("déplacement refusé")
 	}
 
 	// Aux deux bornes, pour que le cas démontre aussi qu'elles sont employables.
-	haut := Aspect{Largeur: 32, Hauteur: 16, Teinte: Blanc(), Couche: CoucheMax, Etage: EtageMax}
-	if !s.PoserCellule(1, 1, 0, haut) {
+	haut := Aspect{Width: 32, Height: 16, Tint: Blanc(), Layer: CoucheMax, Floor: EtageMax}
+	if !s.PlaceCell(1, 1, 0, haut) {
 		t.Fatal("cellule refusée aux bornes")
 	}
-	if got := s.Cellule(1, 1, 0); got.Couche != CoucheMax || got.Etage != EtageMax {
-		t.Errorf("cellule relue en couche %d étage %d", got.Couche, got.Etage)
+	if got := s.Cell(1, 1, 0); got.Layer != CoucheMax || got.Floor != EtageMax {
+		t.Errorf("cellule relue en couche %d étage %d", got.Layer, got.Floor)
 	}
 
-	s.Orienter(DemiTour)
-	if got := s.Orientation(); got != DemiTour {
-		t.Errorf("orientation %d, attendu %d", got, DemiTour)
+	s.Orient(HalfTurn)
+	if got := s.Orientation(); got != HalfTurn {
+		t.Errorf("orientation %d, attendu %d", got, HalfTurn)
 	}
 
-	s.Cadrer(4, 5, 480, 270)
-	if _, _, largeur, hauteur := s.Vue(); largeur != 480 || hauteur != 270 {
+	s.Focus(4, 5, 480, 270)
+	if _, _, largeur, hauteur := s.View(); largeur != 480 || hauteur != 270 {
 		t.Errorf("vue de %d×%d, attendu 480×270", largeur, hauteur)
 	}
 }

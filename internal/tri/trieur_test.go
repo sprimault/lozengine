@@ -15,17 +15,17 @@ import (
 func scenePourTest(t *testing.T, cote, capacite int) *scene.Scene {
 	t.Helper()
 
-	s, err := scene.Nouvelle(cote, cote, geometry.Dimetric(32, 16), scene.Options{Entites: capacite})
+	s, err := scene.New(cote, cote, geometry.Dimetric(32, 16), scene.Options{Entities: capacite})
 	if err != nil {
 		t.Fatalf("montage : %v", err)
 	}
-	s.Cadrer(float64(cote)/2, float64(cote)/2, 480, 270)
+	s.Focus(float64(cote)/2, float64(cote)/2, 480, 270)
 	return s
 }
 
 // figure rend un aspect visible de la taille d'une tuile.
 func figure() scene.Aspect {
-	return scene.Aspect{Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc()}
+	return scene.Aspect{Width: 32, Height: 16, Tint: rendu.Blanc()}
 }
 
 // TestImageOrdonneParProfondeur vérifie la propriété que tout le jalon sert : ce qui
@@ -37,8 +37,8 @@ func TestImageOrdonneParProfondeur(t *testing.T) {
 	// l'inverse de l'ordre attendu.
 	for _, d := range []float64{3, 2, 1} {
 		a := figure()
-		a.Planche = uint16(d)
-		if _, ok := s.Poser(scene.Entite{X: 8 + d, Y: 8 + d, Aspect: a}); !ok {
+		a.Sheet = uint16(d)
+		if _, ok := s.Place(scene.Entity{X: 8 + d, Y: 8 + d, Aspect: a}); !ok {
 			t.Fatal("entité refusée")
 		}
 	}
@@ -61,12 +61,12 @@ func TestCeQuiSortDeLImageEstRetire(t *testing.T) {
 	s := scenePourTest(t, 400, 8)
 
 	proche := figure()
-	proche.Planche = 1
-	s.Poser(scene.Entite{X: 200, Y: 200, Aspect: proche})
+	proche.Sheet = 1
+	s.Place(scene.Entity{X: 200, Y: 200, Aspect: proche})
 
 	loin := figure()
-	loin.Planche = 2
-	s.Poser(scene.Entite{X: 10, Y: 390, Aspect: loin})
+	loin.Sheet = 2
+	s.Place(scene.Entity{X: 10, Y: 390, Aspect: loin})
 
 	image := Nouveau(s).Image()
 	if len(image) != 1 {
@@ -92,11 +92,11 @@ func TestIndexAttribueParProfondeur(t *testing.T) {
 	// montre toutes — la moitié du cas serait sinon retirée comme hors de l'image.
 	s := scenePourTest(t, 4096, n)
 	for i := range n {
-		if _, ok := s.Poser(scene.Entite{X: float64(i) * 0.25, Aspect: figure()}); !ok {
+		if _, ok := s.Place(scene.Entity{X: float64(i) * 0.25, Aspect: figure()}); !ok {
 			t.Fatalf("entité %d refusée", i)
 		}
 	}
-	s.Cadrer(0, 0, 32767, 32767)
+	s.Focus(0, 0, 32767, 32767)
 
 	trieur := Nouveau(s)
 	trieur.Image()
@@ -119,7 +119,7 @@ func TestIndexNumeroteDansUneMemeProfondeur(t *testing.T) {
 
 	s := scenePourTest(t, 16, n)
 	for range n {
-		s.Poser(scene.Entite{X: 8, Y: 8, Aspect: figure()})
+		s.Place(scene.Entity{X: 8, Y: 8, Aspect: figure()})
 	}
 
 	trieur := Nouveau(s)
@@ -144,12 +144,12 @@ func TestOrdreTientQuandUneTroisiemeDisparait(t *testing.T) {
 
 	// Posée en premier pour que son retrait déplace les deux suivantes. Sa
 	// profondeur diffère, donc elle ne se mêle pas à leur départage.
-	jetable, _ := s.Poser(scene.Entite{X: 20, Y: 20, Aspect: figure()})
+	jetable, _ := s.Place(scene.Entity{X: 20, Y: 20, Aspect: figure()})
 
 	// Même profondeur — la somme des deux axes vaut 28 — et deux abscisses écran
 	// opposées. Même aspect, sans quoi la planche trancherait avant l'index.
-	s.Poser(scene.Entite{X: 16, Y: 12, Aspect: figure()})
-	s.Poser(scene.Entite{X: 12, Y: 16, Aspect: figure()})
+	s.Place(scene.Entity{X: 16, Y: 12, Aspect: figure()})
+	s.Place(scene.Entity{X: 12, Y: 16, Aspect: figure()})
 
 	trieur := Nouveau(s)
 
@@ -162,7 +162,7 @@ func TestOrdreTientQuandUneTroisiemeDisparait(t *testing.T) {
 	}
 	avant := [2]int16{image[0].X, image[1].X}
 
-	s.Retirer(jetable)
+	s.Remove(jetable)
 
 	image = trieur.Image()
 	if len(image) != 2 {
@@ -183,7 +183,7 @@ func TestDecorReleveParFenetre(t *testing.T) {
 	s := scenePourTest(t, cote, 1)
 	for v := range cote {
 		for u := range cote {
-			s.PoserCellule(u, v, 0, figure())
+			s.PlaceCell(u, v, 0, figure())
 		}
 	}
 
@@ -201,11 +201,11 @@ func TestDecorReleveParFenetre(t *testing.T) {
 func TestImageNAlloueApresLaPremiere(t *testing.T) {
 	s := scenePourTest(t, 64, 256)
 	for i := range 256 {
-		s.Poser(scene.Entite{X: float64(i % 64), Y: float64(i / 64), Aspect: figure()})
+		s.Place(scene.Entity{X: float64(i % 64), Y: float64(i / 64), Aspect: figure()})
 	}
 	for v := range 64 {
 		for u := range 64 {
-			s.PoserCellule(u, v, 0, figure())
+			s.PlaceCell(u, v, 0, figure())
 		}
 	}
 
@@ -226,15 +226,15 @@ func TestLesQuatreOrientationsRendentAutantDeQuads(t *testing.T) {
 	s := scenePourTest(t, 24, 1)
 	for v := range 24 {
 		for u := range 24 {
-			s.PoserCellule(u, v, 0, figure())
+			s.PlaceCell(u, v, 0, figure())
 		}
 	}
 
 	trieur := Nouveau(s)
 	comptes := make([]int, 0, 4)
 
-	for _, o := range []scene.Orientation{scene.SansRotation, scene.UnQuart, scene.DemiTour, scene.TroisQuarts} {
-		s.Orienter(o)
+	for _, o := range []scene.Orientation{scene.NoRotation, scene.QuarterTurn, scene.HalfTurn, scene.ThreeQuarters} {
+		s.Orient(o)
 		comptes = append(comptes, len(trieur.Image()))
 	}
 

@@ -41,27 +41,27 @@ func partDImage(b *testing.B) {
 func scenePourBanc(b *testing.B, cote, entites, strates int) *scene.Scene {
 	b.Helper()
 
-	s, err := scene.Nouvelle(cote, cote, geometry.Dimetric(32, 16), scene.Options{Entites: entites + 1})
+	s, err := scene.New(cote, cote, geometry.Dimetric(32, 16), scene.Options{Entities: entites + 1})
 	if err != nil {
 		b.Fatalf("montage : %v", err)
 	}
-	s.Cadrer(float64(cote)/2, float64(cote)/2, 480, 270)
+	s.Focus(float64(cote)/2, float64(cote)/2, 480, 270)
 
-	sol := scene.Aspect{Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc()}
+	sol := scene.Aspect{Width: 32, Height: 16, Tint: rendu.Blanc()}
 	for strate := range strates {
 		for v := range cote {
 			for u := range cote {
-				s.PoserCellule(u, v, uint8(strate), sol)
+				s.PlaceCell(u, v, uint8(strate), sol)
 			}
 		}
 	}
 
-	figure := scene.Aspect{Largeur: 12, Hauteur: 24, Teinte: rendu.Blanc()}
+	figure := scene.Aspect{Width: 12, Height: 24, Tint: rendu.Blanc()}
 	for i := range entites {
 		x := float64((i*37)%cote) + 0.5
 		y := float64((i*61)%cote) + 0.5
 
-		if _, ok := s.Poser(scene.Entite{X: x, Y: y, Aspect: figure}); !ok {
+		if _, ok := s.Place(scene.Entity{X: x, Y: y, Aspect: figure}); !ok {
 			b.Fatalf("entité %d refusée", i)
 		}
 	}

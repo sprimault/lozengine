@@ -31,29 +31,29 @@ import "github.com/sprimault/lozengine/rendu"
 // n'a à exister à côté.
 type Aspect struct {
 	// La planche où lire, et le rectangle qu'on y prend.
-	Planche          uint16
+	Sheet            uint16
 	SourceX, SourceY uint16
-	Largeur, Hauteur uint16
+	Width, Height    uint16
 
-	// Teinte multiplie la source, et [rendu.Blanc] est la valeur qui la laisse
+	// Tint multiplie la source, et [rendu.Blanc] est la valeur qui la laisse
 	// intacte. Attention : la valeur zéro d'une couleur est transparente, donc elle
 	// ne dessine rien — une cellule qu'on veut voir porte une teinte explicite.
-	Teinte   rendu.Couleur
-	Drapeaux rendu.Drapeaux
+	Tint  rendu.Couleur
+	Flags rendu.Drapeaux
 
-	// Couche et Etage ouvrent les deux champs les plus forts de la clé de tri. La
+	// Layer et Floor ouvrent les deux champs les plus forts de la clé de tri. La
 	// couche range ce qui doit passer devant tout le reste, une interface par exemple ;
 	// l'étage sépare les niveaux d'un décor. Combien un jeu en emploie ne regarde que
 	// lui — la clé sait en distinguer seize et soixante-quatre.
 	//
-	// Ni l'une ni l'autre n'est la strate de [Scene.PoserCellule], qui dit seulement
+	// Ni l'une ni l'autre n'est la strate de [Scene.PlaceCell], qui dit seulement
 	// ce qui s'empile sur une même cellule. Une couche passe devant toute l'image, une
 	// strate ne passe devant que ce qu'elle recouvre.
-	Couche uint8
-	Etage  uint8
+	Layer uint8
+	Floor uint8
 }
 
-// tientDansLaCle dit si la couche et l'étage sont dans ce que l'ordre de dessin sait
+// fitsInKey dit si la couche et l'étage sont dans ce que l'ordre de dessin sait
 // distinguer, soit [rendu.CoucheMax] et [rendu.EtageMax].
 //
 // Les deux champs sont des octets alors que la clé de tri n'en porte que seize et
@@ -62,11 +62,11 @@ type Aspect struct {
 // confondre avec la quinzième : l'image serait fausse, aucun code ne l'aurait dit, et
 // la cause se chercherait dans le jeu. La pose refuse donc, ce qui est le seul endroit
 // où elle peut être vue — le chemin d'une image ne vérifie rien.
-func (a Aspect) tientDansLaCle() bool {
-	return a.Couche <= rendu.CoucheMax && a.Etage <= rendu.EtageMax
+func (a Aspect) fitsInKey() bool {
+	return a.Layer <= rendu.CoucheMax && a.Floor <= rendu.EtageMax
 }
 
-// Entite est un aspect posé à un point du monde.
+// Entity est un aspect posé à un point du monde.
 //
 // Les coordonnées sont des cellules, et elles sont flottantes : une entité se tient en
 // x = 3,5 sans que rien ne l'arrondisse ici. La conversion vers les entiers du rendu se
@@ -75,7 +75,7 @@ func (a Aspect) tientDansLaCle() bool {
 // z est la hauteur au-dessus du sol et reste un champ à part. L'écran la retranche de
 // l'ordonnée, la clé de tri la range dans son propre champ : les fondre perdrait
 // l'information dès l'entrée et rendrait l'ordre de dessin irréparable.
-type Entite struct {
+type Entity struct {
 	X, Y, Z float64
 
 	Aspect
