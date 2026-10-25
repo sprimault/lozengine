@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La découpe en grille : ce qu'elle rend quand la case divise la planche, et ce qu'elle
+// refuse quand elle ne la divise pas.
+
 package raster
 
 import "testing"

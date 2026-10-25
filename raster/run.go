@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'encodage d'une planche en séquences de pixels de même nature — transparents,
+// opaques, translucides. Calculé une fois au chargement, il permet au dessin de sauter
+// les transparents et de recopier les opaques en bloc au lieu de tester chaque pixel.
+
 package raster
 
 // kind dit ce que le blit a à faire d'une suite de pixels.

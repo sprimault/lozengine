@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'aller-retour par le PNG, et le cran que les couleurs à alpha partiel y perdent.
+// C'est ce cas qui oblige les images de référence à être opaques : sans lui, on
+// chercherait la cause d'un écart d'un cran dans le rastériseur.
+
 package raster
 
 import (
@@ -11,11 +15,11 @@ import (
 	"github.com/sprimault/lozengine/render"
 )
 
-// ecrivainEnPanne refuse tout ce qu'on lui donne, pour éprouver le chemin d'erreur.
-type ecrivainEnPanne struct{}
+// failingWriter refuse tout ce qu'on lui donne, pour éprouver le chemin d'erreur.
+type failingWriter struct{}
 
 // Write échoue toujours.
-func (ecrivainEnPanne) Write([]byte) (int, error) { return 0, errors.New("disque plein") }
+func (failingWriter) Write([]byte) (int, error) { return 0, errors.New("disque plein") }
 
 // TestWritePNGRoundTrip vérifie qu'une image écrite puis rechargée rend les mêmes
 // pixels. C'est l'aller-retour dont la suite de non-régression dépend : elle compare
@@ -117,7 +121,7 @@ func TestWritePNGOpaque(t *testing.T) {
 // et non nue : c'est au chargement et à l'écriture que les erreurs ont le droit
 // d'exister, donc elles doivent se lire.
 func TestWritePNGFailing(t *testing.T) {
-	err := WritePNG(render.NewBuffer(1, 1), ecrivainEnPanne{})
+	err := WritePNG(render.NewBuffer(1, 1), failingWriter{})
 	if err == nil {
 		t.Fatal("écrivain en panne accepté")
 	}

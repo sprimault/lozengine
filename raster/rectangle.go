@@ -1,6 +1,8 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le rectangle d'une planche qu'un quad lit, en pixels et sans alignement imposé.
+
 package raster
 
 // Rectangle est une découpe dans une planche, en pixels de celle-ci.

@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'atlas : les planches rangées dans l'ordre où un quad les désigne. C'est aussi là
+// que l'encodage des lignes se calcule, une fois par planche et jamais à l'image.
+
 package raster
 
 import (

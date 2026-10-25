@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Les PNG que le chargement doit accepter et ceux qu'il doit refuser, dont celui dont
+// l'origine n'est pas en haut à gauche — un cas que la bibliothèque standard rend
+// possible et qu'un calcul d'index naïf lirait de travers.
+
 package raster
 
 import (

@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'effacement du tampon avant une image, par doublement de la première ligne : la
+// bibliothèque standard ne sait remplir vite qu'avec des zéros, et un fond coloré n'en
+// est pas.
+
 package raster
 
 import "github.com/sprimault/lozengine/render"
