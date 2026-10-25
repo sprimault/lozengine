@@ -65,6 +65,14 @@ notes de publication.
 - `windows/386` entre dans les cibles vérifiées à la compilation, la famille Windows
   étant annoncée sur ses trois architectures. Cette cible **compile**, rien de plus.
 
+### Modifié
+
+- **Les paquets et les identifiants passent à l'anglais, chemins d'import compris** :
+  `lozengine/rendu` devient `lozengine/render`, `geometrie` devient `geometry`. Un jeu
+  écrit pour la `0.2.0` ne compile plus sans renommer ses imports et ses appels.
+- Les messages d'erreur sont en anglais. La godoc et les commentaires restent en
+  français.
+
 ***
 
 ### Added
@@ -85,6 +93,13 @@ notes de publication.
   `NewBuffer` and `MaxBufferSide` come with it.
 - `windows/386` joins the targets verified at build time, the Windows family being
   announced for all three of its architectures. That target **compiles**, nothing more.
+
+### Changed
+
+- **Packages and identifiers move to English, import paths included**:
+  `lozengine/rendu` becomes `lozengine/render`, `geometrie` becomes `geometry`. A game
+  written against `0.2.0` no longer compiles without renaming its imports and calls.
+- Error messages are in English. Godoc and comments stay in French.
 
 ## [0.2.0] — 2026-10-24 — Jalon 1 · Noyau isométrique
 

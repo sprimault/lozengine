@@ -17,7 +17,7 @@ discussion préalable utile plutôt que bureaucratique.
 
 ## La règle sur les dépendances
 
-**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `tri`, `render` et
+**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `sorting`, `render` et
 `raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. Une
 pull request qui y ajoute quoi que ce soit est refusée, quelle que soit sa
 qualité : « juste pour les tests » n'est pas une exception, et une bibliothèque
