@@ -30,6 +30,23 @@ func TestConstantesRepubliees(t *testing.T) {
 	}
 }
 
+// TestTamponRepublie vérifie que le tampon traverse la surface publique sans
+// conversion, et que sa borne republiée est bien celle du noyau.
+//
+// L'annotation de type explicite est le test lui-même : elle ne compile que si Tampon
+// désigne le type du noyau. Une enveloppe, ou un type distinct de même forme,
+// obligerait un hôte à convertir l'image à chaque passage de frontière.
+func TestTamponRepublie(t *testing.T) {
+	var racine *Tampon = rendu.NouveauTampon(2, 1)
+
+	if BorneTampon != rendu.BorneTampon {
+		t.Errorf("BorneTampon republié : %d, attendu %d", BorneTampon, rendu.BorneTampon)
+	}
+	if got := NouveauTampon(2, 1); got.Largeur != racine.Largeur || len(got.Pixels) != len(racine.Pixels) {
+		t.Errorf("NouveauTampon republié rend %d×%d et %d pixels", got.Largeur, got.Hauteur, len(got.Pixels))
+	}
+}
+
 // TestConstructeursRepublies vérifie que chaque enveloppe rend la matrice du noyau.
 //
 // Ce qu'elle est seule à pouvoir attraper : une enveloppe qui appellerait le mauvais

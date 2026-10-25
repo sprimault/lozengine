@@ -17,6 +17,24 @@ type Quad = rendu.Quad
 // l'ordre de dessin.
 type Rendu = rendu.Rendu
 
+// Tampon est l'image dans laquelle le moteur écrit : des pixels contigus, ligne par
+// ligne, prémultipliés comme ceux d'une planche.
+//
+// Un hôte peut l'allouer lui-même et laisser le moteur écrire dedans, ce qui évite
+// d'avoir à négocier qui possède cette mémoire.
+type Tampon = rendu.Tampon
+
+// BorneTampon est le plus grand côté qu'un tampon puisse avoir : la plus grande
+// coordonnée qu'un [Quad] sait désigner.
+const BorneTampon = rendu.BorneTampon
+
+// NouveauTampon rend un tampon transparent aux dimensions demandées, et panique
+// au-delà de [BorneTampon] de côté — une taille pareille signale un calcul fautif en
+// amont plutôt qu'une donnée du jeu.
+//
+// Une fonction et non un alias, pour la raison qui vaut pour [Blanc].
+func NouveauTampon(largeur, hauteur uint16) *Tampon { return rendu.NouveauTampon(largeur, hauteur) }
+
 // Couleur est une couleur RVBA sur quatre octets, à alpha prémultiplié.
 type Couleur = rendu.Couleur
 

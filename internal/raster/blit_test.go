@@ -52,13 +52,13 @@ func quadDe(x, y int16, largeur, hauteur uint16) rendu.Quad {
 }
 
 // pixel rend le pixel du tampon, pour une lecture qui se lit en coordonnées.
-func pixel(t *Tampon, x, y int) rendu.Couleur {
+func pixel(t *rendu.Tampon, x, y int) rendu.Couleur {
 	return t.Pixels[y*int(t.Largeur)+x]
 }
 
 // peints compte les pixels non transparents, ce qui suffit à dire qu'un découpage
 // n'a pas dessiné plus que sa part.
-func peints(t *Tampon) int {
+func peints(t *rendu.Tampon) int {
 	n := 0
 	for _, c := range t.Pixels {
 		if c.A != 0 {
@@ -72,9 +72,9 @@ func peints(t *Tampon) int {
 // gardent l'ordre de la planche.
 func TestDessinerPose(t *testing.T) {
 	a := atlasDe(t, 2, 2, rouge, vert, bleu, blanc)
-	tampon := NouveauTampon(4, 4)
+	tampon := rendu.NouveauTampon(4, 4)
 
-	tampon.Dessiner(rendu.Rendu{quadDe(1, 1, 2, 2)}, a)
+	Dessiner(tampon, rendu.Rendu{quadDe(1, 1, 2, 2)}, a)
 
 	attendu := map[[2]int]rendu.Couleur{
 		{1, 1}: rouge, {2, 1}: vert,
@@ -106,9 +106,9 @@ func TestDessinerDecoupage(t *testing.T) {
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
 			a := atlasDe(t, 2, 2, rouge, vert, bleu, blanc)
-			tampon := NouveauTampon(4, 4)
+			tampon := rendu.NouveauTampon(4, 4)
 
-			tampon.Dessiner(rendu.Rendu{quadDe(c.x, c.y, 2, 2)}, a)
+			Dessiner(tampon, rendu.Rendu{quadDe(c.x, c.y, 2, 2)}, a)
 
 			for position, veut := range c.attendu {
 				if got := pixel(tampon, position[0], position[1]); got != veut {
@@ -137,9 +137,9 @@ func TestDessinerHorsChamp(t *testing.T) {
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
 			a := atlasDe(t, 2, 2, rouge, vert, bleu, blanc)
-			tampon := NouveauTampon(4, 4)
+			tampon := rendu.NouveauTampon(4, 4)
 
-			tampon.Dessiner(rendu.Rendu{quadDe(c.x, c.y, 2, 2)}, a)
+			Dessiner(tampon, rendu.Rendu{quadDe(c.x, c.y, 2, 2)}, a)
 
 			if n := peints(tampon); n != 0 {
 				t.Errorf("pixels peints : %d, attendu aucun", n)
@@ -152,12 +152,12 @@ func TestDessinerHorsChamp(t *testing.T) {
 // tableau est la seule vérité du résultat.
 func TestDessinerOrdre(t *testing.T) {
 	a := atlasDe(t, 1, 1, blanc)
-	tampon := NouveauTampon(2, 1)
+	tampon := rendu.NouveauTampon(2, 1)
 
 	premier, second := quadDe(0, 0, 1, 1), quadDe(0, 0, 1, 1)
 	premier.Teinte, second.Teinte = rouge, vert
 
-	tampon.Dessiner(rendu.Rendu{premier, second}, a)
+	Dessiner(tampon, rendu.Rendu{premier, second}, a)
 
 	if got := pixel(tampon, 0, 0); got != vert {
 		t.Errorf("pixel recouvert : %v, attendu %v", got, vert)
@@ -168,10 +168,10 @@ func TestDessinerOrdre(t *testing.T) {
 // place : c'est ce que le pré-encodage promet au blit.
 func TestDessinerSaut(t *testing.T) {
 	a := atlasDe(t, 2, 1, rien, rouge)
-	tampon := NouveauTampon(2, 1)
+	tampon := rendu.NouveauTampon(2, 1)
 	tampon.Pixels[0], tampon.Pixels[1] = bleu, bleu
 
-	tampon.Dessiner(rendu.Rendu{quadDe(0, 0, 2, 1)}, a)
+	Dessiner(tampon, rendu.Rendu{quadDe(0, 0, 2, 1)}, a)
 
 	if got := pixel(tampon, 0, 0); got != bleu {
 		t.Errorf("fond sous un pixel transparent : %v, attendu %v", got, bleu)
@@ -185,10 +185,10 @@ func TestDessinerSaut(t *testing.T) {
 // un fond opaque.
 func TestDessinerMelange(t *testing.T) {
 	a := atlasDe(t, 1, 1, demiRge)
-	tampon := NouveauTampon(1, 1)
+	tampon := rendu.NouveauTampon(1, 1)
 	tampon.Pixels[0] = blanc
 
-	tampon.Dessiner(rendu.Rendu{quadDe(0, 0, 1, 1)}, a)
+	Dessiner(tampon, rendu.Rendu{quadDe(0, 0, 1, 1)}, a)
 
 	if veut := (rendu.Couleur{R: 255, V: 127, B: 127, A: 255}); pixel(tampon, 0, 0) != veut {
 		t.Errorf("mélange : %v, attendu %v", pixel(tampon, 0, 0), veut)
@@ -211,11 +211,11 @@ func TestDessinerTeinte(t *testing.T) {
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
 			a := atlasDe(t, 1, 1, blanc)
-			tampon := NouveauTampon(1, 1)
+			tampon := rendu.NouveauTampon(1, 1)
 
 			q := quadDe(0, 0, 1, 1)
 			q.Teinte = c.teinte
-			tampon.Dessiner(rendu.Rendu{q}, a)
+			Dessiner(tampon, rendu.Rendu{q}, a)
 
 			if got := pixel(tampon, 0, 0); got != c.veut {
 				t.Errorf("pixel : %v, attendu %v", got, c.veut)
@@ -240,11 +240,11 @@ func TestDessinerMiroir(t *testing.T) {
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
 			a := atlasDe(t, 2, 2, rouge, vert, bleu, blanc)
-			tampon := NouveauTampon(2, 2)
+			tampon := rendu.NouveauTampon(2, 2)
 
 			q := quadDe(0, 0, 2, 2)
 			q.Drapeaux = c.drapeaux
-			tampon.Dessiner(rendu.Rendu{q}, a)
+			Dessiner(tampon, rendu.Rendu{q}, a)
 
 			for i, veut := range c.attendu {
 				if tampon.Pixels[i] != veut {
@@ -259,11 +259,11 @@ func TestDessinerMiroir(t *testing.T) {
 // tampon découpe la droite de la source quand le miroir est posé.
 func TestDessinerMiroirDecoupe(t *testing.T) {
 	a := atlasDe(t, 2, 1, rouge, vert)
-	tampon := NouveauTampon(2, 1)
+	tampon := rendu.NouveauTampon(2, 1)
 
 	q := quadDe(-1, 0, 2, 1)
 	q.Drapeaux = rendu.MiroirX
-	tampon.Dessiner(rendu.Rendu{q}, a)
+	Dessiner(tampon, rendu.Rendu{q}, a)
 
 	if got := pixel(tampon, 0, 0); got != rouge {
 		t.Errorf("pixel visible : %v, attendu %v", got, rouge)
@@ -277,11 +277,11 @@ func TestDessinerMiroirDecoupe(t *testing.T) {
 // celui qu'une découpe en grille lui a donné.
 func TestDessinerSource(t *testing.T) {
 	a := atlasDe(t, 2, 2, rouge, vert, bleu, blanc)
-	tampon := NouveauTampon(1, 1)
+	tampon := rendu.NouveauTampon(1, 1)
 
 	q := quadDe(0, 0, 1, 1)
 	q.SourceX, q.SourceY = 1, 1
-	tampon.Dessiner(rendu.Rendu{q}, a)
+	Dessiner(tampon, rendu.Rendu{q}, a)
 
 	if got := pixel(tampon, 0, 0); got != blanc {
 		t.Errorf("pixel : %v, attendu %v", got, blanc)
@@ -292,12 +292,12 @@ func TestDessinerSource(t *testing.T) {
 // vide ici — et qu'il se découpe comme les autres.
 func TestDessinerAplat(t *testing.T) {
 	var a Atlas
-	tampon := NouveauTampon(3, 2)
+	tampon := rendu.NouveauTampon(3, 2)
 
 	q := quadDe(1, 0, 5, 1)
 	q.Teinte = vert
 	q.Drapeaux = rendu.Aplat
-	tampon.Dessiner(rendu.Rendu{q}, &a)
+	Dessiner(tampon, rendu.Rendu{q}, &a)
 
 	for x := 1; x < 3; x++ {
 		if got := pixel(tampon, x, 0); got != vert {
@@ -313,13 +313,13 @@ func TestDessinerAplat(t *testing.T) {
 // fond, ce qu'un fondu au noir demande.
 func TestDessinerAplatTranslucide(t *testing.T) {
 	var a Atlas
-	tampon := NouveauTampon(1, 1)
+	tampon := rendu.NouveauTampon(1, 1)
 	tampon.Pixels[0] = blanc
 
 	q := quadDe(0, 0, 1, 1)
 	q.Teinte = demiRge
 	q.Drapeaux = rendu.Aplat
-	tampon.Dessiner(rendu.Rendu{q}, &a)
+	Dessiner(tampon, rendu.Rendu{q}, &a)
 
 	if veut := (rendu.Couleur{R: 255, V: 127, B: 127, A: 255}); pixel(tampon, 0, 0) != veut {
 		t.Errorf("aplat mélangé : %v, attendu %v", pixel(tampon, 0, 0), veut)
@@ -330,9 +330,9 @@ func TestDessinerAplatTranslucide(t *testing.T) {
 // l'échec sûr sur lequel compte un hôte qui remplit la structure de zéros.
 func TestDessinerQuadVide(t *testing.T) {
 	a := atlasDe(t, 1, 1, rouge)
-	tampon := NouveauTampon(2, 2)
+	tampon := rendu.NouveauTampon(2, 2)
 
-	tampon.Dessiner(rendu.Rendu{{}}, a)
+	Dessiner(tampon, rendu.Rendu{{}}, a)
 
 	if n := peints(tampon); n != 0 {
 		t.Errorf("pixels peints : %d, attendu aucun", n)
@@ -344,7 +344,7 @@ func TestDessinerQuadVide(t *testing.T) {
 // échappe — sans quoi le ramasse-miettes s'invite à soixante hertz.
 func TestDessinerNAlloueRien(t *testing.T) {
 	a := atlasDe(t, 2, 2, rouge, vert, bleu, demiRge)
-	tampon := NouveauTampon(8, 8)
+	tampon := rendu.NouveauTampon(8, 8)
 
 	q := quadDe(1, 1, 2, 2)
 	miroir := quadDe(-1, 5, 2, 2)
@@ -353,7 +353,7 @@ func TestDessinerNAlloueRien(t *testing.T) {
 	aplat.Drapeaux = rendu.Aplat
 	r := rendu.Rendu{q, miroir, aplat}
 
-	if n := testing.AllocsPerRun(10, func() { tampon.Dessiner(r, a) }); n != 0 {
+	if n := testing.AllocsPerRun(10, func() { Dessiner(tampon, r, a) }); n != 0 {
 		t.Errorf("allocations par image : %v, attendu aucune", n)
 	}
 }
@@ -362,9 +362,9 @@ func TestDessinerNAlloueRien(t *testing.T) {
 // planche s'arrête à la dernière ligne au lieu de lire la suivante.
 func TestDessinerSourceDebordante(t *testing.T) {
 	a := atlasDe(t, 2, 1, rouge, vert)
-	tampon := NouveauTampon(2, 2)
+	tampon := rendu.NouveauTampon(2, 2)
 
-	tampon.Dessiner(rendu.Rendu{quadDe(0, 0, 2, 2)}, a)
+	Dessiner(tampon, rendu.Rendu{quadDe(0, 0, 2, 2)}, a)
 
 	if got := pixel(tampon, 0, 0); got != rouge {
 		t.Errorf("première ligne : %v, attendu %v", got, rouge)
@@ -382,9 +382,9 @@ func TestDessinerSourceDebordante(t *testing.T) {
 // parcourait ce cas : tous lisent une planche à leur propre taille.
 func TestDessinerArreteLeQuadSurSaLargeur(t *testing.T) {
 	a := atlasDe(t, 4, 1, rouge, vert, bleu, blanc)
-	tampon := NouveauTampon(4, 1)
+	tampon := rendu.NouveauTampon(4, 1)
 
-	tampon.Dessiner(rendu.Rendu{quadDe(0, 0, 2, 1)}, a)
+	Dessiner(tampon, rendu.Rendu{quadDe(0, 0, 2, 1)}, a)
 
 	if got := pixel(tampon, 0, 0); got != rouge {
 		t.Errorf("pixel 0 : %v, attendu rouge", got)
@@ -405,12 +405,12 @@ func TestDessinerArreteLeQuadSurSaLargeur(t *testing.T) {
 // SourceX non nul.
 func TestDessinerMiroirSurSourcePartielle(t *testing.T) {
 	a := atlasDe(t, 4, 1, rouge, vert, bleu, blanc)
-	tampon := NouveauTampon(2, 1)
+	tampon := rendu.NouveauTampon(2, 1)
 
 	q := quadDe(0, 0, 2, 1)
 	q.SourceX = 1
 	q.Drapeaux = rendu.MiroirX
-	tampon.Dessiner(rendu.Rendu{q}, a)
+	Dessiner(tampon, rendu.Rendu{q}, a)
 
 	// La source lue est vert puis bleu ; le miroir la rend dans l'autre sens.
 	if got := pixel(tampon, 0, 0); got != bleu {
@@ -434,9 +434,9 @@ func TestDessinerMiroirSurSourcePartielle(t *testing.T) {
 // quelque chose pour un alpha nul, l'image changerait et ce test le dirait.
 func TestDessinerAplatTransparentNePeintRien(t *testing.T) {
 	a := atlasDe(t, 1, 1, rouge)
-	tampon := NouveauTampon(2, 2)
+	tampon := rendu.NouveauTampon(2, 2)
 
-	tampon.Dessiner(rendu.Rendu{{
+	Dessiner(tampon, rendu.Rendu{{
 		Largeur: 2, Hauteur: 2, Teinte: rien, Drapeaux: rendu.Aplat,
 	}}, a)
 

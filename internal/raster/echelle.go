@@ -10,9 +10,12 @@ import "github.com/sprimault/lozengine/rendu"
 //
 // C'est le défaut, pas une obligation : un jeu peut vouloir plafonner
 // l'agrandissement plutôt que d'afficher des pixels de sept pixels de côté sur un
-// écran 4K. Le choix lui appartient, [Tampon.Agrandir] prenant le facteur en
-// paramètre.
-func (t *Tampon) Facteur(sortie *Tampon) int {
+// écran 4K. Le choix lui appartient, [Agrandir] prenant le facteur en paramètre.
+//
+// Une fonction et non une méthode : le tampon vit dans [rendu], que l'ABI expose, et
+// Go veut qu'une méthode soit déclarée dans le paquet de son type. Vaut pour
+// [Agrandir] comme pour celle-ci.
+func Facteur(t, sortie *rendu.Tampon) int {
 	if t.Largeur == 0 || t.Hauteur == 0 {
 		return 1
 	}
@@ -33,7 +36,7 @@ func (t *Tampon) Facteur(sortie *Tampon) int {
 // Une sortie plus petite que le tampon ne fait pas échouer l'appel : le facteur
 // tombe à 1 et l'image se découpe, toujours centrée. Un redimensionnement de fenêtre
 // n'a pas à être un cas d'erreur.
-func (t *Tampon) Agrandir(sortie *Tampon, facteur int, fond rendu.Couleur) {
+func Agrandir(t, sortie *rendu.Tampon, facteur int, fond rendu.Couleur) {
 	if facteur < 1 {
 		facteur = 1
 	}
@@ -59,7 +62,7 @@ func (t *Tampon) Agrandir(sortie *Tampon, facteur int, fond rendu.Couleur) {
 	// Rien à peindre autour quand la sortie tombe juste, ni quand elle est plus
 	// petite : deux comparaisons plutôt qu'une sortie entière réécrite.
 	if large < int(sortie.Largeur) || haut < int(sortie.Hauteur) {
-		sortie.peindreBandes(bordA, hautA, bordB, hautB, fond)
+		peindreBandes(sortie, bordA, hautA, bordB, hautB, fond)
 	}
 
 	for sy := 0; sy < int(t.Hauteur); sy++ {
@@ -98,7 +101,7 @@ func (t *Tampon) Agrandir(sortie *Tampon, facteur int, fond rendu.Couleur) {
 //
 // Les bandes latérales se recopient d'une ligne modèle au lieu de se remplir chacune :
 // sur des segments courts, le coût d'appel de copy dépasse ce qu'il écrit.
-func (t *Tampon) peindreBandes(x0, y0, x1, y1 int, fond rendu.Couleur) {
+func peindreBandes(t *rendu.Tampon, x0, y0, x1, y1 int, fond rendu.Couleur) {
 	largeur := int(t.Largeur)
 
 	remplir(t.Pixels[:y0*largeur], fond)
