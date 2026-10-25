@@ -1,7 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-package geometrie
+package geometry
 
 import "math"
 
@@ -18,7 +18,7 @@ import "math"
 // perdrait un cran à chaque appel.
 const (
 	fractionBits = 16
-	unite        = 1 << fractionBits
+	unit         = 1 << fractionBits
 )
 
 // quartBits mène du fixe aux quarts de cellule, l'unité dans laquelle la clé de tri
@@ -43,10 +43,10 @@ const quartBits = fractionBits - 2
 // Vingt-quatre ramènent l'écart à quelques millièmes de cellule, bien sous ce
 // plancher. Les prendre plus larges le ramènerait plus bas encore, mais chaque bit
 // gagné raccourcit d'autant la plage de pixels que l'inverse peut accepter sans que
-// le produit quitte un int64 — voir le champ plage d'une [Matrice], qui s'en déduit.
+// le produit quitte un int64 — voir le champ plage d'une [Matrix], qui s'en déduit.
 const inverseBits = 24
 
-// quantifier convertit une coordonnée de monde en virgule fixe, en saturant.
+// quantize convertit une coordonnée de monde en virgule fixe, en saturant.
 //
 // La saturation n'est pas une précaution : hors plage, la conversion d'un flottant
 // vers un int32 est laissée à l'implémentation par la spécification du langage, et
@@ -64,8 +64,8 @@ const inverseBits = 24
 // fusionner en une instruction unique, pratiquée par arm64 et riscv64 mais pas par
 // amd64 — et l'arrondi redeviendrait dépendant de la machine, ce que toute cette
 // virgule fixe sert justement à empêcher.
-func quantifier(v float64) int32 {
-	f := math.Round(v * unite)
+func quantize(v float64) int32 {
+	f := math.Round(v * unit)
 
 	if f != f {
 		return 0
@@ -89,14 +89,14 @@ func quantifier(v float64) int32 {
 // La saturation couvre le produit d'une coordonnée extrême par une grande cellule,
 // qui atteint la plage d'un int32 bien avant d'être absurde : 32 768 cellules de
 // 65 535 pixels y arrivent.
-func pixel(fixe64 int64) int32 {
-	arrondi := (fixe64 + 1<<(2*fractionBits-1)) >> (2 * fractionBits)
+func pixel(fixed64 int64) int32 {
+	rounded := (fixed64 + 1<<(2*fractionBits-1)) >> (2 * fractionBits)
 
-	if arrondi > math.MaxInt32 {
+	if rounded > math.MaxInt32 {
 		return math.MaxInt32
 	}
-	if arrondi < math.MinInt32 {
+	if rounded < math.MinInt32 {
 		return math.MinInt32
 	}
-	return int32(arrondi)
+	return int32(rounded)
 }

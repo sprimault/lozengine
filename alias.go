@@ -6,7 +6,7 @@ package lozengine
 import (
 	"io"
 
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/input"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/rendu"
@@ -96,28 +96,28 @@ func Blanc() Couleur { return rendu.Blanc() }
 // Une matrice s'obtient d'un des quatre constructeurs qui suivent, republiés en
 // fonctions pour la raison qui vaut pour [Blanc], et s'emploie par ses méthodes.
 // L'ordre de dessin n'en vient pas : c'est la clé de tri qui le porte.
-type Matrice = geometrie.Matrice
+type Matrice = geometry.Matrix
 
 // Dimetrique rend la projection d'une cellule en losange au ratio libre, celle d'un
 // rendu isométrique de jeu : une cellule de 32 sur 16 avance de seize pixels vers le
 // côté et de huit vers le bas.
 //
 // C'est le constructeur du cas courant, et le seul qui laisse la hauteur libre.
-func Dimetrique(largeur, hauteur int) Matrice { return geometrie.Dimetrique(largeur, hauteur) }
+func Dimetrique(largeur, hauteur int) Matrice { return geometry.Dimetric(largeur, hauteur) }
 
 // Isometrique rend la projection de l'isométrie vraie, dont la hauteur ne se choisit
 // pas : elle vaut la largeur divisée par racine de trois, soit dix-huit pixels et
 // demi pour une largeur de trente-deux là où le dimétrique courant en prend seize.
-func Isometrique(largeur int) Matrice { return geometrie.Isometrique(largeur) }
+func Isometrique(largeur int) Matrice { return geometry.Isometric(largeur) }
 
 // Grille rend la projection de la vue de dessus, où une cellule est un carré et non
 // un losange. Les axes n'y tournent pas, ce qu'aucun ratio de [Dimetrique] ne donne.
-func Grille(cote int) Matrice { return geometrie.Grille(cote) }
+func Grille(cote int) Matrice { return geometry.Grid(cote) }
 
 // Brute rend la projection de quatre coefficients donnés, pour ce qu'aucun des trois
 // autres constructeurs n'exprime : l'abscisse écran vaut a·x + b·y et l'ordonnée
 // c·x + d·y. Sans translation, la vue étant cadrée ailleurs.
-func Brute(a, b, c, d float64) Matrice { return geometrie.Brute(a, b, c, d) }
+func Brute(a, b, c, d float64) Matrice { return geometry.Raw(a, b, c, d) }
 
 // Input est ce que le clavier dit à une image : les touches tenues, et celles qui
 // viennent d'être enfoncées.

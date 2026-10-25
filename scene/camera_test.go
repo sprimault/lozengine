@@ -6,7 +6,7 @@ package scene
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 )
 
 // rectanglePourTest monte une scène dont les deux côtés diffèrent.
@@ -16,7 +16,7 @@ import (
 func rectanglePourTest(t *testing.T) *Scene {
 	t.Helper()
 
-	s, err := Nouvelle(8, 5, geometrie.Dimetrique(32, 16), Options{Entites: 1})
+	s, err := Nouvelle(8, 5, geometry.Dimetric(32, 16), Options{Entites: 1})
 	if err != nil {
 		t.Fatalf("montage : %v", err)
 	}
@@ -79,7 +79,7 @@ func TestCadrerCentreLePointVise(t *testing.T) {
 	s := rectanglePourTest(t)
 	s.Cadrer(2, 3, 100, 60)
 
-	ex, ey, _, _ := s.Projection().Projeter(2, 3, 0)
+	ex, ey, _, _ := s.Projection().Project(2, 3, 0)
 	x, y, largeur, hauteur := s.Vue()
 
 	if largeur != 100 || hauteur != 60 {
@@ -108,7 +108,7 @@ func TestRotationRecadre(t *testing.T) {
 	}
 
 	rx, ry := s.Remapper(2, 3)
-	ex, _, _, _ := s.Projection().Projeter(rx, ry, 0)
+	ex, _, _, _ := s.Projection().Project(rx, ry, 0)
 	if ex-apres != 50 {
 		t.Errorf("après rotation, le point visé tombe en %d, attendu 50", ex-apres)
 	}

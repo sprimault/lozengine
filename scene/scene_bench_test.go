@@ -6,7 +6,7 @@ package scene
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/rendu"
 )
 
@@ -25,7 +25,7 @@ import (
 func BenchmarkChangerDeDirection(b *testing.B) {
 	const entites = 800
 
-	s, err := Nouvelle(64, 64, geometrie.Dimetrique(32, 16), Options{Entites: entites})
+	s, err := Nouvelle(64, 64, geometry.Dimetric(32, 16), Options{Entites: entites})
 	if err != nil {
 		b.Fatalf("montage : %v", err)
 	}

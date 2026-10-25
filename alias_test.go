@@ -6,7 +6,7 @@ package lozengine
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/input"
 	"github.com/sprimault/lozengine/rendu"
 	"github.com/sprimault/lozengine/scene"
@@ -61,10 +61,10 @@ func TestConstructeursRepublies(t *testing.T) {
 		nom           string
 		racine, noyau Matrice
 	}{
-		{"Dimetrique", Dimetrique(32, 16), geometrie.Dimetrique(32, 16)},
-		{"Isometrique", Isometrique(32), geometrie.Isometrique(32)},
-		{"Grille", Grille(32), geometrie.Grille(32)},
-		{"Brute", Brute(2, 3, 5, 7), geometrie.Brute(2, 3, 5, 7)},
+		{"Dimetrique", Dimetrique(32, 16), geometry.Dimetric(32, 16)},
+		{"Isometrique", Isometrique(32), geometry.Isometric(32)},
+		{"Grille", Grille(32), geometry.Grid(32)},
+		{"Brute", Brute(2, 3, 5, 7), geometry.Raw(2, 3, 5, 7)},
 	}
 	for _, c := range cas {
 		if c.racine != c.noyau {
@@ -200,17 +200,17 @@ func TestSceneSUtiliseDepuisLaRacine(t *testing.T) {
 // s'emploie sans rien importer d'autre : c'est tout ce qu'un consommateur peut en
 // faire au sortir de ce jalon, et le seul cas qui le démontre.
 func TestMatriceSUtiliseDepuisLaRacine(t *testing.T) {
-	m := Dimetrique(32, 16).AvecEtage(8)
+	m := Dimetrique(32, 16).WithFloorHeight(8)
 
-	ex, ey, profondeur, hauteur := m.Projeter(1, 1, 1)
+	ex, ey, profondeur, hauteur := m.Project(1, 1, 1)
 	if ex != 0 || ey != 8 || profondeur != 8 || hauteur != 4 {
 		t.Errorf("projeté (%d, %d), profondeur %d, hauteur %d — attendu (0, 8), 8 et 4", ex, ey, profondeur, hauteur)
 	}
 
-	if x, y := m.Inverser(ex, ey); x != 0.5 || y != 0.5 {
+	if x, y := m.Unproject(ex, ey); x != 0.5 || y != 0.5 {
 		t.Errorf("inversé (%g, %g), attendu (0.5, 0.5)", x, y)
 	}
-	if n := m.CellulesMax(480, 270); n == 0 {
+	if n := m.MaxCells(480, 270); n == 0 {
 		t.Error("majorant de cellules nul")
 	}
 }

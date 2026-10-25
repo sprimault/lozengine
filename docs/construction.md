@@ -78,14 +78,14 @@ tentante, et elle interroge les deux plateformes, parce qu'un import placé sous
 contrainte de construction ne se voit pas depuis l'autre.
 
 **`make frontiere`** vérifie que le noyau ne touche ni au système ni à un
-backend. Aucun paquet parmi `geometrie`, `scene`, `tri`, `rendu`, `raster` et
+backend. Aucun paquet parmi `geometry`, `scene`, `tri`, `rendu`, `raster` et
 `apparence` ne doit importer `syscall`, `net`, `os/exec` ou un backend — ni
 directement, ni à travers un autre paquet du moteur.
 
 C'est le contrôle que `make cross` ne fait pas, contrairement à ce qu'on croit
 spontanément. Compiler pour une plateforme ne dit rien de l'étanchéité :
 le backend Linux est du protocole écrit sur socket, donc il n'emploie que `net`
-et `os`, qui existent des deux côtés. Un `net.Dial` placé dans `geometrie`
+et `os`, qui existent des deux côtés. Un `net.Dial` placé dans `geometry`
 compile pour Windows comme pour Linux, sans un mot.
 
 Seuls les imports écrits comptent, suivis de proche en proche à travers les

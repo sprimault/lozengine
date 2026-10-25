@@ -1,22 +1,22 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-package geometrie
+package geometry
 
 import (
 	"math"
 	"testing"
 )
 
-// TestProfondeurCompteEnQuarts vérifie l'unité du champ que la clé de tri réserve à
+// TestDepthCountsInQuarters vérifie l'unité du champ que la clé de tri réserve à
 // la profondeur, et qu'elle sort du même arrondi que le pixel.
-func TestProfondeurCompteEnQuarts(t *testing.T) {
-	m := Dimetrique(32, 16)
+func TestDepthCountsInQuarters(t *testing.T) {
+	m := Dimetric(32, 16)
 
-	cas := []struct {
-		nom     string
-		x, y    float64
-		attendu uint32
+	cases := []struct {
+		name string
+		x, y float64
+		want uint32
 	}{
 		{"l'origine", 0, 0, 0},
 		{"un quart de cellule", 0.25, 0, 1},
@@ -25,29 +25,29 @@ func TestProfondeurCompteEnQuarts(t *testing.T) {
 		{"un demi-quart s'arrondit vers le bas", 0.12, 0, 0},
 		{"un négatif se range devant tout", -5, 0, 0},
 	}
-	for _, c := range cas {
-		t.Run(c.nom, func(t *testing.T) {
-			if _, _, p, _ := m.Projeter(c.x, c.y, 0); p != c.attendu {
-				t.Errorf("profondeur %d, attendu %d", p, c.attendu)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if _, _, p, _ := m.Project(c.x, c.y, 0); p != c.want {
+				t.Errorf("profondeur %d, attendu %d", p, c.want)
 			}
 		})
 	}
 }
 
-// TestHauteurCompteEnQuarts vérifie l'unité du champ que la clé de tri réserve à la
+// TestHeightCountsInQuarters vérifie l'unité du champ que la clé de tri réserve à la
 // hauteur, et les deux bouts où elle s'arrête.
 //
 // Ce que ce cas est seul à pouvoir faire échouer : une hauteur recalculée ailleurs,
 // depuis le nombre d'origine. Elle y perdrait la conversion saturée, donc rendrait un
 // résultat différent selon la machine, et sortirait d'un second arrondi qui peut
 // tomber de l'autre côté d'un quart.
-func TestHauteurCompteEnQuarts(t *testing.T) {
-	m := Dimetrique(32, 16)
+func TestHeightCountsInQuarters(t *testing.T) {
+	m := Dimetric(32, 16)
 
-	cas := []struct {
-		nom     string
-		z       float64
-		attendu uint16
+	cases := []struct {
+		name string
+		z    float64
+		want uint16
 	}{
 		{"le sol", 0, 0},
 		{"un quart de cellule", 0.25, 1},
@@ -56,53 +56,53 @@ func TestHauteurCompteEnQuarts(t *testing.T) {
 		{"sous le sol, ramenée au sol", -2, 0},
 		{"au-delà du champ, saturée", 1e6, math.MaxUint16},
 	}
-	for _, c := range cas {
-		t.Run(c.nom, func(t *testing.T) {
-			if _, _, _, h := m.Projeter(0, 0, c.z); h != c.attendu {
-				t.Errorf("hauteur %d, attendu %d", h, c.attendu)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if _, _, _, h := m.Project(0, 0, c.z); h != c.want {
+				t.Errorf("hauteur %d, attendu %d", h, c.want)
 			}
 		})
 	}
 }
 
-// TestQuantifierSature vérifie ce sans quoi toute la virgule fixe serait vaine.
+// TestQuantizeSaturates vérifie ce sans quoi toute la virgule fixe serait vaine.
 //
 // Hors plage, la conversion d'un flottant vers un int32 est laissée à
 // l'implémentation : amd64 rend le plus petit entier là où arm64 sature au plus
 // grand, donc une même scène rendrait des pixels différents selon la machine. Le NaN
 // est à part parce qu'aucune comparaison de borne ne l'attrape.
-func TestQuantifierSature(t *testing.T) {
-	cas := []struct {
-		nom     string
-		v       float64
-		attendu int32
+func TestQuantizeSaturates(t *testing.T) {
+	cases := []struct {
+		name string
+		v    float64
+		want int32
 	}{
 		{"au-delà de la plage", 1e12, math.MaxInt32},
 		{"en deçà de la plage", -1e12, math.MinInt32},
 		{"l'infini", math.Inf(1), math.MaxInt32},
 		{"l'infini négatif", math.Inf(-1), math.MinInt32},
 		{"le NaN, qu'aucune borne n'attrape", math.NaN(), 0},
-		{"une valeur ordinaire", 3.5, 3.5 * unite},
+		{"une valeur ordinaire", 3.5, 3.5 * unit},
 		{"l'arrondi au plus proche", 1.0 / 3, 21845},
 	}
-	for _, c := range cas {
-		t.Run(c.nom, func(t *testing.T) {
-			if got := quantifier(c.v); got != c.attendu {
-				t.Errorf("quantifier(%g) = %d, attendu %d", c.v, got, c.attendu)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := quantize(c.v); got != c.want {
+				t.Errorf("quantize(%g) = %d, attendu %d", c.v, got, c.want)
 			}
 		})
 	}
 }
 
-// TestInverserExactSurLesPuissancesDeDeux vérifie que l'aller-retour ne perd rien
+// TestUnprojectExactOnPowersOfTwo vérifie que l'aller-retour ne perd rien
 // quand le ratio est une puissance de deux : là, aucun coefficient n'est arrondi, et
 // un écart signalerait une erreur de calcul et non un quantum.
-func TestInverserExactSurLesPuissancesDeDeux(t *testing.T) {
-	m := Dimetrique(32, 16)
+func TestUnprojectExactOnPowersOfTwo(t *testing.T) {
+	m := Dimetric(32, 16)
 
 	for _, p := range [][2]float64{{0, 0}, {3, 5}, {1, 1}, {100, 250}, {-4, 7}} {
-		ex, ey, _, _ := m.Projeter(p[0], p[1], 0)
-		x, y := m.Inverser(ex, ey)
+		ex, ey, _, _ := m.Project(p[0], p[1], 0)
+		x, y := m.Unproject(ex, ey)
 
 		if x != p[0] || y != p[1] {
 			t.Errorf("(%g, %g) → (%d, %d) → (%g, %g)", p[0], p[1], ex, ey, x, y)
@@ -110,31 +110,31 @@ func TestInverserExactSurLesPuissancesDeDeux(t *testing.T) {
 	}
 }
 
-// TestAllerRetourTolerance mesure l'écart de l'aller-retour sur les trois ratios et
-// vérifie qu'il reste sous le quantum annoncé par la godoc d'Inverser.
+// TestRoundTripTolerance mesure l'écart de l'aller-retour sur les trois ratios et
+// vérifie qu'il reste sous le quantum annoncé par la godoc d'Unproject.
 //
 // Ce que le cas protège vraiment : que l'écart reste dominé par l'arrondi au pixel et
 // non par l'inexactitude des coefficients de l'inverse. Réduire inverseBits le ferait
 // rougir, et c'est la seule chose qui le garde.
-func TestAllerRetourTolerance(t *testing.T) {
+func TestRoundTripTolerance(t *testing.T) {
 	const quantum = 0.05
 
-	cas := []struct {
-		nom string
-		m   Matrice
+	cases := []struct {
+		name string
+		m    Matrix
 	}{
-		{"dimétrique", Dimetrique(32, 16)},
-		{"isométrie vraie", Isometrique(32)},
-		{"ratio arbitraire", Dimetrique(37, 13)},
+		{"dimétrique", Dimetric(32, 16)},
+		{"isométrie vraie", Isometric(32)},
+		{"ratio arbitraire", Dimetric(37, 13)},
 	}
-	for _, c := range cas {
-		t.Run(c.nom, func(t *testing.T) {
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
 			var pire float64
 
 			for i := 0; i < 4000; i++ {
 				ax, ay := float64(i)*0.37, float64(i)*0.61
-				ex, ey, _, _ := c.m.Projeter(ax, ay, 0)
-				rx, ry := c.m.Inverser(ex, ey)
+				ex, ey, _, _ := c.m.Project(ax, ay, 0)
+				rx, ry := c.m.Unproject(ex, ey)
 
 				pire = max(pire, math.Abs(rx-ax), math.Abs(ry-ay))
 			}
@@ -147,14 +147,14 @@ func TestAllerRetourTolerance(t *testing.T) {
 	}
 }
 
-// TestCellulesMaxMajore vérifie que le majorant couvre vraiment ce que le relevé
+// TestMaxCellsIsAnUpperBound vérifie que le majorant couvre vraiment ce que le relevé
 // trouvera, pour toute position de la vue : un relevé qui n'alloue pas déborderait
 // sinon, et c'est ce que la signature sert à empêcher.
-func TestCellulesMaxMajore(t *testing.T) {
+func TestMaxCellsIsAnUpperBound(t *testing.T) {
 	const largeur, hauteur = 480, 270
 
-	m := Dimetrique(32, 16)
-	majorant := m.CellulesMax(largeur, hauteur)
+	m := Dimetric(32, 16)
+	majorant := m.MaxCells(largeur, hauteur)
 
 	// Le relevé réel, pour quelques positions de vue : l'englobant en cellules des
 	// quatre coins du tampon, comme le relevé des cellules visibles le calculera.
@@ -163,7 +163,7 @@ func TestCellulesMaxMajore(t *testing.T) {
 		maxX, maxY := -math.MaxFloat64, -math.MaxFloat64
 
 		for _, coin := range [4][2]int32{{0, 0}, {largeur, 0}, {0, hauteur}, {largeur, hauteur}} {
-			x, y := m.Inverser(origine[0]+coin[0], origine[1]+coin[1])
+			x, y := m.Unproject(origine[0]+coin[0], origine[1]+coin[1])
 			minX, maxX = min(minX, x), max(maxX, x)
 			minY, maxY = min(minY, y), max(maxY, y)
 		}
@@ -175,14 +175,14 @@ func TestCellulesMaxMajore(t *testing.T) {
 	}
 }
 
-// TestInverserBorneSonEntree vérifie que l'inverse sature au lieu de déborder : au
+// TestUnprojectClampsItsInput vérifie que l'inverse sature au lieu de déborder : au
 // -delà de la plage, le produit d'un pixel par un coefficient quitterait un int64 et
 // rendrait un point arbitraire plutôt qu'un point lointain.
-func TestInverserBorneSonEntree(t *testing.T) {
-	m := Dimetrique(32, 16)
+func TestUnprojectClampsItsInput(t *testing.T) {
+	m := Dimetric(32, 16)
 
-	loin, _ := m.Inverser(math.MaxInt32, 0)
-	borne, _ := m.Inverser(m.plage, 0)
+	loin, _ := m.Unproject(math.MaxInt32, 0)
+	borne, _ := m.Unproject(m.span, 0)
 
 	if loin != borne {
 		t.Errorf("l'entrée extrême rend %g, la borne %g", loin, borne)

@@ -6,7 +6,7 @@ package scene
 import (
 	"fmt"
 
-	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/rendu"
 )
 
@@ -54,7 +54,7 @@ type Options struct {
 // le tri n'alloue pas davantage.
 type Scene struct {
 	largeur, hauteur int
-	projection       geometrie.Matrice
+	projection       geometry.Matrix
 
 	// Les entités vivantes occupent le début de la tranche, sans trou, ce qui rend
 	// leur parcours dense. Retirer comble le trou avec la dernière : c'est ce qui
@@ -85,7 +85,7 @@ type Scene struct {
 //
 // C'est le seul moment où une scène rend une erreur. Passé ce point, plus rien sur le
 // chemin d'une image n'en rend, parce qu'une image n'a nulle part où la mettre.
-func Nouvelle(largeur, hauteur int, projection geometrie.Matrice, o Options) (*Scene, error) {
+func Nouvelle(largeur, hauteur int, projection geometry.Matrix, o Options) (*Scene, error) {
 	if largeur <= 0 || hauteur <= 0 {
 		return nil, fmt.Errorf("grille de %d×%d : les deux côtés sont obligatoires", largeur, hauteur)
 	}
@@ -117,7 +117,7 @@ func Nouvelle(largeur, hauteur int, projection geometrie.Matrice, o Options) (*S
 func (s *Scene) Dimensions() (largeur, hauteur int) { return s.largeur, s.hauteur }
 
 // Projection rend la matrice sur laquelle la scène a été montée.
-func (s *Scene) Projection() geometrie.Matrice { return s.projection }
+func (s *Scene) Projection() geometry.Matrix { return s.projection }
 
 // Poser ajoute une entité et rend la poignée qui la désignera.
 //
