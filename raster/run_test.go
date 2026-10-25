@@ -9,9 +9,9 @@ import (
 	"github.com/sprimault/lozengine/rendu"
 )
 
-// ligneDAlphas construit une planche d'une seule ligne dont les alphas sont donnés,
+// alphaRow construit une planche d'une seule ligne dont les alphas sont donnés,
 // et l'encode. Les composantes de couleur ne jouent aucun rôle dans le classement.
-func ligneDAlphas(alphas ...uint8) Sheet {
+func alphaRow(alphas ...uint8) Sheet {
 	p := NewSheet(uint16(len(alphas)), 1)
 	for i, a := range alphas {
 		p.Pixels[i] = rendu.Couleur{R: a, V: a, B: a, A: a}
@@ -20,13 +20,13 @@ func ligneDAlphas(alphas ...uint8) Sheet {
 	return p
 }
 
-// TestEncoderClasseLesLignes vérifie le découpage d'une ligne en séquences, cas par
+// TestEncodeClassifiesRows vérifie le découpage d'une ligne en séquences, cas par
 // cas : c'est de lui que le blit tire ses trois chemins.
-func TestEncoderClasseLesLignes(t *testing.T) {
-	cas := []struct {
-		nom    string
+func TestEncodeClassifiesRows(t *testing.T) {
+	cases := []struct {
+		name   string
 		alphas []uint8
-		veut   []run
+		want   []run
 	}{
 		{"ligne vide", []uint8{0, 0, 0}, []run{{3, transparent}}},
 		{"ligne opaque", []uint8{255, 255}, []run{{2, opaque}}},
@@ -45,27 +45,27 @@ func TestEncoderClasseLesLignes(t *testing.T) {
 		{"alpha 1 n'est pas transparent", []uint8{1}, []run{{1, translucent}}},
 	}
 
-	for _, c := range cas {
-		t.Run(c.nom, func(t *testing.T) {
-			p := ligneDAlphas(c.alphas...)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			p := alphaRow(c.alphas...)
 
 			got := p.runsOf(0)
-			if len(got) != len(c.veut) {
-				t.Fatalf("séquences : %v, attendu %v", got, c.veut)
+			if len(got) != len(c.want) {
+				t.Fatalf("séquences : %v, attendu %v", got, c.want)
 			}
 			for i := range got {
-				if got[i] != c.veut[i] {
-					t.Errorf("séquence %d : %v, attendu %v", i, got[i], c.veut[i])
+				if got[i] != c.want[i] {
+					t.Errorf("séquence %d : %v, attendu %v", i, got[i], c.want[i])
 				}
 			}
 		})
 	}
 }
 
-// TestEncoderPaveChaqueLigne vérifie l'invariant dont le blit dépend sans le
+// TestEncodePavesEachRow vérifie l'invariant dont le blit dépend sans le
 // vérifier : les séquences d'une ligne la couvrent exactement, ce qui autorise à
 // déduire la colonne de départ en avançant plutôt qu'à la stocker.
-func TestEncoderPaveChaqueLigne(t *testing.T) {
+func TestEncodePavesEachRow(t *testing.T) {
 	p := NewSheet(5, 3)
 	for i := range p.Pixels {
 		p.Pixels[i] = rendu.Couleur{A: uint8(i % 3 * 127)}
@@ -85,7 +85,7 @@ func TestEncoderPaveChaqueLigne(t *testing.T) {
 
 // TestEncoderSeparelesLignes vérifie qu'une ligne ne déborde pas sur la suivante :
 // deux lignes identiques et uniformes doivent rendre deux séquences, pas une.
-func TestEncoderSepareLesLignes(t *testing.T) {
+func TestEncodeSeparatesRows(t *testing.T) {
 	p := NewSheet(4, 2)
 	for i := range p.Pixels {
 		p.Pixels[i] = rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
@@ -102,9 +102,9 @@ func TestEncoderSepareLesLignes(t *testing.T) {
 	}
 }
 
-// TestEncoderPlancheVide vérifie qu'une planche sans hauteur s'encode sans borne
+// TestEncodeEmptySheet vérifie qu'une planche sans hauteur s'encode sans borne
 // fausse : le tableau de bornes en porte toujours une de plus que de lignes.
-func TestEncoderPlancheVide(t *testing.T) {
+func TestEncodeEmptySheet(t *testing.T) {
 	p := NewSheet(0, 0)
 	p.encode()
 
@@ -116,9 +116,9 @@ func TestEncoderPlancheVide(t *testing.T) {
 	}
 }
 
-// TestAjouterEncode vérifie le passage obligé : une planche construite à la main
+// TestAddEncodes vérifie le passage obligé : une planche construite à la main
 // ressort de l'atlas encodée, sans que l'appelant ait eu à le demander.
-func TestAjouterEncode(t *testing.T) {
+func TestAddEncodes(t *testing.T) {
 	var a Atlas
 
 	p := NewSheet(2, 1)
@@ -129,8 +129,8 @@ func TestAjouterEncode(t *testing.T) {
 		t.Fatalf("ajout : %v", err)
 	}
 
-	rangee := a.Sheets[index]
-	if got := rangee.runsOf(0); len(got) != 2 {
+	row := a.Sheets[index]
+	if got := row.runsOf(0); len(got) != 2 {
 		t.Errorf("séquences de la planche rangée : %v, attendu une copie puis un saut", got)
 	}
 }

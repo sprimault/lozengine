@@ -5,9 +5,9 @@ package raster
 
 import "testing"
 
-// TestNouvellePlanche vérifie les dimensions et la taille du tableau de pixels,
+// TestNewSheet vérifie les dimensions et la taille du tableau de pixels,
 // dont le rastériseur dépendra sans les revérifier.
-func TestNouvellePlanche(t *testing.T) {
+func TestNewSheet(t *testing.T) {
 	p := NewSheet(32, 16)
 
 	if p.Width != 32 || p.Height != 16 {
@@ -21,34 +21,34 @@ func TestNouvellePlanche(t *testing.T) {
 	}
 }
 
-// TestDecouperGrille vérifie l'ordre des cases, de gauche à droite puis de haut en
+// TestCutGrid vérifie l'ordre des cases, de gauche à droite puis de haut en
 // bas, sur lequel un fournisseur d'apparence numérote ses directions.
-func TestDecouperGrille(t *testing.T) {
+func TestCutGrid(t *testing.T) {
 	p := NewSheet(96, 32)
 	if err := p.CutGrid(32, 16); err != nil {
 		t.Fatalf("découpe : %v", err)
 	}
 
-	attendu := []Rectangle{
+	want := []Rectangle{
 		{0, 0, 32, 16}, {32, 0, 32, 16}, {64, 0, 32, 16},
 		{0, 16, 32, 16}, {32, 16, 32, 16}, {64, 16, 32, 16},
 	}
-	if len(p.Rectangles) != len(attendu) {
-		t.Fatalf("nombre de cases : %d, attendu %d", len(p.Rectangles), len(attendu))
+	if len(p.Rectangles) != len(want) {
+		t.Fatalf("nombre de cases : %d, attendu %d", len(p.Rectangles), len(want))
 	}
-	for i, veut := range attendu {
+	for i, veut := range want {
 		if p.Rectangles[i] != veut {
 			t.Errorf("case %d : %v, attendu %v", i, p.Rectangles[i], veut)
 		}
 	}
 }
 
-// TestDecouperGrilleRefusee vérifie que les découpes qui laisseraient un reste
+// TestCutGridRefused vérifie que les découpes qui laisseraient un reste
 // échouent, plutôt que de perdre une colonne ou une ligne sans le dire.
-func TestDecouperGrilleRefusee(t *testing.T) {
-	cas := []struct {
-		nom              string
-		largeur, hauteur uint16
+func TestCutGridRefused(t *testing.T) {
+	cases := []struct {
+		name          string
+		width, height uint16
 	}{
 		{"case plus large que la planche", 128, 16},
 		{"reste en largeur", 30, 16},
@@ -56,11 +56,11 @@ func TestDecouperGrilleRefusee(t *testing.T) {
 		{"case de largeur nulle", 0, 16},
 		{"case de hauteur nulle", 32, 0},
 	}
-	for _, c := range cas {
-		t.Run(c.nom, func(t *testing.T) {
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
 			p := NewSheet(96, 32)
-			if err := p.CutGrid(c.largeur, c.hauteur); err == nil {
-				t.Errorf("découpe %d×%d acceptée", c.largeur, c.hauteur)
+			if err := p.CutGrid(c.width, c.height); err == nil {
+				t.Errorf("découpe %d×%d acceptée", c.width, c.height)
 			}
 		})
 	}
