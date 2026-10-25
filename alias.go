@@ -135,6 +135,15 @@ type Input = input.Input
 // touche nommée W est celle marquée Z sur un clavier français.
 type Key = input.Key
 
+// State fabrique des entrées sans clavier, et c'est à cela qu'il sert ici : éprouver
+// la méthode d'un jeu sans ouvrir de fenêtre.
+//
+// Un jeu n'en a pas besoin pour jouer — la boucle lui donne ses entrées —, mais il en
+// a besoin pour se tester, et l'obliger à un second import pour cela irait contre le
+// seul import que le paquet racine promet. `Press`, `Release` puis `Frame` rendent une
+// [Input] comme la boucle en rendrait une.
+type State = input.State
+
 // Les places du clavier, republiées pour qu'un jeu n'ait qu'un import à écrire.
 //
 // Les noms portent la légende d'un clavier américain, et c'est ce qui les rend utiles :
@@ -274,6 +283,12 @@ type Scene = scene.Scene
 // Les coordonnées sont des cellules et elles sont flottantes : une entité se tient en
 // x = 3,5 sans que rien ne l'arrondisse. z est la hauteur au-dessus du sol et reste un
 // champ à part, que l'écran retranche de l'ordonnée.
+//
+// La cellule k couvre l'intervalle de k à k+1, et son centre est à k+0,5 : un jeu qui
+// pose une entité « sur » une case ajoute un demi à ses deux coordonnées, et un jeu qui
+// borne ses déplacements à la grille borne à [0, côté) — borner à côté moins un
+// l'arrêterait une case avant le bord, et seulement d'un côté. [scene.Entity] porte le
+// reste de la convention.
 type Entity = scene.Entity
 
 // Aspect est ce qu'une chose montre : de quoi remplir un quad, sans dire où.

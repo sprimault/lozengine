@@ -62,6 +62,18 @@ func (a Aspect) fitsInKey() bool {
 // x = 3,5 sans que rien ne l'arrondisse ici. La conversion vers les entiers du rendu se
 // fait à l'entrée de la projection, une fois.
 //
+// **La cellule k couvre l'intervalle de k à k+1, et son centre est à k+0,5.** Le décor
+// suit la même convention : une case posée en (3, 4) se dessine comme une entité qui
+// se tiendrait en (3,5 ; 4,5), ce qui met une créature et le sol qu'elle foule sur le
+// même point de comparaison. Deux conséquences qu'on ne devine pas : un jeu qui pose
+// une entité « sur » une case ajoute un demi à ses deux coordonnées, et un jeu qui
+// borne ses déplacements à la grille borne à [0, côté) — borner à côté moins un
+// l'arrêterait une case avant le bord, et seulement d'un côté.
+//
+// Les coordonnées ne sont pas vérifiées : une entité hors de la grille est posée sans
+// refus, et simplement retirée de l'image si elle n'y tombe pas. C'est au jeu de
+// borner, parce que lui seul sait si son personnage a le droit de sortir.
+//
 // z est la hauteur au-dessus du sol et reste un champ à part. L'écran la retranche de
 // l'ordonnée, la clé de tri la range dans son propre champ : les fondre perdrait
 // l'information dès l'entrée et rendrait l'ordre de dessin irréparable.

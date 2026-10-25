@@ -51,6 +51,20 @@ func (m Matrix) Project(x, y, z float64) (ex, ey int32, depth uint32, height uin
 // trois ratios, et l'isométrie vraie — dont la hauteur ne tombe pas sur un entier —
 // n'y est pas moins exacte que le dimétrique : c'est ce qui montre que le plancher
 // est bien l'arrondi au pixel et non la quantification des coefficients.
+//
+// **Elle rend aussi une direction, et c'est son troisième usage** : la matrice étant
+// sans translation, lui donner un vecteur d'écran rend le vecteur de monde
+// correspondant. C'est ce qu'il faut à un jeu qui veut qu'une touche « haut » monte à
+// l'écran, car les axes du monde sont les diagonales de l'image :
+//
+//	dx, dy := m.Unproject(0, -1)   // la direction « vers le haut de l'écran »
+//	x, y = x+dx*vitesse, y+dy*vitesse
+//
+// Sans cela il faut deviner la combinaison, et se tromper est facile : monter demande
+// de reculer sur les deux axes à la fois, aller à gauche d'avancer sur l'un en
+// reculant sur l'autre. Un jeu qui préfère se déplacer selon les axes du monde — ce
+// que beaucoup de jeux de stratégie veulent — n'a rien à convertir ; le choix lui
+// appartient, le moteur ne le fait pas à sa place.
 func (m Matrix) Unproject(ex, ey int32) (x, y float64) {
 	px, py := int64(m.clamp(ex)), int64(m.clamp(ey))
 
