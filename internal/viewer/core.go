@@ -1,7 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-package visionneuse
+package viewer
 
 import (
 	"github.com/sprimault/lozengine/geometry"
@@ -35,7 +35,7 @@ const (
 	hauteurNoyau = coteGrille*tuileH + 4*tuileH
 )
 
-// Noyau rend le scénario qui éprouve le chemin complet du moteur : une scène décrite,
+// Core rend le scénario qui éprouve le chemin complet du moteur : une scène décrite,
 // ordonnée par le tri, puis dessinée.
 //
 // C'est le seul scénario qui ne pose pas ses quads à la main. Les autres vérifient le
@@ -54,21 +54,21 @@ const (
 // rien et une image ne montrerait pas qu'il a changé ; deux rectangles se chevauchent,
 // et le bord que l'un mange à l'autre dit lequel est passé devant. Ce scénario garde
 // l'ordre, pas l'apparence d'un décor.
-func Noyau() Scenario {
+func Core() Scenario {
 	return Scenario{
-		Nom:     "noyau",
-		Largeur: largeurNoyau,
-		Hauteur: hauteurNoyau,
-		Images:  4,
-		Fond:    render.Color{R: 18, G: 18, B: 24, A: 255},
+		Name:       "core",
+		Width:      largeurNoyau,
+		Height:     hauteurNoyau,
+		Frames:     4,
+		Background: render.Color{R: 18, G: 18, B: 24, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
 			var atlas raster.Atlas
 			planches := []raster.Sheet{
-				plancheBordee(tuileL, tuileH, render.Color{R: 96, G: 112, B: 88, A: 255}),
-				plancheBordee(tuileL, tuileH, render.Color{R: 64, G: 80, B: 64, A: 255}),
-				plancheBordee(tuileL/2, tuileH*2, render.Color{R: 176, G: 144, B: 96, A: 255}),
-				plancheBordee(tuileL/3, tuileH*3/2, render.Color{R: 208, G: 96, B: 96, A: 255}),
+				borderedSheet(tuileL, tuileH, render.Color{R: 96, G: 112, B: 88, A: 255}),
+				borderedSheet(tuileL, tuileH, render.Color{R: 64, G: 80, B: 64, A: 255}),
+				borderedSheet(tuileL/2, tuileH*2, render.Color{R: 176, G: 144, B: 96, A: 255}),
+				borderedSheet(tuileL/3, tuileH*3/2, render.Color{R: 208, G: 96, B: 96, A: 255}),
 			}
 			for _, p := range planches {
 				if _, err := atlas.Add(p); err != nil {
@@ -78,18 +78,18 @@ func Noyau() Scenario {
 			return &atlas, nil
 		},
 
-		Quads: func(numero int, _ Entrees, reserve render.DrawList) render.DrawList {
-			s := sceneDuNoyau()
-			s.Orient(scene.Orientation(numero))
+		Quads: func(frame int, _ InputLine, reserve render.DrawList) render.DrawList {
+			s := coreScene()
+			s.Orient(scene.Orientation(frame))
 
 			return append(reserve, sorting.New(s).Frame()...)
 		},
 	}
 }
 
-// sceneDuNoyau monte la scène à neuf, ce que la pureté exigée d'un scénario demande :
+// coreScene monte la scène à neuf, ce que la pureté exigée d'un scénario demande :
 // une image doit pouvoir se rendre seule, deux fois, et donner les mêmes pixels.
-func sceneDuNoyau() *scene.Scene {
+func coreScene() *scene.Scene {
 	s, err := scene.New(coteGrille, coteGrille, geometry.Dimetric(tuileL, tuileH), scene.Options{Entities: 8})
 	if err != nil {
 		panic(err)

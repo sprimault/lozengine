@@ -297,7 +297,7 @@ check: fmt vet deps entetes frontiere cross test
 # Le paquet qui porte la suite de non-régression visuelle, et lui seul : un
 # drapeau de test n'existe que pour le paquet qui le déclare, donc `./...` ferait
 # échouer tous les autres sur « flag provided but not defined ».
-PKG_REFERENCES ?= ./internal/visionneuse
+PKG_REFERENCES ?= ./internal/viewer
 
 # Jamais automatique, et toujours justifiée dans le message de commit : une
 # image de référence qui change sans raison énoncée est un bug entériné.

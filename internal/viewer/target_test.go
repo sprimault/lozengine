@@ -1,23 +1,23 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-package visionneuse
+package viewer
 
 import "testing"
 
-// TestMireSansVoile éprouve la seule directive d'entrée que la mire interprète, et ce
+// TestTargetWithoutVeil éprouve la seule directive d'entrée que la mire interprète, et ce
 // test est le seul endroit où elle l'est : aucune image de référence ne l'emploie,
 // donc la retirer du scénario ne faisait rougir personne.
-func TestMireSansVoile(t *testing.T) {
-	rejeu, err := NouveauRejeu(Mire())
+func TestTargetWithoutVeil(t *testing.T) {
+	replay, err := NewReplay(Target())
 	if err != nil {
 		t.Fatalf("rejeu : %v", err)
 	}
 
-	avec := copiePixels(rejeu.Image(0, ""))
-	sans := rejeu.Image(0, "sans-voile")
+	avec := copyPixels(replay.Frame(0, ""))
+	sans := replay.Frame(0, "sans-voile")
 
-	if memesPixels(avec, sans) {
+	if samePixels(avec, sans) {
 		t.Fatal("la directive ne change rien à l'image")
 	}
 
