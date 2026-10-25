@@ -6,9 +6,9 @@ package tri
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/geometrie"
-	"github.com/sprimault/lozengine/internal/scene"
+	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/scene"
 )
 
 // Une mesure brute dit ce que l'opération coûte sur la machine qui mesure. Ce qu'on

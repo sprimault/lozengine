@@ -196,8 +196,8 @@ Le sens des dépendances ne s'inverse jamais.
 
 ```
 lozengine             surface publique, boucle, assemblage      tous les internes
-internal/geometrie    projection, matrices, conversions         aucune
-internal/scene        grille, entités, couches, caméra          geometrie, rendu
+geometrie             projection, matrices, conversions         aucune
+scene                 grille, entités, couches, caméra          geometrie, rendu
 internal/tri          retrait hors image, clé, départage        geometrie, scene, rendu
 rendu                 structures Quad et Rendu, publiques       aucune
 internal/raster       rastériseur logiciel, écriture PNG        rendu
@@ -219,26 +219,36 @@ scénario de non-régression construit une scène, la fait trier, puis la rasté
 
 Le paquet racine est le seul à tout connaître, et rien ne dépend de lui.
 
-**Tout le moteur vit sous `internal/` sauf `rendu`, et les deux moitiés de cette
-phrase sont des décisions, pas un rangement.** Le compilateur Go interdit d'importer
-un paquet `internal` depuis un autre module : la surface publique se réduit donc à
-ce que le paquet racine republie, et publier quelque chose demande de l'écrire, au
-lieu de l'être par défaut. C'est ce qui rend tenable la règle voulant que toute
-signature publique soit définitive.
+**Un paquet sort d'`internal/` quand un consommateur doit lire la documentation de ses
+types, et c'est une décision, pas un rangement.** Trois y sont : `rendu`, `geometrie`
+et `scene`. Le reste — le tri, le rastériseur, les backends, la visionneuse — n'a
+aucune raison d'être lu par qui écrit un jeu, et le compilateur Go interdit de
+l'importer depuis un autre module.
 
-**`rendu` est l'exception, et une seule chose la motive** : un type publié par alias
-ne montre aucune structure quand il désigne un paquet `internal`. Un consommateur
-lisait `type Quad = rendu.Quad` et la godoc de l'alias, sans un seul champ — ni
-coordonnées, ni teinte, ni planche —, donc sans de quoi construire la primitive du
-moteur. Ce sont les structures que l'ABI C exposera, et celles qu'un hôte doit
-pouvoir lire avant d'écrire une ligne. L'invariant tient pour autant : le seul
-paquet public est celui qu'on a décidé de publier, et être public ne relâche rien —
-`rendu` reste le cœur, donc sans aucune dépendance.
+**Le critère est mécanique, et il s'est vérifié deux fois.** Un type publié par alias
+ne montre rien quand il désigne un paquet `internal` : un consommateur lisait
+`type Quad = rendu.Quad` et la godoc de l'alias, sans un seul champ — ni coordonnées,
+ni teinte, ni planche —, ce qui a sorti `rendu` au jalon 0. La même chose vaut pour les
+méthodes, et personne ne l'avait vu : le 25 octobre 2026, `go doc -all` ne montrait
+aucune des quatre méthodes de `Matrice`, alors que la `0.2.0` l'annonçait comme la
+surface du jalon 1 et que sa propre godoc disait « s'emploie par ses méthodes ».
+`geometrie` et `scene` sont sortis de là.
 
-Deux conséquences qui comptent davantage que la discipline. Réorganiser l'intérieur
-ne casse aucun consommateur, tant que ce que republie le paquet racine ne bouge pas.
-Et un hôte ne peut plus importer un backend pour se lier directement à X11 : ce
-n'est plus un contrôle qui l'interdit, c'est le compilateur.
+**Ce que cela retire, et qu'il faut savoir.** La règle précédente voulait que la
+surface publique se réduise à ce que le paquet racine republie, publier demandant de
+l'écrire. Elle supposait qu'un alias publie quelque chose, et la mesure l'a défaite :
+ce qui sort d'`internal/` est désormais surveillé à l'export. Le paquet racine
+republie toujours par alias, pour qu'un jeu n'ait qu'un seul import à écrire.
+
+Conséquence assumée : un paquet public publie tout ce qu'il exporte, donc les deux
+portes par lesquelles le tri lit la scène le sont aussi. Il n'y a pas de voie Go pour
+l'éviter, et le dégât est borné — la clé sature, donc une couche écrite hors borne
+range la chose au plafond sans rien casser d'autre. Leur documentation nomme la voie
+normale.
+
+Deux acquis restent entiers. Réorganiser ce qui est interne ne casse aucun
+consommateur. Et un hôte ne peut pas importer un backend pour se lier directement à
+X11 : ce n'est pas un contrôle qui l'interdit, c'est le compilateur.
 
 Les types du noyau sont republiés par **alias** et non par enveloppe. Un alias
 désigne le même type, sans conversion ni copie — ce qui est indispensable pour des

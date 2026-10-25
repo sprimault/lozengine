@@ -4,9 +4,9 @@
 package lozengine
 
 import (
-	"github.com/sprimault/lozengine/internal/geometrie"
-	"github.com/sprimault/lozengine/internal/scene"
+	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/scene"
 )
 
 // Quad est la primitive unique du moteur : un rectangle de planche posé dans le
@@ -62,6 +62,16 @@ const (
 const (
 	CoucheMax = rendu.CoucheMax
 	EtageMax  = rendu.EtageMax
+)
+
+// CoteMax est le plus grand côté qu'une grille de scène puisse avoir, en cellules, et
+// StratesMax le nombre de choses qu'une cellule peut empiler.
+//
+// [NouvelleScene] et [Scene.PoserCellule] refusent au-delà. Les lire évite d'avoir à
+// essayer pour le savoir.
+const (
+	CoteMax    = rendu.CoteMax
+	StratesMax = scene.StratesMax
 )
 
 // Blanc rend la teinte neutre, celle qui laisse la source intacte.

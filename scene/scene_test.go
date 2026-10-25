@@ -6,7 +6,7 @@ package scene
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/geometrie"
+	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/rendu"
 )
 
@@ -37,7 +37,7 @@ func TestNouvelleRefuse(t *testing.T) {
 	}{
 		{"largeur nulle", 0, 8, Options{}},
 		{"hauteur négative", 8, -1, Options{}},
-		{"au-delà de ce que la clé ordonne", coteMax + 1, 8, Options{}},
+		{"au-delà de ce que la clé ordonne", rendu.CoteMax + 1, 8, Options{}},
 		{"capacité au-delà du champ de rang", 8, 8, Options{Entites: rangMax + 1}},
 		{"capacité négative", 8, 8, Options{Entites: -1}},
 	}
@@ -53,13 +53,13 @@ func TestNouvelleRefuse(t *testing.T) {
 // TestNouvelleAccepteLaBorne vérifie que la garde s'arrête là où la clé de tri cesse
 // de distinguer, et pas une cellule avant.
 func TestNouvelleAccepteLaBorne(t *testing.T) {
-	s, err := Nouvelle(coteMax, 1, geometrie.Dimetrique(32, 16), Options{Entites: 1})
+	s, err := Nouvelle(rendu.CoteMax, 1, geometrie.Dimetrique(32, 16), Options{Entites: 1})
 	if err != nil {
-		t.Fatalf("grille de %d de côté refusée : %v", coteMax, err)
+		t.Fatalf("grille de %d de côté refusée : %v", rendu.CoteMax, err)
 	}
 
-	if l, h := s.Dimensions(); l != coteMax || h != 1 {
-		t.Errorf("dimensions %d×%d, attendu %d×1", l, h, coteMax)
+	if l, h := s.Dimensions(); l != rendu.CoteMax || h != 1 {
+		t.Errorf("dimensions %d×%d, attendu %d×1", l, h, rendu.CoteMax)
 	}
 }
 
@@ -268,7 +268,7 @@ func TestCelluleHorsBornes(t *testing.T) {
 	if s.PoserCellule(8, 0, 0, plein()) {
 		t.Error("pose acceptée hors grille")
 	}
-	if s.PoserCellule(0, 0, stratesMax, plein()) {
+	if s.PoserCellule(0, 0, StratesMax, plein()) {
 		t.Error("pose acceptée au-delà des strates qu'une cellule empile")
 	}
 }

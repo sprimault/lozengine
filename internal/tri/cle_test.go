@@ -39,6 +39,23 @@ func TestPlafondsDeCoucheEtEtageConcordent(t *testing.T) {
 	}
 }
 
+// TestPlafondDeCoteTientDansLaProfondeur vérifie que la plus grande grille annoncée
+// produit une profondeur que le champ porte encore.
+//
+// La profondeur est la somme des deux axes, comptée en quarts de cellule : deux coins
+// opposés d'une grille au maximum en donnent la plus grande valeur possible. C'est le
+// seul lien entre la limite qu'un jeu lit et la largeur du champ qui la supporte, et
+// il se vérifie par le calcul plutôt que par un chiffre recopié — qui aurait péri à la
+// première des deux qui bouge.
+func TestPlafondDeCoteTientDansLaProfondeur(t *testing.T) {
+	sommeMax := 2 * (rendu.CoteMax - 1)
+
+	if quarts := sommeMax * 4; quarts > ProfondeurMax {
+		t.Errorf("une grille de %d de côté donne %d quarts de profondeur, le champ en porte %d",
+			rendu.CoteMax, quarts, ProfondeurMax)
+	}
+}
+
 // TestOrdreDesChamps vérifie la propriété qui tient tout le reste : un champ plus fort
 // l'emporte sur tous les suivants réunis.
 //

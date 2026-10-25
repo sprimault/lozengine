@@ -6,9 +6,9 @@ package tri
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/internal/geometrie"
-	"github.com/sprimault/lozengine/internal/scene"
+	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/scene"
 )
 
 // scenePourTest monte une scène cadrée, prête à produire une image.
