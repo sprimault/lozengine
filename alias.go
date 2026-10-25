@@ -135,6 +135,90 @@ type Input = input.Input
 // touche nommée W est celle marquée Z sur un clavier français.
 type Key = input.Key
 
+// Les places du clavier, republiées pour qu'un jeu n'ait qu'un import à écrire.
+//
+// Les noms portent la légende d'un clavier américain, et c'est ce qui les rend utiles :
+// un jeu qui avance sur [KeyW] avance sur la touche au-dessus de [KeyS], quelle que
+// soit la disposition du joueur. Nommer le caractère produit aurait dispersé la croix
+// de déplacement sur un clavier français.
+const (
+	KeyA = input.KeyA
+	KeyB = input.KeyB
+	KeyC = input.KeyC
+	KeyD = input.KeyD
+	KeyE = input.KeyE
+	KeyF = input.KeyF
+	KeyG = input.KeyG
+	KeyH = input.KeyH
+	KeyI = input.KeyI
+	KeyJ = input.KeyJ
+	KeyK = input.KeyK
+	KeyL = input.KeyL
+	KeyM = input.KeyM
+	KeyN = input.KeyN
+	KeyO = input.KeyO
+	KeyP = input.KeyP
+	KeyQ = input.KeyQ
+	KeyR = input.KeyR
+	KeyS = input.KeyS
+	KeyT = input.KeyT
+	KeyU = input.KeyU
+	KeyV = input.KeyV
+	KeyW = input.KeyW
+	KeyX = input.KeyX
+	KeyY = input.KeyY
+	KeyZ = input.KeyZ
+
+	Key1 = input.Key1
+	Key2 = input.Key2
+	Key3 = input.Key3
+	Key4 = input.Key4
+	Key5 = input.Key5
+	Key6 = input.Key6
+	Key7 = input.Key7
+	Key8 = input.Key8
+	Key9 = input.Key9
+	Key0 = input.Key0
+
+	KeyUp    = input.KeyUp
+	KeyLeft  = input.KeyLeft
+	KeyRight = input.KeyRight
+	KeyDown  = input.KeyDown
+
+	KeyEscape    = input.KeyEscape
+	KeyBackspace = input.KeyBackspace
+	KeyTab       = input.KeyTab
+	KeyEnter     = input.KeyEnter
+	KeySpace     = input.KeySpace
+
+	KeyLeftShift    = input.KeyLeftShift
+	KeyRightShift   = input.KeyRightShift
+	KeyLeftControl  = input.KeyLeftControl
+	KeyRightControl = input.KeyRightControl
+	KeyLeftAlt      = input.KeyLeftAlt
+	KeyRightAlt     = input.KeyRightAlt
+
+	KeyF1  = input.KeyF1
+	KeyF2  = input.KeyF2
+	KeyF3  = input.KeyF3
+	KeyF4  = input.KeyF4
+	KeyF5  = input.KeyF5
+	KeyF6  = input.KeyF6
+	KeyF7  = input.KeyF7
+	KeyF8  = input.KeyF8
+	KeyF9  = input.KeyF9
+	KeyF10 = input.KeyF10
+	KeyF11 = input.KeyF11
+	KeyF12 = input.KeyF12
+
+	KeyHome     = input.KeyHome
+	KeyEnd      = input.KeyEnd
+	KeyPageUp   = input.KeyPageUp
+	KeyPageDown = input.KeyPageDown
+	KeyInsert   = input.KeyInsert
+	KeyDelete   = input.KeyDelete
+)
+
 // Sheet est une page de pixels dans laquelle les quads puisent, ligne par ligne et
 // sans remplissage : le pixel (x, y) est à l'index y×Width + x.
 //

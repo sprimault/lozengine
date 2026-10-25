@@ -125,3 +125,57 @@ func TestFrameDoesNotAllocate(t *testing.T) {
 		t.Errorf("allocations : %v, attendu aucune", n)
 	}
 }
+
+// TestBriefPressSurvivesItsStep garde le défaut qui a fait croire, à la vérification
+// manuelle du premier backend, qu'une touche sur deux ne répondait pas.
+//
+// À soixante images par seconde un pas dure seize millisecondes, et un appui ordinaire
+// est plus court une fois sur deux : son appui et son relâchement arrivent alors dans
+// la même poignée de messages. Si le pas ne lisait que l'état final, les deux
+// s'annuleraient et il ne verrait rien.
+func TestBriefPressSurvivesItsStep(t *testing.T) {
+	var state State
+
+	state.Press(keyA)
+	state.Release(keyA)
+
+	frame := state.Frame()
+	if !frame.Held(keyA) {
+		t.Error("un appui plus court qu'un pas n'est pas tenu pendant ce pas")
+	}
+	if !frame.JustPressed(keyA) {
+		t.Error("un appui plus court qu'un pas n'est pas monté")
+	}
+}
+
+// TestBriefPressLastsOneStepOnly vérifie l'autre moitié : la trace d'un appui bref ne
+// survit pas au pas suivant, sans quoi une touche relâchée resterait tenue pour
+// toujours.
+func TestBriefPressLastsOneStepOnly(t *testing.T) {
+	var state State
+
+	state.Press(keyA)
+	state.Release(keyA)
+	state.Frame()
+
+	frame := state.Frame()
+	if frame.Held(keyA) {
+		t.Error("la touche est encore tenue au pas suivant")
+	}
+	if frame.JustPressed(keyA) {
+		t.Error("la touche est encore montée au pas suivant")
+	}
+}
+
+// TestForgetClearsTheBriefPress vérifie que l'oubli emporte aussi la trace : une touche
+// enfoncée juste avant une perte de focus ne doit pas se présenter au pas suivant.
+func TestForgetClearsTheBriefPress(t *testing.T) {
+	var state State
+
+	state.Press(keyA)
+	state.Forget()
+
+	if frame := state.Frame(); frame.Held(keyA) || frame.JustPressed(keyA) {
+		t.Error("l'appui a survécu à l'oubli")
+	}
+}

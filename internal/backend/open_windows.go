@@ -57,7 +57,12 @@ func Open(o Options) (Window, error) {
 	// est la fenêtre entière.
 	outerW, outerH := outerSize(o.Width, o.Height, wsOverlappedWindow)
 
-	w := &window{lastW: o.Width, lastH: o.Height}
+	w := &window{
+		lastW: o.Width,
+		lastH: o.Height,
+		info:  newBitmapInfo(),
+		args:  newPresentArgs(),
+	}
 
 	hwnd, _, err := createWindowExW.Call(
 		0,
