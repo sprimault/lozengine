@@ -202,7 +202,8 @@ internal/tri          retrait hors image, clé, départage        geometrie, sce
 rendu                 structures Quad et Rendu, publiques       aucune
 raster                planches, atlas, rastériseur, PNG         rendu
 internal/apparence    interface fournisseur, animation          geometrie, rendu
-internal/backend/…    fenêtre, entrées, présentation            rendu
+entree                touches, état du clavier                  aucune
+internal/backend/…    contrat de fenêtre, familles, présentation  entree, rendu
 internal/audio        mixeur et sorties système                 aucune
 internal/visionneuse  scènes scriptées, rejeu, images           tous les précédents
 cmd/visionneuse       commande de rejeu                         visionneuse
