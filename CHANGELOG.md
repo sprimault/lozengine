@@ -45,6 +45,11 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.3.0] — 2026-10-25 — Jalon 2 · Backend Windows
+
+Un jeu s'écrit, mais sous Windows seulement : Linux par X11 est le jalon 3, le navigateur
+le jalon 5. Ailleurs le moteur se compile et calcule ses images, et rien ne les affiche.
+
 ### Ajouté
 
 - `Input` dit ce que le clavier tient à une image et ce qui vient d'être enfoncé, par

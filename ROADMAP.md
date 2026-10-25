@@ -3,9 +3,9 @@
 Moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance. Rendu
 logiciel. Cibles : Windows, Linux et le navigateur en WebAssembly.
 
-État : jalon 1 franchi, jalon 2 pas encore ouvert. Le moteur décrit une scène, en ordonne le
-dessin et la rend hors écran, où sa suite de non-régression compare chaque image à une
-référence. Seule la projection est publiée, et il n'a pas de fenêtre.
+État : jalon 2 franchi, jalon 3 pas encore ouvert. Un jeu s'écrit : le moteur ouvre une
+fenêtre, lit le clavier, tient une boucle à pas fixe et n'attend du jeu qu'une seule
+méthode. Sous Windows uniquement — Linux et le navigateur viennent aux jalons 3 et 5.
 
 ## Jalons
 
@@ -36,7 +36,14 @@ de tri, l'échelle du facteur entier.
 
 La boucle s'appuie sur une étape appelable, qu'un hôte pilote lui-même.
 
-Fin : un exemple de moins de 30 lignes affiche une grille et un personnage déplaçable.
+Fin : un exemple affiche une grille et un personnage déplaçable, et le hello world tient
+en moins de 30 lignes.
+
+Deux exigences et non une, parce qu'elles mesurent deux choses : la première dit que la
+chaîne entière tourne, la seconde que les valeurs par défaut suffisent à démarrer. Les
+fondre en demanderait une troisième que personne ne voulait — un déplacement aux quatre
+directions coûte à lui seul seize lignes, et c'est de la logique de jeu que le moteur
+n'a pas le droit d'écrire à la place du jeu.
 
 ### 3 · Backend Linux par X11
 

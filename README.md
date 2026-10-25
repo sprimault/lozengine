@@ -108,10 +108,14 @@ loop: a host game already has its own and will not give up its main thread.
 
 ## Status
 
-**Milestone 1 reached.** The engine describes a scene, orders its drawing and
-renders it off-screen, where its regression suite compares every frame against a
-reference. But none of that is reachable from the outside yet — only the projection is
-published —, it has no window, and nothing in it is enough to write a game.
+**Milestone 2 reached.** A game can be written. The engine opens a window, reads the
+keyboard, holds a fixed-step loop and expects a single method from the game: describe
+its scene, the engine taking care of draw order and scale. Its regression suite still
+compares every frame against a reference, headless.
+
+**On Windows only.** Linux through X11 is milestone 3, the browser milestone 5: on any
+other platform the engine builds and computes its frames, but nothing displays them yet.
+`make example` opens the smaller of the two examples.
 
 A release marks every milestone reached, but **no signature is frozen**: they may
 change with every minor until milestone 9, where validation by a second game
