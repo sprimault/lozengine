@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La suite ordonnée des quads d'une image. Un tableau nu, parce qu'un hôte la reçoit
+// par pointeur et longueur.
+
 package render
 
 // DrawList est la suite ordonnée des quads d'une image : l'ordre du tableau est

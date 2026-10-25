@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Les quatre quarts de tour sur une grille rectangulaire — un carré cacherait une
+// confusion entre les deux côtés — et le recadrage qui suit une rotation.
+
 package scene
 
 import (
@@ -94,7 +97,7 @@ func TestFocusCentersTheTarget(t *testing.T) {
 //
 // Sans cela, la scène pivoterait sous une origine restée en place et le point suivi
 // partirait hors de l'image — un défaut qu'on ne voit qu'en tournant, c'est-à-dire
-// rarement, et jamais dans cohue qui n'a aucune orientation.
+// rarement.
 func TestRotationReframes(t *testing.T) {
 	s := testRectangle(t)
 	s.Focus(2, 3, 100, 60)

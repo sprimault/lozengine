@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'état que le backend tient d'une image à l'autre, et dont il dérive le front
+// montant en comparant avec l'image précédente. C'est le côté écriture du clavier,
+// celui qu'un jeu ne voit pas.
+
 package input
 
 // State accumule ce qu'un backend relève du clavier, et en tire les entrées d'une

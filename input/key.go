@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La touche désignée par sa place sur le clavier, et le découpage en mots de
+// soixante-quatre bits qui tient cinq cent douze places sans rien allouer.
+
 package input
 
 // Key désigne une place sur le clavier, et non le caractère qu'elle produit.

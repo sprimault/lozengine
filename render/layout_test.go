@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que l'exposition à l'ABI rend irrévocable : la taille et la position de chaque
+// champ d'un quad, la contiguïté de la liste, et les deux valeurs qu'un hôte compare
+// sans lire notre documentation.
+
 package render
 
 import (

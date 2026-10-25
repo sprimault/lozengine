@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La couleur à alpha prémultiplié, et la teinte neutre sur laquelle le rastériseur
+// reconnaît qu'il n'a rien à moduler.
+
 package render
 
 // Color est une couleur RVBA sur quatre octets, à alpha prémultiplié.

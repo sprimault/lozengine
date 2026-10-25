@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La vue : les quatre quarts de tour, le cadrage sur un point du monde, et le
+// remappage qui fait tourner la grille sous la caméra. La matrice n'y est pour rien et
+// reste la même pour les quatre orientations.
+
 package scene
 
 // Orientation est l'un des quatre quarts de tour sous lesquels une scène se regarde.

@@ -1,6 +1,11 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La virgule fixe : seize bits de fraction sur un entier de trente-deux, et les deux
+// conversions qui entrent et sortent du format. C'est ce qui rend une même scène
+// identique au pixel près d'une architecture à l'autre, là où un flottant dépendrait
+// de la façon dont la machine fusionne un produit et une somme.
+
 package geometry
 
 import "math"

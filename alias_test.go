@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que la republication doit garantir, et qu'aucun autre test ne verrait : qu'un
+// alias désigne bien le type du noyau, qu'une enveloppe rende bien ce que la fonction
+// qu'elle cache rend, et qu'un jeu puisse tout écrire sans importer autre chose.
+
 package lozengine
 
 import (

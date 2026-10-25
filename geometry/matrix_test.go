@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que chaque constructeur promet sur son ratio, et ce que la matrice nulle fait
+// plutôt que de paniquer.
+
 package geometry
 
 import "testing"

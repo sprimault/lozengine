@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que le paquet racine republie, pour qu'un jeu n'écrive qu'un import : les types
+// par alias, qui désignent le même type sans conversion, et les fonctions par
+// enveloppe — Go n'a pas d'alias de fonction.
+
 package lozengine
 
 import (

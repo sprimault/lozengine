@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que la scène refuse et quand elle le dit, ce qu'une poignée désigne encore après
+// un retrait, et la propriété dont le budget d'une image dépend : rien n'y alloue.
+
 package scene
 
 import (

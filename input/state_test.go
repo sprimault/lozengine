@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La propriété que tout le paquet sert : un front montant dure exactement une image,
+// et la répétition automatique du système ne le réarme pas.
+
 package input
 
 import "testing"

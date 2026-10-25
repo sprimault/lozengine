@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que la valeur zéro rend, et ce qu'une touche hors plage rend plutôt que de
+// déborder de la table.
+
 package input
 
 import "testing"

@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le passage du monde à l'écran et son retour, plus la borne que la profondeur de la
+// clé de tri impose à une carte.
+
 package geometry
 
 import "math"

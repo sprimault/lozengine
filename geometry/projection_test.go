@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'aller-retour monde vers écran, la tolérance qu'il admet — l'inverse d'une matrice
+// en virgule fixe n'est pas exacte —, et les bornes que la projection sature au lieu
+// de les laisser déborder.
+
 package geometry
 
 import (

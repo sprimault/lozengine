@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La poignée qui désigne une entité : un rang et une génération dans un seul entier,
+// pour qu'une poignée gardée trop longtemps ne finisse pas par désigner l'entité qui a
+// repris sa place.
+
 package scene
 
 // Handle désigne une entité posée dans la scène, et vaut jusqu'à son retrait.
