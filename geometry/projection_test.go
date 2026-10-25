@@ -133,19 +133,19 @@ func TestRoundTripTolerance(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			var pire float64
+			var worst float64
 
 			for i := 0; i < 4000; i++ {
 				ax, ay := float64(i)*0.37, float64(i)*0.61
 				ex, ey, _, _ := c.m.Project(ax, ay, 0)
 				rx, ry := c.m.Unproject(ex, ey)
 
-				pire = max(pire, math.Abs(rx-ax), math.Abs(ry-ay))
+				worst = max(worst, math.Abs(rx-ax), math.Abs(ry-ay))
 			}
 
-			t.Logf("écart maximal : %.6f cellule", pire)
-			if pire > quantum {
-				t.Errorf("écart de %.6f cellule, au-delà du quantum de %g", pire, quantum)
+			t.Logf("écart maximal : %.6f cellule", worst)
+			if worst > quantum {
+				t.Errorf("écart de %.6f cellule, au-delà du quantum de %g", worst, quantum)
 			}
 		})
 	}
@@ -155,26 +155,26 @@ func TestRoundTripTolerance(t *testing.T) {
 // trouvera, pour toute position de la vue : un relevé qui n'alloue pas déborderait
 // sinon, et c'est ce que la signature sert à empêcher.
 func TestMaxCellsIsAnUpperBound(t *testing.T) {
-	const largeur, hauteur = 480, 270
+	const width, height = 480, 270
 
 	m := Dimetric(32, 16)
-	majorant := m.MaxCells(largeur, hauteur)
+	upperBound := m.MaxCells(width, height)
 
 	// Le relevé réel, pour quelques positions de vue : l'englobant en cellules des
 	// quatre coins du tampon, comme le relevé des cellules visibles le calculera.
-	for _, origine := range [][2]int32{{0, 0}, {7, 3}, {1000, -500}, {-13, 9999}} {
+	for _, origin := range [][2]int32{{0, 0}, {7, 3}, {1000, -500}, {-13, 9999}} {
 		minX, minY := math.MaxFloat64, math.MaxFloat64
 		maxX, maxY := -math.MaxFloat64, -math.MaxFloat64
 
-		for _, coin := range [4][2]int32{{0, 0}, {largeur, 0}, {0, hauteur}, {largeur, hauteur}} {
-			x, y := m.Unproject(origine[0]+coin[0], origine[1]+coin[1])
+		for _, corner := range [4][2]int32{{0, 0}, {width, 0}, {0, height}, {width, height}} {
+			x, y := m.Unproject(origin[0]+corner[0], origin[1]+corner[1])
 			minX, maxX = min(minX, x), max(maxX, x)
 			minY, maxY = min(minY, y), max(maxY, y)
 		}
 
-		cote := (int(maxX) - int(minX) + 1) * (int(maxY) - int(minY) + 1)
-		if cote > majorant {
-			t.Errorf("vue en (%d, %d) : %d cellules relevées, majorant %d", origine[0], origine[1], cote, majorant)
+		cells := (int(maxX) - int(minX) + 1) * (int(maxY) - int(minY) + 1)
+		if cells > upperBound {
+			t.Errorf("vue en (%d, %d) : %d cellules relevées, majorant %d", origin[0], origin[1], cells, upperBound)
 		}
 	}
 }
@@ -185,10 +185,10 @@ func TestMaxCellsIsAnUpperBound(t *testing.T) {
 func TestUnprojectClampsItsInput(t *testing.T) {
 	m := Dimetric(32, 16)
 
-	loin, _ := m.Unproject(math.MaxInt32, 0)
-	borne, _ := m.Unproject(m.span, 0)
+	far, _ := m.Unproject(math.MaxInt32, 0)
+	bound, _ := m.Unproject(m.span, 0)
 
-	if loin != borne {
-		t.Errorf("l'entrée extrême rend %g, la borne %g", loin, borne)
+	if far != bound {
+		t.Errorf("l'entrée extrême rend %g, la borne %g", far, bound)
 	}
 }

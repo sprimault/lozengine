@@ -57,7 +57,7 @@ const (
 	// MirrorY lit la source de bas en haut.
 	MirrorY = render.MirrorY
 
-	// Flat peint le rectangle en Teinte sans lire aucune source.
+	// Flat peint le rectangle en Tint sans lire aucune source.
 	Flat = render.Flat
 )
 
@@ -177,7 +177,7 @@ func LoadSheet(r io.Reader) (Sheet, error) { return raster.LoadSheet(r) }
 // Une scène se décrit, elle ne se dessine pas. Rien ici ne place quoi que ce soit à
 // l'écran : c'est ce qui permet au moteur de décider de l'ordre de dessin au lieu de le
 // demander au jeu, et c'est tout ce qu'une scène décrite rapporte. Elle s'obtient de
-// [NouvelleScene] et s'emploie par ses méthodes.
+// [NewScene] et s'emploie par ses méthodes.
 //
 // Deux chemins, parce que deux coûts. Le décor se pose par cellule et ne se relit que
 // sur la fenêtre visible, donc une carte de cinq cents cellules de côté coûte autant
@@ -185,7 +185,7 @@ func LoadSheet(r io.Reader) (Sheet, error) { return raster.LoadSheet(r) }
 // l'image.
 type Scene = scene.Scene
 
-// Entite est un aspect posé à un point du monde.
+// Entity est un aspect posé à un point du monde.
 //
 // Les coordonnées sont des cellules et elles sont flottantes : une entité se tient en
 // x = 3,5 sans que rien ne l'arrondisse. z est la hauteur au-dessus du sol et reste un

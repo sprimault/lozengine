@@ -13,22 +13,22 @@ import "testing"
 // nombreuse est refusée au chargement — alors que celle-ci n'a aucune forme visible :
 // la part inatteignable du tampon reçoit les quads lointains repliés.
 func TestNewBufferRefusesBeyondTheLimit(t *testing.T) {
-	cas := []struct {
-		nom              string
-		largeur, hauteur uint16
+	cases := []struct {
+		name          string
+		width, height uint16
 	}{
 		{"largeur", MaxBufferSide + 1, 1},
 		{"hauteur", 1, MaxBufferSide + 1},
 	}
-	for _, c := range cas {
-		t.Run(c.nom, func(t *testing.T) {
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
 			defer func() {
 				if recover() == nil {
-					t.Errorf("tampon de %d×%d accepté", c.largeur, c.hauteur)
+					t.Errorf("tampon de %d×%d accepté", c.width, c.height)
 				}
 			}()
 
-			NewBuffer(c.largeur, c.hauteur)
+			NewBuffer(c.width, c.height)
 		})
 	}
 }
@@ -37,22 +37,22 @@ func TestNewBufferRefusesBeyondTheLimit(t *testing.T) {
 // la manger. Un hors-par-un ici retirerait une colonne au plus grand tampon possible,
 // et aucun autre cas ne le verrait.
 func TestNewBufferAcceptsTheLimit(t *testing.T) {
-	tampon := NewBuffer(MaxBufferSide, 1)
+	buffer := NewBuffer(MaxBufferSide, 1)
 
-	if len(tampon.Pixels) != MaxBufferSide {
-		t.Errorf("pixels : %d, attendu %d", len(tampon.Pixels), MaxBufferSide)
+	if len(buffer.Pixels) != MaxBufferSide {
+		t.Errorf("pixels : %d, attendu %d", len(buffer.Pixels), MaxBufferSide)
 	}
 }
 
 // TestNewBufferIsTransparent vérifie que l'image part transparente : un hôte qui
 // n'écrit rien reçoit une valeur zéro, et c'est sur elle que le rastériseur efface.
 func TestNewBufferIsTransparent(t *testing.T) {
-	tampon := NewBuffer(2, 2)
+	buffer := NewBuffer(2, 2)
 
-	if len(tampon.Pixels) != 4 {
-		t.Fatalf("pixels : %d, attendu 4", len(tampon.Pixels))
+	if len(buffer.Pixels) != 4 {
+		t.Fatalf("pixels : %d, attendu 4", len(buffer.Pixels))
 	}
-	for i, got := range tampon.Pixels {
+	for i, got := range buffer.Pixels {
 		if got != (Color{}) {
 			t.Errorf("pixel %d : %v, attendu transparent", i, got)
 		}

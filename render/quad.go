@@ -19,7 +19,7 @@ const (
 	// MirrorY lit la source de bas en haut.
 	MirrorY
 
-	// Flat peint le rectangle en Teinte sans lire aucune source ; Planche,
+	// Flat peint le rectangle en Tint sans lire aucune source ; Sheet,
 	// SourceX et SourceY sont alors ignorés.
 	//
 	// Sans lui, un panneau d'interface ou un fondu au noir demanderait d'étirer
@@ -30,7 +30,7 @@ const (
 )
 
 // MaxSheets est le nombre de planches qu'un atlas peut porter, donc la plus grande
-// valeur que le champ Planche d'un [Quad] puisse désigner.
+// valeur que le champ Sheet d'un [Quad] puisse désigner.
 //
 // Elle vit ici parce que deux paquets doivent la respecter sans pouvoir s'atteindre :
 // celui qui range les planches, qui refuse la mille vingt-cinquième au chargement, et
@@ -43,7 +43,7 @@ const (
 // hôte qui construit un atlas doit la connaître —, pas un détail de format.
 const MaxSheets = 1 << 10
 
-// MaxLayer et MaxFloor sont les plus grandes valeurs que les champs Couche et Etage
+// MaxLayer et MaxFloor sont les plus grandes valeurs que les champs Layer et Floor
 // d'une chose à peindre puissent porter : seize couches et soixante-quatre étages.
 //
 // Elles sortent ici pour la raison qui fait sortir [MaxSheets], et pour une de plus :
@@ -77,10 +77,10 @@ const MaxSide = 32768
 //
 // Tout converge ici et rien n'en sort — les fonctions de confort produisent des
 // quads, jamais un second chemin de dessin. Un quad ne porte pas sa clé de tri :
-// un Rendu est ordonné par construction, et la répartition des bits de la clé n'a
+// une DrawList est ordonnée par construction, et la répartition des bits de la clé n'a
 // pas à traverser la frontière C, où elle deviendrait irrévocable.
 //
-// Teinte multiplie la source composante par composante, 255 étant neutre, et son
+// Tint multiplie la source composante par composante, 255 étant neutre, et son
 // alpha multiplie en plus l'opacité. À blanc opaque, le rastériseur retombe sur
 // la copie directe : la modulation se décide une fois par quad et non par pixel.
 //

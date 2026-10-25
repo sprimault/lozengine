@@ -27,7 +27,7 @@ type run struct {
 	kind  kind
 }
 
-// encoder calcule les séquences de chaque ligne de la planche.
+// encode calcule les séquences de chaque ligne de la planche.
 //
 // Le gain n'est pas d'éviter un test d'alpha par pixel, mais de donner au blit des
 // segments sur lesquels il peut travailler en bloc : un saut n'écrit rien, une
