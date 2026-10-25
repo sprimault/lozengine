@@ -10,7 +10,7 @@ import (
 	"github.com/sprimault/lozengine/rendu"
 )
 
-// BenchmarkChangerDeDirection mesure le second critère de contrôle du projet : huit
+// BenchmarkChangeDirection mesure le second critère de contrôle du projet : huit
 // cents entités de six types changent de direction sur la même image.
 //
 // Changer de direction, pour une scène, c'est rhabiller une entité — la position ne
@@ -22,10 +22,10 @@ import (
 // cher à rhabiller qu'à déplacer, pour des tailles voisines — l'écart n'est donc pas
 // expliqué, et il ne vaut pas d'être cherché tant que les deux restent sous le
 // centième d'une image.
-func BenchmarkChangerDeDirection(b *testing.B) {
-	const entites = 800
+func BenchmarkChangeDirection(b *testing.B) {
+	const entities = 800
 
-	s, err := Nouvelle(64, 64, geometry.Dimetric(32, 16), Options{Entites: entites})
+	s, err := New(64, 64, geometry.Dimetric(32, 16), Options{Entities: entities})
 	if err != nil {
 		b.Fatalf("montage : %v", err)
 	}
@@ -35,17 +35,17 @@ func BenchmarkChangerDeDirection(b *testing.B) {
 	types := make([]Aspect, 6)
 	for i := range types {
 		types[i] = Aspect{
-			Planche: uint16(i), Largeur: 12, Hauteur: 24, Teinte: rendu.Blanc(),
+			Sheet: uint16(i), Width: 12, Height: 24, Tint: rendu.Blanc(),
 		}
 	}
 
-	poignees := make([]Poignee, 0, entites)
-	for i := range entites {
-		p, ok := s.Poser(Entite{X: float64(i % 64), Y: float64(i / 64), Aspect: types[i%6]})
+	handles := make([]Handle, 0, entities)
+	for i := range entities {
+		p, ok := s.Place(Entity{X: float64(i % 64), Y: float64(i / 64), Aspect: types[i%6]})
 		if !ok {
 			b.Fatalf("entité %d refusée", i)
 		}
-		poignees = append(poignees, p)
+		handles = append(handles, p)
 	}
 
 	b.Run("rhabiller", func(b *testing.B) {
@@ -53,8 +53,8 @@ func BenchmarkChangerDeDirection(b *testing.B) {
 		b.ResetTimer()
 
 		for n := range b.N {
-			for i, p := range poignees {
-				s.Habiller(p, types[(i+n)%6])
+			for i, p := range handles {
+				s.SetAspect(p, types[(i+n)%6])
 			}
 		}
 	})
@@ -64,8 +64,8 @@ func BenchmarkChangerDeDirection(b *testing.B) {
 		b.ResetTimer()
 
 		for n := range b.N {
-			for i, p := range poignees {
-				s.Deplacer(p, float64(i%64)+float64(n%2)*0.5, float64(i/64), 0)
+			for i, p := range handles {
+				s.Move(p, float64(i%64)+float64(n%2)*0.5, float64(i/64), 0)
 			}
 		}
 	})

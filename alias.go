@@ -68,14 +68,14 @@ const (
 	EtageMax  = rendu.EtageMax
 )
 
-// CoteMax est le plus grand côté qu'une grille de scène puisse avoir, en cellules, et
-// StratesMax le nombre de choses qu'une cellule peut empiler.
+// MaxSide est le plus grand côté qu'une grille de scène puisse avoir, en cellules, et
+// MaxTiers le nombre de choses qu'une cellule peut empiler.
 //
-// [NouvelleScene] et [Scene.PoserCellule] refusent au-delà. Les lire évite d'avoir à
-// essayer pour le savoir.
+// [NewScene] et [Scene.PlaceCell] refusent au-delà. Les lire évite d'avoir à essayer
+// pour le savoir.
 const (
-	CoteMax    = rendu.CoteMax
-	StratesMax = scene.StratesMax
+	MaxSide  = rendu.CoteMax
+	MaxTiers = scene.MaxTiers
 )
 
 // Blanc rend la teinte neutre, celle qui laisse la source intacte.
@@ -186,7 +186,7 @@ type Scene = scene.Scene
 // Les coordonnées sont des cellules et elles sont flottantes : une entité se tient en
 // x = 3,5 sans que rien ne l'arrondisse. z est la hauteur au-dessus du sol et reste un
 // champ à part, que l'écran retranche de l'ordonnée.
-type Entite = scene.Entite
+type Entity = scene.Entity
 
 // Aspect est ce qu'une chose montre : de quoi remplir un quad, sans dire où.
 //
@@ -195,9 +195,9 @@ type Entite = scene.Entite
 // donc une chose qu'on veut voir porte [Blanc] ou une teinte explicite.
 type Aspect = scene.Aspect
 
-// Poignee désigne une entité posée, et lui reste fidèle quand le retrait d'une autre la
+// Handle désigne une entité posée, et lui reste fidèle quand le retrait d'une autre la
 // déplace dans la scène. Sa valeur zéro ne désigne rien.
-type Poignee = scene.Poignee
+type Handle = scene.Handle
 
 // Orientation est l'un des quatre quarts de tour sous lesquels la vue présente la
 // grille. Quatre et non un angle libre : une apparence est dessinée pour un nombre
@@ -205,29 +205,29 @@ type Poignee = scene.Poignee
 type Orientation = scene.Orientation
 
 const (
-	// SansRotation présente la grille telle que le jeu l'a posée.
-	SansRotation = scene.SansRotation
+	// NoRotation présente la grille telle que le jeu l'a posée.
+	NoRotation = scene.NoRotation
 
-	// UnQuart, DemiTour et TroisQuarts sont les trois autres quarts de tour, dans le
-	// sens où la grille pivote sous la vue.
-	UnQuart     = scene.UnQuart
-	DemiTour    = scene.DemiTour
-	TroisQuarts = scene.TroisQuarts
+	// QuarterTurn, HalfTurn et ThreeQuarters sont les trois autres quarts de tour,
+	// dans le sens où la grille pivote sous la vue.
+	QuarterTurn   = scene.QuarterTurn
+	HalfTurn      = scene.HalfTurn
+	ThreeQuarters = scene.ThreeQuarters
 )
 
-// OptionsScene porte ce qu'une scène admet de régler, et sa valeur zéro convient.
+// SceneOptions porte ce qu'une scène admet de régler, et sa valeur zéro convient.
 //
 // Le nom est qualifié parce que la boucle a les siennes : deux structures d'options
 // dont une seule serait nommée sans suffixe laisseraient deviner laquelle.
-type OptionsScene = scene.Options
+type SceneOptions = scene.Options
 
-// NouvelleScene monte une scène sur une grille et une projection.
+// NewScene monte une scène sur une grille et une projection.
 //
 // La projection est obligatoire et n'est pas vérifiée : sa valeur zéro projette tout
 // sur l'origine, ce que sa propre documentation annonce comme l'échec visible.
 //
 // C'est le seul moment où une scène rend une erreur. Passé ce point, plus rien sur le
 // chemin d'une image n'en rend, parce qu'une image n'a nulle part où la mettre.
-func NouvelleScene(largeur, hauteur int, projection Matrice, o OptionsScene) (*Scene, error) {
-	return scene.Nouvelle(largeur, hauteur, projection, o)
+func NewScene(width, height int, projection Matrice, o SceneOptions) (*Scene, error) {
+	return scene.New(width, height, projection, o)
 }
