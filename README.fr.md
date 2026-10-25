@@ -108,10 +108,14 @@ principal.
 
 ## État
 
-**Jalon 1 franchi.** Le moteur décrit une scène, en ordonne le dessin et la rend hors
-écran, où sa suite de non-régression compare chaque image à une référence. Mais rien de
-tout cela ne s'atteint encore de l'extérieur — seule la projection est publiée —, il
-n'a pas de fenêtre, et rien n'y suffit à écrire un jeu.
+**Jalon 2 franchi.** Un jeu s'écrit. Le moteur ouvre une fenêtre, lit le clavier, tient
+une boucle à pas fixe et n'attend du jeu qu'une seule méthode : décrire sa scène, lui se
+chargeant de l'ordre de dessin et de l'échelle. Sa suite de non-régression continue de
+comparer chaque image à une référence, sans écran.
+
+**Sous Windows uniquement.** Linux par X11 est le jalon 3, le navigateur le jalon 5 : sur
+toute autre plateforme le moteur se compile et calcule ses images, mais rien ne les
+affiche encore. `make example` ouvre le plus petit des deux exemples.
 
 Une version marque chaque jalon franchi, mais **aucune signature n'est figée** :
 elles peuvent changer à chaque mineure jusqu'au jalon 9, où la validation du
