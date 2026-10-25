@@ -8,10 +8,11 @@ décisions d'architecture.
 
 - Commentaires, godoc et libellés de cas de test : français. Messages d'erreur : anglais,
   parce qu'un message se colle dans un rapport de bug.
-- Identifiants, noms de fichiers et de répertoires : français par défaut.
-  L'anglais est admis quand c'est le terme technique naturel et sans équivalent
-  usuel courant — `atlas`, `sprite`, `buffer`. Ne pas franciser de force ce que
-  personne n'appelle autrement.
+- Identifiants, noms de fichiers et de répertoires : anglais, tous. Répertoires,
+  fichiers, paquets, types, fonctions, champs, locales, paramètres, noms de tests :
+  `geometry`, `Project`, `DrawList`, `Anchor`. Une godoc explique ce que fait une
+  fonction, donc la fonction se nomme dans la langue du code, et le moteur est
+  destiné à des projets qui ne sont pas les miens.
 - Chaque type et chaque fonction exportés portent un godoc en français,
   commençant par le nom de ce qu'ils déclarent.
 - **Bilingue, français et anglais** : ce qui s'adresse à quelqu'un qui ne connaît
@@ -190,6 +191,12 @@ Un défaut de rendu qui n'a pas laissé de scénario derrière lui reviendra.
   cycles.
 - Tables de cas, sans bibliothèque d'assertions — la règle de dépendance vaut
   aussi pour les tests.
+
+Un test à part garde la convention de langue : il lit l'arbre syntaxique de chaque
+fichier du dépôt et refuse les mots français qu'un identifiant a déjà portés. Il lit
+l'arbre et non le texte parce que les commentaires, eux, restent en français, et
+qu'une chaîne peut porter de la prose sur plusieurs lignes. Ce qu'il n'attrape pas :
+un mot français inédit — sa liste s'allonge le jour où l'on en retire un du code.
 
 ### Bancs d'essai
 
