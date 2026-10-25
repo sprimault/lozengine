@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'agrandissement vers la fenêtre : un facteur entier, et des bandes autour quand la
+// taille ne tombe pas juste. Jamais de mise à l'échelle fractionnaire, qui brouillerait
+// des pixels dessinés un par un.
+
 package raster
 
 import "github.com/sprimault/lozengine/render"

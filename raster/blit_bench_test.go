@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Les quatre étapes d'une image mesurées séparément, et leur part d'un budget à
+// soixante images par seconde sur une machine modeste. C'est ce rapport qui décide
+// qu'on optimise ou non, jamais la mesure brute de la machine qui mesure.
+
 package raster
 
 import (

@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que l'effacement doit laisser derrière lui — rien du dessin précédent — et les
+// deux cas qui cassent un remplissage par doublement : le tampon vide et le tampon
+// d'une seule ligne.
+
 package raster
 
 import (

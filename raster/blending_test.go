@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Les trois arrondis dont tout le rastériseur dépend : un blanc modulé par un blanc
+// doit rendre 255 et non 254, et l'alpha d'une teinte doit agir aussi sur ses
+// composantes, prémultipliées.
+
 package raster
 
 import (

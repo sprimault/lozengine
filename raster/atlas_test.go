@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'index que l'ajout rend, et le plafond qu'il refuse de dépasser : au-delà, un quad
+// ne saurait plus désigner la planche.
+
 package raster
 
 import (

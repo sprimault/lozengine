@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Les vingt-deux cas du dessin, et c'est le fichier le plus long du dépôt pour une
+// raison : chaque variante du blit — copie, modulation, mélange, aplat, miroir — a son
+// propre découpage, et un découpage faux d'un pixel ne se voit pas à l'œil.
+
 package raster
 
 import (

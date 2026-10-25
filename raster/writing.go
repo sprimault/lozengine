@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'écriture d'un tampon en PNG, et la division par l'alpha qu'elle impose — le format
+// veut des composantes non prémultipliées. C'est ce qui fait perdre un cran aux
+// couleurs à alpha partiel, et pourquoi une image de référence est opaque.
+
 package raster
 
 import (

@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La planche : les pixels d'une image chargée, et la découpe en grille qui donne les
+// rectangles d'un sprite sans recopier quoi que ce soit.
+
 package raster
 
 import (

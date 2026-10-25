@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le dessin d'une liste de quads : pour chacun, le découpage à l'image puis la recopie
+// de ses pixels. C'est le chemin le plus chaud du moteur, et le seul que la suite de
+// référence juge au pixel près.
+
 package raster
 
 import "github.com/sprimault/lozengine/render"

@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que l'encodage doit garantir au dessin : chaque ligne entièrement pavée, aucune
+// séquence qui franchisse une fin de ligne, et la nature juste pour les alphas qui
+// bordent les seuils.
+
 package raster
 
 import (

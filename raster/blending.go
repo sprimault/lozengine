@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'arithmétique d'un pixel : la multiplication arrondie, la modulation par une teinte
+// et la composition sur le fond. Quatre fonctions courtes appelées des millions de fois
+// par image, d'où l'absence de toute vérification ici.
+
 package raster
 
 import "github.com/sprimault/lozengine/render"

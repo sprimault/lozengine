@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Les cas où l'agrandissement ne tombe pas juste : une sortie plus petite que l'entrée,
+// un centrage impair, des bandes à découper. C'est là que le calcul des bornes se
+// trompe, pas sur le cas qui divise exactement.
+
 package raster
 
 import (
