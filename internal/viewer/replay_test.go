@@ -3,12 +3,14 @@
 
 // Le déterminisme dont tout le reste dépend — deux rejeux de la même image rendent les
 // mêmes pixels, et une image ne dépend pas de celle qui la précède —, puis les noms de
-// fichiers écrits et le refus d'un agrandissement qui déborde.
+// fichiers écrits, l'arrivée de chaque ligne d'entrées à son image, et le refus d'un
+// agrandissement qui déborde.
 
 package viewer
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -17,6 +19,39 @@ import (
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
 )
+
+// inputScenario rend un scénario dont l'image dépend de son entrée et non de son
+// numéro : le quad se pose à l'abscisse que la ligne dicte.
+//
+// C'est ce qui distingue [TestRunFollowsTheInputFile] de tous les autres cas du
+// paquet. [testScenario] ignore son entrée, donc un rejeu qui perdrait les lignes en
+// route y rendrait exactement les mêmes images.
+func inputScenario() Scenario {
+	return Scenario{
+		Name: "inputs", Width: 4, Height: 1, Frames: 3,
+
+		// Opaque, comme tout scénario : l'écriture d'un PNG divise par l'alpha et le
+		// rechargement remultiplie, donc une couleur à alpha partiel perdrait un cran
+		// dans l'aller-retour que ce cas fait à chaque image.
+		Background: render.Color{A: 255},
+
+		Atlas: func() (*raster.Atlas, error) {
+			p := raster.NewSheet(1, 1)
+			p.Pixels[0] = render.Color{R: 255, G: 255, B: 255, A: 255}
+
+			var atlas raster.Atlas
+			_, err := atlas.Add(p)
+			return &atlas, err
+		},
+		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {
+			x := -1
+			fmt.Sscanf(string(e), "x %d", &x)
+			return append(reserve, render.Quad{
+				X: int16(x), Width: 1, Height: 1, Tint: render.White(),
+			})
+		},
+	}
+}
 
 // testScenario rend un scénario minuscule et rapide, pour ce qui n'a pas besoin de la
 // mire : trois images, un seul quad qui se déplace d'un pixel par image.
@@ -152,6 +187,63 @@ func TestRunWritesNumberedFrames(t *testing.T) {
 	if p.Width != 4 || p.Height != 2 {
 		t.Errorf("dimensions : %d×%d, attendu 4×2", p.Width, p.Height)
 	}
+}
+
+// TestRunFollowsTheInputFile vérifie que l'image numéro N est rendue avec la ligne
+// numéro N du fichier d'entrées.
+//
+// C'est l'assemblage que rien ne couvrait, et c'est le seul chemin que la commande
+// emprunte : [InputLineAt] a ses cas, [Replay.Frame] a [TestFrameFollowsTheInput], mais
+// [Replay.Run] n'était appelé qu'avec des lignes nulles. Un décalage d'index, une borne
+// fausse ou une entrée vide passée en dur laisseraient tous les autres cas du paquet
+// verts, et le rejeu d'un fichier écrirait des images fausses en silence.
+//
+// **Les abscisses ne sont pas croissantes, et c'est ce qui rend le cas mordant.** Avec
+// « x 0, x 1, x 2 », un rejeu qui passerait le numéro d'image à la place de la ligne
+// rendrait exactement les mêmes pixels. La suite demandée est donc une permutation qui
+// ne coïncide ni avec le numéro d'image, ni avec une valeur constante.
+func TestRunFollowsTheInputFile(t *testing.T) {
+	replay, err := NewReplay(inputScenario())
+	if err != nil {
+		t.Fatalf("rejeu : %v", err)
+	}
+
+	lines := []InputLine{"x 3", "x 1", "x 2"}
+	dir := filepath.Join(t.TempDir(), "images")
+	if err := replay.Run(dir, lines, 1); err != nil {
+		t.Fatalf("rejeu : %v", err)
+	}
+
+	for frame, want := range []int{3, 1, 2} {
+		if got := litColumn(t, dir, frame); got != want {
+			t.Errorf("image %d : pixel allumé en %d, attendu %d — la ligne %q n'est pas arrivée",
+				frame, got, want, lines[frame])
+		}
+	}
+}
+
+// litColumn rend l'abscisse du pixel allumé de l'image écrite, ou -1 quand l'image
+// n'en porte aucun — ce qui est le cas si l'entrée n'est pas arrivée, le scénario
+// posant alors son quad hors de l'image.
+func litColumn(t *testing.T, dir string, frame int) int {
+	t.Helper()
+
+	file, err := os.Open(filepath.Join(dir, fmt.Sprintf("inputs-%04d.png", frame)))
+	if err != nil {
+		t.Fatalf("ouverture : %v", err)
+	}
+	defer file.Close()
+
+	p, err := raster.LoadSheet(file)
+	if err != nil {
+		t.Fatalf("rechargement : %v", err)
+	}
+	for x, color := range p.Pixels {
+		if color.R != 0 {
+			return x
+		}
+	}
+	return -1
 }
 
 // TestWriteUpscales vérifie que le facteur agrandit le fichier écrit, et lui seul :
