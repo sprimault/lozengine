@@ -17,10 +17,10 @@ import (
 func TestReadInputLines(t *testing.T) {
 	content := `
 # le pion part du bord
-pion 0 30
+pawn 0 30
 
 # on le fige au centre, sans voile
-pion 60 30 sans-voile
+pawn 60 30 no-veil
 `
 
 	lines, err := ReadInputLines(strings.NewReader(content))
@@ -28,7 +28,7 @@ pion 60 30 sans-voile
 		t.Fatalf("lecture : %v", err)
 	}
 
-	want := []InputLine{"pion 0 30", "pion 60 30 sans-voile"}
+	want := []InputLine{"pawn 0 30", "pawn 60 30 no-veil"}
 	if len(lines) != len(want) {
 		t.Fatalf("entrées : %q, attendu %q", lines, want)
 	}

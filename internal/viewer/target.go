@@ -82,7 +82,7 @@ func Target() Scenario {
 				Sheet: 1, Tint: render.White(),
 			})
 
-			if !strings.Contains(string(e), "sans-voile") {
+			if !strings.Contains(string(e), "no-veil") {
 				quads = append(quads, render.Quad{
 					X: int16(width - 4 - frame*5), Y: 0, Width: 24, Height: height,
 					Tint: render.Color{A: 96}, Flags: render.Flat,
@@ -93,12 +93,12 @@ func Target() Scenario {
 	}
 }
 
-// pawnPosition lit la directive « pion X Y » d'une entrée.
+// pawnPosition lit la directive « pawn X Y » d'une entrée.
 //
 // Une position absolue et non un déplacement : un scénario doit rester une fonction
 // pure de son numéro d'image, donc rien ne s'accumule d'une image à la suivante.
 func pawnPosition(e InputLine) (x, y int, ok bool) {
-	if _, err := fmt.Sscanf(string(e), "pion %d %d", &x, &y); err != nil {
+	if _, err := fmt.Sscanf(string(e), "pawn %d %d", &x, &y); err != nil {
 		return 0, 0, false
 	}
 	return x, y, true

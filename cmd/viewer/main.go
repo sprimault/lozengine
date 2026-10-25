@@ -3,7 +3,7 @@
 
 // La commande viewer rejoue un scénario scripté et en écrit les images.
 //
-//	viewer -scenario target -facteur 4 -sortie .tmp/images
+//	viewer -scenario target -factor 4 -out .tmp/images
 //
 // Elle n'ouvre aucune fenêtre : le moteur n'a pas encore de backend, et la suite de
 // non-régression se juge sur des fichiers. Les images sont numérotées, donc une
@@ -22,16 +22,17 @@ import (
 
 // main lit les drapeaux de la ligne de commande et rejoue le scénario demandé.
 //
-// Les drapeaux restent en français : c'est ce qu'une personne tape, et leur aide
-// l'est aussi. Tout le travail est dans run ; ce qui reste ici est la traduction des
-// drapeaux et le code de sortie, pour qu'un échec se voie depuis un script au lieu de
-// se lire dans la sortie.
+// Les drapeaux sont en anglais et leur aide en français, comme les outils de la chaîne
+// Go eux-mêmes. Ce qui tranche : un drapeau est un nom, et la règle du dépôt veut les
+// noms en anglais, là que l'aide est une phrase et s'adresse à qui la lit. Tout le
+// travail est dans run ; ce qui reste ici est la traduction des drapeaux et le code de
+// sortie, pour qu'un échec se voie depuis un script au lieu de se lire dans la sortie.
 func main() {
 	name := flag.String("scenario", "target", "scénario à rejouer, parmi "+strings.Join(viewer.Names(), ", "))
-	dir := flag.String("sortie", filepath.Join(".tmp", "images"), "répertoire des images écrites")
-	factor := flag.Int("facteur", 1, "facteur d'agrandissement entier des images écrites")
-	frames := flag.Int("images", 0, "nombre d'images, 0 pour celui du scénario")
-	path := flag.String("entrees", "", "fichier d'entrées simulées, une ligne par image")
+	dir := flag.String("out", filepath.Join(".tmp", "images"), "répertoire des images écrites")
+	factor := flag.Int("factor", 1, "facteur d'agrandissement entier des images écrites")
+	frames := flag.Int("frames", 0, "nombre d'images, 0 pour celui du scénario")
+	path := flag.String("inputs", "", "fichier d'entrées simulées, une ligne par image")
 	flag.Parse()
 
 	if err := run(*name, *dir, *path, *factor, *frames); err != nil {

@@ -43,7 +43,7 @@ func TestReadInputLinesMissingFile(t *testing.T) {
 // TestReadInputLinesFile vérifie qu'une ligne du fichier devient une entrée d'image.
 func TestReadInputLinesFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "lines.txt")
-	if err := os.WriteFile(path, []byte("sans-voile\npion 4 8\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("no-veil\npawn 4 8\n"), 0o644); err != nil {
 		t.Fatalf("écriture : %v", err)
 	}
 
@@ -54,8 +54,8 @@ func TestReadInputLinesFile(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("entrées : %d, attendu 2", len(lines))
 	}
-	if string(lines[0]) != "sans-voile" {
-		t.Errorf("première entrée : %q, attendu sans-voile", lines[0])
+	if string(lines[0]) != "no-veil" {
+		t.Errorf("première entrée : %q, attendu no-veil", lines[0])
 	}
 }
 

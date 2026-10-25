@@ -96,8 +96,8 @@ func TestFrenchIdentifiersAreDetected(t *testing.T) {
 // Le tampon reçoit la couleur : une godoc reste en français, et rien de ce commentaire
 // ne doit être relevé.
 var lines = ` + "`" + `
-# le pion part du bord
-pion 60 30 sans-voile
+# le pion part du bord, sans voile
+pawn 60 30 no-veil
 ` + "`" + `
 
 var tampon int
