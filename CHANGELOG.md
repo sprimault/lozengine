@@ -64,6 +64,9 @@ notes de publication.
   lui-même : `NewBuffer` et `MaxBufferSide` viennent avec.
 - `windows/386` entre dans les cibles vérifiées à la compilation, la famille Windows
   étant annoncée sur ses trois architectures. Cette cible **compile**, rien de plus.
+- Les touches se nomment : lettres, chiffres, flèches, modificateurs distingués à
+  gauche et à droite, fonctions et navigation. Un nom désigne une place, donc `KeyW`
+  reste la touche au-dessus de `KeyS` quelle que soit la disposition du joueur.
 
 ### Modifié
 
@@ -93,6 +96,9 @@ notes de publication.
   `NewBuffer` and `MaxBufferSide` come with it.
 - `windows/386` joins the targets verified at build time, the Windows family being
   announced for all three of its architectures. That target **compiles**, nothing more.
+- Keys have names: letters, digits, arrows, modifiers told apart left and right,
+  function and navigation keys. A name states a place, so `KeyW` stays the key above
+  `KeyS` whatever the player's layout.
 
 ### Changed
 

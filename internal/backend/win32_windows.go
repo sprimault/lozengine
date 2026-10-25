@@ -49,6 +49,11 @@ var (
 	getDC            = user32.NewProc("GetDC")
 	releaseDC        = user32.NewProc("ReleaseDC")
 
+	// Les deux que la reprise du focus emploie, pour relire ce que le clavier tient
+	// déjà. La traduction suit la disposition, ce qui est voulu ici.
+	mapVirtualKeyW   = user32.NewProc("MapVirtualKeyW")
+	getAsyncKeyState = user32.NewProc("GetAsyncKeyState")
+
 	// Dans kernel32 et non user32, ce qu'un `LazyProc` ne dit qu'à l'appel : la
 	// compilation et les tests sans écran laissaient passer l'erreur, et c'est la
 	// vérification manuelle qui l'a trouvée.
@@ -88,7 +93,23 @@ const (
 	wmSize      = 0x0005
 	wmKillFocus = 0x0008
 	wmClose     = 0x0010
+
+	// Les quatre messages de touche. Les variantes « système » arrivent quand Alt
+	// est tenu, et pour F10 seule : les ignorer laisserait un déplacement coincé dès
+	// qu'un joueur garde Alt enfoncé.
+	wmKeyDown    = 0x0100
+	wmKeyUp      = 0x0101
+	wmSysKeyDown = 0x0104
+	wmSysKeyUp   = 0x0105
+
+	// La prise de focus, par laquelle on rattrape ce qu'un doigt déjà posé n'a pas
+	// envoyé ici.
+	wmSetFocus = 0x0007
 )
+
+// mapvkVscToVkEx demande le code virtuel d'une place, préfixe des touches étendues
+// compris.
+const mapvkVscToVkEx = 3
 
 // sizeMinimized est le `wParam` de `wmSize` qui annonce la réduction. C'est par lui
 // que la minimisation se lit, et non en interrogeant la fenêtre à chaque image.
@@ -100,6 +121,46 @@ const pmRemove = 0x0001
 // dibRGBColors dit que les couleurs du DIB sont littérales, sans passer par une
 // palette.
 const dibRGBColors = 0
+
+// biBitfields dit que l'en-tête est suivi de trois masques qui disent où sont les
+// composantes, au lieu de l'ordre que le système suppose.
+//
+// C'est ce qui épargne une conversion par pixel et par image. Le moteur écrit du RVBA,
+// le rouge dans l'octet de poids faible ; `BI_RGB` ferait lire du bleu à cette place,
+// et il faudrait recopier tout le tampon en échangeant deux canaux. Vérifié en posant
+// une couleur connue par les deux voies : avec les masques, les pixels arrivent
+// justes ; sans eux, inversés.
+const biBitfields = 3
+
+// bitmapInfoFields est l'en-tête suivi de ses trois masques, tel que l'appel le lit :
+// un seul bloc, les masques juste derrière l'en-tête.
+type bitmapInfoFields struct {
+	header           bitmapInfoHeader
+	red, green, blue uint32
+}
+
+// newBitmapInfo décrit au système la disposition d'un tampon du moteur.
+//
+// Les dimensions se posent à chaque présentation, le reste ne change jamais. La
+// hauteur sera négative : le moteur compte ses lignes depuis le haut, là où un DIB les
+// compte depuis le bas par défaut, et une hauteur négative est la façon de le dire.
+func newBitmapInfo() bitmapInfoFields {
+	var info bitmapInfoFields
+
+	info.header.size = uint32(unsafe.Sizeof(info.header))
+	info.header.planes = 1
+	info.header.bitCount = 32
+	info.header.compression = biBitfields
+
+	// L'ordre des masques suit la disposition de render.Color, et un cas de test
+	// relie les deux : si la couleur du moteur changeait d'ordre, les masques
+	// mentiraient sans que rien ne s'en aperçoive à la compilation.
+	info.red = 0x000000FF
+	info.green = 0x0000FF00
+	info.blue = 0x00FF0000
+
+	return info
+}
 
 // perMonitorAwareV2 est la poignée opaque de conscience de densité la plus complète.
 //
@@ -166,6 +227,20 @@ type bitmapInfoHeader struct {
 	yPelsPerMeter int32
 	clrUsed       uint32
 	clrImportant  uint32
+}
+
+// newPresentArgs monte la liste d'arguments de la présentation, les cases qui ne
+// changent jamais étant déjà posées.
+//
+// L'ordre est celui de l'appel : contexte, coin de destination, largeur et hauteur,
+// coin de source, première ligne et nombre de lignes, pixels, description, usage des
+// couleurs. Les cases laissées à zéro le restent — la destination et la source sont
+// toujours à leur origine, puisque l'agrandissement et le centrage sont faits en
+// amont par le rastériseur.
+func newPresentArgs() []uintptr {
+	args := make([]uintptr, 12)
+	args[11] = dibRGBColors
+	return args
 }
 
 // clientSize rend les dimensions de la zone utile, en pixels.

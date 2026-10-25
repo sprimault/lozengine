@@ -23,6 +23,14 @@ package input
 type State struct {
 	held     [words]uint64
 	previous [words]uint64
+
+	// seen retient ce qui a été enfoncé depuis le pas précédent, même si le doigt
+	// s'est relevé entre-temps. Sans lui, un appui plus court qu'un pas disparaît
+	// sans trace : son appui et son relâchement arrivent dans la même poignée de
+	// messages, les deux s'annulent, et le pas ne voit rien. Relevé le 25 octobre
+	// 2026 à la vérification manuelle du backend Windows, où une touche sur deux
+	// paraissait ne pas répondre.
+	seen [words]uint64
 }
 
 // Press note qu'une touche est tenue. Le répéter est sans effet, ce qui absorbe la
@@ -31,37 +39,60 @@ type State struct {
 func (s *State) Press(k Key) {
 	if word, bit, ok := locate(k); ok {
 		s.held[word] |= bit
+		s.seen[word] |= bit
 	}
 }
 
 // Release note qu'une touche ne l'est plus. C'est le relâchement qui réarme le front
 // montant, donc une action ne se répète qu'en relevant le doigt.
+//
+// Il n'efface pas la trace de l'appui pour le pas en cours — ce qui s'est passé
+// pendant un pas appartient à ce pas, même si c'est fini quand il se calcule.
 func (s *State) Release(k Key) {
 	if word, bit, ok := locate(k); ok {
 		s.held[word] &^= bit
 	}
 }
 
-// Forget relâche tout.
+// Forget relâche tout, trace comprise.
 //
 // C'est ce qu'une fenêtre appelle en perdant le focus : le système cesse alors
 // d'envoyer les relâchements, donc une touche tenue au moment du changement le
-// resterait indéfiniment et le personnage marcherait tout seul au retour.
+// resterait indéfiniment et le personnage marcherait tout seul au retour. La trace
+// part avec, sinon l'appui perdu réapparaîtrait au pas suivant.
 func (s *State) Forget() {
 	s.held = [words]uint64{}
+	s.seen = [words]uint64{}
 }
 
 // Frame rend les entrées du pas qui commence, et arme le front montant pour le suivant.
 //
-// Une touche est montée quand elle est tenue maintenant et ne l'était pas au pas
-// précédent. Appeler deux fois pour un même pas rendrait donc des montées vides la
-// seconde fois : c'est une fois par pas, depuis la boucle, et jamais depuis le jeu.
+// **Un pas rapporte ce qui s'est passé pendant lui, et non l'état à sa fin.** Une
+// touche enfoncée puis relâchée entre deux pas y est donc tenue et montée, ce qui est
+// la seule lecture utile : à soixante images par seconde, un appui ordinaire dure
+// moins d'un pas une fois sur deux, et le perdre ferait « une touche sur deux ne
+// répond pas ».
+//
+// Une touche est montée quand elle est tenue à ce pas et ne l'était pas au précédent.
+// Appeler deux fois pour un même pas rendrait donc des montées vides la seconde fois :
+// c'est une fois par pas, depuis la boucle, et jamais depuis le jeu.
+//
+// **Ce que ce modèle ne peut pas rendre, et il faut le dire** : deux appuis de la même
+// touche dans le même pas ne font qu'une montée. Un état par pas n'a pas de quoi en
+// compter deux, et c'est le prix de l'arbitrage qui a préféré un état à une file
+// d'événements — lequel évite qu'un pas coûte selon ce qui est arrivé depuis le
+// précédent. Le cas demande de taper deux fois en moins de seize millisecondes, ce
+// qu'une main ne fait pas ; il devient atteignable quand la boucle traîne, et c'est
+// alors la boucle qu'il faut regarder. Mesuré le 25 octobre 2026 : une boucle qui
+// dort à l'aveugle au lieu de mesurer son pas rate des images, et deux tapes
+// ordinaires finissent dans la même.
 func (s *State) Frame() Input {
 	var frame Input
 	for i := range s.held {
-		frame.held[i] = s.held[i]
-		frame.edges[i] = s.held[i] &^ s.previous[i]
+		frame.held[i] = s.held[i] | s.seen[i]
+		frame.edges[i] = frame.held[i] &^ s.previous[i]
 	}
-	s.previous = s.held
+	s.previous = frame.held
+	s.seen = [words]uint64{}
 	return frame
 }
