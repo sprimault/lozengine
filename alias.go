@@ -6,6 +6,7 @@ package lozengine
 import (
 	"io"
 
+	"github.com/sprimault/lozengine/entree"
 	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/rendu"
@@ -117,6 +118,18 @@ func Grille(cote int) Matrice { return geometrie.Grille(cote) }
 // autres constructeurs n'exprime : l'abscisse écran vaut a·x + b·y et l'ordonnée
 // c·x + d·y. Sans translation, la vue étant cadrée ailleurs.
 func Brute(a, b, c, d float64) Matrice { return geometrie.Brute(a, b, c, d) }
+
+// Entrees est ce que le clavier dit à une image : les touches tenues, et celles qui
+// viennent d'être enfoncées.
+//
+// Les deux régimes n'ont pas le même usage. Enfoncee sert au déplacement, tant que la
+// touche est tenue ; Pressee sert à ce qui se consomme — tirer, ramasser, valider —, et
+// ne vaut qu'une fois par appui.
+type Entrees = entree.Entrees
+
+// Touche désigne une place sur le clavier, et non le caractère qu'elle produit : la
+// touche nommée W est celle marquée Z sur un clavier français.
+type Touche = entree.Touche
 
 // Planche est une page de pixels dans laquelle les quads puisent, ligne par ligne et
 // sans remplissage : le pixel (x, y) est à l'index y×Largeur + x.

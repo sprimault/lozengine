@@ -6,6 +6,7 @@ package lozengine
 import (
 	"testing"
 
+	"github.com/sprimault/lozengine/entree"
 	"github.com/sprimault/lozengine/geometrie"
 	"github.com/sprimault/lozengine/rendu"
 	"github.com/sprimault/lozengine/scene"
@@ -105,6 +106,23 @@ func TestOrientationsRepubliees(t *testing.T) {
 	}
 	if StratesMax != scene.StratesMax {
 		t.Errorf("StratesMax republié : %d, attendu %d", StratesMax, scene.StratesMax)
+	}
+}
+
+// TestEntreesRepubliees vérifie que l'état du clavier traverse la surface publique sans
+// conversion, et que les deux régimes se lisent depuis ce paquet seul.
+//
+// L'annotation de type explicite est le test : elle ne compile que si Entrees désigne
+// le type du noyau. Un jeu reçoit cette valeur à chaque pas, donc une enveloppe lui
+// coûterait une conversion par image.
+func TestEntreesRepubliees(t *testing.T) {
+	var etat entree.Etat
+	etat.Enfoncer(Touche(17))
+
+	var recues Entrees = etat.Image()
+	if !recues.Enfoncee(17) || !recues.Pressee(17) {
+		t.Errorf("touche tenue %v, montée %v, attendu les deux",
+			recues.Enfoncee(17), recues.Pressee(17))
 	}
 }
 
