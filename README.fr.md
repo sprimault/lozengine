@@ -134,6 +134,7 @@ La feuille de route compte douze jalons, chacun avec un critère de fin vérifia
 
 ```
 make build     # compile tous les paquets
+make example   # lance le plus petit exemple, dans une fenêtre
 make test      # la suite de non-régression, qui tourne sans écran
 make check     # ce qui doit passer avant un commit
 make frontiere # le noyau ne touche ni au système ni à un backend

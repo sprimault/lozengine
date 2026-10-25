@@ -4,6 +4,7 @@
 
 ```
 make build        # compile tous les paquets
+make example      # lance le plus petit exemple, dans une fenêtre
 make test         # la suite de non-régression, sans écran
 make check        # ce qui doit passer avant un commit
 make fmt          # échoue si un fichier n'est pas au format
@@ -21,7 +22,12 @@ make clean
 ```
 
 `PKG` restreint la portée de `test`, `bench` et `cover` à un paquet :
-`make test PKG=./raster`. `RUN` restreint `test` à un motif de nom.
+`make test PKG=./raster`. `RUN` restreint `test` à un motif de nom. `EXAMPLE` choisit
+l'exemple que `example` lance : `make example EXAMPLE=walk`.
+
+Les exemples ouvrent une fenêtre, donc aucune cible de contrôle ne les lance. Ils
+entrent en revanche dans `./...`, si bien que `build` et `cross` les compilent : un
+exemple qui cesse de compiler fait échouer `check` comme le reste.
 
 `bench` mesure un paquet à la fois et nomme ses profils d'après lui, parce que la
 chaîne Go refuse `-cpuprofile` dès qu'il y a plus d'un paquet. `references` ne

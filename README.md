@@ -134,6 +134,7 @@ The roadmap has twelve milestones, each with a verifiable completion criterion.
 
 ```
 make build     # builds every package
+make example   # runs the smallest example, in a window
 make test      # the regression suite, which runs headless
 make check     # what has to pass before a commit
 make frontiere # the core touches neither the system nor a backend
