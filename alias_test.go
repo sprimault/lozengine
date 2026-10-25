@@ -108,6 +108,36 @@ func TestOrientationsRepubliees(t *testing.T) {
 	}
 }
 
+// TestPlanchesSUtilisentDepuisLaRacine suit le chemin complet d'une image de jeu : une
+// planche, sa découpe en grille, son entrée dans un atlas, et l'index qu'un quad
+// désignera — sans rien importer d'autre que ce paquet.
+//
+// Le rectangle est comparé à un littéral, ce qui ne compile que si ses champs sont
+// atteignables depuis ici. C'est précisément ce qu'un alias vers un paquet interne ne
+// donnait pas.
+func TestPlanchesSUtilisentDepuisLaRacine(t *testing.T) {
+	planche := NouvellePlanche(64, 32)
+	if err := planche.DecouperGrille(32, 16); err != nil {
+		t.Fatalf("découpe : %v", err)
+	}
+
+	if n := len(planche.Rectangles); n != 4 {
+		t.Fatalf("%d rectangles, attendu 4", n)
+	}
+	if got := planche.Rectangles[3]; got != (Rectangle{X: 32, Y: 16, Largeur: 32, Hauteur: 16}) {
+		t.Errorf("dernière case %+v", got)
+	}
+
+	var atlas Atlas
+	index, err := atlas.Ajouter(planche)
+	if err != nil {
+		t.Fatalf("ajout à l'atlas : %v", err)
+	}
+	if index != 0 {
+		t.Errorf("index %d, attendu 0", index)
+	}
+}
+
 // TestSceneSUtiliseDepuisLaRacine vérifie qu'un jeu décrit une scène entière sans rien
 // importer d'autre que ce paquet : grille, entités, décor, caméra.
 //

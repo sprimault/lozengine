@@ -4,7 +4,10 @@
 package lozengine
 
 import (
+	"io"
+
 	"github.com/sprimault/lozengine/geometrie"
+	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/rendu"
 	"github.com/sprimault/lozengine/scene"
 )
@@ -114,6 +117,43 @@ func Grille(cote int) Matrice { return geometrie.Grille(cote) }
 // autres constructeurs n'exprime : l'abscisse écran vaut a·x + b·y et l'ordonnée
 // c·x + d·y. Sans translation, la vue étant cadrée ailleurs.
 func Brute(a, b, c, d float64) Matrice { return geometrie.Brute(a, b, c, d) }
+
+// Planche est une page de pixels dans laquelle les quads puisent, ligne par ligne et
+// sans remplissage : le pixel (x, y) est à l'index y×Largeur + x.
+//
+// Ses composantes sont prémultipliées, comme celles de [Couleur]. Son champ Rectangles
+// porte la découpe, que [Planche.DecouperGrille] remplit ou qu'on écrit à la main ;
+// vide, la planche vaut pour elle-même.
+type Planche = raster.Planche
+
+// Atlas est la suite des planches qu'un quad désigne par index.
+//
+// [Atlas.Ajouter] est le seul passage obligé avant qu'un quad puisse désigner une
+// planche : c'est là qu'elle est préparée pour le dessin, donc l'oubli n'est pas
+// possible.
+type Atlas = raster.Atlas
+
+// Rectangle est une découpe dans une planche, en pixels de celle-ci.
+//
+// Il ne voyage pas jusqu'au dessin — un quad porte déjà sa source. Il sert à qui
+// construit des quads.
+type Rectangle = raster.Rectangle
+
+// NouvellePlanche rend une planche transparente aux dimensions demandées, à remplir
+// pixel par pixel.
+//
+// C'est la seule façon d'obtenir une planche sans fichier : la retenir obligerait un
+// jeu à encoder un PNG en mémoire pour dessiner un aplat.
+func NouvellePlanche(largeur, hauteur uint16) Planche {
+	return raster.NouvellePlanche(largeur, hauteur)
+}
+
+// ChargerPlanche lit un PNG depuis un lecteur et rend une planche en alpha
+// prémultiplié.
+//
+// Un lecteur et non un chemin, ce qui sert aussi bien un fichier qu'une ressource
+// embarquée par go:embed ou une archive. Pour un chemin, [OuvrirPlanche].
+func ChargerPlanche(r io.Reader) (Planche, error) { return raster.ChargerPlanche(r) }
 
 // Scene porte une grille de décor, des entités qui s'y déplacent, et la vue par
 // laquelle on les regarde.

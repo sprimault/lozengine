@@ -200,8 +200,8 @@ geometrie             projection, matrices, conversions         aucune
 scene                 grille, entités, couches, caméra          geometrie, rendu
 internal/tri          retrait hors image, clé, départage        geometrie, scene, rendu
 rendu                 structures Quad et Rendu, publiques       aucune
-internal/raster       rastériseur logiciel, écriture PNG        rendu
-internal/apparence    interface fournisseur, atlas, animation   geometrie, rendu
+raster                planches, atlas, rastériseur, PNG         rendu
+internal/apparence    interface fournisseur, animation          geometrie, rendu
 internal/backend/…    fenêtre, entrées, présentation            rendu
 internal/audio        mixeur et sorties système                 aucune
 internal/visionneuse  scènes scriptées, rejeu, images           tous les précédents
@@ -220,10 +220,18 @@ scénario de non-régression construit une scène, la fait trier, puis la rasté
 Le paquet racine est le seul à tout connaître, et rien ne dépend de lui.
 
 **Un paquet sort d'`internal/` quand un consommateur doit lire la documentation de ses
-types, et c'est une décision, pas un rangement.** Trois y sont : `rendu`, `geometrie`
-et `scene`. Le reste — le tri, le rastériseur, les backends, la visionneuse — n'a
-aucune raison d'être lu par qui écrit un jeu, et le compilateur Go interdit de
+types, et c'est une décision, pas un rangement.** Quatre y sont : `rendu`,
+`geometrie`, `scene` et `raster`. Le reste — le tri, les backends, la visionneuse —
+n'a aucune raison d'être lu par qui écrit un jeu, et le compilateur Go interdit de
 l'importer depuis un autre module.
+
+**`raster` est sorti en entier, faute de découpe possible.** Un jeu construit ses
+planches et son atlas, donc leurs champs doivent se lire ; mais le rastériseur emploie
+deux méthodes privées de `Planche` — l'encodage des lignes qui lui donne des segments
+à traiter en bloc —, et laisser le dessin derrière aurait obligé à publier le détail de
+cette optimisation dans un type que l'ABI exposera. Les cinq fonctions de dessin sont
+donc publiques ; ce sont celles que le jalon 11 exposera de toute façon, et le paquet
+racine ne les republie pas, un jeu n'ayant pas à les appeler.
 
 **Le critère est mécanique, et il s'est vérifié deux fois.** Un type publié par alias
 ne montre rien quand il désigne un paquet `internal` : un consommateur lisait

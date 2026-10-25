@@ -21,7 +21,7 @@ make clean
 ```
 
 `PKG` restreint la portée de `test`, `bench` et `cover` à un paquet :
-`make test PKG=./internal/raster`. `RUN` restreint `test` à un motif de nom.
+`make test PKG=./raster`. `RUN` restreint `test` à un motif de nom.
 
 `bench` mesure un paquet à la fois et nomme ses profils d'après lui, parce que la
 chaîne Go refuse `-cpuprofile` dès qu'il y a plus d'un paquet. `references` ne

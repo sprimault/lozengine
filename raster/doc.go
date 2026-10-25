@@ -1,13 +1,23 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package raster dessine une liste de quads dans un tampon de pixels, sans carte
-// graphique et sans fenêtre.
+// Package raster porte les images dans lesquelles le moteur puise — les planches et
+// l'atlas qui les range — et dessine une liste de quads dans un tampon de pixels, sans
+// carte graphique et sans fenêtre.
 //
 // C'est le rastériseur du moteur, et le mot ne dit rien de plus que cela : peindre
 // une forme décrite en recopiant ses pixels un à un, là où une carte graphique le
 // ferait pour nous. Le dessin d'un quad s'appelle un blit dans le même esprit — une
 // recopie de pixels d'une planche vers le tampon, sans rotation ni étirement.
+//
+// **Les deux moitiés vivent ensemble parce qu'elles ne se séparent pas.** Un jeu
+// construit ses planches, donc il lit leurs champs ; mais le dessin emploie l'encodage
+// des lignes qu'[Atlas.Ajouter] calcule, lequel reste privé. Les mettre dans deux
+// paquets aurait obligé à publier ce détail d'optimisation dans [Planche], que l'ABI
+// exposera un jour.
+//
+// Pour écrire un jeu en Go, le paquet racine republie [Planche], [Atlas], [Rectangle]
+// et les deux chargeurs — pas les fonctions de dessin, dont la boucle se charge.
 //
 // Le tampon lui-même vit dans [github.com/sprimault/lozengine/rendu], parce qu'un
 // hôte en remplit les champs. Les opérations de ce paquet le prennent donc en premier

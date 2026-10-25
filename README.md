@@ -81,8 +81,8 @@ will be called one by one, and nothing will claim a window or a thread. The firs
 door adds convenience, never capability: everything it allows can also be done by
 driving the engine by hand.
 
-Three packages are public because the documentation of their types has to be
-readable: `rendu`, `geometrie` and `scene`. Everything else lives under `internal/`,
+Four packages are public because the documentation of their types has to be readable:
+`rendu`, `geometrie`, `scene` and `raster`. Everything else lives under `internal/`,
 which the compiler forbids importing from another module — so a host cannot bind to a
 backend by going around the boundary. The root package republishes the essentials, so
 that a game has a single import to write.
