@@ -1,44 +1,44 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-package visionneuse
+package viewer
 
 import (
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
 )
 
-// Melange éprouve la composition : une échelle d'opacités sur un fond opaque, deux
+// Blend éprouve la composition : une échelle d'opacités sur un fond opaque, deux
 // aplats translucides qui se recouvrent, et le bord translucide de la planche posé sur
 // une couleur.
 //
 // Un arrondi qui dérive d'un cran ne se voit nulle part ailleurs. Ici il se lit sur
 // l'échelle, où chaque marche vaut un mélange connu, et sur le recouvrement, où deux
 // mélanges s'enchaînent — c'est-à-dire là où une erreur d'un pixel se double.
-func Melange() Scenario {
+func Blend() Scenario {
 	const (
-		largeur, hauteur = 48, 32
-		cote             = 8
+		width, height = 48, 32
+		side          = 8
 	)
 
 	return Scenario{
-		Nom:     "melange",
-		Largeur: largeur,
-		Hauteur: hauteur,
-		Images:  1,
-		Fond:    render.Color{R: 200, G: 200, B: 200, A: 255},
+		Name:       "blend",
+		Width:      width,
+		Height:     height,
+		Frames:     1,
+		Background: render.Color{R: 200, G: 200, B: 200, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			return atlasDUnePlanche(plancheMarquee(cote))
+			return atlasOfOneSheet(markedSheet(side))
 		},
 
-		Quads: func(numero int, e Entrees, reserve render.DrawList) render.DrawList {
+		Quads: func(numero int, e InputLine, reserve render.DrawList) render.DrawList {
 			quads := reserve
 
 			// Une bande sombre sous l'échelle : un mélange ne se juge pas sur un seul
 			// fond, et le blanc cache ce que le sombre révèle.
 			quads = append(quads, render.Quad{
-				X: 0, Y: 12, Width: largeur, Height: 8,
+				X: 0, Y: 12, Width: width, Height: 8,
 				Tint: render.Color{R: 30, G: 30, B: 40, A: 255}, Flags: render.Flat,
 			})
 
@@ -46,7 +46,7 @@ func Melange() Scenario {
 				x := int16(2 + i*9)
 				for _, y := range []int16{2, 12} {
 					quads = append(quads, render.Quad{
-						X: x, Y: y, Width: cote, Height: cote,
+						X: x, Y: y, Width: side, Height: side,
 						Tint: render.Color{R: alpha, G: alpha, B: alpha, A: alpha},
 					})
 				}

@@ -205,8 +205,8 @@ internal/apparence    interface fournisseur, animation          geometry, render
 input                 touches, état du clavier                  aucune
 internal/backend/…    contrat de fenêtre, familles, présentation  input, render
 internal/audio        mixeur et sorties système                 aucune
-internal/visionneuse  scènes scriptées, rejeu, images           tous les précédents
-cmd/visionneuse       commande de rejeu                         visionneuse
+internal/viewer       scènes scriptées, rejeu, images           tous les précédents
+cmd/viewer            commande de rejeu                         viewer
 ```
 
 `scene` et `tri` atteignent `render` parce que l'un décrit des entités qui portent

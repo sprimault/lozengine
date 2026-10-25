@@ -1,7 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-package visionneuse
+package viewer
 
 import (
 	"github.com/sprimault/lozengine/raster"
@@ -26,12 +26,12 @@ import (
 // La résolution appartient au scénario. Un scénario de découpage sur les bords en veut
 // une petite, et `raster` n'a de toute façon aucune résolution en constante.
 type Scenario struct {
-	Nom              string
-	Largeur, Hauteur uint16
-	Images           int
-	Fond             render.Color
-	Atlas            func() (*raster.Atlas, error)
-	Quads            func(numero int, e Entrees, reserve render.DrawList) render.DrawList
+	Name          string
+	Width, Height uint16
+	Frames        int
+	Background    render.Color
+	Atlas         func() (*raster.Atlas, error)
+	Quads         func(numero int, e InputLine, reserve render.DrawList) render.DrawList
 
 	// References désigne les images que la suite de non-régression compare. Vide,
 	// elles le sont toutes — ce qui convient aux scénarios courts, faits pour tenir
@@ -39,15 +39,15 @@ type Scenario struct {
 	References []int
 }
 
-// ImagesDeReference rend les numéros d'image que la suite compare.
-func (s Scenario) ImagesDeReference() []int {
+// ReferenceFrames rend les numéros d'image que la suite compare.
+func (s Scenario) ReferenceFrames() []int {
 	if len(s.References) > 0 {
 		return s.References
 	}
 
-	tous := make([]int, s.Images)
-	for i := range tous {
-		tous[i] = i
+	all := make([]int, s.Frames)
+	for i := range all {
+		all[i] = i
 	}
-	return tous
+	return all
 }
