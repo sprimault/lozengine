@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que la commande doit dire quand on se trompe — un scénario inconnu énumère les
+// connus, un fichier d'entrées absent nomme ce qu'on tentait de faire — et le chemin
+// complet jusqu'aux images écrites, qui ne vont que dans un répertoire temporaire.
+
 package main
 
 import (

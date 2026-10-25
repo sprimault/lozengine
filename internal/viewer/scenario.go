@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce qu'un scénario doit fournir, et la frontière entre ce qui se fait une fois et ce
+// qui se fait par image. C'est ici que vit la contrainte dont la comparaison au pixel
+// près dépend : une image est une fonction pure de son numéro et de son entrée.
+
 package viewer
 
 import (

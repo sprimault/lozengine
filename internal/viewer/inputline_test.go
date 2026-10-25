@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce qu'un fichier d'entrées admet sans décaler les images — lignes vides et
+// commentaires — et ce qu'un rejeu fait quand il dépasse la fin du fichier : il
+// continue sur des entrées vides, ce qui n'est pas une erreur.
+
 package viewer
 
 import (

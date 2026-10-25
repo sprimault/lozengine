@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce que le rangement doit tenir — l'ordre, la stabilité, et le tas auquel il ne
+// touche plus après la première image —, avec les deux tailles qui cassent une boucle
+// par paquets : la séquence vide et celle d'un seul élément.
+
 package sorting
 
 import (

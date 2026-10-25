@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La mesure du chemin complet d'une image, à la cible de contrôle du jalon. Les
+// chiffres se lisent pondérés : une mesure brute dit ce que vaut la machine qui
+// mesure, pas la part d'image que l'étape prendrait ailleurs.
+
 package sorting
 
 import (

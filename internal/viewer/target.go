@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La mire de démonstration, et le seul scénario qui lise une entrée simulée : elle
+// exerce les quatre chemins du dessin d'un coup, et le découpage puisque le pion entre
+// et sort par les bords.
+
 package viewer
 
 import (

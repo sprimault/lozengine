@@ -1,6 +1,11 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La comparaison pixel à pixel avec les images qui font foi, et le seul endroit du
+// dépôt qui les réécrit — sur un drapeau explicite, jamais tout seul. Un cas éprouve
+// la comparaison elle-même : une suite qui passerait sur des images fausses ne
+// garderait rien.
+
 package viewer
 
 import (

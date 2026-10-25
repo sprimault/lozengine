@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le scénario de l'ordre de dessin et des miroirs : un escalier, deux quads
+// exactement superposés, et la planche marquée dans ses quatre orientations. Partout
+// ailleurs les quads se recouvrent trop peu pour qu'un ordre faux se voie.
+
 package viewer
 
 import (
