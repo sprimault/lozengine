@@ -201,7 +201,7 @@ scene                 grille, entités, couches, caméra          geometry, rend
 internal/sorting      retrait hors image, clé, départage        geometry, scene, render
 render                structures Quad et DrawList, publiques    aucune
 raster                planches, atlas, rastériseur, PNG         render
-internal/apparence    interface fournisseur, animation          geometry, render
+internal/appearance   interface fournisseur, animation          geometry, render
 input                 touches, état du clavier                  aucune
 internal/backend/…    contrat de fenêtre, familles, présentation  input, render
 internal/audio        mixeur et sorties système                 aucune
@@ -317,7 +317,7 @@ là que la promesse se joue, et le contrôle la vérifie paquet par paquet plut�
 que globalement.
 
 Deux paquets périphériques font exception, sous licence permissive et par
-décision inscrite dans le `Makefile` : le rendu de polices dans `apparence`, la
+décision inscrite dans le `Makefile` : le rendu de polices dans `appearance`, la
 sortie audio dans `audio`. Les réécrire coûterait des semaines pour un résultat
 qui ne distinguerait en rien le moteur.
 

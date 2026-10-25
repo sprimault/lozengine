@@ -79,7 +79,7 @@ contrainte de construction ne se voit pas depuis l'autre.
 
 **`make frontiere`** vérifie que le noyau ne touche ni au système ni à un
 backend. Aucun paquet parmi `geometry`, `scene`, `sorting`, `render`, `raster` et
-`apparence` ne doit importer `syscall`, `net`, `os/exec` ou un backend — ni
+`appearance` ne doit importer `syscall`, `net`, `os/exec` ou un backend — ni
 directement, ni à travers un autre paquet du moteur.
 
 C'est le contrôle que `make cross` ne fait pas, contrairement à ce qu'on croit

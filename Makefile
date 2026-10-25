@@ -118,10 +118,10 @@ AUTORISEES = golang\.org/x/image(/.*)?|github\.com/ebitengine/oto/v3(/.*)?
 # Les paquets qui n'ont droit à rien, pas même à ce que la liste autorise. C'est
 # le cœur, et c'est lui qui porte la promesse.
 #
-# `apparence` n'y figure pas alors qu'il appartient au noyau au sens de la
+# `appearance` n'y figure pas alors qu'il appartient au noyau au sens de la
 # frontière système : c'est lui qui rastérise les polices, donc lui qui pourra
 # puiser dans la liste. Deux notions voisines, deux listes — les confondre
-# interdirait à `apparence` ce que la liste existe précisément pour lui permettre.
+# interdirait à `appearance` ce que la liste existe précisément pour lui permettre.
 # `render`, `geometry`, `scene`, `raster` et `input` vivent hors d'`internal/`, parce
 # qu'un consommateur
 # doit pouvoir lire la documentation de leurs champs et de leurs méthodes — un alias
@@ -181,10 +181,10 @@ deps:
 	  done; \
 	done
 
-# Les paquets qui consomment ou produisent un Rendu, et rien d'autre. Le paquet
+# Les paquets qui consomment ou produisent une DrawList, et rien d'autre. Le paquet
 # racine en est absent : c'est lui qui assemble, donc il connaît les backends.
 NOYAU = render geometry scene raster input internal/sorting \
-        internal/apparence
+        internal/appearance
 
 # Ce qu'aucun d'eux ne doit importer. Les appels directs et les sockets vivent dans
 # un backend, l'audio parle son protocole depuis le sien.
