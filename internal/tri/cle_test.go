@@ -22,6 +22,23 @@ func TestPlafondDePlancheConcorde(t *testing.T) {
 	}
 }
 
+// TestPlafondsDeCoucheEtEtageConcordent vérifie que les bornes qu'un jeu lit sont bien
+// ce que les champs de la clé distinguent.
+//
+// Celles-ci sont annoncées hors de ce paquet, puisque c'est le jeu qui décide combien
+// de couches il emploie. Élargir un champ sans toucher à l'annonce laisserait une
+// capacité que personne n'oserait employer ; le rétrécir ferait ranger ensemble deux
+// couches qu'un jeu croit distinctes, et une pose hors borne serait refusée sans
+// raison apparente.
+func TestPlafondsDeCoucheEtEtageConcordent(t *testing.T) {
+	if got := 1<<bitsCouche - 1; got != rendu.CoucheMax {
+		t.Errorf("la clé distingue %d couches, le moteur en annonce %d", got+1, rendu.CoucheMax+1)
+	}
+	if got := 1<<bitsEtage - 1; got != rendu.EtageMax {
+		t.Errorf("la clé distingue %d étages, le moteur en annonce %d", got+1, rendu.EtageMax+1)
+	}
+}
+
 // TestOrdreDesChamps vérifie la propriété qui tient tout le reste : un champ plus fort
 // l'emporte sur tous les suivants réunis.
 //
@@ -35,7 +52,7 @@ func TestOrdreDesChamps(t *testing.T) {
 		avant, apres Cle
 	}{
 		{"la couche l'emporte sur tout",
-			Composer(0, EtageMax, ProfondeurMax, HauteurMax, PlancheMax, IndexMax),
+			Composer(0, rendu.EtageMax, ProfondeurMax, HauteurMax, PlancheMax, IndexMax),
 			Composer(1, 0, 0, 0, 0, 0)},
 		{"l'étage l'emporte sur la profondeur",
 			Composer(0, 0, ProfondeurMax, HauteurMax, PlancheMax, IndexMax),
@@ -72,8 +89,8 @@ func TestComposerRameneAuPlafond(t *testing.T) {
 		nom            string
 		trop, plafonne Cle
 	}{
-		{"couche", Composer(CoucheMax+1, 0, 0, 0, 0, 0), Composer(CoucheMax, 0, 0, 0, 0, 0)},
-		{"étage", Composer(0, EtageMax+1, 0, 0, 0, 0), Composer(0, EtageMax, 0, 0, 0, 0)},
+		{"couche", Composer(rendu.CoucheMax+1, 0, 0, 0, 0, 0), Composer(rendu.CoucheMax, 0, 0, 0, 0, 0)},
+		{"étage", Composer(0, rendu.EtageMax+1, 0, 0, 0, 0), Composer(0, rendu.EtageMax, 0, 0, 0, 0)},
 		{"profondeur", Composer(0, 0, ProfondeurMax+1, 0, 0, 0), Composer(0, 0, ProfondeurMax, 0, 0, 0)},
 		{"planche", Composer(0, 0, 0, 0, PlancheMax+1, 0), Composer(0, 0, 0, 0, PlancheMax, 0)},
 		{"index", Composer(0, 0, 0, 0, 0, IndexMax+1), Composer(0, 0, 0, 0, 0, IndexMax)},

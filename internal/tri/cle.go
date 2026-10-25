@@ -10,6 +10,8 @@
 // des milliers de fois par image.
 package tri
 
+import "github.com/sprimault/lozengine/rendu"
+
 // La répartition des bits d'une clé, du plus fort au plus faible.
 //
 // L'ordre des champs est l'ordre de priorité, et c'est tout le procédé : ranger les
@@ -40,9 +42,12 @@ const (
 	PlancheMax    = 1<<bitsPlanche - 1
 	HauteurMax    = 1<<bitsHauteur - 1
 	ProfondeurMax = 1<<bitsProfondeur - 1
-	EtageMax      = 1<<bitsEtage - 1
-	CoucheMax     = 1<<bitsCouche - 1
 )
+
+// Les plafonds de la couche et de l'étage ne sont pas déclarés ici : ce sont
+// [rendu.CoucheMax] et [rendu.EtageMax], parce qu'un jeu décide combien de couches il
+// emploie et doit donc pouvoir les lire. La répartition des bits reste ici, et un test
+// vérifie que les deux disent le même nombre.
 
 // Cle porte l'ordre de dessin d'une chose à peindre, du champ le plus fort au plus
 // faible : couche, étage, profondeur, hauteur, planche, index stable.
@@ -60,8 +65,8 @@ type Cle uint64
 // Composer assemble une clé. Chaque champ est ramené à ce qu'il porte, donc un
 // dépassement range la chose au bord plutôt que dans le champ voisin.
 func Composer(couche, etage uint8, profondeur uint32, hauteur uint16, planche, index uint16) Cle {
-	return Cle(min(uint64(couche), CoucheMax))<<decalageCouche |
-		Cle(min(uint64(etage), EtageMax))<<decalageEtage |
+	return Cle(min(uint64(couche), rendu.CoucheMax))<<decalageCouche |
+		Cle(min(uint64(etage), rendu.EtageMax))<<decalageEtage |
 		Cle(min(uint64(profondeur), ProfondeurMax))<<decalageProfondeur |
 		Cle(uint64(hauteur))<<decalageHauteur |
 		Cle(min(uint64(planche), PlancheMax))<<decalagePlanche |

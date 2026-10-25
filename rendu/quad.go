@@ -39,6 +39,24 @@ const (
 // hôte qui construit un atlas doit la connaître —, pas un détail de format.
 const PlanchesMax = 1 << 10
 
+// CoucheMax et EtageMax sont les plus grandes valeurs que les champs Couche et Etage
+// d'une chose à peindre puissent porter : seize couches et soixante-quatre étages.
+//
+// Elles sortent ici pour la raison qui fait sortir [PlanchesMax], et pour une de plus :
+// **c'est le jeu qui décide combien de couches il emploie**, donc c'est lui qui doit
+// savoir jusqu'où il peut aller. Les laisser dans le paquet qui compose l'ordre de
+// dessin les aurait rendues invisibles de l'extérieur, et un jeu qui demande une
+// vingtième couche aurait vu six de ses couches se confondre avec la quinzième sans
+// qu'aucun contrôle ne le dise.
+//
+// Ce ne sont pas des choix de jeu codés en dur, mais ce que le format porte — une clé
+// de tri sur soixante-quatre bits est par nature un jeu de plafonds, et les annoncer
+// est le contraire de décider à la place de qui écrit le jeu.
+const (
+	CoucheMax = 1<<4 - 1
+	EtageMax  = 1<<6 - 1
+)
+
 // Quad est la primitive unique du moteur : un rectangle de planche posé dans le
 // tampon, déjà placé à l'écran, rangé dans l'ordre de dessin, et retenu — ceux qui
 // sortaient du tampon ont été retirés en amont.

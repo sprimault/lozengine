@@ -5,6 +5,7 @@ package lozengine
 
 import (
 	"github.com/sprimault/lozengine/internal/geometrie"
+	"github.com/sprimault/lozengine/internal/scene"
 	"github.com/sprimault/lozengine/rendu"
 )
 
@@ -52,6 +53,17 @@ const (
 	Aplat = rendu.Aplat
 )
 
+// CoucheMax et EtageMax sont les plus grandes valeurs qu'une couche et un étage
+// puissent porter : seize couches et soixante-quatre étages.
+//
+// Combien un jeu en emploie ne regarde que lui ; ce sont les bornes au-delà desquelles
+// l'ordre de dessin ne distinguerait plus deux choses, et une pose qui les dépasse est
+// refusée au lieu d'être ramenée au plafond en silence.
+const (
+	CoucheMax = rendu.CoucheMax
+	EtageMax  = rendu.EtageMax
+)
+
 // Blanc rend la teinte neutre, celle qui laisse la source intacte.
 //
 // Une fonction et non un alias : seuls les types se republient sans enveloppe, et
@@ -92,3 +104,68 @@ func Grille(cote int) Matrice { return geometrie.Grille(cote) }
 // autres constructeurs n'exprime : l'abscisse écran vaut a·x + b·y et l'ordonnée
 // c·x + d·y. Sans translation, la vue étant cadrée ailleurs.
 func Brute(a, b, c, d float64) Matrice { return geometrie.Brute(a, b, c, d) }
+
+// Scene porte une grille de décor, des entités qui s'y déplacent, et la vue par
+// laquelle on les regarde.
+//
+// Une scène se décrit, elle ne se dessine pas. Rien ici ne place quoi que ce soit à
+// l'écran : c'est ce qui permet au moteur de décider de l'ordre de dessin au lieu de le
+// demander au jeu, et c'est tout ce qu'une scène décrite rapporte. Elle s'obtient de
+// [NouvelleScene] et s'emploie par ses méthodes.
+//
+// Deux chemins, parce que deux coûts. Le décor se pose par cellule et ne se relit que
+// sur la fenêtre visible, donc une carte de cinq cents cellules de côté coûte autant
+// qu'une de cinquante. Les entités se parcourent en entier, étant presque toutes à
+// l'image.
+type Scene = scene.Scene
+
+// Entite est un aspect posé à un point du monde.
+//
+// Les coordonnées sont des cellules et elles sont flottantes : une entité se tient en
+// x = 3,5 sans que rien ne l'arrondisse. z est la hauteur au-dessus du sol et reste un
+// champ à part, que l'écran retranche de l'ordonnée.
+type Entite = scene.Entite
+
+// Aspect est ce qu'une chose montre : de quoi remplir un quad, sans dire où.
+//
+// Sa valeur zéro ne montre rien, et c'est ainsi qu'une cellule vide se reconnaît. Sa
+// teinte, en revanche, se renseigne : la valeur zéro d'une couleur est transparente,
+// donc une chose qu'on veut voir porte [Blanc] ou une teinte explicite.
+type Aspect = scene.Aspect
+
+// Poignee désigne une entité posée, et lui reste fidèle quand le retrait d'une autre la
+// déplace dans la scène. Sa valeur zéro ne désigne rien.
+type Poignee = scene.Poignee
+
+// Orientation est l'un des quatre quarts de tour sous lesquels la vue présente la
+// grille. Quatre et non un angle libre : une apparence est dessinée pour un nombre
+// fini de directions.
+type Orientation = scene.Orientation
+
+const (
+	// SansRotation présente la grille telle que le jeu l'a posée.
+	SansRotation = scene.SansRotation
+
+	// UnQuart, DemiTour et TroisQuarts sont les trois autres quarts de tour, dans le
+	// sens où la grille pivote sous la vue.
+	UnQuart     = scene.UnQuart
+	DemiTour    = scene.DemiTour
+	TroisQuarts = scene.TroisQuarts
+)
+
+// OptionsScene porte ce qu'une scène admet de régler, et sa valeur zéro convient.
+//
+// Le nom est qualifié parce que la boucle a les siennes : deux structures d'options
+// dont une seule serait nommée sans suffixe laisseraient deviner laquelle.
+type OptionsScene = scene.Options
+
+// NouvelleScene monte une scène sur une grille et une projection.
+//
+// La projection est obligatoire et n'est pas vérifiée : sa valeur zéro projette tout
+// sur l'origine, ce que sa propre documentation annonce comme l'échec visible.
+//
+// C'est le seul moment où une scène rend une erreur. Passé ce point, plus rien sur le
+// chemin d'une image n'en rend, parce qu'une image n'a nulle part où la mettre.
+func NouvelleScene(largeur, hauteur int, projection Matrice, o OptionsScene) (*Scene, error) {
+	return scene.Nouvelle(largeur, hauteur, projection, o)
+}

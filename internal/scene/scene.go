@@ -129,10 +129,14 @@ func (s *Scene) Projection() geometrie.Matrice { return s.projection }
 
 // Poser ajoute une entité et rend la poignée qui la désignera.
 //
-// Le second résultat est faux quand la capacité est atteinte, et rien n'a alors été
+// Le second résultat est faux quand la capacité est atteinte, ou quand la couche ou
+// l'étage de l'aspect dépasse ce que l'ordre de dessin distingue ; rien n'a alors été
 // posé. C'est un refus et non une erreur : il arrive en cours de partie, là où une
 // erreur n'aurait personne à qui se plaindre.
 func (s *Scene) Poser(e Entite) (Poignee, bool) {
+	if !e.tientDansLaCle() {
+		return 0, false
+	}
 	if len(s.entites) == cap(s.entites) {
 		return 0, false
 	}
@@ -199,11 +203,14 @@ func (s *Scene) Deplacer(p Poignee, x, y, z float64) bool {
 }
 
 // Habiller change ce qu'une entité montre sans toucher à sa position, et rend faux
-// quand la poignée ne désigne plus rien.
+// quand la poignée ne désigne plus rien ou que l'aspect sort des bornes de la clé.
 //
 // C'est par là que passe un changement de direction ou d'image d'animation, qui
 // touchent des centaines d'entités sur une même image.
 func (s *Scene) Habiller(p Poignee, a Aspect) bool {
+	if !a.tientDansLaCle() {
+		return false
+	}
 	place, ok := s.place(p)
 	if !ok {
 		return false
@@ -217,20 +224,30 @@ func (s *Scene) Habiller(p Poignee, a Aspect) bool {
 //
 // La tranche vaut jusqu'à la prochaine pose ou au prochain retrait. Le tri la lit sans
 // la copier, et c'est ce qui lui évite d'allouer à chaque image.
-func (s *Scene) Entites() []Entite { return s.entites }
+//
+// **Une fonction et non une méthode, délibérément.** C'est une porte de service pour le
+// tri, pas une opération qu'un jeu appelle : la tranche qu'elle rend est l'état interne
+// de la scène, qu'une écriture depuis l'extérieur désaccorderait des poignées. Le paquet
+// racine republie [Scene] par un alias, qui emporte toutes ses méthodes et aucune de ses
+// fonctions — c'est donc ce qui garde la porte fermée, là où un commentaire ne le
+// ferait pas.
+func Entites(s *Scene) []Entite { return s.entites }
 
-// Identites rend, dans le même ordre qu'[Scene.Entites], un numéro par entité qui ne
-// change jamais tant qu'elle vit.
+// Identites rend, dans le même ordre qu'[Entites], un numéro par entité qui ne change
+// jamais tant qu'elle vit.
 //
 // La place d'une entité, elle, change : un retrait comble le trou avec la dernière.
 // Un ordre de dessin qui se départagerait sur la place changerait donc parce qu'une
 // **troisième** entité est morte ailleurs, et deux images de suite ne montreraient pas
 // la même chose. C'est ce que le tri emploie pour départager ce que la profondeur ne
 // sépare pas.
-func (s *Scene) Identites() []uint32 { return s.places }
+//
+// Fonction et non méthode, pour la raison qui vaut pour [Entites].
+func Identites(s *Scene) []uint32 { return s.places }
 
 // PoserCellule pose un aspect sur une cellule de la grille, à la strate donnée, et
-// rend faux si la cellule ou la strate sort des bornes.
+// rend faux si la cellule ou la strate sort des bornes, ou si la couche ou l'étage de
+// l'aspect dépasse ce que l'ordre de dessin distingue.
 //
 // La strate dit ce qui s'empile sur une même cellule sans l'effacer — une chaussée, le
 // passage piéton peint dessus, le véhicule qui s'y gare. Sans elle il faudrait choisir
@@ -246,6 +263,9 @@ func (s *Scene) Identites() []uint32 { return s.places }
 // vide la cellule.
 func (s *Scene) PoserCellule(x, y int, strate uint8, a Aspect) bool {
 	if x < 0 || y < 0 || x >= s.largeur || y >= s.hauteur || int(strate) >= stratesMax {
+		return false
+	}
+	if !a.tientDansLaCle() {
 		return false
 	}
 
