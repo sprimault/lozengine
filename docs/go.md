@@ -223,7 +223,7 @@ Ailleurs, une **liste close de deux entrées**, et aucune autre :
 
 | Dépendance | Licence | Pour | À partir du |
 | --- | --- | --- | --- |
-| `golang.org/x/image` | BSD-3 | rastériser une police dans `apparence` | jalon 4 |
+| `golang.org/x/image` | BSD-3 | rastériser une police dans `appearance` | jalon 4 |
 | `github.com/ebitengine/oto/v3` | Apache-2.0 | sortie audio dans `audio` | jalon 7 |
 
 ### Ce qu'une dépendance doit passer pour entrer
