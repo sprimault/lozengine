@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce qu'un jeu lit du clavier à l'image courante, et rien de plus : il n'y a aucune
+// façon d'y écrire depuis l'extérieur du moteur.
+
 package input
 
 // Input est ce que le clavier dit à une image : les touches tenues, et celles qui

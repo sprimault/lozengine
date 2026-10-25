@@ -122,8 +122,15 @@ quatre à la fois :
 type Key uint64
 ```
 
-Un fichier peut commencer par un commentaire qui dit son rôle, séparé du
-commentaire de paquet par une ligne vide — sans quoi il en deviendrait la godoc.
+**Tout fichier commence par un commentaire qui dit ce qu'il porte**, deux ou trois
+lignes placées après l'en-tête de licence et **séparées de la clause `package` par une
+ligne vide**. Cette ligne vide est la condition technique, pas une mise en forme : sans
+elle, Go prend le commentaire pour la godoc du paquet, et ceux de plusieurs fichiers se
+concatènent dans un ordre que rien ne garantit.
+
+Ce commentaire dit le rôle du fichier et la raison d'être de son contenu, jamais la
+liste de ce qu'il déclare — le nom du fichier la donne déjà. Le fichier qui porte la
+godoc du paquet n'en prend pas : c'est sa seule raison d'exister.
 
 ## Erreurs
 

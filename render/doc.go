@@ -1,7 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package rendu porte les structures que le noyau produit et que tout backend
+// Package render porte les structures que le noyau produit et que tout backend
 // consomme : le quad projeté, la liste ordonnée qui les rassemble, et l'image dans
 // laquelle ils se peignent.
 //

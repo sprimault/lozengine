@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Ce qu'OpenSheet rend sur un fichier qui n'existe pas ou qui n'est pas une image, et
+// le chemin qui marche.
+
 package lozengine
 
 import (

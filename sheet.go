@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// L'ouverture d'une planche par son chemin, seule fonction de la surface publique qui
+// touche au système de fichiers : tout le reste passe par un lecteur ou un écrivain
+// que l'appelant fournit.
+
 package lozengine
 
 import (

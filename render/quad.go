@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Le quad, et les plafonds que la clé de tri impose à ce qui le remplit : combien de
+// planches un atlas porte, combien de couches et d'étages l'ordre de dessin distingue,
+// et le plus grand côté qu'une grille puisse avoir.
+
 package render
 
 // Flags porte les variantes de dessin d'un quad, un bit par variante.

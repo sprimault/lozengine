@@ -1,6 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// Les trois réponses de NewBuffer à sa borne : au-delà il panique, dessus il accepte,
+// et l'image qu'il rend part transparente.
+
 package render
 
 import "testing"

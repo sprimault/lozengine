@@ -1,6 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// La scène et les tables qui la tiennent : les entités serrées sans trou pour que leur
+// parcours soit dense, les rangs qui survivent au retrait d'une voisine, et une tranche
+// de décor par strate, allouée seulement si le jeu s'en sert.
+
 package scene
 
 import (
@@ -23,14 +27,13 @@ import (
 // un décor qui en empile davantage sur une seule cellule décrit autre chose qu'un
 // décor.
 //
-// Chaque strate ouverte coûte une tranche de la taille de la carte, soit environ cinq
-// mégaoctets sur cinq cents cellules de côté. Une strate creuse — quelques véhicules
-// sur une grande carte — la paie donc pleine, ce qui est à reconsidérer le jour où une
-// mesure le demande, pas avant.
+// Chaque strate ouverte coûte une tranche de la taille de la carte — environ cinq
+// mégaoctets sur cinq cents cellules de côté —, qu'elle porte trois objets ou la carte
+// entière. Quelques véhicules sur une grande carte se décrivent donc mieux en entités.
 const MaxTiers = 16
 
 // defaultEntities est la capacité qu'une scène prend quand l'appelant n'en demande
-// aucune — au-dessus de ce qu'un jeu de horde emploie, pour deux cents kilooctets.
+// aucune : deux cents kilooctets, et [Options.Entities] la règle au-delà.
 const defaultEntities = 4096
 
 // Options porte ce qu'une scène admet de régler, et sa valeur zéro convient.
