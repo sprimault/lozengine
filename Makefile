@@ -302,7 +302,7 @@ PKG_REFERENCES ?= ./internal/viewer
 # Jamais automatique, et toujours justifiée dans le message de commit : une
 # image de référence qui change sans raison énoncée est un bug entériné.
 references:
-	go test $(PKG_REFERENCES) -regenerer
+	go test $(PKG_REFERENCES) -regenerate
 
 # Les notes d'une version sont la section du CHANGELOG, reprise telle quelle. Une
 # section absente arrête la publication : c'est le seul moment où quelqu'un relit

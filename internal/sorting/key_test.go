@@ -48,11 +48,11 @@ func TestLayerAndFloorCeilingsMatch(t *testing.T) {
 // il se vérifie par le calcul plutôt que par un chiffre recopié — qui aurait péri à la
 // première des deux qui bouge.
 func TestSideCeilingFitsInDepth(t *testing.T) {
-	sommeMax := 2 * (render.MaxSide - 1)
+	maxSum := 2 * (render.MaxSide - 1)
 
-	if quarts := sommeMax * 4; quarts > MaxDepth {
+	if quarters := maxSum * 4; quarters > MaxDepth {
 		t.Errorf("une grille de %d de côté donne %d quarts de profondeur, le champ en porte %d",
-			render.MaxSide, quarts, MaxDepth)
+			render.MaxSide, quarters, MaxDepth)
 	}
 }
 

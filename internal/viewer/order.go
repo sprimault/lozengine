@@ -33,7 +33,7 @@ func Order() Scenario {
 			return atlasOfOneSheet(markedSheet(side))
 		},
 
-		Quads: func(numero int, e InputLine, reserve render.DrawList) render.DrawList {
+		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {
 			quads := reserve
 
 			// Escalier : chacun recouvre le précédent d'un quart.
@@ -56,12 +56,12 @@ func Order() Scenario {
 					Tint: render.Color{R: 60, G: 200, B: 200, A: 255}},
 			)
 
-			for i, drapeaux := range []render.Flags{
+			for i, flags := range []render.Flags{
 				0, render.MirrorX, render.MirrorY, render.MirrorX | render.MirrorY,
 			} {
 				quads = append(quads, render.Quad{
 					X: int16(2 + i*11), Y: 20, Width: side, Height: side,
-					Tint: render.White(), Flags: drapeaux,
+					Tint: render.White(), Flags: flags,
 				})
 			}
 			return quads

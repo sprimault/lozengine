@@ -19,9 +19,9 @@ import (
 // le découpage, puisque le pion entre et sort par les bords.
 func Target() Scenario {
 	const (
-		width, height  = 128, 72
-		tuileL, tuileH = 32, 16
-		pionCote       = 8
+		width, height = 128, 72
+		tileW, tileH  = 32, 16
+		pawnSide      = 8
 	)
 
 	// Deux teintes sur une planche blanche : la couleur du sol vient de la modulation,
@@ -57,24 +57,24 @@ func Target() Scenario {
 		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {
 			quads := reserve
 
-			for row := 0; row*tuileH/2 < height+tuileH; row++ {
-				for column := 0; column*tuileL < width+tuileL; column++ {
+			for row := 0; row*tileH/2 < height+tileH; row++ {
+				for column := 0; column*tileW < width+tileW; column++ {
 					quads = append(quads, render.Quad{
-						X:      int16(column*tuileL - tuileL + (row%2)*(tuileL/2)),
-						Y:      int16(row*tuileH/2 - tuileH),
-						Width:  tuileL,
-						Height: tuileH,
+						X:      int16(column*tileW - tileW + (row%2)*(tileW/2)),
+						Y:      int16(row*tileH/2 - tileH),
+						Width:  tileW,
+						Height: tileH,
 						Tint:   ground[(column+row)%2],
 					})
 				}
 			}
 
-			x, y := -pionCote+frame*6, 30
+			x, y := -pawnSide+frame*6, 30
 			if px, py, ok := pawnPosition(e); ok {
 				x, y = px, py
 			}
 			quads = append(quads, render.Quad{
-				X: int16(x), Y: int16(y), Width: pionCote, Height: pionCote,
+				X: int16(x), Y: int16(y), Width: pawnSide, Height: pawnSide,
 				Sheet: 1, Tint: render.White(),
 			})
 
@@ -111,11 +111,11 @@ func tileSheet() raster.Sheet {
 		half := (rank + 1) * 2
 
 		for x := 16 - half; x < 16+half; x++ {
-			couleur := render.Color{R: 255, G: 255, B: 255, A: 255}
+			color := render.Color{R: 255, G: 255, B: 255, A: 255}
 			if x == 16-half || x == 16+half-1 {
-				couleur = render.Color{R: 128, G: 128, B: 128, A: 128}
+				color = render.Color{R: 128, G: 128, B: 128, A: 128}
 			}
-			p.Pixels[y*32+x] = couleur
+			p.Pixels[y*32+x] = color
 		}
 	}
 	return p
@@ -126,11 +126,11 @@ func pawnSheet() raster.Sheet {
 	p := raster.NewSheet(8, 8)
 	for y := range 8 {
 		for x := range 8 {
-			couleur := render.Color{R: 255, G: 255, B: 255, A: 255}
+			color := render.Color{R: 255, G: 255, B: 255, A: 255}
 			if x == 0 || y == 0 || x == 7 || y == 7 {
-				couleur = render.Color{R: 96, G: 96, B: 96, A: 96}
+				color = render.Color{R: 96, G: 96, B: 96, A: 96}
 			}
-			p.Pixels[y*8+x] = couleur
+			p.Pixels[y*8+x] = color
 		}
 	}
 	return p

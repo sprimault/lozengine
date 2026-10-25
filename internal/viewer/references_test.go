@@ -14,20 +14,20 @@ import (
 	"github.com/sprimault/lozengine/render"
 )
 
-// regenerer réécrit les images de référence au lieu de les comparer.
+// regenerate réécrit les images de référence au lieu de les comparer.
 //
 // Jamais automatique : une image qui change sans qu'on l'ait demandé est un bug
 // entériné. La cible `make references` le pose, et le commit qui en découle doit dire
 // pourquoi le rendu a changé.
-var regenerer = flag.Bool("regenerer", false, "réécrit les images de référence")
+var regenerate = flag.Bool("regenerate", false, "réécrit les images de référence")
 
 // referencesDir est le répertoire des images qui font foi, versionnées avec le code.
 const referencesDir = "testdata/references"
 
-// echecsDir reçoit le rendu et l'écart quand une comparaison échoue. Il est sous le
+// failuresDir reçoit le rendu et l'écart quand une comparaison échoue. Il est sous le
 // `.tmp` du dépôt, qui n'est pas suivi : ces deux images servent à voir ce qu'on a
 // cassé, pas à entrer dans l'historique.
-var echecsDir = filepath.Join("..", "..", ".tmp", "references")
+var failuresDir = filepath.Join("..", "..", ".tmp", "references")
 
 // TestReferences rend chaque scénario du catalogue et compare ses images à celles qui
 // font foi.
@@ -50,7 +50,7 @@ func TestReferences(t *testing.T) {
 
 			for _, frame := range scenario.ReferenceFrames() {
 				buffer := replay.Frame(frame, "")
-				if *regenerer {
+				if *regenerate {
 					if err := replay.Write(referencesDir, frame, 1); err != nil {
 						t.Fatalf("régénération : %v", err)
 					}
@@ -120,18 +120,18 @@ func pixelGaps(got, want []render.Color) (count, first int) {
 // sans qu'aucun défaut existe. C'est ce qui oblige les scénarios à rendre des images
 // opaques.
 func TestPixelGapsCanFail(t *testing.T) {
-	bleu := render.Color{B: 255, A: 255}
-	rouge := render.Color{R: 255, A: 255}
+	blue := render.Color{B: 255, A: 255}
+	red := render.Color{R: 255, A: 255}
 
 	cases := []struct {
 		name         string
 		got, want    []render.Color
 		count, first int
 	}{
-		{"identiques", []render.Color{bleu, bleu}, []render.Color{bleu, bleu}, 0, -1},
-		{"le second faux", []render.Color{bleu, rouge}, []render.Color{bleu, bleu}, 1, 1},
-		{"le premier faux", []render.Color{rouge, bleu}, []render.Color{bleu, bleu}, 1, 0},
-		{"les deux faux", []render.Color{rouge, rouge}, []render.Color{bleu, bleu}, 2, 0},
+		{"identiques", []render.Color{blue, blue}, []render.Color{blue, blue}, 0, -1},
+		{"le second faux", []render.Color{blue, red}, []render.Color{blue, blue}, 1, 1},
+		{"le premier faux", []render.Color{red, blue}, []render.Color{blue, blue}, 1, 0},
+		{"les deux faux", []render.Color{red, red}, []render.Color{blue, blue}, 2, 0},
 		{"un seul cran", []render.Color{{R: 1, A: 2}}, []render.Color{{A: 2}}, 1, 0},
 	}
 
@@ -167,8 +167,8 @@ func dump(t *testing.T, name string, buffer *render.Buffer, reference raster.She
 	}
 
 	for suffix, image := range map[string]*render.Buffer{"rendu": buffer, "ecart": gap} {
-		path := filepath.Join(echecsDir, suffix+"-"+name)
-		if err := os.MkdirAll(echecsDir, 0o755); err != nil {
+		path := filepath.Join(failuresDir, suffix+"-"+name)
+		if err := os.MkdirAll(failuresDir, 0o755); err != nil {
 			return ""
 		}
 
@@ -182,5 +182,5 @@ func dump(t *testing.T, name string, buffer *render.Buffer, reference raster.She
 		}
 		file.Close()
 	}
-	return " ; rendu et écart déposés dans " + echecsDir
+	return " ; rendu et écart déposés dans " + failuresDir
 }

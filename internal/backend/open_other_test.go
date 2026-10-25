@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-// TestOuvrirReplieSansFenetre vérifie le seul comportement que ce lot livre : sur une
+// TestOpenFallsBackWithoutWindow vérifie le seul comportement que ce lot livre : sur une
 // plateforme dont le backend n'est pas écrit, l'ouverture échoue proprement au lieu de
 // rendre une fenêtre inutilisable.
 //

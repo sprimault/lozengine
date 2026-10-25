@@ -14,20 +14,20 @@ func TestTargetWithoutVeil(t *testing.T) {
 		t.Fatalf("rejeu : %v", err)
 	}
 
-	avec := copyPixels(replay.Frame(0, ""))
-	sans := replay.Frame(0, "sans-voile")
+	with := copyPixels(replay.Frame(0, ""))
+	without := replay.Frame(0, "sans-voile")
 
-	if samePixels(avec, sans) {
+	if samePixels(with, without) {
 		t.Fatal("la directive ne change rien à l'image")
 	}
 
 	// Le voile est un aplat sombre à alpha partiel : le retirer ne peut qu'éclaircir,
 	// jamais assombrir un seul pixel. C'est ce qui distingue ce cas d'une image
 	// simplement différente.
-	for i := range avec.Pixels {
-		if sans.Pixels[i].R < avec.Pixels[i].R {
+	for i := range with.Pixels {
+		if without.Pixels[i].R < with.Pixels[i].R {
 			t.Fatalf("pixel %d plus sombre sans le voile : %v au lieu de %v",
-				i, sans.Pixels[i], avec.Pixels[i])
+				i, without.Pixels[i], with.Pixels[i])
 		}
 	}
 }

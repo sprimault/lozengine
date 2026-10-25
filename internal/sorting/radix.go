@@ -3,8 +3,8 @@
 
 package sorting
 
-// octetsParPasse et passes découpent une clé de soixante-quatre bits en tranches
-// d'un octet, rangées de la plus faible à la plus forte.
+// passBits et passes découpent une clé de soixante-quatre bits en tranches d'un
+// octet, rangées de la plus faible à la plus forte.
 const (
 	passBits = 8
 	buckets  = 1 << passBits

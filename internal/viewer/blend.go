@@ -32,7 +32,7 @@ func Blend() Scenario {
 			return atlasOfOneSheet(markedSheet(side))
 		},
 
-		Quads: func(numero int, e InputLine, reserve render.DrawList) render.DrawList {
+		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {
 			quads := reserve
 
 			// Une bande sombre sous l'échelle : un mélange ne se juge pas sur un seul

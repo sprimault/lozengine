@@ -60,13 +60,13 @@ func TestFrameOrdersByDepth(t *testing.T) {
 func TestOffScreenIsRemoved(t *testing.T) {
 	s := testScene(t, 400, 8)
 
-	proche := figure()
-	proche.Sheet = 1
-	s.Place(scene.Entity{X: 200, Y: 200, Aspect: proche})
+	near := figure()
+	near.Sheet = 1
+	s.Place(scene.Entity{X: 200, Y: 200, Aspect: near})
 
-	loin := figure()
-	loin.Sheet = 2
-	s.Place(scene.Entity{X: 10, Y: 390, Aspect: loin})
+	far := figure()
+	far.Sheet = 2
+	s.Place(scene.Entity{X: 10, Y: 390, Aspect: far})
 
 	image := New(s).Frame()
 	if len(image) != 1 {
@@ -144,7 +144,7 @@ func TestOrderHoldsWhenAThirdDisappears(t *testing.T) {
 
 	// Posée en premier pour que son retrait déplace les deux suivantes. Sa
 	// profondeur diffère, donc elle ne se mêle pas à leur départage.
-	jetable, _ := s.Place(scene.Entity{X: 20, Y: 20, Aspect: figure()})
+	toRemove, _ := s.Place(scene.Entity{X: 20, Y: 20, Aspect: figure()})
 
 	// Même profondeur — la somme des deux axes vaut 28 — et deux abscisses écran
 	// opposées. Même aspect, sans quoi la planche trancherait avant l'index.
@@ -160,16 +160,16 @@ func TestOrderHoldsWhenAThirdDisappears(t *testing.T) {
 	if image[0].X > image[1].X {
 		t.Errorf("abscisses %d puis %d : les deux d'une même profondeur ne vont pas de gauche à droite", image[0].X, image[1].X)
 	}
-	avant := [2]int16{image[0].X, image[1].X}
+	previous := [2]int16{image[0].X, image[1].X}
 
-	s.Remove(jetable)
+	s.Remove(toRemove)
 
 	image = sorter.Frame()
 	if len(image) != 2 {
 		t.Fatalf("%d quads après le retrait, attendu 2", len(image))
 	}
-	if image[0].X != avant[0] || image[1].X != avant[1] {
-		t.Errorf("ordre %d, %d après le retrait, attendu %d, %d", image[0].X, image[1].X, avant[0], avant[1])
+	if image[0].X != previous[0] || image[1].X != previous[1] {
+		t.Errorf("ordre %d, %d après le retrait, attendu %d, %d", image[0].X, image[1].X, previous[0], previous[1])
 	}
 }
 
