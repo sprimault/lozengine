@@ -47,8 +47,8 @@ notes de publication.
 
 ### Ajouté
 
-- `Entrees` dit ce que le clavier tient à une image et ce qui vient d'être enfoncé, par
-  `Enfoncee` et `Pressee`. Une `Touche` désigne une place, pas un caractère.
+- `Input` dit ce que le clavier tient à une image et ce qui vient d'être enfoncé, par
+  `Held` et `JustPressed`. Une `Key` désigne une place, pas un caractère.
 - Les planches se chargent depuis le paquet racine : `OuvrirPlanche` par chemin,
   `ChargerPlanche` par lecteur, plus `Planche`, `Atlas`, `Rectangle` et
   `NouvellePlanche`.
@@ -70,8 +70,8 @@ notes de publication.
 
 ### Added
 
-- `Entrees` states which keys a frame holds and which were just pressed, through
-  `Enfoncee` and `Pressee`. A `Touche` names a place, not a character.
+- `Input` states which keys a frame holds and which were just pressed, through `Held`
+  and `JustPressed`. A `Key` names a place, not a character.
 - Sheets are loaded from the root package: `OuvrirPlanche` by path, `ChargerPlanche`
   by reader, plus `Planche`, `Atlas`, `Rectangle` and `NouvellePlanche`.
 - `geometrie`, `scene` and `raster` are public: the fields and methods of `Matrice`,

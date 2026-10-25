@@ -82,7 +82,7 @@ door adds convenience, never capability: everything it allows can also be done b
 driving the engine by hand.
 
 Five packages are public because the documentation of their types has to be readable:
-`rendu`, `geometrie`, `scene`, `raster` and `entree`. Everything else lives under
+`rendu`, `geometrie`, `scene`, `raster` and `input`. Everything else lives under
 `internal/`,
 which the compiler forbids importing from another module — so a host cannot bind to a
 backend by going around the boundary. The root package republishes the essentials, so

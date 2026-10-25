@@ -1,10 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package entree porte ce qu'un jeu lit du clavier : quelles touches sont enfoncées à
+// Package input porte ce qu'un jeu lit du clavier : quelles touches sont enfoncées à
 // l'image courante, et lesquelles viennent de l'être.
 //
-// Une position, jamais un caractère. Une [Touche] désigne l'endroit où elle se trouve
+// Une position, jamais un caractère. Une [Key] désigne l'endroit où la touche se trouve
 // sur le clavier, indépendamment de la disposition active : la touche nommée W est
 // celle marquée Z sur un clavier français, et les quatre touches de déplacement gardent
 // leur losange partout. C'est ce que la documentation du système appelle un code de
@@ -17,7 +17,7 @@
 // doigt se pose et se répéterait soixante fois par seconde, et le joueur ne saurait
 // jamais s'il l'a dépensée exprès.
 //
-// Deux types, parce que deux côtés. [Etat] est celui du backend, qui relève les
-// événements du système et les accumule d'une image à l'autre. [Entrees] est ce qu'un
-// jeu reçoit : une valeur, qu'il lit et ne peut pas modifier.
-package entree
+// Deux types, parce que deux côtés. [State] est celui du backend, qui relève les
+// événements du système et les accumule d'une image à l'autre. [Input] est ce qu'un jeu
+// reçoit : une valeur, qu'il lit et ne peut pas modifier.
+package input

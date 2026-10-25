@@ -20,7 +20,7 @@
 package backend
 
 import (
-	"github.com/sprimault/lozengine/entree"
+	"github.com/sprimault/lozengine/input"
 	"github.com/sprimault/lozengine/rendu"
 )
 
@@ -32,7 +32,7 @@ import (
 type Fenetre interface {
 	// Entrees rend l'état du clavier pour le pas qui commence, les touches tenues
 	// comme celles qui viennent d'être enfoncées.
-	Entrees() entree.Entrees
+	Entrees() input.Input
 
 	// Presenter pose le tampon à l'écran, tel quel.
 	//
