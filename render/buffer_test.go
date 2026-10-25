@@ -1,7 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-package rendu
+package render
 
 import "testing"
 
@@ -14,8 +14,8 @@ func TestNouveauTamponRefuseAuDelaDeLaBorne(t *testing.T) {
 		nom              string
 		largeur, hauteur uint16
 	}{
-		{"largeur", BorneTampon + 1, 1},
-		{"hauteur", 1, BorneTampon + 1},
+		{"largeur", MaxBufferSide + 1, 1},
+		{"hauteur", 1, MaxBufferSide + 1},
 	}
 	for _, c := range cas {
 		t.Run(c.nom, func(t *testing.T) {
@@ -25,7 +25,7 @@ func TestNouveauTamponRefuseAuDelaDeLaBorne(t *testing.T) {
 				}
 			}()
 
-			NouveauTampon(c.largeur, c.hauteur)
+			NewBuffer(c.largeur, c.hauteur)
 		})
 	}
 }
@@ -34,23 +34,23 @@ func TestNouveauTamponRefuseAuDelaDeLaBorne(t *testing.T) {
 // la manger. Un hors-par-un ici retirerait une colonne au plus grand tampon possible,
 // et aucun autre cas ne le verrait.
 func TestNouveauTamponAccepteLaBorne(t *testing.T) {
-	tampon := NouveauTampon(BorneTampon, 1)
+	tampon := NewBuffer(MaxBufferSide, 1)
 
-	if len(tampon.Pixels) != BorneTampon {
-		t.Errorf("pixels : %d, attendu %d", len(tampon.Pixels), BorneTampon)
+	if len(tampon.Pixels) != MaxBufferSide {
+		t.Errorf("pixels : %d, attendu %d", len(tampon.Pixels), MaxBufferSide)
 	}
 }
 
 // TestNouveauTamponTransparent vérifie que l'image part transparente : un hôte qui
 // n'écrit rien reçoit une valeur zéro, et c'est sur elle que le rastériseur efface.
 func TestNouveauTamponTransparent(t *testing.T) {
-	tampon := NouveauTampon(2, 2)
+	tampon := NewBuffer(2, 2)
 
 	if len(tampon.Pixels) != 4 {
 		t.Fatalf("pixels : %d, attendu 4", len(tampon.Pixels))
 	}
 	for i, got := range tampon.Pixels {
-		if got != (Couleur{}) {
+		if got != (Color{}) {
 			t.Errorf("pixel %d : %v, attendu transparent", i, got)
 		}
 	}

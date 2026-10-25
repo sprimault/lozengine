@@ -6,7 +6,7 @@ package raster
 import (
 	"testing"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Une mesure brute dit ce que l'opération coûte sur la machine qui mesure. Ce qu'on
@@ -47,9 +47,9 @@ func tile() Sheet {
 		demi := (height + 1) * 2
 
 		for x := 16 - demi; x < 16+demi; x++ {
-			color := rendu.Couleur{R: 90, V: 110, B: 90, A: 255}
+			color := render.Color{R: 90, G: 110, B: 90, A: 255}
 			if x == 16-demi || x == 16+demi-1 {
-				color = rendu.Couleur{R: 45, V: 55, B: 45, A: 128}
+				color = render.Color{R: 45, G: 55, B: 45, A: 128}
 			}
 			p.Pixels[y*32+x] = color
 		}
@@ -63,9 +63,9 @@ func character() Sheet {
 	p := NewSheet(16, 24)
 	for y := 2; y < 24; y++ {
 		for x := 4; x < 12; x++ {
-			color := rendu.Couleur{R: 160, V: 140, B: 120, A: 255}
+			color := render.Color{R: 160, G: 140, B: 120, A: 255}
 			if x == 4 || x == 11 {
-				color = rendu.Couleur{R: 80, V: 70, B: 60, A: 128}
+				color = render.Color{R: 80, G: 70, B: 60, A: 128}
 			}
 			p.Pixels[y*16+x] = color
 		}
@@ -93,24 +93,24 @@ func testAtlas(b *testing.B) *Atlas {
 func BenchmarkQuad(b *testing.B) {
 	cases := []struct {
 		name   string
-		regler func(*rendu.Quad)
+		regler func(*render.Quad)
 	}{
-		{"copie", func(*rendu.Quad) {}},
-		{"teinte", func(q *rendu.Quad) { q.Teinte = rendu.Couleur{R: 255, V: 160, B: 160, A: 255} }},
-		{"demi-opacité", func(q *rendu.Quad) { q.Teinte = rendu.Couleur{R: 128, V: 128, B: 128, A: 128} }},
-		{"miroir", func(q *rendu.Quad) { q.Drapeaux = rendu.MiroirX }},
-		{"découpé de moitié", func(q *rendu.Quad) { q.X = -16 }},
-		{"aplat", func(q *rendu.Quad) { q.Drapeaux = rendu.Aplat }},
+		{"copie", func(*render.Quad) {}},
+		{"teinte", func(q *render.Quad) { q.Tint = render.Color{R: 255, G: 160, B: 160, A: 255} }},
+		{"demi-opacité", func(q *render.Quad) { q.Tint = render.Color{R: 128, G: 128, B: 128, A: 128} }},
+		{"miroir", func(q *render.Quad) { q.Flags = render.MirrorX }},
+		{"découpé de moitié", func(q *render.Quad) { q.X = -16 }},
+		{"aplat", func(q *render.Quad) { q.Flags = render.Flat }},
 	}
 
 	a := testAtlas(b)
 	for _, c := range cases {
 		b.Run(c.name, func(b *testing.B) {
-			buffer := rendu.NouveauTampon(480, 270)
+			buffer := render.NewBuffer(480, 270)
 
-			q := rendu.Quad{X: 100, Y: 100, Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc()}
+			q := render.Quad{X: 100, Y: 100, Width: 32, Height: 16, Tint: render.White()}
 			c.regler(&q)
-			r := rendu.Rendu{q}
+			r := render.DrawList{q}
 
 			b.ResetTimer()
 			for range b.N {
@@ -126,14 +126,14 @@ func BenchmarkQuad(b *testing.B) {
 func BenchmarkClear(b *testing.B) {
 	cases := []struct {
 		name  string
-		color rendu.Couleur
+		color render.Color
 	}{
-		{"transparent", rendu.Couleur{}},
-		{"couleur", rendu.Couleur{R: 20, V: 30, B: 40, A: 255}},
+		{"transparent", render.Color{}},
+		{"couleur", render.Color{R: 20, G: 30, B: 40, A: 255}},
 	}
 	for _, c := range cases {
 		b.Run(c.name, func(b *testing.B) {
-			buffer := rendu.NouveauTampon(480, 270)
+			buffer := render.NewBuffer(480, 270)
 
 			b.ResetTimer()
 			for range b.N {
@@ -158,13 +158,13 @@ func BenchmarkUpscale(b *testing.B) {
 	}
 	for _, c := range cases {
 		b.Run(c.name, func(b *testing.B) {
-			inner := rendu.NouveauTampon(480, 270)
-			Clear(inner, rendu.Couleur{R: 60, V: 80, B: 60, A: 255})
-			out := rendu.NouveauTampon(c.outWidth, c.outHeight)
+			inner := render.NewBuffer(480, 270)
+			Clear(inner, render.Color{R: 60, G: 80, B: 60, A: 255})
+			out := render.NewBuffer(c.outWidth, c.outHeight)
 
 			b.ResetTimer()
 			for range b.N {
-				Upscale(inner, out, c.factor, rendu.Couleur{A: 255})
+				Upscale(inner, out, c.factor, render.Color{A: 255})
 			}
 			imagePart(b)
 		})
@@ -176,27 +176,27 @@ func BenchmarkUpscale(b *testing.B) {
 // qui compte — combien d'images par seconde le blit laisse au reste du moteur.
 func BenchmarkFrame(b *testing.B) {
 	a := testAtlas(b)
-	buffer := rendu.NouveauTampon(480, 270)
+	buffer := render.NewBuffer(480, 270)
 
-	var r rendu.Rendu
+	var r render.DrawList
 	for y := -16; y < 270; y += 8 {
 		decalage := 0
 		if (y/8)%2 != 0 {
 			decalage = 16
 		}
 		for x := -32; x < 480; x += 32 {
-			r = append(r, rendu.Quad{
+			r = append(r, render.Quad{
 				X: int16(x + decalage), Y: int16(y),
-				Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc(),
+				Width: 32, Height: 16, Tint: render.White(),
 			})
 		}
 	}
 	tuiles := len(r)
 
 	for i := range 200 {
-		r = append(r, rendu.Quad{
+		r = append(r, render.Quad{
 			X: int16(i * 7 % 460), Y: int16(i * 13 % 240),
-			Largeur: 16, Hauteur: 24, Planche: 1, Teinte: rendu.Blanc(),
+			Width: 16, Height: 24, Sheet: 1, Tint: render.White(),
 		})
 	}
 

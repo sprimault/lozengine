@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // encodePNG rend le PNG d'une image, pour éprouver le chargement sans fichier sur
@@ -39,10 +39,10 @@ func TestLoadSheetPremultiplies(t *testing.T) {
 		t.Fatalf("chargement : %v", err)
 	}
 
-	if veut := (rendu.Couleur{R: 128, A: 128}); p.Pixels[0] != veut {
+	if veut := (render.Color{R: 128, A: 128}); p.Pixels[0] != veut {
 		t.Errorf("rouge à demi transparent : %v, attendu %v", p.Pixels[0], veut)
 	}
-	if veut := (rendu.Couleur{R: 255, V: 255, B: 255, A: 255}); p.Pixels[1] != veut {
+	if veut := (render.Color{R: 255, G: 255, B: 255, A: 255}); p.Pixels[1] != veut {
 		t.Errorf("blanc opaque : %v, attendu %v", p.Pixels[1], veut)
 	}
 }
@@ -60,10 +60,10 @@ func TestLoadSheetFormats(t *testing.T) {
 	cases := []struct {
 		name string
 		img  image.Image
-		want rendu.Couleur
+		want render.Color
 	}{
-		{"niveaux de gris", gris, rendu.Couleur{R: 200, V: 200, B: 200, A: 255}},
-		{"palette", palette, rendu.Couleur{R: 10, V: 20, B: 30, A: 255}},
+		{"niveaux de gris", gris, render.Color{R: 200, G: 200, B: 200, A: 255}},
+		{"palette", palette, render.Color{R: 10, G: 20, B: 30, A: 255}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -93,7 +93,7 @@ func TestLoadSheetShiftedOrigin(t *testing.T) {
 	if p.Width != 2 || p.Height != 2 {
 		t.Fatalf("dimensions : %d×%d, attendu 2×2", p.Width, p.Height)
 	}
-	if veut := (rendu.Couleur{V: 255, A: 255}); p.Pixels[0] != veut {
+	if veut := (render.Color{G: 255, A: 255}); p.Pixels[0] != veut {
 		t.Errorf("premier pixel : %v, attendu %v", p.Pixels[0], veut)
 	}
 }

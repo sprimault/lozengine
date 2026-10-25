@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Rejeu tient ce qu'un scénario réutilise d'une image à l'autre : son atlas, son
@@ -17,9 +17,9 @@ import (
 type Rejeu struct {
 	scenario Scenario
 	atlas    *raster.Atlas
-	tampon   *rendu.Tampon
-	sortie   *rendu.Tampon
-	quads    rendu.Rendu
+	tampon   *render.Buffer
+	sortie   *render.Buffer
+	quads    render.DrawList
 }
 
 // NouveauRejeu monte l'atlas du scénario et prépare le tampon à sa résolution.
@@ -38,7 +38,7 @@ func NouveauRejeu(s Scenario) (*Rejeu, error) {
 	return &Rejeu{
 		scenario: s,
 		atlas:    atlas,
-		tampon:   rendu.NouveauTampon(s.Largeur, s.Hauteur),
+		tampon:   render.NewBuffer(s.Largeur, s.Hauteur),
 	}, nil
 }
 
@@ -48,7 +48,7 @@ func NouveauRejeu(s Scenario) (*Rejeu, error) {
 // l'écrire se fait avant l'image suivante. C'est cette image-là que la suite de
 // références compare, jamais une image agrandie — l'échelle est un habillage, pas un
 // résultat de rendu.
-func (r *Rejeu) Image(numero int, e Entrees) *rendu.Tampon {
+func (r *Rejeu) Image(numero int, e Entrees) *render.Buffer {
 	r.quads = r.scenario.Quads(numero, e, r.quads[:0])
 	raster.Clear(r.tampon, r.scenario.Fond)
 	raster.Draw(r.tampon, r.quads, r.atlas)
@@ -70,14 +70,14 @@ func (r *Rejeu) Ecrire(repertoire string, numero, facteur int) error {
 		// La taille reste en int jusqu'au contrôle : convertie d'abord, elle se
 		// repliait sur un facteur élevé et rendait une image minuscule que rien ne
 		// distinguait de celle qu'on avait demandée.
-		large := int(r.tampon.Largeur) * facteur
-		haut := int(r.tampon.Hauteur) * facteur
-		if large > rendu.BorneTampon || haut > rendu.BorneTampon {
-			return fmt.Errorf("facteur %d : l'image ferait %d×%d, au-delà des %d de côté qu'un tampon porte", facteur, large, haut, rendu.BorneTampon)
+		large := int(r.tampon.Width) * facteur
+		haut := int(r.tampon.Height) * facteur
+		if large > render.MaxBufferSide || haut > render.MaxBufferSide {
+			return fmt.Errorf("facteur %d : l'image ferait %d×%d, au-delà des %d de côté qu'un tampon porte", facteur, large, haut, render.MaxBufferSide)
 		}
 
-		if r.sortie == nil || int(r.sortie.Largeur) != large || int(r.sortie.Hauteur) != haut {
-			r.sortie = rendu.NouveauTampon(uint16(large), uint16(haut))
+		if r.sortie == nil || int(r.sortie.Width) != large || int(r.sortie.Height) != haut {
+			r.sortie = render.NewBuffer(uint16(large), uint16(haut))
 		}
 		raster.Upscale(r.tampon, r.sortie, facteur, r.scenario.Fond)
 		source = r.sortie

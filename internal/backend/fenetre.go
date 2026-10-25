@@ -21,7 +21,7 @@ package backend
 
 import (
 	"github.com/sprimault/lozengine/input"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Fenetre est ce qu'une famille de plateformes doit savoir faire, et rien de plus.
@@ -40,7 +40,7 @@ type Fenetre interface {
 	// se plaindre soixante fois par seconde. Une présentation qui ne peut pas avoir
 	// lieu — fenêtre minimisée, par exemple — ne fait rien, ce qui est le bon
 	// comportement et non un échec. Ce qui est terminal se lit par Fermee.
-	Presenter(t *rendu.Tampon)
+	Presenter(t *render.Buffer)
 
 	// Taille rend les dimensions de la zone utile, en pixels, hors bordures et
 	// barre de titre. C'est d'elle que la boucle tire le facteur d'agrandissement.

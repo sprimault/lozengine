@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/geometry"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
 
@@ -47,7 +47,7 @@ func scenePourBanc(b *testing.B, cote, entites, strates int) *scene.Scene {
 	}
 	s.Focus(float64(cote)/2, float64(cote)/2, 480, 270)
 
-	sol := scene.Aspect{Width: 32, Height: 16, Tint: rendu.Blanc()}
+	sol := scene.Aspect{Width: 32, Height: 16, Tint: render.White()}
 	for strate := range strates {
 		for v := range cote {
 			for u := range cote {
@@ -56,7 +56,7 @@ func scenePourBanc(b *testing.B, cote, entites, strates int) *scene.Scene {
 		}
 	}
 
-	figure := scene.Aspect{Width: 12, Height: 24, Tint: rendu.Blanc()}
+	figure := scene.Aspect{Width: 12, Height: 24, Tint: render.White()}
 	for i := range entites {
 		x := float64((i*37)%cote) + 0.5
 		y := float64((i*61)%cote) + 0.5

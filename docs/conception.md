@@ -137,7 +137,7 @@ racine carrée d'IEEE-754 sont à arrondi correct.
   d'interface est une couche haute de la clé de tri, pas une exception.
 - **Options en structure.** Valeur zéro utilisable. Tout ce qui n'est pas
   renseigné a un défaut raisonnable.
-- **Disposition compatible C.** `Quad` et `Rendu` n'emploient que des champs de
+- **Disposition compatible C.** `Quad` et `DrawList` n'emploient que des champs de
   taille fixe, dans un tableau contigu. Pas de chaîne, pas d'interface, pas de
   slice imbriquée, pas de pointeur vers de la mémoire gérée.
 - **Aucun rappel dans le chemin de rendu.** L'apparence est résolue en amont,
@@ -196,23 +196,23 @@ Le sens des dépendances ne s'inverse jamais.
 
 ```
 lozengine             surface publique, boucle, assemblage      tous les internes
-geometry             projection, matrices, conversions         aucune
-scene                 grille, entités, couches, caméra          geometry, rendu
-internal/tri          retrait hors image, clé, départage        geometry, scene, rendu
-rendu                 structures Quad et Rendu, publiques       aucune
-raster                planches, atlas, rastériseur, PNG         rendu
-internal/apparence    interface fournisseur, animation          geometry, rendu
+geometry              projection, matrices, conversions         aucune
+scene                 grille, entités, couches, caméra          geometry, render
+internal/tri          retrait hors image, clé, départage        geometry, scene, render
+render                structures Quad et DrawList, publiques    aucune
+raster                planches, atlas, rastériseur, PNG         render
+internal/apparence    interface fournisseur, animation          geometry, render
 input                 touches, état du clavier                  aucune
-internal/backend/…    contrat de fenêtre, familles, présentation  input, rendu
+internal/backend/…    contrat de fenêtre, familles, présentation  input, render
 internal/audio        mixeur et sorties système                 aucune
 internal/visionneuse  scènes scriptées, rejeu, images           tous les précédents
 cmd/visionneuse       commande de rejeu                         visionneuse
 ```
 
-`scene` et `tri` atteignent `rendu` parce que l'un décrit des entités qui portent
+`scene` et `tri` atteignent `render` parce que l'un décrit des entités qui portent
 une teinte et des drapeaux, et que l'autre produit la liste de quads : sans cela, le
 noyau ne pourrait pas rendre ce que son critère de fin lui demande. Cela ne leur
-ouvre rien d'autre — `rendu` n'a lui-même aucune dépendance.
+ouvre rien d'autre — `render` n'a lui-même aucune dépendance.
 
 La visionneuse n'est pas le moteur : c'est l'outillage qui le rend jugeable sans
 écran. Rien ne dépend d'elle, et c'est pourquoi elle atteint tout le reste — un
@@ -221,7 +221,7 @@ scénario de non-régression construit une scène, la fait trier, puis la rasté
 Le paquet racine est le seul à tout connaître, et rien ne dépend de lui.
 
 **Un paquet sort d'`internal/` quand un consommateur doit lire la documentation de ses
-types, et c'est une décision, pas un rangement.** Quatre y sont : `rendu`,
+types, et c'est une décision, pas un rangement.** Quatre y sont : `render`,
 `geometry`, `scene` et `raster`. Le reste — le tri, les backends, la visionneuse —
 n'a aucune raison d'être lu par qui écrit un jeu, et le compilateur Go interdit de
 l'importer depuis un autre module.
@@ -237,9 +237,9 @@ racine ne les republie pas, un jeu n'ayant pas à les appeler.
 **Le critère est mécanique, et il s'est vérifié deux fois.** Un type publié par alias
 ne montre rien quand il désigne un paquet `internal` : un consommateur lisait
 `type Quad = rendu.Quad` et la godoc de l'alias, sans un seul champ — ni coordonnées,
-ni teinte, ni planche —, ce qui a sorti `rendu` au jalon 0. La même chose vaut pour les
+ni teinte, ni planche —, ce qui a sorti `render` au jalon 0. La même chose vaut pour les
 méthodes, et personne ne l'avait vu : le 25 octobre 2026, `go doc -all` ne montrait
-aucune des quatre méthodes de `Matrice`, alors que la `0.2.0` l'annonçait comme la
+aucune des quatre méthodes de `Matrix`, alors que la `0.2.0` l'annonçait comme la
 surface du jalon 1 et que sa propre godoc disait « s'emploie par ses méthodes ».
 `geometry` et `scene` sont sortis de là.
 
@@ -265,7 +265,7 @@ structures qu'un hôte reçoit par milliers à chaque image, et qui doivent gard
 leur disposition compatible C jusqu'à la frontière.
 
 `scene` et `tri` ne connaissent aucun backend. `raster` et `backend` ne
-connaissent pas `scene` : ils consomment un `Rendu` déjà trié. Si un backend a
+connaissent pas `scene` : ils consomment une `DrawList` déjà triée. Si un backend a
 besoin de trier, de projeter ou de consulter la scène, la frontière est mal
 placée, et le correctif est dans le noyau.
 
@@ -311,7 +311,7 @@ c'est qu'un défaut manque quelque part.
 
 ## Dépendances
 
-**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `tri`, `rendu` et
+**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `tri`, `render` et
 `raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. C'est
 là que la promesse se joue, et le contrôle la vérifie paquet par paquet plutôt
 que globalement.

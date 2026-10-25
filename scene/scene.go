@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/sprimault/lozengine/geometry"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // MaxTiers est le nombre de choses qu'une cellule peut empiler.
@@ -89,8 +89,8 @@ func New(width, height int, projection geometry.Matrix, o Options) (*Scene, erro
 	if width <= 0 || height <= 0 {
 		return nil, fmt.Errorf("grille de %d×%d : les deux côtés sont obligatoires", width, height)
 	}
-	if width > rendu.CoteMax || height > rendu.CoteMax {
-		return nil, fmt.Errorf("grille de %d×%d : %d cellules de côté au plus, ce que la clé de tri sait ordonner", width, height, rendu.CoteMax)
+	if width > render.MaxSide || height > render.MaxSide {
+		return nil, fmt.Errorf("grille de %d×%d : %d cellules de côté au plus, ce que la clé de tri sait ordonner", width, height, render.MaxSide)
 	}
 
 	capacity := o.Entities

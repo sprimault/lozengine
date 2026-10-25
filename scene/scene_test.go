@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/geometry"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // testScene monte une petite scène, la capacité d'entités étant le seul réglage
@@ -24,7 +24,7 @@ func testScene(t *testing.T, capacity int) *Scene {
 
 // solid rend un aspect visible, la valeur zéro d'un aspect ne montrant rien.
 func solid() Aspect {
-	return Aspect{Width: 32, Height: 16, Tint: rendu.Blanc()}
+	return Aspect{Width: 32, Height: 16, Tint: render.White()}
 }
 
 // TestNewRefuses vérifie que ce qui ne peut pas marcher se dit au montage, le seul
@@ -37,7 +37,7 @@ func TestNewRefuses(t *testing.T) {
 	}{
 		{"largeur nulle", 0, 8, Options{}},
 		{"hauteur négative", 8, -1, Options{}},
-		{"au-delà de ce que la clé ordonne", rendu.CoteMax + 1, 8, Options{}},
+		{"au-delà de ce que la clé ordonne", render.MaxSide + 1, 8, Options{}},
 		{"capacité au-delà du champ de rang", 8, 8, Options{Entities: maxRank + 1}},
 		{"capacité négative", 8, 8, Options{Entities: -1}},
 	}
@@ -53,13 +53,13 @@ func TestNewRefuses(t *testing.T) {
 // TestNewAcceptsTheLimit vérifie que la garde s'arrête là où la clé de tri cesse
 // de distinguer, et pas une cellule avant.
 func TestNewAcceptsTheLimit(t *testing.T) {
-	s, err := New(rendu.CoteMax, 1, geometry.Dimetric(32, 16), Options{Entities: 1})
+	s, err := New(render.MaxSide, 1, geometry.Dimetric(32, 16), Options{Entities: 1})
 	if err != nil {
-		t.Fatalf("grille de %d de côté refusée : %v", rendu.CoteMax, err)
+		t.Fatalf("grille de %d de côté refusée : %v", render.MaxSide, err)
 	}
 
-	if l, h := s.Dimensions(); l != rendu.CoteMax || h != 1 {
-		t.Errorf("dimensions %d×%d, attendu %d×1", l, h, rendu.CoteMax)
+	if l, h := s.Dimensions(); l != render.MaxSide || h != 1 {
+		t.Errorf("dimensions %d×%d, attendu %d×1", l, h, render.MaxSide)
 	}
 }
 
@@ -154,8 +154,8 @@ func TestPlaceRefusesOutsideKeyBounds(t *testing.T) {
 		name   string
 		aspect Aspect
 	}{
-		{"couche", Aspect{Width: 32, Height: 16, Tint: rendu.Blanc(), Layer: rendu.CoucheMax + 1}},
-		{"étage", Aspect{Width: 32, Height: 16, Tint: rendu.Blanc(), Floor: rendu.EtageMax + 1}},
+		{"couche", Aspect{Width: 32, Height: 16, Tint: render.White(), Layer: render.MaxLayer + 1}},
+		{"étage", Aspect{Width: 32, Height: 16, Tint: render.White(), Floor: render.MaxFloor + 1}},
 	}
 	for _, c := range outOfBounds {
 		t.Run(c.name, func(t *testing.T) {
@@ -187,7 +187,7 @@ func TestPlaceRefusesOutsideKeyBounds(t *testing.T) {
 // étage, que le moteur annonce pourtant, et aucun autre cas ne le verrait.
 func TestPlaceAcceptsTheBounds(t *testing.T) {
 	s := testScene(t, 2)
-	extremes := Aspect{Width: 32, Height: 16, Tint: rendu.Blanc(), Layer: rendu.CoucheMax, Floor: rendu.EtageMax}
+	extremes := Aspect{Width: 32, Height: 16, Tint: render.White(), Layer: render.MaxLayer, Floor: render.MaxFloor}
 
 	if _, ok := s.Place(Entity{Aspect: extremes}); !ok {
 		t.Error("Place a refusé la borne")
@@ -204,7 +204,7 @@ func TestSetAspectKeepsThePosition(t *testing.T) {
 	s := testScene(t, 2)
 
 	p, _ := s.Place(Entity{X: 3, Y: 5, Z: 1, Aspect: solid()})
-	if !s.SetAspect(p, Aspect{Width: 8, Height: 8, Sheet: 7, Tint: rendu.Blanc()}) {
+	if !s.SetAspect(p, Aspect{Width: 8, Height: 8, Sheet: 7, Tint: render.White()}) {
 		t.Fatal("habillage refusé")
 	}
 

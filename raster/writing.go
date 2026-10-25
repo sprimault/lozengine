@@ -9,7 +9,7 @@ import (
 	"image/png"
 	"io"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // WritePNG écrit le tampon en PNG.
@@ -27,11 +27,11 @@ import (
 // 32 896 couples prémultipliés valides, un tiers le perdent, et jamais plus d'un
 // cran. Un tampon opaque, lui, revient exact — c'est ce dont la suite de
 // non-régression dépend, et pourquoi ses scénarios rendent des images opaques.
-func WritePNG(t *rendu.Tampon, w io.Writer) error {
-	img := image.NewRGBA(image.Rect(0, 0, int(t.Largeur), int(t.Hauteur)))
+func WritePNG(t *render.Buffer, w io.Writer) error {
+	img := image.NewRGBA(image.Rect(0, 0, int(t.Width), int(t.Height)))
 	for i, c := range t.Pixels {
 		o := i * 4
-		img.Pix[o], img.Pix[o+1], img.Pix[o+2], img.Pix[o+3] = c.R, c.V, c.B, c.A
+		img.Pix[o], img.Pix[o+1], img.Pix[o+2], img.Pix[o+3] = c.R, c.G, c.B, c.A
 	}
 
 	if err := png.Encode(w, img); err != nil {

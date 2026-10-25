@@ -58,10 +58,10 @@ notes de publication.
   choses qu'une cellule empile.
 - La scène se décrit depuis le paquet racine : `NewScene`, `Scene`, `Entity`,
   `Aspect`, `Handle`, `Orientation` et ses quatre quarts de tour, `SceneOptions`.
-- `CoucheMax` et `EtageMax` disent combien de couches et d'étages l'ordre de dessin
+- `MaxLayer` et `MaxFloor` disent combien de couches et d'étages l'ordre de dessin
   distingue. Une pose qui les dépasse est refusée, au lieu d'être ramenée au plafond.
-- `Tampon` est l'image dans laquelle le moteur dessine, et un hôte peut l'allouer
-  lui-même : `NouveauTampon` et `BorneTampon` viennent avec.
+- `Buffer` est l'image dans laquelle le moteur dessine, et un hôte peut l'allouer
+  lui-même : `NewBuffer` et `MaxBufferSide` viennent avec.
 - `windows/386` entre dans les cibles vérifiées à la compilation, la famille Windows
   étant annoncée sur ses trois architectures. Cette cible **compile**, rien de plus.
 
@@ -79,10 +79,10 @@ notes de publication.
   cell stacks.
 - A scene is described from the root package: `NewScene`, `Scene`, `Entity`,
   `Aspect`, `Handle`, `Orientation` and its four quarter turns, `SceneOptions`.
-- `CoucheMax` and `EtageMax` state how many layers and floors the draw order tells
+- `MaxLayer` and `MaxFloor` state how many layers and floors the draw order tells
   apart. A placement beyond them is refused rather than clamped to the ceiling.
-- `Tampon` is the image the engine draws into, and a host may allocate it itself:
-  `NouveauTampon` and `BorneTampon` come with it.
+- `Buffer` is the image the engine draws into, and a host may allocate it itself:
+  `NewBuffer` and `MaxBufferSide` come with it.
 - `windows/386` joins the targets verified at build time, the Windows family being
   announced for all three of its architectures. That target **compiles**, nothing more.
 

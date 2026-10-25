@@ -51,7 +51,7 @@ is in [`docs/go.md`](docs/go.md) (French).
 
 ## The boundary that carries everything
 
-The core produces a `Rendu`: the list of quads already placed, in drawing order
+The core produces a `DrawList`: the list of quads already placed, in drawing order
 and grouped by sheet, with those falling outside the screen already removed.
 Nothing in that structure knows about Windows, X11 or an image format.
 
@@ -61,7 +61,7 @@ the core. That is what lets the software rasteriser and the system backends
 consume exactly the same thing — and therefore what lets the regression suite
 judge the rendering without ever opening a window.
 
-`Quad` and `Rendu` keep a C-compatible layout: fixed-size fields, one contiguous
+`Quad` and `DrawList` keep a C-compatible layout: fixed-size fields, one contiguous
 array, no string and no interface, and no callback anywhere in the render path.
 The core is meant to be consumed from Rust, C++ or any language speaking the C
 ABI; a `string` in `Quad` would force a conversion per quad and per frame, which
@@ -82,7 +82,7 @@ door adds convenience, never capability: everything it allows can also be done b
 driving the engine by hand.
 
 Five packages are public because the documentation of their types has to be readable:
-`rendu`, `geometry`, `scene`, `raster` and `input`. Everything else lives under
+`render`, `geometry`, `scene`, `raster` and `input`. Everything else lives under
 `internal/`,
 which the compiler forbids importing from another module — so a host cannot bind to a
 backend by going around the boundary. The root package republishes the essentials, so

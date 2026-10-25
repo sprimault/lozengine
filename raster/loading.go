@@ -11,7 +11,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // LoadSheet lit un PNG et rend une planche en alpha prémultiplié.
@@ -41,9 +41,9 @@ func LoadSheet(r io.Reader) (Sheet, error) {
 	sheet := NewSheet(uint16(size.Dx()), uint16(size.Dy()))
 	for i := range sheet.Pixels {
 		o := i * 4
-		sheet.Pixels[i] = rendu.Couleur{
+		sheet.Pixels[i] = render.Color{
 			R: rgba.Pix[o],
-			V: rgba.Pix[o+1],
+			G: rgba.Pix[o+1],
 			B: rgba.Pix[o+2],
 			A: rgba.Pix[o+3],
 		}

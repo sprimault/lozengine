@@ -17,7 +17,7 @@
 // le cadrage, la seconde vit dans la matrice que l'appelant fournit.
 package scene
 
-import "github.com/sprimault/lozengine/rendu"
+import "github.com/sprimault/lozengine/render"
 
 // Aspect est ce qu'une chose montre : de quoi remplir un quad, sans dire où.
 //
@@ -38,8 +38,8 @@ type Aspect struct {
 	// Tint multiplie la source, et [rendu.Blanc] est la valeur qui la laisse
 	// intacte. Attention : la valeur zéro d'une couleur est transparente, donc elle
 	// ne dessine rien — une cellule qu'on veut voir porte une teinte explicite.
-	Tint  rendu.Couleur
-	Flags rendu.Drapeaux
+	Tint  render.Color
+	Flags render.Flags
 
 	// Layer et Floor ouvrent les deux champs les plus forts de la clé de tri. La
 	// couche range ce qui doit passer devant tout le reste, une interface par exemple ;
@@ -54,7 +54,7 @@ type Aspect struct {
 }
 
 // fitsInKey dit si la couche et l'étage sont dans ce que l'ordre de dessin sait
-// distinguer, soit [rendu.CoucheMax] et [rendu.EtageMax].
+// distinguer, soit [render.MaxLayer] et [render.MaxFloor].
 //
 // Les deux champs sont des octets alors que la clé de tri n'en porte que seize et
 // soixante-quatre valeurs, et la composition de la clé ramène une valeur trop grande
@@ -63,7 +63,7 @@ type Aspect struct {
 // la cause se chercherait dans le jeu. La pose refuse donc, ce qui est le seul endroit
 // où elle peut être vue — le chemin d'une image ne vérifie rien.
 func (a Aspect) fitsInKey() bool {
-	return a.Layer <= rendu.CoucheMax && a.Floor <= rendu.EtageMax
+	return a.Layer <= render.MaxLayer && a.Floor <= render.MaxFloor
 }
 
 // Entity est un aspect posé à un point du monde.

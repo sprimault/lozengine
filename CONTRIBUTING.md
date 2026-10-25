@@ -17,7 +17,7 @@ bureaucratic.
 
 ## The rule on dependencies
 
-**The core of the engine has none.** `geometrie`, `scene`, `tri`, `rendu` and
+**The core of the engine has none.** `geometry`, `scene`, `tri`, `render` and
 `raster` use the standard library and nothing else, no cgo, tests included. A
 pull request that adds anything there is refused whatever its quality: "just for
 the tests" is not an exception, and an assertion library even less so.
@@ -56,7 +56,7 @@ places where one change tips over others.
 - **The direction of dependencies between packages.** It never inverts. If a
   backend needs to sort, to project or to consult the scene, the boundary is in
   the wrong place and the fix belongs in the core, not in the backend.
-- **The layout of `Quad` and `Rendu`.** Fixed-size fields, contiguous array, no
+- **The layout of `Quad` and `DrawList`.** Fixed-size fields, contiguous array, no
   string, no interface, no nested slice. A single field added to the wrong type
   makes the engine unusable from another language.
 - **How the sort key is composed.** It is the only truth about draw order, and

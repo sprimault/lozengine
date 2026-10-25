@@ -122,12 +122,12 @@ AUTORISEES = golang\.org/x/image(/.*)?|github\.com/ebitengine/oto/v3(/.*)?
 # frontière système : c'est lui qui rastérise les polices, donc lui qui pourra
 # puiser dans la liste. Deux notions voisines, deux listes — les confondre
 # interdirait à `apparence` ce que la liste existe précisément pour lui permettre.
-# `rendu`, `geometry`, `scene`, `raster` et `input` vivent hors d'`internal/`, parce
+# `render`, `geometry`, `scene`, `raster` et `input` vivent hors d'`internal/`, parce
 # qu'un consommateur
 # doit pouvoir lire la documentation de leurs champs et de leurs méthodes — un alias
 # vers un paquet interne n'en montre aucun. Être public ne relâche rien : ils restent
 # le cœur, donc ils n'ont droit à aucune dépendance.
-SANS_DEPENDANCE = rendu geometry scene raster input internal/tri
+SANS_DEPENDANCE = render geometry scene raster input internal/tri
 
 # La règle du dépôt, rendue exécutable.
 #
@@ -183,7 +183,7 @@ deps:
 
 # Les paquets qui consomment ou produisent un Rendu, et rien d'autre. Le paquet
 # racine en est absent : c'est lui qui assemble, donc il connaît les backends.
-NOYAU = rendu geometry scene raster input internal/tri \
+NOYAU = render geometry scene raster input internal/tri \
         internal/apparence
 
 # Ce qu'aucun d'eux ne doit importer. Les appels directs et les sockets vivent dans

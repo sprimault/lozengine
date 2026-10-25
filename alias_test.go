@@ -8,7 +8,7 @@ import (
 
 	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/input"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
 
@@ -19,11 +19,11 @@ import (
 func TestConstantesRepubliees(t *testing.T) {
 	cas := []struct {
 		nom           string
-		racine, noyau Drapeaux
+		racine, noyau Flags
 	}{
-		{"MiroirX", MiroirX, rendu.MiroirX},
-		{"MiroirY", MiroirY, rendu.MiroirY},
-		{"Aplat", Aplat, rendu.Aplat},
+		{"MirrorX", MirrorX, render.MirrorX},
+		{"MirrorY", MirrorY, render.MirrorY},
+		{"Aplat", Flat, render.Flat},
 	}
 	for _, c := range cas {
 		if c.racine != c.noyau {
@@ -39,13 +39,13 @@ func TestConstantesRepubliees(t *testing.T) {
 // désigne le type du noyau. Une enveloppe, ou un type distinct de même forme,
 // obligerait un hôte à convertir l'image à chaque passage de frontière.
 func TestTamponRepublie(t *testing.T) {
-	var racine *Tampon = rendu.NouveauTampon(2, 1)
+	var racine *Buffer = render.NewBuffer(2, 1)
 
-	if BorneTampon != rendu.BorneTampon {
-		t.Errorf("BorneTampon republié : %d, attendu %d", BorneTampon, rendu.BorneTampon)
+	if MaxBufferSide != render.MaxBufferSide {
+		t.Errorf("MaxBufferSide republié : %d, attendu %d", MaxBufferSide, render.MaxBufferSide)
 	}
-	if got := NouveauTampon(2, 1); got.Largeur != racine.Largeur || len(got.Pixels) != len(racine.Pixels) {
-		t.Errorf("NouveauTampon republié rend %d×%d et %d pixels", got.Largeur, got.Hauteur, len(got.Pixels))
+	if got := NewBuffer(2, 1); got.Width != racine.Width || len(got.Pixels) != len(racine.Pixels) {
+		t.Errorf("NewBuffer republié rend %d×%d et %d pixels", got.Width, got.Height, len(got.Pixels))
 	}
 }
 
@@ -59,12 +59,12 @@ func TestTamponRepublie(t *testing.T) {
 func TestConstructeursRepublies(t *testing.T) {
 	cas := []struct {
 		nom           string
-		racine, noyau Matrice
+		racine, noyau Matrix
 	}{
-		{"Dimetrique", Dimetrique(32, 16), geometry.Dimetric(32, 16)},
-		{"Isometrique", Isometrique(32), geometry.Isometric(32)},
-		{"Grille", Grille(32), geometry.Grid(32)},
-		{"Brute", Brute(2, 3, 5, 7), geometry.Raw(2, 3, 5, 7)},
+		{"Dimetric", Dimetric(32, 16), geometry.Dimetric(32, 16)},
+		{"Isometric", Isometric(32), geometry.Isometric(32)},
+		{"Grille", Grid(32), geometry.Grid(32)},
+		{"Brute", Raw(2, 3, 5, 7), geometry.Raw(2, 3, 5, 7)},
 	}
 	for _, c := range cas {
 		if c.racine != c.noyau {
@@ -95,14 +95,14 @@ func TestOrientationsRepubliees(t *testing.T) {
 		}
 	}
 
-	if CoucheMax != rendu.CoucheMax {
-		t.Errorf("CoucheMax republié : %d, attendu %d", CoucheMax, rendu.CoucheMax)
+	if MaxLayer != render.MaxLayer {
+		t.Errorf("MaxLayer republié : %d, attendu %d", MaxLayer, render.MaxLayer)
 	}
-	if EtageMax != rendu.EtageMax {
-		t.Errorf("EtageMax republié : %d, attendu %d", EtageMax, rendu.EtageMax)
+	if MaxFloor != render.MaxFloor {
+		t.Errorf("MaxFloor republié : %d, attendu %d", MaxFloor, render.MaxFloor)
 	}
-	if MaxSide != rendu.CoteMax {
-		t.Errorf("MaxSide republié : %d, attendu %d", MaxSide, rendu.CoteMax)
+	if MaxSide != render.MaxSide {
+		t.Errorf("MaxSide republié : %d, attendu %d", MaxSide, render.MaxSide)
 	}
 	if MaxTiers != scene.MaxTiers {
 		t.Errorf("MaxTiers republié : %d, attendu %d", MaxTiers, scene.MaxTiers)
@@ -163,12 +163,12 @@ func TestPlanchesSUtilisentDepuisLaRacine(t *testing.T) {
 // alias manquant, ou un constructeur qui échangerait ses paramètres, ne se verrait
 // nulle part ailleurs.
 func TestSceneSUtiliseDepuisLaRacine(t *testing.T) {
-	s, err := NewScene(16, 16, Dimetrique(32, 16), SceneOptions{Entities: 8})
+	s, err := NewScene(16, 16, Dimetric(32, 16), SceneOptions{Entities: 8})
 	if err != nil {
 		t.Fatalf("montage : %v", err)
 	}
 
-	p, ok := s.Place(Entity{X: 2, Y: 3, Aspect: Aspect{Width: 32, Height: 16, Tint: Blanc()}})
+	p, ok := s.Place(Entity{X: 2, Y: 3, Aspect: Aspect{Width: 32, Height: 16, Tint: White()}})
 	if !ok {
 		t.Fatal("entité refusée")
 	}
@@ -177,11 +177,11 @@ func TestSceneSUtiliseDepuisLaRacine(t *testing.T) {
 	}
 
 	// Aux deux bornes, pour que le cas démontre aussi qu'elles sont employables.
-	haut := Aspect{Width: 32, Height: 16, Tint: Blanc(), Layer: CoucheMax, Floor: EtageMax}
+	haut := Aspect{Width: 32, Height: 16, Tint: White(), Layer: MaxLayer, Floor: MaxFloor}
 	if !s.PlaceCell(1, 1, 0, haut) {
 		t.Fatal("cellule refusée aux bornes")
 	}
-	if got := s.Cell(1, 1, 0); got.Layer != CoucheMax || got.Floor != EtageMax {
+	if got := s.Cell(1, 1, 0); got.Layer != MaxLayer || got.Floor != MaxFloor {
 		t.Errorf("cellule relue en couche %d étage %d", got.Layer, got.Floor)
 	}
 
@@ -200,7 +200,7 @@ func TestSceneSUtiliseDepuisLaRacine(t *testing.T) {
 // s'emploie sans rien importer d'autre : c'est tout ce qu'un consommateur peut en
 // faire au sortir de ce jalon, et le seul cas qui le démontre.
 func TestMatriceSUtiliseDepuisLaRacine(t *testing.T) {
-	m := Dimetrique(32, 16).WithFloorHeight(8)
+	m := Dimetric(32, 16).WithFloorHeight(8)
 
 	ex, ey, profondeur, hauteur := m.Project(1, 1, 1)
 	if ex != 0 || ey != 8 || profondeur != 8 || hauteur != 4 {

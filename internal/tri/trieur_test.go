@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/geometry"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
 
@@ -25,7 +25,7 @@ func scenePourTest(t *testing.T, cote, capacite int) *scene.Scene {
 
 // figure rend un aspect visible de la taille d'une tuile.
 func figure() scene.Aspect {
-	return scene.Aspect{Width: 32, Height: 16, Tint: rendu.Blanc()}
+	return scene.Aspect{Width: 32, Height: 16, Tint: render.White()}
 }
 
 // TestImageOrdonneParProfondeur vérifie la propriété que tout le jalon sert : ce qui
@@ -49,8 +49,8 @@ func TestImageOrdonneParProfondeur(t *testing.T) {
 	}
 
 	for i, attendu := range []uint16{1, 2, 3} {
-		if image[i].Planche != attendu {
-			t.Errorf("rang %d : planche %d, attendu %d", i, image[i].Planche, attendu)
+		if image[i].Sheet != attendu {
+			t.Errorf("rang %d : planche %d, attendu %d", i, image[i].Sheet, attendu)
 		}
 	}
 }
@@ -72,8 +72,8 @@ func TestCeQuiSortDeLImageEstRetire(t *testing.T) {
 	if len(image) != 1 {
 		t.Fatalf("%d quads, attendu 1 — l'entité lointaine devait être écartée", len(image))
 	}
-	if image[0].Planche != 1 {
-		t.Errorf("planche %d, attendu celle du centre", image[0].Planche)
+	if image[0].Sheet != 1 {
+		t.Errorf("planche %d, attendu celle du centre", image[0].Sheet)
 	}
 }
 

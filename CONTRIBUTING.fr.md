@@ -17,7 +17,7 @@ discussion préalable utile plutôt que bureaucratique.
 
 ## La règle sur les dépendances
 
-**Le cœur du moteur n'en a aucune.** `geometrie`, `scene`, `tri`, `rendu` et
+**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `tri`, `render` et
 `raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. Une
 pull request qui y ajoute quoi que ce soit est refusée, quelle que soit sa
 qualité : « juste pour les tests » n'est pas une exception, et une bibliothèque
@@ -58,7 +58,7 @@ que ce sont les endroits où une modification en fait basculer d'autres.
 - **Le sens des dépendances entre paquets.** Il ne s'inverse jamais. Si un
   backend a besoin de trier, de projeter ou de consulter la scène, la frontière
   est mal placée et le correctif est dans le noyau, pas dans le backend.
-- **La disposition de `Quad` et `Rendu`.** Champs de taille fixe, tableau
+- **La disposition de `Quad` et `DrawList`.** Champs de taille fixe, tableau
   contigu, ni chaîne ni interface ni slice imbriquée. Un seul champ ajouté au
   mauvais type rend le moteur inexploitable depuis un autre langage.
 - **La composition de la clé de tri.** Elle est la seule vérité de l'ordre de

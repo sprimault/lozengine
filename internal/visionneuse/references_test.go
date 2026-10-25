@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // regenerer réécrit les images de référence au lieu de les comparer.
@@ -63,7 +63,7 @@ func TestReferences(t *testing.T) {
 }
 
 // comparer confronte un tampon à l'image de référence du même nom.
-func comparer(t *testing.T, nom string, tampon *rendu.Tampon) {
+func comparer(t *testing.T, nom string, tampon *render.Buffer) {
 	t.Helper()
 
 	fichier, err := os.Open(filepath.Join(referencesDir, nom))
@@ -76,9 +76,9 @@ func comparer(t *testing.T, nom string, tampon *rendu.Tampon) {
 	if err != nil {
 		t.Fatalf("%s : %v", nom, err)
 	}
-	if reference.Width != tampon.Largeur || reference.Height != tampon.Hauteur {
+	if reference.Width != tampon.Width || reference.Height != tampon.Height {
 		t.Fatalf("%s : rendu %d×%d, référence %d×%d",
-			nom, tampon.Largeur, tampon.Hauteur, reference.Width, reference.Height)
+			nom, tampon.Width, tampon.Height, reference.Width, reference.Height)
 	}
 
 	ecarts, premier := ecartsPixels(tampon.Pixels, reference.Pixels)
@@ -86,7 +86,7 @@ func comparer(t *testing.T, nom string, tampon *rendu.Tampon) {
 		return
 	}
 
-	x, y := premier%int(tampon.Largeur), premier/int(tampon.Largeur)
+	x, y := premier%int(tampon.Width), premier/int(tampon.Width)
 	t.Errorf("%s : %d pixels diffèrent, le premier en (%d, %d) — %v au lieu de %v%s",
 		nom, ecarts, x, y, tampon.Pixels[premier], reference.Pixels[premier],
 		deposer(t, nom, tampon, reference))
@@ -99,7 +99,7 @@ func comparer(t *testing.T, nom string, tampon *rendu.Tampon) {
 // rangement : c'est le contrôle dont les sept images de référence dépendent, et rien
 // ne disait qu'il savait échouer. Une comparaison qui rendrait toujours zéro laisse
 // la suite verte en ne gardant plus rien.
-func ecartsPixels(obtenu, attendu []rendu.Couleur) (nombre, premier int) {
+func ecartsPixels(obtenu, attendu []render.Color) (nombre, premier int) {
 	premier = -1
 	for i := range obtenu {
 		if obtenu[i] != attendu[i] {
@@ -120,19 +120,19 @@ func ecartsPixels(obtenu, attendu []rendu.Couleur) (nombre, premier int) {
 // sans qu'aucun défaut existe. C'est ce qui oblige les scénarios à rendre des images
 // opaques.
 func TestEcartsPixelsSaitEchouer(t *testing.T) {
-	bleu := rendu.Couleur{B: 255, A: 255}
-	rouge := rendu.Couleur{R: 255, A: 255}
+	bleu := render.Color{B: 255, A: 255}
+	rouge := render.Color{R: 255, A: 255}
 
 	cas := []struct {
 		nom             string
-		obtenu, attendu []rendu.Couleur
+		obtenu, attendu []render.Color
 		nombre, premier int
 	}{
-		{"identiques", []rendu.Couleur{bleu, bleu}, []rendu.Couleur{bleu, bleu}, 0, -1},
-		{"le second faux", []rendu.Couleur{bleu, rouge}, []rendu.Couleur{bleu, bleu}, 1, 1},
-		{"le premier faux", []rendu.Couleur{rouge, bleu}, []rendu.Couleur{bleu, bleu}, 1, 0},
-		{"les deux faux", []rendu.Couleur{rouge, rouge}, []rendu.Couleur{bleu, bleu}, 2, 0},
-		{"un seul cran", []rendu.Couleur{{R: 1, A: 2}}, []rendu.Couleur{{A: 2}}, 1, 0},
+		{"identiques", []render.Color{bleu, bleu}, []render.Color{bleu, bleu}, 0, -1},
+		{"le second faux", []render.Color{bleu, rouge}, []render.Color{bleu, bleu}, 1, 1},
+		{"le premier faux", []render.Color{rouge, bleu}, []render.Color{bleu, bleu}, 1, 0},
+		{"les deux faux", []render.Color{rouge, rouge}, []render.Color{bleu, bleu}, 2, 0},
+		{"un seul cran", []render.Color{{R: 1, A: 2}}, []render.Color{{A: 2}}, 1, 0},
 	}
 
 	for _, c := range cas {
@@ -155,18 +155,18 @@ func TestEcartsPixelsSaitEchouer(t *testing.T) {
 // preuve. Un dépôt qui échoue n'aggrave donc pas l'échec, il le rend seulement moins
 // lisible — et c'est tout ce qu'on peut faire de mieux ici, puisque le test a déjà
 // quelque chose à rapporter.
-func deposer(t *testing.T, nom string, tampon *rendu.Tampon, reference raster.Sheet) string {
+func deposer(t *testing.T, nom string, tampon *render.Buffer, reference raster.Sheet) string {
 	t.Helper()
 
-	ecart := rendu.NouveauTampon(tampon.Largeur, tampon.Hauteur)
+	ecart := render.NewBuffer(tampon.Width, tampon.Height)
 	for i := range ecart.Pixels {
-		ecart.Pixels[i] = rendu.Couleur{R: 0, V: 0, B: 0, A: 255}
+		ecart.Pixels[i] = render.Color{R: 0, G: 0, B: 0, A: 255}
 		if tampon.Pixels[i] != reference.Pixels[i] {
-			ecart.Pixels[i] = rendu.Couleur{R: 255, V: 0, B: 0, A: 255}
+			ecart.Pixels[i] = render.Color{R: 255, G: 0, B: 0, A: 255}
 		}
 	}
 
-	for suffixe, image := range map[string]*rendu.Tampon{"rendu": tampon, "ecart": ecart} {
+	for suffixe, image := range map[string]*render.Buffer{"rendu": tampon, "ecart": ecart} {
 		chemin := filepath.Join(echecsDir, suffixe+"-"+nom)
 		if err := os.MkdirAll(echecsDir, 0o755); err != nil {
 			return ""

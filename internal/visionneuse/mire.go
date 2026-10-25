@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/sprimault/lozengine/raster"
-	"github.com/sprimault/lozengine/rendu"
+	"github.com/sprimault/lozengine/render"
 )
 
 // Mire est le scénario de démonstration : un sol en damier de losanges, un pion qui
@@ -26,9 +26,9 @@ func Mire() Scenario {
 
 	// Deux teintes sur une planche blanche : la couleur du sol vient de la modulation,
 	// ce qui évite deux planches pour un damier.
-	sol := [2]rendu.Couleur{
-		{R: 90, V: 130, B: 90, A: 255},
-		{R: 70, V: 100, B: 75, A: 255},
+	sol := [2]render.Color{
+		{R: 90, G: 130, B: 90, A: 255},
+		{R: 70, G: 100, B: 75, A: 255},
 	}
 
 	return Scenario{
@@ -36,7 +36,7 @@ func Mire() Scenario {
 		Largeur: largeur,
 		Hauteur: hauteur,
 		Images:  24,
-		Fond:    rendu.Couleur{R: 12, V: 12, B: 18, A: 255},
+		Fond:    render.Color{R: 12, G: 12, B: 18, A: 255},
 
 		// Quatre moments plutôt que vingt-quatre images : le pion hors champ à
 		// gauche, puis dedans, puis le voile au milieu, puis le pion qui sort à
@@ -54,17 +54,17 @@ func Mire() Scenario {
 			return &atlas, nil
 		},
 
-		Quads: func(numero int, e Entrees, reserve rendu.Rendu) rendu.Rendu {
+		Quads: func(numero int, e Entrees, reserve render.DrawList) render.DrawList {
 			quads := reserve
 
 			for ligne := 0; ligne*tuileH/2 < hauteur+tuileH; ligne++ {
 				for colonne := 0; colonne*tuileL < largeur+tuileL; colonne++ {
-					quads = append(quads, rendu.Quad{
-						X:       int16(colonne*tuileL - tuileL + (ligne%2)*(tuileL/2)),
-						Y:       int16(ligne*tuileH/2 - tuileH),
-						Largeur: tuileL,
-						Hauteur: tuileH,
-						Teinte:  sol[(colonne+ligne)%2],
+					quads = append(quads, render.Quad{
+						X:      int16(colonne*tuileL - tuileL + (ligne%2)*(tuileL/2)),
+						Y:      int16(ligne*tuileH/2 - tuileH),
+						Width:  tuileL,
+						Height: tuileH,
+						Tint:   sol[(colonne+ligne)%2],
 					})
 				}
 			}
@@ -73,15 +73,15 @@ func Mire() Scenario {
 			if px, py, ok := positionPion(e); ok {
 				x, y = px, py
 			}
-			quads = append(quads, rendu.Quad{
-				X: int16(x), Y: int16(y), Largeur: pionCote, Hauteur: pionCote,
-				Planche: 1, Teinte: rendu.Blanc(),
+			quads = append(quads, render.Quad{
+				X: int16(x), Y: int16(y), Width: pionCote, Height: pionCote,
+				Sheet: 1, Tint: render.White(),
 			})
 
 			if !strings.Contains(string(e), "sans-voile") {
-				quads = append(quads, rendu.Quad{
-					X: int16(largeur - 4 - numero*5), Y: 0, Largeur: 24, Hauteur: hauteur,
-					Teinte: rendu.Couleur{A: 96}, Drapeaux: rendu.Aplat,
+				quads = append(quads, render.Quad{
+					X: int16(largeur - 4 - numero*5), Y: 0, Width: 24, Height: hauteur,
+					Tint: render.Color{A: 96}, Flags: render.Flat,
 				})
 			}
 			return quads
@@ -111,9 +111,9 @@ func plancheTuile() raster.Sheet {
 		demi := (rang + 1) * 2
 
 		for x := 16 - demi; x < 16+demi; x++ {
-			couleur := rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+			couleur := render.Color{R: 255, G: 255, B: 255, A: 255}
 			if x == 16-demi || x == 16+demi-1 {
-				couleur = rendu.Couleur{R: 128, V: 128, B: 128, A: 128}
+				couleur = render.Color{R: 128, G: 128, B: 128, A: 128}
 			}
 			p.Pixels[y*32+x] = couleur
 		}
@@ -126,9 +126,9 @@ func planchePion() raster.Sheet {
 	p := raster.NewSheet(8, 8)
 	for y := range 8 {
 		for x := range 8 {
-			couleur := rendu.Couleur{R: 255, V: 255, B: 255, A: 255}
+			couleur := render.Color{R: 255, G: 255, B: 255, A: 255}
 			if x == 0 || y == 0 || x == 7 || y == 7 {
-				couleur = rendu.Couleur{R: 96, V: 96, B: 96, A: 96}
+				couleur = render.Color{R: 96, G: 96, B: 96, A: 96}
 			}
 			p.Pixels[y*8+x] = couleur
 		}
