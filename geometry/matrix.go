@@ -127,8 +127,8 @@ func matrix(a, b, c, d float64) Matrix {
 
 	// Trois parts et non deux : l'inverse additionne deux produits et le biais
 	// d'arrondi, et il reste ainsi de quoi les porter tous les trois.
-	if pire := maxAbs(m.ia, m.ib, m.ic, m.id); pire > 0 {
-		m.span = int32(min(math.MaxInt64/(3*pire), math.MaxInt32))
+	if worst := maxAbs(m.ia, m.ib, m.ic, m.id); worst > 0 {
+		m.span = int32(min(math.MaxInt64/(3*worst), math.MaxInt32))
 	}
 	return m
 }

@@ -13,7 +13,7 @@ import (
 )
 
 // Sheet est une page de pixels dans laquelle les quads puisent, ligne par ligne
-// et sans remplissage : le pixel (x, y) est à l'index y×Largeur + x.
+// et sans remplissage : le pixel (x, y) est à l'index y×Width + x.
 //
 // Ses composantes sont prémultipliées, comme celles de [render.Color] : le
 // mélange d'un pixel se ramène ainsi à une multiplication et une addition, et la

@@ -21,17 +21,17 @@ import (
 // porte pas : l'oubli ne se compile pas en erreur, il se compile en valeur
 // fausse.
 func TestConstantsRepublished(t *testing.T) {
-	cas := []struct {
-		nom           string
-		racine, noyau Flags
+	cases := []struct {
+		name       string
+		root, core Flags
 	}{
 		{"MirrorX", MirrorX, render.MirrorX},
 		{"MirrorY", MirrorY, render.MirrorY},
 		{"Aplat", Flat, render.Flat},
 	}
-	for _, c := range cas {
-		if c.racine != c.noyau {
-			t.Errorf("%s republié : %#b, attendu %#b", c.nom, c.racine, c.noyau)
+	for _, c := range cases {
+		if c.root != c.core {
+			t.Errorf("%s republié : %#b, attendu %#b", c.name, c.root, c.core)
 		}
 	}
 }
@@ -39,16 +39,16 @@ func TestConstantsRepublished(t *testing.T) {
 // TestBufferRepublished vérifie que le tampon traverse la surface publique sans
 // conversion, et que sa borne republiée est bien celle du noyau.
 //
-// L'annotation de type explicite est le test lui-même : elle ne compile que si Tampon
+// L'annotation de type explicite est le test lui-même : elle ne compile que si Buffer
 // désigne le type du noyau. Une enveloppe, ou un type distinct de même forme,
 // obligerait un hôte à convertir l'image à chaque passage de frontière.
 func TestBufferRepublished(t *testing.T) {
-	var racine *Buffer = render.NewBuffer(2, 1)
+	var root *Buffer = render.NewBuffer(2, 1)
 
 	if MaxBufferSide != render.MaxBufferSide {
 		t.Errorf("MaxBufferSide republié : %d, attendu %d", MaxBufferSide, render.MaxBufferSide)
 	}
-	if got := NewBuffer(2, 1); got.Width != racine.Width || len(got.Pixels) != len(racine.Pixels) {
+	if got := NewBuffer(2, 1); got.Width != root.Width || len(got.Pixels) != len(root.Pixels) {
 		t.Errorf("NewBuffer republié rend %d×%d et %d pixels", got.Width, got.Height, len(got.Pixels))
 	}
 }
@@ -58,21 +58,21 @@ func TestBufferRepublished(t *testing.T) {
 // Ce qu'elle est seule à pouvoir attraper : une enveloppe qui appellerait le mauvais
 // constructeur, ou qui échangerait ses deux paramètres, se compilerait sans broncher
 // et ne se verrait qu'à l'image. La comparaison elle-même prouve au passage que
-// Matrice est bien un alias et non un type distinct — deux types différents ne se
+// Matrix est bien un alias et non un type distinct — deux types différents ne se
 // compareraient pas.
 func TestConstructorsRepublished(t *testing.T) {
-	cas := []struct {
-		nom           string
-		racine, noyau Matrix
+	cases := []struct {
+		name       string
+		root, core Matrix
 	}{
 		{"Dimetric", Dimetric(32, 16), geometry.Dimetric(32, 16)},
 		{"Isometric", Isometric(32), geometry.Isometric(32)},
 		{"Grille", Grid(32), geometry.Grid(32)},
 		{"Brute", Raw(2, 3, 5, 7), geometry.Raw(2, 3, 5, 7)},
 	}
-	for _, c := range cas {
-		if c.racine != c.noyau {
-			t.Errorf("%s republié ne rend pas la matrice du noyau", c.nom)
+	for _, c := range cases {
+		if c.root != c.core {
+			t.Errorf("%s republié ne rend pas la matrice du noyau", c.name)
 		}
 	}
 }
@@ -84,18 +84,18 @@ func TestConstructorsRepublished(t *testing.T) {
 // mauvaise constante — QuarterTurn valant le demi-tour — se compile sans broncher et ne se
 // voit qu'à l'image, où elle ressemble à un défaut de caméra.
 func TestOrientationsRepublished(t *testing.T) {
-	cas := []struct {
-		nom           string
-		racine, noyau Orientation
+	cases := []struct {
+		name       string
+		root, core Orientation
 	}{
 		{"NoRotation", NoRotation, scene.NoRotation},
 		{"QuarterTurn", QuarterTurn, scene.QuarterTurn},
 		{"HalfTurn", HalfTurn, scene.HalfTurn},
 		{"ThreeQuarters", ThreeQuarters, scene.ThreeQuarters},
 	}
-	for _, c := range cas {
-		if c.racine != c.noyau {
-			t.Errorf("%s republié : %d, attendu %d", c.nom, c.racine, c.noyau)
+	for _, c := range cases {
+		if c.root != c.core {
+			t.Errorf("%s republié : %d, attendu %d", c.name, c.root, c.core)
 		}
 	}
 
@@ -181,8 +181,8 @@ func TestSceneUsableFromTheRoot(t *testing.T) {
 	}
 
 	// Aux deux bornes, pour que le cas démontre aussi qu'elles sont employables.
-	haut := Aspect{Width: 32, Height: 16, Tint: White(), Layer: MaxLayer, Floor: MaxFloor}
-	if !s.PlaceCell(1, 1, 0, haut) {
+	top := Aspect{Width: 32, Height: 16, Tint: White(), Layer: MaxLayer, Floor: MaxFloor}
+	if !s.PlaceCell(1, 1, 0, top) {
 		t.Fatal("cellule refusée aux bornes")
 	}
 	if got := s.Cell(1, 1, 0); got.Layer != MaxLayer || got.Floor != MaxFloor {
@@ -195,8 +195,8 @@ func TestSceneUsableFromTheRoot(t *testing.T) {
 	}
 
 	s.Focus(4, 5, 480, 270)
-	if _, _, largeur, hauteur := s.View(); largeur != 480 || hauteur != 270 {
-		t.Errorf("vue de %d×%d, attendu 480×270", largeur, hauteur)
+	if _, _, width, height := s.View(); width != 480 || height != 270 {
+		t.Errorf("vue de %d×%d, attendu 480×270", width, height)
 	}
 }
 
@@ -206,9 +206,9 @@ func TestSceneUsableFromTheRoot(t *testing.T) {
 func TestMatrixUsableFromTheRoot(t *testing.T) {
 	m := Dimetric(32, 16).WithFloorHeight(8)
 
-	ex, ey, profondeur, hauteur := m.Project(1, 1, 1)
-	if ex != 0 || ey != 8 || profondeur != 8 || hauteur != 4 {
-		t.Errorf("projeté (%d, %d), profondeur %d, hauteur %d — attendu (0, 8), 8 et 4", ex, ey, profondeur, hauteur)
+	ex, ey, depth, height := m.Project(1, 1, 1)
+	if ex != 0 || ey != 8 || depth != 8 || height != 4 {
+		t.Errorf("projeté (%d, %d), profondeur %d, hauteur %d — attendu (0, 8), 8 et 4", ex, ey, depth, height)
 	}
 
 	if x, y := m.Unproject(ex, ey); x != 0.5 || y != 0.5 {

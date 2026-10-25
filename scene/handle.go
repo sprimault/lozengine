@@ -22,7 +22,7 @@ type Handle uint32
 const (
 	rankBits = 20
 
-	// maxRank et generationMax sont ce que les deux champs portent : un million
+	// maxRank et maxGeneration sont ce que les deux champs portent : un million
 	// d'entités vivantes à la fois, et quatre mille réemplois d'un même rang avant
 	// qu'une poignée périmée puisse se faire passer pour valide.
 	maxRank       = 1<<rankBits - 1

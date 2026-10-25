@@ -25,7 +25,7 @@ type Aspect struct {
 	SourceX, SourceY uint16
 	Width, Height    uint16
 
-	// Tint multiplie la source, et [rendu.Blanc] est la valeur qui la laisse
+	// Tint multiplie la source, et [render.White] est la valeur qui la laisse
 	// intacte. Attention : la valeur zéro d'une couleur est transparente, donc elle
 	// ne dessine rien — une cellule qu'on veut voir porte une teinte explicite.
 	Tint  render.Color
