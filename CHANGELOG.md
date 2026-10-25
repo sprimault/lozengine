@@ -47,6 +47,10 @@ notes de publication.
 
 ### Ajouté
 
+- La scène se décrit depuis le paquet racine : `NouvelleScene`, `Scene`, `Entite`,
+  `Aspect`, `Poignee`, `Orientation` et ses quatre quarts de tour, `OptionsScene`.
+- `CoucheMax` et `EtageMax` disent combien de couches et d'étages l'ordre de dessin
+  distingue. Une pose qui les dépasse est refusée, au lieu d'être ramenée au plafond.
 - `Tampon` est l'image dans laquelle le moteur dessine, et un hôte peut l'allouer
   lui-même : `NouveauTampon` et `BorneTampon` viennent avec.
 - `windows/386` entre dans les cibles vérifiées à la compilation, la famille Windows
@@ -56,6 +60,10 @@ notes de publication.
 
 ### Added
 
+- A scene is described from the root package: `NouvelleScene`, `Scene`, `Entite`,
+  `Aspect`, `Poignee`, `Orientation` and its four quarter turns, `OptionsScene`.
+- `CoucheMax` and `EtageMax` state how many layers and floors the draw order tells
+  apart. A placement beyond them is refused rather than clamped to the ceiling.
 - `Tampon` is the image the engine draws into, and a host may allocate it itself:
   `NouveauTampon` and `BorneTampon` come with it.
 - `windows/386` joins the targets verified at build time, the Windows family being

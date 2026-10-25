@@ -88,7 +88,7 @@ func TestRetraitGardeLesPoigneesDesAutres(t *testing.T) {
 	}
 
 	vues := map[float64]bool{}
-	for _, e := range s.Entites() {
+	for _, e := range Entites(s) {
 		vues[e.X] = true
 	}
 	if len(vues) != 2 || !vues[10] || !vues[30] {
@@ -136,8 +136,64 @@ func TestPoserRefuseAuPlein(t *testing.T) {
 	if _, ok := s.Poser(Entite{Aspect: plein()}); ok {
 		t.Error("entité acceptée au-delà de la capacité")
 	}
-	if n := len(s.Entites()); n != 2 {
+	if n := len(Entites(s)); n != 2 {
 		t.Errorf("%d entités, attendu 2", n)
+	}
+}
+
+// TestPoseRefuseHorsDesBornesDeLaCle couvre le seul défaut de cette surface qui ne se
+// verrait jamais : la composition de la clé ramène une couche ou un étage trop grand au
+// plafond, donc un jeu qui en demande vingt en verrait six se confondre avec la
+// quinzième, sur une image par ailleurs irréprochable.
+//
+// Les trois portes sont éprouvées parce qu'elles ont trois contrôles distincts, et
+// qu'un aspect entre par n'importe laquelle. Chacune rend déjà un booléen : refuser ne
+// coûte donc aucune signature.
+func TestPoseRefuseHorsDesBornesDeLaCle(t *testing.T) {
+	horsBornes := []struct {
+		nom    string
+		aspect Aspect
+	}{
+		{"couche", Aspect{Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc(), Couche: rendu.CoucheMax + 1}},
+		{"étage", Aspect{Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc(), Etage: rendu.EtageMax + 1}},
+	}
+	for _, c := range horsBornes {
+		t.Run(c.nom, func(t *testing.T) {
+			s := scenePourTest(t, 4)
+
+			if _, ok := s.Poser(Entite{Aspect: c.aspect}); ok {
+				t.Error("Poser a accepté")
+			}
+			if n := len(Entites(s)); n != 0 {
+				t.Errorf("%d entités posées, attendu aucune", n)
+			}
+
+			p, ok := s.Poser(Entite{Aspect: plein()})
+			if !ok {
+				t.Fatal("entité valide refusée")
+			}
+			if s.Habiller(p, c.aspect) {
+				t.Error("Habiller a accepté")
+			}
+			if s.PoserCellule(1, 1, 0, c.aspect) {
+				t.Error("PoserCellule a accepté")
+			}
+		})
+	}
+}
+
+// TestPoseAccepteLesBornes vérifie que le refus s'arrête à la borne au lieu de la
+// manger. Un hors-par-un ici retirerait la seizième couche et le soixante-quatrième
+// étage, que le moteur annonce pourtant, et aucun autre cas ne le verrait.
+func TestPoseAccepteLesBornes(t *testing.T) {
+	s := scenePourTest(t, 2)
+	extremes := Aspect{Largeur: 32, Hauteur: 16, Teinte: rendu.Blanc(), Couche: rendu.CoucheMax, Etage: rendu.EtageMax}
+
+	if _, ok := s.Poser(Entite{Aspect: extremes}); !ok {
+		t.Error("Poser a refusé la borne")
+	}
+	if !s.PoserCellule(1, 1, 0, extremes) {
+		t.Error("PoserCellule a refusé la borne")
 	}
 }
 
@@ -152,7 +208,7 @@ func TestHabillerNeTouchePasLaPosition(t *testing.T) {
 		t.Fatal("habillage refusé")
 	}
 
-	e := s.Entites()[0]
+	e := Entites(s)[0]
 	if e.X != 3 || e.Y != 5 || e.Z != 1 {
 		t.Errorf("position (%g, %g, %g), attendu (3, 5, 1)", e.X, e.Y, e.Z)
 	}
@@ -234,7 +290,7 @@ func TestLeCheminDUneImageNAllouePas(t *testing.T) {
 			s.Deplacer(p, float64(i)+0.5, 0, 0)
 			s.Habiller(p, plein())
 		}
-		for _, e := range s.Entites() {
+		for _, e := range Entites(s) {
 			_ = e.X
 		}
 	}

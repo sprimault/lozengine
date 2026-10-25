@@ -91,9 +91,9 @@ func (t *Trieur) Image() rendu.Rendu {
 // qu'un écran en montre.
 func (t *Trieur) releverEntites() {
 	m := t.scene.Projection()
-	identites := t.scene.Identites()
+	identites := scene.Identites(t.scene)
 
-	for i, e := range t.scene.Entites() {
+	for i, e := range scene.Entites(t.scene) {
 		rx, ry := t.scene.Remapper(e.X, e.Y)
 		ex, ey, profondeur, hauteur := m.Projeter(rx, ry, e.Z)
 

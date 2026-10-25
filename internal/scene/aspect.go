@@ -53,6 +53,19 @@ type Aspect struct {
 	Etage  uint8
 }
 
+// tientDansLaCle dit si la couche et l'étage sont dans ce que l'ordre de dessin sait
+// distinguer, soit [rendu.CoucheMax] et [rendu.EtageMax].
+//
+// Les deux champs sont des octets alors que la clé de tri n'en porte que seize et
+// soixante-quatre valeurs, et la composition de la clé ramène une valeur trop grande
+// au plafond. Sans contrôle, un jeu qui demande une vingtième couche en verrait six se
+// confondre avec la quinzième : l'image serait fausse, aucun code ne l'aurait dit, et
+// la cause se chercherait dans le jeu. La pose refuse donc, ce qui est le seul endroit
+// où elle peut être vue — le chemin d'une image ne vérifie rien.
+func (a Aspect) tientDansLaCle() bool {
+	return a.Couche <= rendu.CoucheMax && a.Etage <= rendu.EtageMax
+}
+
 // Entite est un aspect posé à un point du monde.
 //
 // Les coordonnées sont des cellules, et elles sont flottantes : une entité se tient en

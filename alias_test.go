@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/internal/geometrie"
+	"github.com/sprimault/lozengine/internal/scene"
 	"github.com/sprimault/lozengine/rendu"
 )
 
@@ -68,6 +69,76 @@ func TestConstructeursRepublies(t *testing.T) {
 		if c.racine != c.noyau {
 			t.Errorf("%s republié ne rend pas la matrice du noyau", c.nom)
 		}
+	}
+}
+
+// TestOrientationsRepubliees vérifie que les quatre quarts de tour valent ceux du
+// noyau, et les plafonds de couche et d'étage avec eux.
+//
+// Même piège que pour les drapeaux, plus un second : une ligne qui recopierait la
+// mauvaise constante — UnQuart valant le demi-tour — se compile sans broncher et ne se
+// voit qu'à l'image, où elle ressemble à un défaut de caméra.
+func TestOrientationsRepubliees(t *testing.T) {
+	cas := []struct {
+		nom           string
+		racine, noyau Orientation
+	}{
+		{"SansRotation", SansRotation, scene.SansRotation},
+		{"UnQuart", UnQuart, scene.UnQuart},
+		{"DemiTour", DemiTour, scene.DemiTour},
+		{"TroisQuarts", TroisQuarts, scene.TroisQuarts},
+	}
+	for _, c := range cas {
+		if c.racine != c.noyau {
+			t.Errorf("%s republié : %d, attendu %d", c.nom, c.racine, c.noyau)
+		}
+	}
+
+	if CoucheMax != rendu.CoucheMax {
+		t.Errorf("CoucheMax republié : %d, attendu %d", CoucheMax, rendu.CoucheMax)
+	}
+	if EtageMax != rendu.EtageMax {
+		t.Errorf("EtageMax republié : %d, attendu %d", EtageMax, rendu.EtageMax)
+	}
+}
+
+// TestSceneSUtiliseDepuisLaRacine vérifie qu'un jeu décrit une scène entière sans rien
+// importer d'autre que ce paquet : grille, entités, décor, caméra.
+//
+// C'est la porte que ce lot ouvre, et le seul cas qui la démontre de bout en bout — un
+// alias manquant, ou un constructeur qui échangerait ses paramètres, ne se verrait
+// nulle part ailleurs.
+func TestSceneSUtiliseDepuisLaRacine(t *testing.T) {
+	s, err := NouvelleScene(16, 16, Dimetrique(32, 16), OptionsScene{Entites: 8})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+
+	p, ok := s.Poser(Entite{X: 2, Y: 3, Aspect: Aspect{Largeur: 32, Hauteur: 16, Teinte: Blanc()}})
+	if !ok {
+		t.Fatal("entité refusée")
+	}
+	if !s.Deplacer(p, 4, 5, 1) {
+		t.Fatal("déplacement refusé")
+	}
+
+	// Aux deux bornes, pour que le cas démontre aussi qu'elles sont employables.
+	haut := Aspect{Largeur: 32, Hauteur: 16, Teinte: Blanc(), Couche: CoucheMax, Etage: EtageMax}
+	if !s.PoserCellule(1, 1, 0, haut) {
+		t.Fatal("cellule refusée aux bornes")
+	}
+	if got := s.Cellule(1, 1, 0); got.Couche != CoucheMax || got.Etage != EtageMax {
+		t.Errorf("cellule relue en couche %d étage %d", got.Couche, got.Etage)
+	}
+
+	s.Orienter(DemiTour)
+	if got := s.Orientation(); got != DemiTour {
+		t.Errorf("orientation %d, attendu %d", got, DemiTour)
+	}
+
+	s.Cadrer(4, 5, 480, 270)
+	if _, _, largeur, hauteur := s.Vue(); largeur != 480 || hauteur != 270 {
+		t.Errorf("vue de %d×%d, attendu 480×270", largeur, hauteur)
 	}
 }
 
