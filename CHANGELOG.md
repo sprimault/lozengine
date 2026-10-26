@@ -59,6 +59,9 @@ notes de publication.
 - `Premultiply` construit une couleur depuis les composantes séparées qu'affiche un
   éditeur d'images, et `Color.Valid` dit si une teinte écrite à la main est cohérente.
   Un jeu qui remplit une planche en mémoire n'a plus à refaire ce calcul.
+- `Color.Scale` atténue une couleur, ses quatre composantes ensemble : c'est ce que
+  demande un éclat qui s'éteint, et amputer les trois couleurs seules assombrirait au
+  lieu d'estomper. La fraction est entière, donc l'atténuation est la même partout.
 
 ### Corrigé
 
@@ -82,6 +85,9 @@ notes de publication.
 - `Premultiply` builds a colour from the separate channels an image editor shows, and
   `Color.Valid` states whether a hand-written tint is coherent. A game filling a sheet
   in memory no longer has to redo that arithmetic.
+- `Color.Scale` dims a colour, all four channels together: that is what a fading
+  sparkle needs, and cutting the three colour channels alone would darken rather than
+  fade. The fraction is an integer, so the dimming is the same everywhere.
 
 ### Fixed
 
