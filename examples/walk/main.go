@@ -152,6 +152,7 @@ func main() {
 		Title:      "lozengine — un damier et un personnage",
 		Atlas:      atlas,
 		Background: lozengine.Color{R: 18, G: 20, B: 28, A: 255},
+		Icons:      []lozengine.Sheet{icon(16), icon(32)},
 	}); err != nil {
 		fmt.Println(err)
 	}
@@ -194,6 +195,49 @@ func diamond(c lozengine.Color) lozengine.Sheet {
 		}
 	}
 	return p
+}
+
+// icon dessine l'icône de la fenêtre : un losange, la forme dont le moteur tire son
+// nom, au bord à demi transparent.
+//
+// Deux tailles sont posées plutôt qu'une, pour que le choix de taille du moteur ait de
+// quoi choisir — le système en demande une grande et une petite, et rien n'est
+// redimensionné.
+//
+// **Le bord à alpha partiel est l'intérêt de l'exemple**, et il est écrit par
+// [lozengine.Premultiply] comme tout alpha partiel du moteur. C'est la seule chose
+// qu'aucun test ne peut juger : le prémultiplié se défait au dessin, chez le shell du
+// système, donc un bord mal composé ne se voit qu'à l'œil dans la barre des tâches.
+func icon(side int) lozengine.Sheet {
+	p := lozengine.NewSheet(uint16(side), uint16(side))
+	half := side / 2
+
+	body := lozengine.Premultiply(120, 170, 220, 255)
+	fringe := lozengine.Premultiply(120, 170, 220, 128)
+
+	for y := range side {
+		for x := range side {
+			// Un losange est l'ensemble des points dont la distance au centre,
+			// comptée en pas horizontaux plus pas verticaux, ne dépasse pas le
+			// demi-côté.
+			switch d := abs(x-half) + abs(y-half); {
+			case d < half-1:
+				p.Pixels[y*side+x] = body
+			case d <= half:
+				p.Pixels[y*side+x] = fringe
+			}
+		}
+	}
+	return p
+}
+
+// abs rend la valeur absolue, que la bibliothèque standard ne donne que pour les
+// flottants.
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
 }
 
 // pawn dessine une silhouette debout de 16×24, au contour plus sombre.
