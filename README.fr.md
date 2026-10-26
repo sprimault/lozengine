@@ -7,10 +7,13 @@ Rendu logiciel, sans GPU : on lui décrit une scène, il en sort la liste des
 rectangles à peindre — des *quads* —, déjà placés à l'écran et rangés dans l'ordre
 de dessin. Il les peint lui-même, ou un hôte les pousse dans son propre pipeline.
 
-MIT ou Apache-2.0, au choix — voir [`LICENSE-MIT`](LICENSE-MIT) et
-[`LICENSE-APACHE`](LICENSE-APACHE). Sauf mention contraire de son auteur, toute
-contribution proposée à l'inclusion est placée sous ces deux mêmes licences, sans
-condition supplémentaire.
+MIT ou Apache-2.0, **au choix de qui emploie le moteur** : l'une des deux suffit,
+elles ne se cumulent pas — voir [`LICENSE-MIT`](LICENSE-MIT) et
+[`LICENSE-APACHE`](LICENSE-APACHE). Les annuaires de paquets les affichent
+souvent côte à côte sans le « ou », ce qui est une façon de les indexer et non une
+exigence double. Sauf mention contraire de son auteur, toute contribution proposée
+à l'inclusion est placée sous ces deux mêmes licences, sans condition
+supplémentaire.
 
 Le nom vient de *lozenge*, le losange en anglais, fusionné avec *engine* : la
 cellule projetée est la forme que le moteur manipule de bout en bout.

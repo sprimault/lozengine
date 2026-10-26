@@ -25,4 +25,8 @@
 //
 // La fenêtre, elle, n'existe que sous Windows : ailleurs [Run] rend une erreur qui
 // nomme ce qui manque, là où [NewEngine] calcule ses images partout.
+//
+// MIT ou Apache-2.0, au choix de qui emploie le moteur : l'une des deux suffit, elles
+// ne se cumulent pas. Les annuaires de paquets les affichent côte à côte sans le
+// « ou », ce qui est une façon de les indexer et non une exigence double.
 package lozengine
