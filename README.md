@@ -7,10 +7,13 @@ Software rendering, no GPU: you describe a scene, it produces the list of
 rectangles to paint — *quads* — already placed on screen and in drawing order. It
 paints them itself, or a host pushes them into its own pipeline.
 
-MIT or Apache-2.0, at your option — see [`LICENSE-MIT`](LICENSE-MIT) and
-[`LICENSE-APACHE`](LICENSE-APACHE). Unless you state otherwise, any contribution
-you submit for inclusion is dual licensed the same way, without additional terms
-or conditions.
+MIT or Apache-2.0, **whoever uses the engine picks one**: either is enough, they
+do not add up — see [`LICENSE-MIT`](LICENSE-MIT) and
+[`LICENSE-APACHE`](LICENSE-APACHE). Package directories often show them side by
+side without the *or*, which is how they index licences and not a double
+requirement. Unless its author states otherwise, any contribution submitted for
+inclusion is published under those same two licences, without additional terms or
+conditions.
 
 The name comes from *lozenge* merged with *engine*: the projected cell is the
 shape the engine handles from one end of the pipeline to the other.
