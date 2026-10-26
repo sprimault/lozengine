@@ -79,13 +79,21 @@ func quad(t *render.Buffer, q render.Quad, a *Atlas) {
 				continue
 			}
 
+			// Le miroir garde son test par pixel, et c'est mesuré : en sortir le
+			// choix du mélange demandait d'écrire la boucle deux fois, ce qui a
+			// coûté plus que le test — y compris aux chemins qui ne passent pas
+			// par ici. Le banc porte le relevé.
 			if mirrorX {
 				for sx := sa; sx < sb; sx++ {
 					x := left + int(q.Width) - 1 - (sx - sourceX)
 					if x < x0 || x >= x1 {
 						continue
 					}
-					put(&dst[x], src[sx], q.Tint, neutral, additive)
+					if additive {
+						putAdd(&dst[x], src[sx], q.Tint, neutral)
+						continue
+					}
+					put(&dst[x], src[sx], q.Tint, neutral)
 				}
 				continue
 			}
@@ -97,17 +105,29 @@ func quad(t *render.Buffer, q render.Quad, a *Atlas) {
 			}
 			from := sourceX + da - left
 
-			// La recopie remplace, donc elle est juste en composition et fausse en
-			// additif : une séquence opaque ajoutée doit éclaircir le fond, pas
-			// l'effacer. C'est le seul raccourci qui n'arrive jamais jusqu'à
-			// l'arithmétique d'un pixel, donc le seul qu'un test de blending ne
-			// couvrirait pas.
-			if s.kind == opaque && neutral && !additive {
+			// L'additif se branche par séquence et non par pixel : un drapeau porté
+			// jusqu'à l'arithmétique d'un pixel coûtait deux pour cent sur tous les
+			// mélanges, additif ou non, et un test par séquence ne coûte rien de
+			// mesurable, même sur des séquences d'un pixel.
+			//
+			// La recopie n'a pas de pendant ici, et c'est le cœur du sujet : elle
+			// remplace, donc elle est juste en composition et fausse en additif, où
+			// une séquence opaque doit éclaircir le fond plutôt que l'effacer. C'est
+			// le seul raccourci qui n'arrive jamais jusqu'à `put`, donc le seul
+			// qu'un test de `blending` ne couvrirait pas.
+			if additive {
+				for i := 0; i < db-da; i++ {
+					putAdd(&dst[da+i], src[from+i], q.Tint, neutral)
+				}
+				continue
+			}
+
+			if s.kind == opaque && neutral {
 				copy(dst[da:db], src[from:from+db-da])
 				continue
 			}
 			for i := 0; i < db-da; i++ {
-				put(&dst[da+i], src[from+i], q.Tint, neutral, additive)
+				put(&dst[da+i], src[from+i], q.Tint, neutral)
 			}
 		}
 	}

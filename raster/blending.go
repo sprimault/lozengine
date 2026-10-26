@@ -74,22 +74,35 @@ func saturate(a, b uint8) uint8 {
 // rendre transparent un pixel opaque, ou opaque un pixel que la planche donnait
 // déjà tel quel, et le genre de la séquence ne le sait pas.
 //
-// **L'additif n'en garde qu'une.** Une source transparente n'apporte rien, en
-// prémultiplié ses composantes étant nulles avec son alpha ; mais une source opaque
-// s'ajoute au lieu de remplacer, donc le raccourci qui écrit par-dessus serait faux.
-func put(dst *render.Color, src, tint render.Color, neutral, additive bool) {
+// **Elle n'apprend rien de l'additif, et c'est voulu.** Le mélange se choisit par
+// séquence, pas par pixel : lui passer un drapeau de plus ajoutait un argument et un
+// test à chaque appel, pour deux pour cent sur un chemin parcouru des millions de fois
+// par image — mesuré, puis rendu.
+func put(dst *render.Color, src, tint render.Color, neutral bool) {
+	if !neutral {
+		src = modulate(src, tint)
+	}
+	switch src.A {
+	case 0:
+		return
+	case 255:
+		*dst = src
+	default:
+		blend(dst, src)
+	}
+}
+
+// putAdd ajoute un pixel source à un pixel de destination, teinte comprise.
+//
+// Le pendant additif de [put], séparé plutôt que paramétré. Il n'a qu'une sortie
+// rapide : une source transparente n'apporte rien, ses composantes étant nulles avec
+// son alpha en prémultiplié, mais une source opaque s'ajoute au lieu de remplacer.
+func putAdd(dst *render.Color, src, tint render.Color, neutral bool) {
 	if !neutral {
 		src = modulate(src, tint)
 	}
 	if src.A == 0 {
 		return
 	}
-	switch {
-	case additive:
-		add(dst, src)
-	case src.A == 255:
-		*dst = src
-	default:
-		blend(dst, src)
-	}
+	add(dst, src)
 }
