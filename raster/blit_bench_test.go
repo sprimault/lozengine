@@ -94,6 +94,18 @@ func testAtlas(b *testing.B) *Atlas {
 // BenchmarkQuad mesure un quad seul par chemin du blit. Les écarts entre ces
 // lignes sont ce qui dira si une optimisation a servi : la copie est le cas qu'il
 // faut garder rapide, le miroir celui qui perd la copie en bloc.
+//
+// **Ce que ces lignes ont dit ensemble, et qui vaut pour la suite : la taille de
+// cette fonction se paie en entier.** En ajoutant l'additif, porter le drapeau
+// jusqu'à l'arithmétique d'un pixel a coûté 2,8 % en moyenne géométrique sur tous
+// les chemins, additif ou non ; le choisir par séquence ne coûte rien de mesurable.
+// Mais dupliquer une boucle interne pour sortir ce test a coûté 4,7 % sur le chemin
+// visé et 2,4 % sur des chemins qui ne la traversent pas, la fonction passant de
+// 2 196 à 2 789 octets compilés.
+//
+// D'où la règle qu'on relira ici : **un test par séquence est gratuit, du code en
+// plus dans cette fonction ne l'est pas.** Les deux mesures se refont par
+// `make bench PKG=./raster`, et ces chiffres-là périmeront.
 func BenchmarkQuad(b *testing.B) {
 	cases := []struct {
 		name   string
