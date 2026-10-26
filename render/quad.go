@@ -7,7 +7,11 @@
 
 package render
 
-// Flags porte les variantes de dessin d'un quad, un bit par variante.
+// Flags porte les variantes de dessin d'un quad : [MirrorX], [MirrorY] et [Flat], un
+// bit chacune, donc elles se combinent.
+//
+// Les trois sont nommées ici parce qu'interroger le type seul ne les montre pas : la
+// documentation d'un bloc de constantes s'abrège après la première.
 type Flags uint8
 
 const (

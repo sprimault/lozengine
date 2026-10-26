@@ -12,9 +12,14 @@ package input
 // en donne portent la légende d'un clavier américain : c'est la convention de tout le
 // monde, et la seule qui reste vraie quand la disposition change.
 //
-// Les noms arrivent avec le backend qui lit le clavier. Ce type et les deux régimes de
-// lecture existent avant eux parce que c'est le contrat qu'une fenêtre doit remplir,
-// quelle que soit la plateforme.
+// Soixante-neuf places portent un nom : les lettres de [KeyA] à [KeyZ], les chiffres
+// de [Key1] à [Key9] puis [Key0] dans l'ordre de la rangée, les quatre flèches,
+// [KeyEscape], [KeyBackspace], [KeyTab], [KeyEnter] et [KeySpace], les modificateurs
+// distingués à gauche et à droite, les douze touches de fonction, et le bloc de
+// navigation de [KeyHome] à [KeyDelete]. Elles sont nommées ici parce qu'interroger le
+// type ne montre que la première de chaque bloc, la documentation s'abrégeant ensuite.
+//
+// Une place sans nom se lit quand même, par son code de balayage.
 type Key uint16
 
 // keysMax est le nombre de places que l'état sait distinguer.
