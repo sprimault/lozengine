@@ -45,6 +45,12 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- Le pavé numérique se nomme : `KeyNumpad0` à `KeyNumpad9`, le séparateur décimal, les
+  quatre opérateurs, son Entrée et `KeyNumLock`. Ce sont des places à part, lisibles
+  quel que soit l'état du verrou numérique.
+
 ### Corrigé
 
 - Une touche tenue au moment où la fenêtre prend le focus ne pose plus une seconde

@@ -135,9 +135,10 @@ type Input = input.Input
 // Key désigne une place sur le clavier, et non le caractère qu'elle produit : la
 // touche nommée W est celle marquée Z sur un clavier français.
 //
-// Soixante-neuf places portent un nom : lettres, chiffres, flèches, modificateurs
-// distingués à gauche et à droite, touches de fonction et bloc de navigation.
-// [input.Key] les énumère, un alias ne montrant aucune des constantes du type.
+// Quatre-vingt-six places portent un nom : lettres, chiffres, flèches, modificateurs
+// distingués à gauche et à droite, touches de fonction, bloc de navigation et pavé
+// numérique. [input.Key] les énumère, un alias ne montrant aucune des constantes du
+// type.
 type Key = input.Key
 
 // State fabrique des entrées sans clavier, et c'est à cela qu'il sert ici : éprouver
@@ -231,6 +232,25 @@ const (
 	KeyPageDown = input.KeyPageDown
 	KeyInsert   = input.KeyInsert
 	KeyDelete   = input.KeyDelete
+
+	KeyNumpad0 = input.KeyNumpad0
+	KeyNumpad1 = input.KeyNumpad1
+	KeyNumpad2 = input.KeyNumpad2
+	KeyNumpad3 = input.KeyNumpad3
+	KeyNumpad4 = input.KeyNumpad4
+	KeyNumpad5 = input.KeyNumpad5
+	KeyNumpad6 = input.KeyNumpad6
+	KeyNumpad7 = input.KeyNumpad7
+	KeyNumpad8 = input.KeyNumpad8
+	KeyNumpad9 = input.KeyNumpad9
+
+	KeyNumpadDecimal  = input.KeyNumpadDecimal
+	KeyNumpadMultiply = input.KeyNumpadMultiply
+	KeyNumpadSubtract = input.KeyNumpadSubtract
+	KeyNumpadAdd      = input.KeyNumpadAdd
+	KeyNumpadDivide   = input.KeyNumpadDivide
+	KeyNumpadEnter    = input.KeyNumpadEnter
+	KeyNumLock        = input.KeyNumLock
 )
 
 // Sheet est une page de pixels dans laquelle les quads puisent, ligne par ligne et
