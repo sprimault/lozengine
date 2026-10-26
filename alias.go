@@ -45,7 +45,17 @@ const MaxBufferSide = render.MaxBufferSide
 func NewBuffer(width, height uint16) *Buffer { return render.NewBuffer(width, height) }
 
 // Color est une couleur RVBA sur quatre octets, à alpha prémultiplié.
+//
+// [Color.Valid] dit si une couleur écrite à la main est cohérente, et [Premultiply] la
+// construit depuis les composantes séparées qu'un éditeur d'images affiche.
 type Color = render.Color
+
+// Premultiply rend la couleur prémultipliée que décrivent des composantes séparées : un
+// gris à moitié transparent s'écrit 128, 128, 128 pour un alpha de 128 ailleurs, et
+// 64, 64, 64 pour 128 ici.
+//
+// Une fonction et non un alias, pour la raison qui vaut pour [White].
+func Premultiply(r, g, b, a uint8) Color { return render.Premultiply(r, g, b, a) }
 
 // Flags porte les variantes de dessin d'un quad : [MirrorX], [MirrorY], [Flat] et
 // [Additive], un bit chacune, donc elles se combinent.

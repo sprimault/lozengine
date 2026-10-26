@@ -56,6 +56,9 @@ notes de publication.
 - Le drapeau `Additive` ajoute un quad au fond au lieu de l'y composer, chaque
   composante plafonnant à sa valeur pleine. C'est le mélange de ce qui émet de la
   lumière, et combiné à `Flat` il donne un fondu lumineux.
+- `Premultiply` construit une couleur depuis les composantes séparées qu'affiche un
+  éditeur d'images, et `Color.Valid` dit si une teinte écrite à la main est cohérente.
+  Un jeu qui remplit une planche en mémoire n'a plus à refaire ce calcul.
 
 ### Corrigé
 
@@ -76,6 +79,9 @@ notes de publication.
 - The `Additive` flag adds a quad to the background instead of compositing over it,
   each channel capping at its full value. It is the blend for anything that emits
   light, and combined with `Flat` it gives a luminous fade.
+- `Premultiply` builds a colour from the separate channels an image editor shows, and
+  `Color.Valid` states whether a hand-written tint is coherent. A game filling a sheet
+  in memory no longer has to redo that arithmetic.
 
 ### Fixed
 
