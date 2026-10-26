@@ -50,6 +50,9 @@ notes de publication.
 - Le pavé numérique se nomme : `KeyNumpad0` à `KeyNumpad9`, le séparateur décimal, les
   quatre opérateurs, son Entrée et `KeyNumLock`. Ce sont des places à part, lisibles
   quel que soit l'état du verrou numérique.
+- `Options.Icons` porte l'icône de la fenêtre, une planche par taille. Le moteur retient
+  la plus proche de ce que le système demande et n'en redimensionne aucune ; vide,
+  la fenêtre garde l'icône du système.
 
 ### Corrigé
 
@@ -58,6 +61,15 @@ notes de publication.
   erreur ne recevait jamais son relâchement : elle restait tenue pour de bon.
 
 ***
+
+### Added
+
+- The numeric keypad has names: `KeyNumpad0` to `KeyNumpad9`, the decimal separator,
+  the four operators, its Enter key and `KeyNumLock`. These are places of their own,
+  readable whatever Num Lock is set to.
+- `Options.Icons` carries the window icon, one sheet per size. The engine keeps the one
+  closest to what the system asks for and resizes none of them; left empty, the window
+  keeps the system icon.
 
 ### Fixed
 

@@ -50,4 +50,14 @@ type Window interface {
 type Options struct {
 	Title         string
 	Width, Height uint16
+
+	// Icons porte les icônes de la fenêtre, une par taille que le jeu fournit, en
+	// pixels prémultipliés comme le reste de ce que le moteur peint. Vide, la
+	// fenêtre porte l'icône du système.
+	//
+	// Plusieurs tailles et non une, parce que les plateformes en veulent plusieurs :
+	// Windows emploie une grande icône et une petite, et la propriété d'X11 accepte
+	// elle-même une suite d'images de tailles différentes. Chacune choisit, et
+	// aucune ne redimensionne — la règle d'échelle entière l'interdit au moteur.
+	Icons []*render.Buffer
 }

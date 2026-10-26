@@ -64,6 +64,11 @@ type window struct {
 	minimized bool
 	lastW     uint16
 	lastH     uint16
+
+	// icons porte les poignées d'icône posées sur la fenêtre, à rendre au système
+	// avec elle. Le système ne les libère pas de lui-même : elles survivraient à la
+	// fenêtre, et un jeu qui rouvre la sienne en fuirait deux par ouverture.
+	icons []uintptr
 }
 
 // windowProc est la procédure de fenêtre, appelée par le système pour chaque message.
@@ -222,6 +227,7 @@ func (w *window) Close() {
 		releaseDC.Call(w.hwnd, w.dc)
 		w.dc = 0
 	}
+	w.releaseIcons()
 	destroyWindow.Call(w.hwnd)
 
 	windows.Lock()
