@@ -78,6 +78,19 @@ type Options struct {
 	// un quad qui désigne une planche absente arrête le programme, ce que le
 	// rastériseur assume pour que la cause se lise à l'endroit de l'erreur.
 	Atlas *Atlas
+
+	// Icons porte l'icône de la fenêtre, une planche par taille que le jeu dessine.
+	// Vide, la fenêtre porte l'icône du système.
+	//
+	// Plusieurs tailles plutôt qu'une, parce que les systèmes en demandent
+	// plusieurs — Windows une grande et une petite — et que le moteur ne
+	// redimensionne pas : l'échelle entière obligatoire ne sait pas passer de 24 à
+	// 16 pixels, et une réduction douce brouillerait un dessin fait pixel par pixel.
+	// La taille la plus proche est retenue, et c'est au système de réduire s'il y
+	// tient.
+	//
+	// La boucle seule s'en sert : un hôte qui emploie [Engine] possède sa fenêtre.
+	Icons []Sheet
 }
 
 // Les défauts de la résolution interne, choisis au jalon 0 et tenus depuis : une tuile

@@ -20,11 +20,12 @@ import (
 // Les procédures que seule la destination d'essai emploie. Elles vivent ici parce que
 // le backend n'en a pas besoin : les déclarer à côté des siennes laisserait du code
 // que rien n'appelle.
+//
+// `CreateDIBSection` et `DeleteObject` en sont sorties avec l'icône de la fenêtre, qui
+// les emploie pour de bon : elles sont déclarées avec les autres appels du backend.
 var (
 	createCompatibleDC = gdi32.NewProc("CreateCompatibleDC")
-	createDIBSection   = gdi32.NewProc("CreateDIBSection")
 	selectObject       = gdi32.NewProc("SelectObject")
-	deleteObject       = gdi32.NewProc("DeleteObject")
 	deleteDC           = gdi32.NewProc("DeleteDC")
 )
 

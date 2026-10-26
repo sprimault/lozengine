@@ -87,6 +87,10 @@ func Open(o Options) (Window, error) {
 	// ni à suivre quoi que ce soit.
 	w.dc, _, _ = getDC.Call(hwnd)
 
+	// Les icônes se posent avant de montrer la fenêtre, faute de quoi le système
+	// afficherait la sienne le temps d'une image.
+	w.setIcons(o.Icons)
+
 	showWindow.Call(hwnd, swShow)
 
 	// La taille utile réelle, qui peut différer de celle demandée si le système a

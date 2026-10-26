@@ -46,6 +46,7 @@ func Run(s *Scene, g Game, o Options) error {
 		Title:  o.Title,
 		Width:  uint16(o.Width),
 		Height: uint16(o.Height),
+		Icons:  icons(o.Icons),
 	})
 	if err != nil {
 		return fmt.Errorf("opening the window: %w", err)
@@ -103,6 +104,34 @@ func Run(s *Scene, g Game, o Options) error {
 // du monde, et rien d'autre ne pourrait le vérifier puisqu'aucun test n'ouvre de fenêtre.
 func fit(inner, out *Buffer, bars Color) {
 	raster.Upscale(inner, out, raster.ScaleFactor(inner, out), bars)
+}
+
+// icons reprend les planches d'icône dans la forme que le contrat de fenêtre lit.
+//
+// Un jeu dessine son icône comme il dessine le reste, donc il la tient dans une
+// [Sheet] ; un backend ne connaît pas les planches et n'a besoin que des pixels. Les
+// deux structures portent les mêmes trois champs, et la reprise partage la tranche de
+// pixels au lieu de la copier : une icône se lit une fois, à l'ouverture.
+//
+// Les planches vides sont laissées de côté ici plutôt qu'au fond du backend, pour que
+// chacun n'ait pas à s'en garder.
+func icons(sheets []Sheet) []*Buffer {
+	if len(sheets) == 0 {
+		return nil
+	}
+
+	out := make([]*Buffer, 0, len(sheets))
+	for _, sheet := range sheets {
+		if sheet.Width == 0 || sheet.Height == 0 || len(sheet.Pixels) == 0 {
+			continue
+		}
+		out = append(out, &Buffer{
+			Width:  sheet.Width,
+			Height: sheet.Height,
+			Pixels: sheet.Pixels,
+		})
+	}
+	return out
 }
 
 // pace dit combien attendre avant le pas suivant, et quand il tombera.

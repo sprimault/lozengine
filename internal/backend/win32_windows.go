@@ -55,6 +55,11 @@ var (
 	getAsyncKeyState = user32.NewProc("GetAsyncKeyState")
 	getKeyState      = user32.NewProc("GetKeyState")
 
+	sendMessageW       = user32.NewProc("SendMessageW")
+	getSystemMetrics   = user32.NewProc("GetSystemMetrics")
+	createIconIndirect = user32.NewProc("CreateIconIndirect")
+	destroyIcon        = user32.NewProc("DestroyIcon")
+
 	// Dans kernel32 et non user32, ce qu'un `LazyProc` ne dit qu'à l'appel : la
 	// compilation et les tests sans écran laissaient passer l'erreur, et c'est la
 	// vérification manuelle qui l'a trouvée.
@@ -63,6 +68,9 @@ var (
 	setProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 
 	setDIBitsToDevice = gdi32.NewProc("SetDIBitsToDevice")
+	createDIBSection  = gdi32.NewProc("CreateDIBSection")
+	createBitmap      = gdi32.NewProc("CreateBitmap")
+	deleteObject      = gdi32.NewProc("DeleteObject")
 )
 
 // Les styles de classe et de fenêtre.
@@ -120,6 +128,23 @@ const mapvkVkToVsc = 0
 // vkNumLock est le code virtuel du verrou numérique. Son bit de poids faible dit s'il
 // est allumé, là où le bit de poids fort dirait que la touche est enfoncée.
 const vkNumLock = 0x90
+
+// wmSetIcon pose une icône sur la fenêtre, et iconBig ou iconSmall dit laquelle des
+// deux : la grande sert la barre des tâches, la petite le coin du cadre.
+const (
+	wmSetIcon = 0x0080
+
+	iconSmall = 0
+	iconBig   = 1
+)
+
+// smCXIcon et smCXSmallIcon sont les côtés que le système veut pour ses deux icônes.
+// On les demande plutôt que de les écrire : ils suivent la densité de l'écran, donc
+// 32 et 16 ne valent qu'à cent pour cent.
+const (
+	smCXIcon      = 11
+	smCXSmallIcon = 49
+)
 
 // sizeMinimized est le `wParam` de `wmSize` qui annonce la réduction. C'est par lui
 // que la minimisation se lit, et non en interrogeant la fenêtre à chaque image.
