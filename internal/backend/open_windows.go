@@ -116,10 +116,16 @@ func registerClass() (*uint16, error) {
 
 		instance, _, _ := getModuleHandleW.Call(0)
 
+		// Le curseur se charge ici et non à chaque fenêtre : il appartient à la
+		// classe, et `LoadCursorW` sur une ressource du système rend une poignée
+		// partagée qu'il ne faut pas libérer.
+		cursor, _, _ := loadCursorW.Call(0, idcArrow)
+
 		c := windowClass{
 			style:     csHRedraw | csVRedraw | csOwnDC,
 			wndProc:   syscall.NewCallback(windowProc),
 			instance:  instance,
+			cursor:    cursor,
 			className: name,
 		}
 		c.size = uint32(unsafe.Sizeof(c))
