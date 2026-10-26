@@ -66,6 +66,67 @@ func TestPremultiplyRoundsToNearest(t *testing.T) {
 	}
 }
 
+// TestScaleKeepsAColorCoherent est la propriété qui compte, et elle se démontre sur
+// toutes les valeurs : atténuer une couleur cohérente en rend une cohérente.
+//
+// C'est ce qui distingue cette méthode d'une mise à l'échelle des trois composantes de
+// couleur seules. Celle-là casserait la cohérence dès qu'une composante vaut son
+// alpha — un blanc opaque à moitié donnerait 128 de couleur pour 255 d'alpha, ce qui
+// ne décrit plus rien.
+func TestScaleKeepsAColorCoherent(t *testing.T) {
+	for c := 0; c < 256; c++ {
+		for a := c; a < 256; a++ {
+			source := Color{uint8(c), uint8(c), uint8(c), uint8(a)}
+			for _, part := range []uint8{0, 1, 64, 127, 128, 200, 254, 255} {
+				if got := source.Scale(part); !got.Valid() {
+					t.Fatalf("%v atténué de %d donne %v, qui n'est pas cohérent",
+						source, part, got)
+				}
+			}
+		}
+	}
+}
+
+// TestScaleOnKnownParts éprouve les fractions qu'on sait dire de tête, et les deux
+// bornes qui doivent être exactes.
+func TestScaleOnKnownParts(t *testing.T) {
+	grey := Color{64, 64, 64, 128}
+
+	cases := []struct {
+		name string
+		part uint8
+		want Color
+	}{
+		{"la pleine valeur laisse la couleur intacte", 255, grey},
+		{"rien du tout l'efface", 0, Color{0, 0, 0, 0}},
+		{"la moitié", 128, Color{32, 32, 32, 64}},
+		{"le quart", 64, Color{16, 16, 16, 32}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := grey.Scale(c.part); got != c.want {
+				t.Errorf("couleur : %v, attendu %v", got, c.want)
+			}
+		})
+	}
+}
+
+// TestScaleIsExactAtTheFullValue garde la borne qui ne se voit pas : atténuer de 255
+// doit rendre la couleur elle-même, et non une couleur décalée d'un cran.
+//
+// Un arrondi qui tronquerait ferait perdre un cran à chaque appel, donc une couleur
+// atténuée de 255 soixante fois par seconde s'éteindrait toute seule.
+func TestScaleIsExactAtTheFullValue(t *testing.T) {
+	for c := 0; c < 256; c++ {
+		for a := c; a < 256; a++ {
+			source := Color{uint8(c), uint8(c), uint8(c), uint8(a)}
+			if got := source.Scale(255); got != source {
+				t.Fatalf("%v atténué de 255 donne %v", source, got)
+			}
+		}
+	}
+}
+
 // TestValidRefusesWhatDescribesNoColor garde la faute que la méthode existe pour
 // attraper : une composante écrite sans appliquer son alpha.
 func TestValidRefusesWhatDescribesNoColor(t *testing.T) {

@@ -52,6 +52,29 @@ func applyAlpha(c, a uint8) uint8 {
 	return uint8((t + t>>8) >> 8)
 }
 
+// Scale met une couleur prémultipliée à l'échelle d'une fraction de 255, et c'est la
+// seule façon de l'atténuer : 255 la laisse intacte, 128 la met à moitié, 0 l'efface.
+//
+// **Les quatre composantes ensemble, alpha compris.** Amputer les trois couleurs sans
+// toucher l'alpha donnerait quelque chose qui n'est plus une couleur prémultipliée du
+// tout — la cohérence que [Color.Valid] exige serait rompue —, et à l'image cela
+// assombrit au lieu d'estomper : un éclat qui s'éteint deviendrait une tache noire
+// avant de disparaître.
+//
+// Une fraction de 255 plutôt qu'un nombre à virgule, et c'est la doctrine du moteur
+// autant qu'une commodité : tout ce qui touche une couleur ici est entier, donc une
+// même atténuation rend les mêmes pixels d'une machine à l'autre. C'est aussi la forme
+// que la valeur prend déjà chez qui s'en sert — un alpha lu dans une teinte, qu'il
+// fallait auparavant diviser par 255 pour le rendre à la virgule flottante.
+func (c Color) Scale(part uint8) Color {
+	return Color{
+		R: applyAlpha(c.R, part),
+		G: applyAlpha(c.G, part),
+		B: applyAlpha(c.B, part),
+		A: applyAlpha(c.A, part),
+	}
+}
+
 // Valid dit si la couleur est un prémultiplié cohérent, c'est-à-dire si aucune de ses
 // trois composantes ne dépasse son alpha.
 //

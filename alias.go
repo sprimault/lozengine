@@ -46,8 +46,9 @@ func NewBuffer(width, height uint16) *Buffer { return render.NewBuffer(width, he
 
 // Color est une couleur RVBA sur quatre octets, à alpha prémultiplié.
 //
-// [Color.Valid] dit si une couleur écrite à la main est cohérente, et [Premultiply] la
-// construit depuis les composantes séparées qu'un éditeur d'images affiche.
+// [Premultiply] la construit depuis les composantes séparées qu'un éditeur d'images
+// affiche, [Color.Scale] l'atténue sans rompre sa cohérence, et [Color.Valid] dit si
+// une couleur écrite à la main en a une.
 type Color = render.Color
 
 // Premultiply rend la couleur prémultipliée que décrivent des composantes séparées : un
