@@ -122,10 +122,11 @@ natively, before it ships.
 **The `CHANGELOG` section ships with the batch**, not at release time: it is
 reviewed in the pull request, which is when it matters. Every entry is written
 in French and in English under the same version, in the same commit — an entry
-present in only one language is an oversight, not a translation for later. Only
-what is visible from outside the engine goes in: public signature, rendering
-behaviour, resource format, supported platform. Not internal refactors, not
-tests, not tooling.
+present in only one language is an oversight, not a translation for later — and
+`make journal`, which `make check` runs, refuses a section whose two blocks do not
+carry the same number of entries. Only what is visible from outside the engine goes
+in: public signature, rendering behaviour, resource format, supported platform. Not
+internal refactors, not tests, not tooling.
 
 **Documentation ships with the change.** Before committing, check what the
 change makes false elsewhere: the status stated in the README, a decision in
