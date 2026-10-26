@@ -122,9 +122,15 @@ les huit couples que les `README` annoncent — `windows/amd64`, `windows/arm64`
 `js/wasm` —, et « compile » est tout ce qu'elle prouve : « tourne » et « reste vert
 en intégration continue » sont deux autres promesses, et elles ne valent que pour
 `amd64`. D'autres couples
-compilent aussi, `linux/riscv64` et les cibles Apple comprises ; ils n'entrent ici
+compilent aussi — `linux/riscv64`, `darwin/amd64` et `darwin/arm64` ; ils n'entrent ici
 que si un `README` les annonce, faute de quoi la cible vérifierait plus que ce que le
 dépôt promet et personne ne saurait lequel des deux croire.
+
+**Une seule cible échoue, et le motif est à connaître avant de publier** : `ios/arm64`
+rend « requires external (cgo) linking, but cgo is not enabled ». Ce n'est pas une
+limite du moteur mais un refus de Go à la liaison, et aucune ligne de code du dépôt ne
+le lèverait — d'où le hors-périmètre de la feuille de route. Mesuré le 26 octobre
+2026 : le module entier se construit pour les deux `darwin`, et seul `ios/arm64` tombe.
 
 ## Compiler sans cgo
 

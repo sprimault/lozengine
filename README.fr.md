@@ -101,8 +101,12 @@ Trois exclusions suivent de la règle de dépendance, et elles sont assumées :
 
 - **Pas d'accélération GPU.** Le rendu est logiciel, et la résolution interne
   basse est ce qui le rend tenable.
-- **Pas de macOS.** Impossible sans dépendance ni compilateur C. La frontière
-  backend le garde atteignable si la contrainte change.
+- **Pas de fenêtre sous macOS.** Le cœur y compile et y calcule ses images, donc
+  un hôte qui tient sa propre boucle s'en sert déjà ; c'est la fenêtre qui
+  manque, Cocoa ne s'atteignant que par l'ABI Objective-C, dont le point d'entrée
+  demande un compilateur C ou une dépendance de plus. iOS va plus loin : Go
+  lui-même refuse de lier sans cgo. Le jalon 5 couvre les deux par le navigateur,
+  et la frontière backend les garde atteignables si la contrainte change.
 - **Pas de Wayland natif** pour l'instant. XWayland couvre le besoin.
 
 Ce qui sera exposé aux autres langages est le noyau, jamais la fenêtre ni la
