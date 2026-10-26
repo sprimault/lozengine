@@ -45,6 +45,30 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `Quitter` est ce qu'un jeu écrit en plus de `Game` quand il veut pouvoir partir de
+  lui-même : une entrée de menu, une touche d'échappement. Sans elle, seule la
+  fermeture de la fenêtre arrêtait la boucle.
+
+### Corrigé
+
+- Une entité passe devant la cellule qu'elle foule, où qu'elle se place dedans. Dans la
+  moitié nord d'une case, le sol lui passait sur les pieds.
+
+***
+
+### Added
+
+- `Quitter` is what a game writes in addition to `Game` when it wants to leave of its
+  own accord: a menu entry, an escape key. Without it, only closing the window stopped
+  the loop.
+
+### Fixed
+
+- An entity draws in front of the cell it treads, wherever it stands inside it. In the
+  northern half of a cell, the ground painted over its feet.
+
 ## [0.3.1] — 2026-10-26
 
 La fenêtre n'existe toujours que sous Windows : Linux par X11 est le jalon 3, le

@@ -149,3 +149,57 @@ func TestPaceWaitsWhenAhead(t *testing.T) {
 		t.Errorf("le pas suivant est à +%v, attendu +%v", got, tick)
 	}
 }
+
+// leaving est un jeu qui demande à partir dès son premier pas.
+type leaving struct{ steps int }
+
+func (g *leaving) Step(Input)     { g.steps++ }
+func (g *leaving) Quitting() bool { return g.steps > 0 }
+
+// staying est un jeu qui n'écrit que la méthode unique, donc sans [Quitter].
+type staying struct{ steps int }
+
+func (g *staying) Step(Input) { g.steps++ }
+
+// TestQuitterIsOptional vérifie que l'assertion de la boucle ne réclame rien : un jeu
+// qui n'écrit que sa méthode unique reste un jeu valide.
+//
+// C'est la propriété qui rend l'ajout purement additif. Si l'assertion devenait une
+// exigence, tous les jeux écrits jusqu'ici cesseraient de compiler — et les deux
+// exemples du dépôt sont dans ce cas pour l'un d'eux.
+func TestQuitterIsOptional(t *testing.T) {
+	var plain Game = &staying{}
+	if _, ok := plain.(Quitter); ok {
+		t.Error("un jeu sans Quitting a été pris pour un Quitter")
+	}
+
+	var asking Game = &leaving{}
+	if _, ok := asking.(Quitter); !ok {
+		t.Error("un jeu avec Quitting n'a pas été reconnu")
+	}
+}
+
+// TestEngineDoesNotAskToQuit garde la frontière entre les deux portes d'entrée :
+// l'arrêt est une affaire de boucle, et l'étape appelable n'en sait rien.
+//
+// Un hôte qui tient sa propre boucle décide seul quand s'arrêter et n'a personne à qui
+// le demander ; si [Engine.Step] consultait [Quitter], la question traverserait l'ABI
+// du jalon 11, où elle n'a pas de sens. Le cas le vérifie par le seul moyen possible
+// sans fenêtre : un jeu qui demande à partir dès son premier pas est avancé une seconde
+// fois, parce que rien dans l'étape ne l'en empêche.
+func TestEngineDoesNotAskToQuit(t *testing.T) {
+	s, atlas := scenario(t)
+
+	e, err := NewEngine(s, Options{Atlas: atlas})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+
+	g := &leaving{}
+	e.Step(g, Input{})
+	e.Step(g, Input{})
+
+	if g.steps != 2 {
+		t.Errorf("pas avancés : %d, attendu 2 — l'étape a tenu compte de Quitting", g.steps)
+	}
+}
