@@ -45,6 +45,11 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.3.1] — 2026-10-26
+
+La fenêtre n'existe toujours que sous Windows : Linux par X11 est le jalon 3, le
+navigateur le jalon 5. Ailleurs le moteur calcule ses images, et rien ne les affiche.
+
 ### Ajouté
 
 - Le pavé numérique se nomme : `KeyNumpad0` à `KeyNumpad9`, le séparateur décimal, les
@@ -58,7 +63,8 @@ notes de publication.
   lumière, et combiné à `Flat` il donne un fondu lumineux.
 - `Premultiply` construit une couleur depuis les composantes séparées qu'affiche un
   éditeur d'images, et `Color.Valid` dit si une teinte écrite à la main est cohérente.
-  Un jeu qui remplit une planche en mémoire n'a plus à refaire ce calcul.
+  C'est la porte d'une couleur isolée ; pour une planche entière,
+  `NewSheetFromStraight`.
 - `Color.Scale` atténue une couleur, ses quatre composantes ensemble : c'est ce que
   demande un éclat qui s'éteint, et amputer les trois couleurs seules assombrirait au
   lieu d'estomper. La fraction est entière, donc l'atténuation est la même partout.
@@ -74,6 +80,9 @@ notes de publication.
 
 ***
 
+The window still exists on Windows only: Linux through X11 is milestone 3, the browser
+milestone 5. Elsewhere the engine computes its frames, and nothing displays them.
+
 ### Added
 
 - The numeric keypad has names: `KeyNumpad0` to `KeyNumpad9`, the decimal separator,
@@ -86,8 +95,8 @@ notes de publication.
   each channel capping at its full value. It is the blend for anything that emits
   light, and combined with `Flat` it gives a luminous fade.
 - `Premultiply` builds a colour from the separate channels an image editor shows, and
-  `Color.Valid` states whether a hand-written tint is coherent. A game filling a sheet
-  in memory no longer has to redo that arithmetic.
+  `Color.Valid` states whether a hand-written tint is coherent. That is the door for a
+  single colour; for a whole sheet, `NewSheetFromStraight`.
 - `Color.Scale` dims a colour, all four channels together: that is what a fading
   sparkle needs, and cutting the three colour channels alone would darken rather than
   fade. The fraction is an integer, so the dimming is the same everywhere.
