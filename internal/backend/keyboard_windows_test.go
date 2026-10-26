@@ -49,6 +49,10 @@ func TestKeyOfMatchesThePublishedKeys(t *testing.T) {
 		{"contrôle gauche, non étendu", 0x1D, false, input.KeyLeftControl},
 		{"F12", 0x58, false, input.KeyF12},
 		{"suppression, étendue", 0x53, true, input.KeyDelete},
+		{"le 4 du pavé, non étendu là où la flèche l'est", 0x4B, false, input.KeyNumpad4},
+		{"le point du pavé, que la suppression double en étendu", 0x53, false, input.KeyNumpadDecimal},
+		{"l'Entrée du pavé, étendue là où l'Entrée ne l'est pas", 0x1C, true, input.KeyNumpadEnter},
+		{"la division du pavé, étendue", 0x35, true, input.KeyNumpadDivide},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

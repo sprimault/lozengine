@@ -46,7 +46,8 @@ const (
 	KeyZ Key = 0x2C
 )
 
-// Les chiffres de la rangée du haut, qui n'est pas le pavé numérique.
+// Les chiffres de la rangée du haut, qui ne sont pas ceux du pavé numérique : celui-ci
+// a ses propres places, de [KeyNumpad0] à [KeyNumpad9].
 const (
 	Key1 Key = 0x02
 	Key2 Key = 0x03
@@ -73,10 +74,10 @@ const extended Key = 0x100
 // bit étendu, un jeu qui lit les flèches répondrait au pavé numérique, et les deux
 // n'ont pas le même usage.
 const (
-	KeyUp    = extended | 0x48
-	KeyLeft  = extended | 0x4B
-	KeyRight = extended | 0x4D
-	KeyDown  = extended | 0x50
+	KeyUp    Key = extended | 0x48
+	KeyLeft  Key = extended | 0x4B
+	KeyRight Key = extended | 0x4D
+	KeyDown  Key = extended | 0x50
 )
 
 // Les touches d'édition et de validation.
@@ -124,10 +125,49 @@ const (
 
 // Les touches de navigation, toutes étendues.
 const (
-	KeyHome     = extended | 0x47
-	KeyEnd      = extended | 0x4F
-	KeyPageUp   = extended | 0x49
-	KeyPageDown = extended | 0x51
-	KeyInsert   = extended | 0x52
-	KeyDelete   = extended | 0x53
+	KeyHome     Key = extended | 0x47
+	KeyEnd      Key = extended | 0x4F
+	KeyPageUp   Key = extended | 0x49
+	KeyPageDown Key = extended | 0x51
+	KeyInsert   Key = extended | 0x52
+	KeyDelete   Key = extended | 0x53
+)
+
+// Le pavé numérique, qui est un bloc de places à part et non un doublon des chiffres
+// de la rangée du haut.
+//
+// Ses dix chiffres et son séparateur portent les codes que la navigation prend en
+// étendu : [KeyNumpad4] et [KeyLeft] sont la même valeur de base, séparées par le seul
+// bit étendu. **Un jeu les lit sans se soucier du verrou numérique**, parce que le
+// moteur nomme la place et non le caractère : le 0 du pavé reste [KeyNumpad0] quand le
+// verrou est éteint, là où le système le ferait passer pour une insertion.
+const (
+	KeyNumpad0 Key = 0x52
+	KeyNumpad1 Key = 0x4F
+	KeyNumpad2 Key = 0x50
+	KeyNumpad3 Key = 0x51
+	KeyNumpad4 Key = 0x4B
+	KeyNumpad5 Key = 0x4C
+	KeyNumpad6 Key = 0x4D
+	KeyNumpad7 Key = 0x47
+	KeyNumpad8 Key = 0x48
+	KeyNumpad9 Key = 0x49
+
+	KeyNumpadDecimal Key = 0x53
+)
+
+// Les opérateurs du pavé, son Entrée et son verrou.
+//
+// Les quatre opérateurs n'ont pas de jumelle ailleurs sur le clavier, la division
+// exceptée : la barre oblique du pavé est étendue, celle de la rangée ne l'est pas.
+// L'Entrée du pavé est l'étendue de [KeyEnter], et c'est la seule paire que le verrou
+// ne sépare pas.
+const (
+	KeyNumpadMultiply Key = 0x37
+	KeyNumpadSubtract Key = 0x4A
+	KeyNumpadAdd      Key = 0x4E
+	KeyNumpadDivide       = extended | 0x35
+	KeyNumpadEnter        = extended | 0x1C
+
+	KeyNumLock Key = 0x45
 )
