@@ -12,6 +12,7 @@ make vet
 make deps         # échoue si une dépendance externe est entrée
 make entetes      # la mention de licence, sur ce que le dépôt publie
 make frontiere    # le noyau ne touche ni au système ni à un backend
+make journal      # chaque section du CHANGELOG dit la même chose dans ses deux langues
 make cross        # compile pour chacun des couples que les README annoncent
 make cover        # couverture, ouverte dans le navigateur
 make bench        # bancs d'essai, un profil par paquet
@@ -98,6 +99,17 @@ Seuls les imports écrits comptent, suivis de proche en proche à travers les
 paquets du moteur. Prendre les dépendances transitives complètes ne marcherait
 pas : `fmt` tire `os`, qui tire `syscall`, si bien que le moindre paquet
 deviendrait une fuite.
+
+**`make journal`** vérifie que chaque section du `CHANGELOG` dit la même chose dans
+ses deux langues : les mêmes catégories de part et d'autre du séparateur, et le même
+nombre d'entrées dans chacune. Une entrée écrite dans une seule langue est un oubli,
+et les notes de publication reprenant la section telle quelle, l'oubli partirait avec
+elles.
+
+Ce qu'elle compare est le **nombre** d'entrées par catégorie et non leur nom : une
+section de trois entrées puis une donne la même signature des deux côtés, quelle que
+soit la langue. Elle attrape donc une catégorie oubliée et une entrée oubliée, mais
+elle ne dit pas qu'une traduction est juste — cela se relit.
 
 **`make cross`** n'est pas là pour produire un binaire ; les artefacts sont
 jetés. Elle vérifie que le code compile sans compilateur C pour chaque couple de

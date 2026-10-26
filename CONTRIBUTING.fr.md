@@ -124,9 +124,11 @@ la plateforme concernée**, nativement, avant d'être livré.
 elle est relue en pull request, donc au moment où elle compte. Chaque entrée est
 écrite en français et en anglais sous la même version, dans le même commit —
 une entrée présente dans une seule langue est un oubli, pas une traduction à
-faire plus tard. N'y entre que ce qui se voit depuis l'extérieur du moteur :
-signature publique, comportement de rendu, format de ressource, plateforme prise
-en charge. Ni les remaniements internes, ni les tests, ni l'outillage.
+faire plus tard — et `make journal`, que `make check` enchaîne, refuse une section
+dont les deux blocs ne portent pas autant d'entrées. N'y entre que ce qui se voit
+depuis l'extérieur du moteur : signature publique, comportement de rendu, format de
+ressource, plateforme prise en charge. Ni les remaniements internes, ni les tests, ni
+l'outillage.
 
 **La documentation part avec le changement.** Avant de commiter, vérifier ce que
 le changement rend faux ailleurs : l'état annoncé dans le README, une décision

@@ -14,7 +14,7 @@ export CGO_ENABLED := 0
 -include makefile.local
 
 .PHONY: build example test bench cover depot fmt vet deps entetes frontiere cross check \
-        references notes titre clean
+        references journal notes titre clean
 
 build:
 	go build ./...
@@ -306,7 +306,7 @@ entetes: depot
 	  exit 1; \
 	fi
 
-check: fmt vet deps entetes frontiere cross test
+check: fmt vet deps entetes frontiere journal cross test
 
 # Le paquet qui porte la suite de non-régression visuelle, et lui seul : un
 # drapeau de test n'existe que pour le paquet qui le déclare, donc `./...` ferait
@@ -317,6 +317,61 @@ PKG_REFERENCES ?= ./internal/viewer
 # image de référence qui change sans raison énoncée est un bug entériné.
 references:
 	go test $(PKG_REFERENCES) -regenerate
+
+# Chaque section du journal doit dire la même chose dans ses deux langues : les
+# mêmes catégories de part et d'autre du séparateur, et le même nombre d'entrées
+# dans chacune. Une entrée présente dans une seule langue est un oubli, pas une
+# traduction à faire plus tard.
+#
+# Elle existe parce que l'oubli est arrivé et qu'il est passé en pull request
+# fusionnée : une section avait reçu « Ajouté » sans son « Added », et ni le
+# formatage, ni les tests, ni la relecture du diff ne l'ont vu. `notes` extrait la
+# section telle quelle, donc la publication aurait servi des notes à moitié
+# traduites.
+#
+# Ce qui est comparé est le **nombre** de catégories et le nombre d'entrées dans
+# chacune, pas leur nom : une section qui porte trois entrées puis une donne la
+# signature « 3 1 » des deux côtés, quelle que soit la langue. Apparier les noms
+# demanderait une table accentuée dans le Makefile, et elle ne survit pas au
+# passage par `make` et `awk` de cette machine — un « Ajouté » du journal n'y
+# retrouvait pas celui de la table, ce qui rendait le contrôle faux sur toutes les
+# sections.
+#
+# Ce que la signature attrape : une catégorie oubliée dans une langue, et une
+# entrée oubliée dans une catégorie. Ce qu'elle laisse passer : un « Corrigé » en
+# face d'un « Added » portant autant d'entrées. Ce contrôle dit que les deux blocs
+# se correspondent, pas que la traduction est juste — celle-là se relit.
+#
+# Le comptage prend les puces de premier niveau, celles qui commencent la ligne :
+# une continuation est indentée, donc elle ne compte pas deux fois.
+journal:
+	@ecarts=$$(awk ' \
+	  function solde() { \
+	    if (entrees == 0) return; \
+	    if (cote == 0) gauche = gauche " " entrees; else droite = droite " " entrees; \
+	    entrees = 0; \
+	  } \
+	  function verdict() { \
+	    solde(); \
+	    if (section != "" && gauche != droite) \
+	      printf "%s : %s en français, %s en anglais\n", \
+	        section, gauche ? gauche : "rien", droite ? droite : "rien"; \
+	  } \
+	  /^## / { \
+	    verdict(); \
+	    section = match($$0, /\[[^]]*\]/) ? substr($$0, RSTART, RLENGTH) : $$0; \
+	    gauche = droite = ""; cote = 0; next \
+	  } \
+	  /^\*\*\*[[:space:]]*$$/ { solde(); cote = 1; next } \
+	  /^### / { solde(); next } \
+	  /^- / { entrees++ } \
+	  END { verdict() } \
+	' $(JOURNAL)); \
+	if [ -n "$$ecarts" ]; then \
+	  echo "$(JOURNAL) ne dit pas la même chose dans ses deux langues :"; \
+	  printf '%s\n' "$$ecarts" | sed 's/^/  /'; \
+	  exit 1; \
+	fi
 
 # Les notes d'une version sont la section du CHANGELOG, reprise telle quelle. Une
 # section absente arrête la publication : c'est le seul moment où quelqu'un relit
