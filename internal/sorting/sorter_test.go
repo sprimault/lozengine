@@ -64,6 +64,65 @@ func TestCornerDepthMatchesProjection(t *testing.T) {
 	}
 }
 
+// TestAnchorIsTheFootOfTheImage garde les trois faits que la godoc de [scene.Aspect]
+// publie de l'ancre : le coin haut-gauche à (−largeur/2, −hauteur), la dernière ligne
+// peinte une ligne au-dessus du point projeté, et le penchant d'un pixel vers la
+// gauche d'une largeur paire.
+//
+// Le cas ne peut pas rougir sur le code d'aujourd'hui, et il n'en a pas l'objet : il
+// n'y a pas de défaut à attraper, il y a une promesse publiée à tenir. Un jeu qui
+// place une barre de vie au-dessus d'un personnage dérive sa position de ces trois
+// faits, et les changer le décalerait sans qu'aucune image de référence ne le dise —
+// `core` et `ground` emploient tous deux une largeur paire.
+//
+// Les deux largeurs sont voisines pour que la parité soit la seule différence.
+func TestAnchorIsTheFootOfTheImage(t *testing.T) {
+	const height = 24
+
+	for _, c := range []struct {
+		width       uint16
+		left, right int32
+	}{
+		{10, 5, 4},
+		{11, 5, 5},
+	} {
+		s := testScene(t, 16, 2)
+
+		a := figure()
+		a.Width, a.Height = c.width, height
+		if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: a}); !ok {
+			t.Fatal("entité refusée")
+		}
+
+		sorter := New(s)
+		image := sorter.Frame()
+		if len(image) != 1 {
+			t.Fatalf("largeur %d : %d quads, attendu 1", c.width, len(image))
+		}
+
+		rx, ry := s.Remap(8.5, 8.5)
+		px, py, _, _ := s.Projection().Project(rx, ry, 0)
+		px, py = px-sorter.viewX, py-sorter.viewY
+
+		q := image[0]
+		if int32(q.X) != px-int32(c.width)/2 || int32(q.Y) != py-height {
+			t.Errorf("largeur %d : coin en (%d, %d), attendu (%d, %d)",
+				c.width, q.X, q.Y, px-int32(c.width)/2, py-height)
+		}
+
+		if last := int32(q.Y) + height - 1; last != py-1 {
+			t.Errorf("largeur %d : dernière ligne peinte en %d, attendu %d",
+				c.width, last, py-1)
+		}
+
+		left, right := px-int32(q.X), int32(q.X)+int32(c.width)-1-px
+		if left != c.left || right != c.right {
+			t.Errorf("largeur %d : %d colonnes à gauche et %d à droite, attendu %d et %d",
+				c.width, left, right, c.left, c.right)
+		}
+	}
+}
+
 // TestFrameOrdersByDepth vérifie la propriété que tout le jalon sert : ce qui
 // est plus loin se peint avant ce qui est plus près, quel que soit l'ordre de pose.
 func TestFrameOrdersByDepth(t *testing.T) {

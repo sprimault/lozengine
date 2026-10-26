@@ -19,6 +19,18 @@ import "github.com/sprimault/lozengine/render"
 // Sa valeur zéro ne montre rien, et c'est ainsi qu'une cellule vide se reconnaît : une
 // largeur ou une hauteur nulle ne couvre aucun pixel, donc aucune table de présence
 // n'a à exister à côté.
+//
+// **L'ancre est le pied de l'image, centrée horizontalement** : le pixel où la
+// projection fait tomber le point du monde reçoit le coin haut-gauche à
+// (−Width/2, −Height). Elle deviendra surchargeable par le fournisseur d'apparence,
+// jamais par appel.
+//
+// Deux conséquences pour un jeu qui dérive de là une position d'écran, pour une barre
+// de vie ou une infobulle. Le dernier pixel peint est **une ligne au-dessus** du point
+// projeté, qui est donc la première ligne sous l'image et n'en fait pas partie. Et le
+// centrage se fait en entiers : une largeur **paire penche d'un pixel vers la gauche**
+// — dix colonnes en donnent cinq à gauche du point projeté et quatre à droite —, là
+// qu'une largeur impaire centre exactement.
 type Aspect struct {
 	// La planche où lire, et le rectangle qu'on y prend.
 	Sheet            uint16
