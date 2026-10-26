@@ -79,6 +79,13 @@ func benchScene(b *testing.B, side, entities, tiers int) *scene.Scene {
 // sur la fenêtre, donc son coût ne doit pas suivre la taille de la carte, là où les
 // entités se parcourent toutes et le font suivre. Le rapport entre ces lignes est un
 // fait du moteur ; leur valeur absolue n'est qu'un fait de la machine qui mesure.
+//
+// Le second fait sort de la troisième strate, et c'est le plus utile à qui dimensionne
+// une scène : **une strate pleine de plus coûte environ dix fois ce que coûte le
+// parcours de trois cents entités.** Elle ajoute un quad par cellule visible, là qu'une
+// entité hors de la fenêtre ne coûte que son parcours. Le rapport s'obtient d'une seule
+// série — la strate supplémentaire se déduit de l'écart entre une et trois, les entités
+// de la ligne sans décor —, donc la dérive thermique ne le touche pas.
 func BenchmarkFrame(b *testing.B) {
 	cases := []struct {
 		name                  string

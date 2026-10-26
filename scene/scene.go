@@ -30,6 +30,14 @@ import (
 // Chaque strate ouverte coûte une tranche de la taille de la carte — environ cinq
 // mégaoctets sur cinq cents cellules de côté —, qu'elle porte trois objets ou la carte
 // entière. Quelques véhicules sur une grande carte se décrivent donc mieux en entités.
+//
+// **Et son coût par image, qui est celui qu'on sous-estime.** Une strate **pleine**
+// ajoute un quad par cellule visible, à relever, à trier et à peindre à chaque image :
+// ce coût suit donc la surface de la fenêtre en cellules, jamais la taille de la carte.
+// Mesuré sur le banc du moteur, une strate pleine de plus coûte environ dix fois ce que
+// coûte le parcours de trois cents entités. Quatre strates pleines ne sont pas « quatre
+// fois rien » : c'est le décor qui domine l'image, pas les entités, et un jeu qui
+// dimensionne sa scène en pensant à ses créatures se trompe de poste.
 const MaxTiers = 16
 
 // defaultEntities est la capacité qu'une scène prend quand l'appelant n'en demande
