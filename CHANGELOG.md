@@ -62,6 +62,9 @@ notes de publication.
 - `Color.Scale` atténue une couleur, ses quatre composantes ensemble : c'est ce que
   demande un éclat qui s'éteint, et amputer les trois couleurs seules assombrirait au
   lieu d'estomper. La fraction est entière, donc l'atténuation est la même partout.
+- `NewSheetFromStraight` monte une planche depuis des octets RVBA dont l'alpha n'est
+  pas encore appliqué, pour qui tient ses pixels ailleurs que dans un PNG. La
+  conversion a lieu en entrant.
 
 ### Corrigé
 
@@ -88,6 +91,9 @@ notes de publication.
 - `Color.Scale` dims a colour, all four channels together: that is what a fading
   sparkle needs, and cutting the three colour channels alone would darken rather than
   fade. The fraction is an integer, so the dimming is the same everywhere.
+- `NewSheetFromStraight` builds a sheet from RGBA bytes whose alpha is not applied
+  yet, for whoever holds their pixels somewhere other than a PNG. The conversion
+  happens on the way in.
 
 ### Fixed
 

@@ -302,8 +302,19 @@ func NewSheet(width, height uint16) Sheet {
 // LoadSheet lit un PNG depuis un lecteur et rend une planche en alpha prémultiplié.
 //
 // Un lecteur et non un chemin, ce qui sert aussi bien un fichier qu'une ressource
-// embarquée par go:embed ou une archive. Pour un chemin, [OpenSheet].
+// embarquée par go:embed ou une archive. Pour un chemin, [OpenSheet] ; pour des pixels
+// qu'on tient déjà, [NewSheetFromStraight].
 func LoadSheet(r io.Reader) (Sheet, error) { return raster.LoadSheet(r) }
+
+// NewSheetFromStraight rend une planche depuis des octets RVBA dont l'alpha n'est pas
+// encore appliqué, quatre par pixel, ligne par ligne depuis le haut.
+//
+// C'est la porte de qui tient ses pixels ailleurs que dans un PNG — un atlas fabriqué
+// par ses propres outils, une archive, un format maison. La conversion a lieu en
+// entrant, donc il n'y a rien à ne pas oublier.
+func NewSheetFromStraight(width, height uint16, pixels []uint8) (Sheet, error) {
+	return raster.NewSheetFromStraight(width, height, pixels)
+}
 
 // Scene porte une grille de décor, des entités qui s'y déplacent, et la vue par
 // laquelle on les regarde.
