@@ -112,6 +112,9 @@ func TestOrientationsRepublished(t *testing.T) {
 	if MaxTiers != scene.MaxTiers {
 		t.Errorf("MaxTiers republié : %d, attendu %d", MaxTiers, scene.MaxTiers)
 	}
+	if MaxSheets != render.MaxSheets {
+		t.Errorf("MaxSheets republié : %d, attendu %d", MaxSheets, render.MaxSheets)
+	}
 }
 
 // TestInputRepublished vérifie que l'état du clavier traverse la surface publique sans

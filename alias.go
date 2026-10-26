@@ -99,6 +99,14 @@ const (
 	MaxTiers = scene.MaxTiers
 )
 
+// MaxSheets est le nombre de planches qu'un atlas peut porter : mille vingt-quatre,
+// soit ce qu'un [Quad] sait désigner.
+//
+// [Atlas.Add] refuse au-delà au lieu de ramener au plafond : deux planches confondues
+// ne se verraient qu'à l'image. Dans son propre bloc et non avec les autres bornes,
+// parce que `go doc` abrège un bloc de constantes après la première.
+const MaxSheets = render.MaxSheets
+
 // White rend la teinte neutre, celle qui laisse la source intacte.
 //
 // Une fonction et non un alias : seuls les types se republient sans enveloppe, et
@@ -359,6 +367,11 @@ type Handle = scene.Handle
 //
 // Quatre et non un angle libre : une apparence est dessinée pour un nombre fini de
 // directions.
+//
+// **La vue tourne, pas le monde** : un jeu pose ses entités et son décor dans son
+// repère à lui, une fois pour toutes, et son point de visée garde le même sens aux
+// quatre orientations. Rien de ce qu'il a écrit n'est à recalculer quand la caméra
+// pivote.
 type Orientation = scene.Orientation
 
 const (

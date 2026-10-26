@@ -26,6 +26,13 @@ import (
 // permet, et l'agrandissement vers la fenêtre est entier avec des bandes autour quand
 // la taille ne tombe pas juste.
 //
+// **Le retard au-delà de deux pas est abandonné, pas rattrapé.** Après une pause du
+// système — une fenêtre qu'on déplace, une machine qui sort de veille —, la boucle
+// repart de maintenant plutôt que de rejouer les pas manqués, qui feraient sauter le
+// jeu d'un coup. Un jeu qui compte ses pas pour savoir combien de temps s'est écoulé
+// se trompe donc de tout ce qu'une pause a pris : ce compte est un nombre d'images, et
+// non une horloge.
+//
 // Elle ne rend la main qu'à la fermeture, ce qui convient à un jeu écrit en Go et à
 // lui seul : un hôte qui possède sa boucle emploie [Engine] et appelle un pas par
 // image.
