@@ -46,19 +46,48 @@ func blend(dst *render.Color, src render.Color) {
 	dst.A = src.A + product(dst.A, rest)
 }
 
+// add ajoute un pixel source à un pixel de destination, chaque composante plafonnant à
+// sa valeur pleine.
+//
+// Le plafond est le mélange, pas une précaution : sans lui la composante reboucle par
+// le bas et un éclair noircit ce qu'il éclaire. La somme se fait en seize bits parce
+// que c'est le seul endroit où elle peut déborder.
+func add(dst *render.Color, src render.Color) {
+	dst.R = saturate(dst.R, src.R)
+	dst.G = saturate(dst.G, src.G)
+	dst.B = saturate(dst.B, src.B)
+	dst.A = saturate(dst.A, src.A)
+}
+
+// saturate rend la somme de deux composantes, plafonnée à sa valeur pleine.
+func saturate(a, b uint8) uint8 {
+	sum := uint16(a) + uint16(b)
+	if sum > 255 {
+		return 255
+	}
+	return uint8(sum)
+}
+
 // put écrit un pixel source sur un pixel de destination, teinte comprise.
 //
 // Les deux sorties rapides ne sont pas une redite du pré-encodage : une teinte peut
 // rendre transparent un pixel opaque, ou opaque un pixel que la planche donnait
 // déjà tel quel, et le genre de la séquence ne le sait pas.
-func put(dst *render.Color, src, tint render.Color, neutral bool) {
+//
+// **L'additif n'en garde qu'une.** Une source transparente n'apporte rien, en
+// prémultiplié ses composantes étant nulles avec son alpha ; mais une source opaque
+// s'ajoute au lieu de remplacer, donc le raccourci qui écrit par-dessus serait faux.
+func put(dst *render.Color, src, tint render.Color, neutral, additive bool) {
 	if !neutral {
 		src = modulate(src, tint)
 	}
-	switch src.A {
-	case 0:
+	if src.A == 0 {
 		return
-	case 255:
+	}
+	switch {
+	case additive:
+		add(dst, src)
+	case src.A == 255:
 		*dst = src
 	default:
 		blend(dst, src)

@@ -27,7 +27,8 @@ func TestConstantsRepublished(t *testing.T) {
 	}{
 		{"MirrorX", MirrorX, render.MirrorX},
 		{"MirrorY", MirrorY, render.MirrorY},
-		{"Aplat", Flat, render.Flat},
+		{"Flat", Flat, render.Flat},
+		{"Additive", Additive, render.Additive},
 	}
 	for _, c := range cases {
 		if c.root != c.core {

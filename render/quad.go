@@ -7,10 +7,10 @@
 
 package render
 
-// Flags porte les variantes de dessin d'un quad : [MirrorX], [MirrorY] et [Flat], un
-// bit chacune, donc elles se combinent.
+// Flags porte les variantes de dessin d'un quad : [MirrorX], [MirrorY], [Flat] et
+// [Additive], un bit chacune, donc elles se combinent.
 //
-// Les trois sont nommées ici parce qu'interroger le type seul ne les montre pas : la
+// Les quatre sont nommées ici parce qu'interroger le type seul ne les montre pas : la
 // documentation d'un bloc de constantes s'abrège après la première.
 type Flags uint8
 
@@ -31,6 +31,19 @@ const (
 	// fractionnaire que le moteur s'interdit. Le quad reste la primitive unique,
 	// et c'est son chemin le plus court.
 	Flat
+
+	// Additive ajoute la source au fond au lieu de la composer dessus, chaque
+	// composante étant plafonnée à sa valeur pleine.
+	//
+	// C'est le mélange de ce qui émet de la lumière — un éclair, une étincelle, une
+	// lueur —, et le mélange ordinaire ne le rend pas : poser un rose presque blanc
+	// sur un dessin clair ne le change presque pas, là où l'ajouter l'éclaircit
+	// franchement. L'alpha de la source continue de doser ce qu'elle apporte,
+	// puisque les composantes sont prémultipliées.
+	//
+	// Il se combine avec [Flat], et c'est de là que vient un fondu lumineux : un
+	// rectangle sans source qui s'ajoute à toute l'image.
+	Additive
 )
 
 // MaxSheets est le nombre de planches qu'un atlas peut porter, donc la plus grande

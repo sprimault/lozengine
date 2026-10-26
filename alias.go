@@ -47,8 +47,8 @@ func NewBuffer(width, height uint16) *Buffer { return render.NewBuffer(width, he
 // Color est une couleur RVBA sur quatre octets, à alpha prémultiplié.
 type Color = render.Color
 
-// Flags porte les variantes de dessin d'un quad : [MirrorX], [MirrorY] et [Flat], un
-// bit chacune, donc elles se combinent.
+// Flags porte les variantes de dessin d'un quad : [MirrorX], [MirrorY], [Flat] et
+// [Additive], un bit chacune, donc elles se combinent.
 type Flags = render.Flags
 
 const (
@@ -60,6 +60,11 @@ const (
 
 	// Flat peint le rectangle en Tint sans lire aucune source.
 	Flat = render.Flat
+
+	// Additive ajoute la source au fond au lieu de la composer dessus, ce qui est le
+	// mélange de ce qui émet de la lumière. Combiné à [Flat], il donne un fondu
+	// lumineux.
+	Additive = render.Additive
 )
 
 // MaxLayer et MaxFloor sont les plus grandes valeurs qu'une couche et un étage

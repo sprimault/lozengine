@@ -41,8 +41,10 @@ func quad(t *render.Buffer, q render.Quad, a *Atlas) {
 		return
 	}
 
+	additive := q.Flags&render.Additive != 0
+
 	if q.Flags&render.Flat != 0 {
-		fillRect(t, x0, y0, x1, y1, q.Tint)
+		fillRect(t, x0, y0, x1, y1, q.Tint, additive)
 		return
 	}
 
@@ -83,7 +85,7 @@ func quad(t *render.Buffer, q render.Quad, a *Atlas) {
 					if x < x0 || x >= x1 {
 						continue
 					}
-					put(&dst[x], src[sx], q.Tint, neutral)
+					put(&dst[x], src[sx], q.Tint, neutral, additive)
 				}
 				continue
 			}
@@ -95,12 +97,17 @@ func quad(t *render.Buffer, q render.Quad, a *Atlas) {
 			}
 			from := sourceX + da - left
 
-			if s.kind == opaque && neutral {
+			// La recopie remplace, donc elle est juste en composition et fausse en
+			// additif : une séquence opaque ajoutée doit éclaircir le fond, pas
+			// l'effacer. C'est le seul raccourci qui n'arrive jamais jusqu'à
+			// l'arithmétique d'un pixel, donc le seul qu'un test de blending ne
+			// couvrirait pas.
+			if s.kind == opaque && neutral && !additive {
 				copy(dst[da:db], src[from:from+db-da])
 				continue
 			}
 			for i := 0; i < db-da; i++ {
-				put(&dst[da+i], src[from+i], q.Tint, neutral)
+				put(&dst[da+i], src[from+i], q.Tint, neutral, additive)
 			}
 		}
 	}
@@ -110,20 +117,29 @@ func quad(t *render.Buffer, q render.Quad, a *Atlas) {
 //
 // Il ne touche pas à l'atlas : c'est ce qui permet à un panneau d'interface, à une
 // bande ou à un fondu de se dessiner sans qu'aucune planche existe pour eux.
-func fillRect(t *render.Buffer, x0, y0, x1, y1 int, c render.Color) {
+//
+// En additif le remplissage s'ajoute au fond, et c'est de là que vient un fondu
+// lumineux. Le raccourci de l'opaque tombe alors, pour la raison qui le fait tomber
+// partout ailleurs : ajouter n'est pas remplacer.
+func fillRect(t *render.Buffer, x0, y0, x1, y1 int, c render.Color, additive bool) {
 	if c.A == 0 {
 		return
 	}
 	for y := y0; y < y1; y++ {
 		dst := t.Pixels[y*int(t.Width) : (y+1)*int(t.Width)]
-		if c.A == 255 {
+		switch {
+		case additive:
+			for x := x0; x < x1; x++ {
+				add(&dst[x], c)
+			}
+		case c.A == 255:
 			for x := x0; x < x1; x++ {
 				dst[x] = c
 			}
-			continue
-		}
-		for x := x0; x < x1; x++ {
-			blend(&dst[x], c)
+		default:
+			for x := x0; x < x1; x++ {
+				blend(&dst[x], c)
+			}
 		}
 	}
 }

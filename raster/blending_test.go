@@ -66,3 +66,45 @@ func TestBlend(t *testing.T) {
 		t.Errorf("mélange : %v, attendu %v", dst, want)
 	}
 }
+
+// TestAddSaturates vérifie que l'additif plafonne au lieu de reboucler.
+//
+// Sans plafond la somme sort de son octet et la composante repart du sombre : un
+// éclair noircirait ce qu'il éclaire, et c'est un défaut qui ne se voit qu'aux endroits
+// les plus clairs de l'image.
+func TestAddSaturates(t *testing.T) {
+	cases := []struct {
+		name     string
+		dst, src render.Color
+		want     render.Color
+	}{
+		{
+			"une somme qui tient dans l'octet",
+			render.Color{R: 30, G: 30, B: 45, A: 255},
+			render.Color{R: 90, G: 90, B: 110, A: 255},
+			render.Color{R: 120, G: 120, B: 155, A: 255},
+		},
+		{
+			"une somme qui déborde, plafonnée",
+			render.Color{R: 210, G: 210, B: 210, A: 255},
+			render.Color{R: 90, G: 90, B: 110, A: 255},
+			render.Color{R: 255, G: 255, B: 255, A: 255},
+		},
+		{
+			"la borne exacte, qui ne doit pas basculer",
+			render.Color{R: 200, G: 100, B: 0, A: 255},
+			render.Color{R: 55, G: 155, B: 255, A: 0},
+			render.Color{R: 255, G: 255, B: 255, A: 255},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dst := c.dst
+			add(&dst, c.src)
+
+			if dst != c.want {
+				t.Errorf("addition : %v, attendu %v", dst, c.want)
+			}
+		})
+	}
+}
