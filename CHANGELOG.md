@@ -45,11 +45,15 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.3.2] — 2026-10-26
+
 ### Ajouté
 
 - `Quitter` est ce qu'un jeu écrit en plus de `Game` quand il veut pouvoir partir de
   lui-même : une entrée de menu, une touche d'échappement. Sans elle, seule la
   fermeture de la fenêtre arrêtait la boucle.
+- `MaxSheets` se lit depuis le paquet racine, comme les autres plafonds : c'est le
+  nombre de planches qu'un atlas porte, et `Atlas.Add` refuse au-delà.
 
 ### Corrigé
 
@@ -65,6 +69,8 @@ notes de publication.
 - `Quitter` is what a game writes in addition to `Game` when it wants to leave of its
   own accord: a menu entry, an escape key. Without it, only closing the window stopped
   the loop.
+- `MaxSheets` can be read from the root package, like the other ceilings: it is how
+  many sheets an atlas holds, and `Atlas.Add` refuses beyond it.
 
 ### Fixed
 
