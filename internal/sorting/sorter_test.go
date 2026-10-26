@@ -33,6 +33,37 @@ func figure() scene.Aspect {
 	return scene.Aspect{Width: 32, Height: 16, Tint: render.White()}
 }
 
+// TestCornerDepthMatchesProjection garde le raccourci par lequel le décor obtient la
+// profondeur de son coin sans reprojeter.
+//
+// Le collecteur retranche [halfCellQuarters] à la profondeur du centre au lieu
+// d'appeler la projection une seconde fois, ce qui coûtait huit pour cent du décor.
+// L'égalité est exacte par construction — un demi en virgule fixe vaut la moitié du
+// pas de quantification, et deux demis font exactement quatre quarts de cellule —,
+// mais elle dépend de constantes que `geometry` n'exporte pas. Ce cas les relie : si
+// la quantification changeait, le raccourci deviendrait faux en silence, et c'est le
+// genre de faux qui se lit comme un défaut d'ordre.
+//
+// La vérification porte sur des cellules entières et sur des bords, le repli à zéro
+// du coin de la première cellule compris.
+func TestCornerDepthMatchesProjection(t *testing.T) {
+	m := geometry.Dimetric(32, 16)
+
+	for _, c := range [][2]float64{
+		{0, 0}, {0, 1}, {1, 0}, {1, 1}, {3, 7}, {12, 5}, {99, 99}, {500, 500},
+	} {
+		cx, cy := c[0]+0.5, c[1]+0.5
+
+		_, _, center, _ := m.Project(cx, cy, 0)
+		_, _, corner, _ := m.Project(cx-0.5, cy-0.5, 0)
+
+		if got := max(center, halfCellQuarters) - halfCellQuarters; got != corner {
+			t.Errorf("cellule (%g, %g) : le raccourci rend %d, la projection du coin %d",
+				c[0], c[1], got, corner)
+		}
+	}
+}
+
 // TestFrameOrdersByDepth vérifie la propriété que tout le jalon sert : ce qui
 // est plus loin se peint avant ce qui est plus près, quel que soit l'ordre de pose.
 func TestFrameOrdersByDepth(t *testing.T) {

@@ -108,6 +108,20 @@ func (t *Sorter) collectEntities() {
 	}
 }
 
+// halfCellQuarters est ce qu'un demi-cellule pèse dans la profondeur, sur les deux
+// axes : celle-ci se compte en quarts de cellule, donc deux fois deux quarts.
+//
+// Elle sert à obtenir la profondeur du coin d'une cellule depuis celle de son centre
+// sans reprojeter. La soustraction est **exacte** et non une approximation : la
+// profondeur est une somme décalée de quatorze bits, un demi en virgule fixe vaut
+// 32 768, et deux demis font 65 536, soit exactement quatre fois le pas du décalage.
+// Reprojeter le coin donnerait le même nombre et coûtait huit pour cent du décor,
+// mesuré.
+//
+// Le chiffre dépend de la quantification de `geometry`, qui ne l'exporte pas :
+// [TestCornerDepthMatchesProjection] garde l'égalité, et rougirait si elle changeait.
+const halfCellQuarters = 4
+
 // collectDecor parcourt les cellules que la vue peut montrer, couche par couche.
 func (t *Sorter) collectDecor() {
 	tiers := t.scene.Tiers()
@@ -127,11 +141,24 @@ func (t *Sorter) collectDecor() {
 					continue
 				}
 
-				// Le centre de la cellule, comme une entité se tient au centre de la
-				// sienne : c'est ce qui met une créature et la case qu'elle foule sur
-				// le même point de comparaison.
+				// L'écran prend le centre de la cellule, la profondeur son coin le
+				// plus lointain, et les deux ne peuvent pas être le même point.
+				//
+				// Une entité porte la profondeur de sa position brute. Si le décor
+				// portait celle de son centre, une entité dans la moitié nord de sa
+				// case aurait une profondeur plus petite que la case : elle serait
+				// peinte avant, et le sol lui passerait sur les pieds. Le coin met le
+				// décor derrière tout ce qui se tient dedans par construction, les
+				// coordonnées d'une entité de la cellule (u, v) étant dans
+				// [u, u+1[ × [v, v+1[.
+				//
+				// Le remappage est une rotation d'un quart de tour et des
+				// renversements d'axes, donc l'image d'une cellule reste un carré
+				// unité : son coin le plus lointain est le centre remappé moins un
+				// demi sur chaque axe, quelle que soit l'orientation.
 				rx, ry := t.scene.Remap(float64(u)+0.5, float64(v)+0.5)
 				ex, ey, depth, height := m.Project(rx, ry, 0)
+				depth = max(depth, halfCellQuarters) - halfCellQuarters
 
 				// Le rang de la cellule ne bouge jamais, contrairement à la place
 				// d'une entité : c'est l'identité que le départage lui demande.

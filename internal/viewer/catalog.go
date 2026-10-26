@@ -17,6 +17,7 @@ var catalog = map[string]func() Scenario{
 	"additive": Additive,
 	"target":   Target,
 	"core":     Core,
+	"ground":   Ground,
 	"order":    Order,
 }
 
