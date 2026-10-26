@@ -73,11 +73,19 @@ type Quitter interface {
 // résolution interne, le pas, le titre, le fond —, et les laisser vides est le cas
 // courant.
 type Options struct {
-	// Title est le titre de la fenêtre. La boucle seule s'en sert.
+	// Title est le titre de la fenêtre. Vide, il vaut le nom du moteur. La boucle
+	// seule s'en sert.
 	Title string
 
 	// Width et Height sont la résolution interne, celle dans laquelle le moteur
-	// dessine avant l'agrandissement entier vers la fenêtre. Zéro vaut 480×270.
+	// dessine avant l'agrandissement entier vers la fenêtre. Zéro vaut 480×270, et
+	// [MaxBufferSide] est la borne.
+	//
+	// **La fenêtre s'ouvre à cette taille**, donc l'agrandissement vaut un tant que
+	// le joueur ne l'a pas redimensionnée. Un jeu qui se veut grand à l'ouverture
+	// demande une résolution interne plus grande, et non une fenêtre plus grande : le
+	// facteur est entier, et c'est la résolution interne qui dit ce qu'une tuile
+	// couvre.
 	Width, Height int
 
 	// Tick est la durée d'un pas. Zéro vaut un soixantième de seconde.
@@ -219,6 +227,19 @@ func NewEngine(s *Scene, o Options) (*Engine, error) {
 // L'ordre compte et il est le même partout : le jeu décrit, le tri ordonne, le
 // rastériseur peint. Rien n'alloue après la première image, et c'est ce qui permet au
 // pas de tenir son budget.
+//
+// Trois choses qu'elle ne fait pas, et qu'un hôte fait donc lui-même. Elle **n'a pas
+// d'horloge** : un appel vaut un pas, quel qu'ait été le temps réellement écoulé, et
+// [Engine.Tick] dit la durée que le jeu suppose sans que le moteur la tienne — appeler
+// deux fois plus souvent fait avancer le jeu deux fois plus vite. Elle **ne présente
+// rien** : [Engine.Frame] rend un tampon à la résolution interne, et l'agrandissement
+// entier vers une fenêtre appartient à qui présente. Elle **ne demande rien** :
+// [Quitter] n'est pas consultée ici, un hôte qui tient sa boucle décidant seul quand
+// s'arrêter.
+//
+// Un jeu nul est admis, et la scène est alors dessinée telle qu'elle est. C'est ce qui
+// rend une image d'une scène qu'on vient de construire, sans avoir à écrire une
+// méthode vide pour y arriver.
 func (e *Engine) Step(g Game, in Input) {
 	if g != nil {
 		g.Step(in)
