@@ -53,6 +53,7 @@ var (
 	// déjà. La traduction suit la disposition, ce qui est voulu ici.
 	mapVirtualKeyW   = user32.NewProc("MapVirtualKeyW")
 	getAsyncKeyState = user32.NewProc("GetAsyncKeyState")
+	getKeyState      = user32.NewProc("GetKeyState")
 
 	// Dans kernel32 et non user32, ce qu'un `LazyProc` ne dit qu'à l'appel : la
 	// compilation et les tests sans écran laissaient passer l'erreur, et c'est la
@@ -110,6 +111,15 @@ const (
 // mapvkVscToVkEx demande le code virtuel d'une place, préfixe des touches étendues
 // compris.
 const mapvkVscToVkEx = 3
+
+// mapvkVkToVsc demande la place d'un code virtuel, sans préfixe. C'est la traduction
+// inverse de [mapvkVscToVkEx], et elle sert à retrouver les places du pavé numérique
+// depuis les codes virtuels qu'elles produisent quand le verrou est allumé.
+const mapvkVkToVsc = 0
+
+// vkNumLock est le code virtuel du verrou numérique. Son bit de poids faible dit s'il
+// est allumé, là où le bit de poids fort dirait que la touche est enfoncée.
+const vkNumLock = 0x90
 
 // sizeMinimized est le `wParam` de `wmSize` qui annonce la réduction. C'est par lui
 // que la minimisation se lit, et non en interrogeant la fenêtre à chaque image.
