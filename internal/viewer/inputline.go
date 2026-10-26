@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 // Les entrées simulées, une ligne de texte par image. Le format reste une chaîne que
-// chaque scénario interprète : le moteur n'a pas encore de système d'entrées, et en
-// inventer un ici le figerait sans raison.
+// chaque scénario interprète, plutôt que les places de clavier du paquet input.
 
 package viewer
 
@@ -16,10 +15,10 @@ import (
 
 // InputLine est la ligne d'entrées simulées d'une image, telle que le fichier la porte.
 //
-// Une chaîne, et non une structure de touches : le moteur n'aura de système d'entrées
-// qu'au jalon 2, et en inventer un ici le figerait sans raison. Chaque scénario
-// interprète sa propre ligne, ce qui garde toute sémantique de jeu hors du moteur —
-// et un fichier d'entrées se relit dans un diff.
+// Une chaîne, et non les places de clavier que le paquet input nomme : un scénario
+// décrit ce qu'il veut voir arriver, pas la touche par laquelle un joueur le
+// demanderait. Chaque scénario interprète donc sa propre ligne, ce qui garde toute
+// sémantique de jeu hors du moteur — et un fichier d'entrées se relit dans un diff.
 type InputLine string
 
 // ReadInputLines lit un fichier d'entrées, une ligne par image.

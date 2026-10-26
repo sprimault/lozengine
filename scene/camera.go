@@ -7,7 +7,8 @@
 
 package scene
 
-// Orientation est l'un des quatre quarts de tour sous lesquels une scène se regarde.
+// Orientation est l'un des quatre quarts de tour sous lesquels une scène se regarde :
+// [NoRotation], [QuarterTurn], [HalfTurn] et [ThreeQuarters].
 //
 // Quatre et non un angle libre : une apparence est dessinée pour un nombre fini de
 // directions, et un angle quelconque demanderait de l'interpoler — ce qu'un rendu en

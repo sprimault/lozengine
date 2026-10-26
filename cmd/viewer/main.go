@@ -5,9 +5,9 @@
 //
 //	viewer -scenario target -factor 4 -out .tmp/images
 //
-// Elle n'ouvre aucune fenêtre : le moteur n'a pas encore de backend, et la suite de
-// non-régression se juge sur des fichiers. Les images sont numérotées, donc une
-// visionneuse d'images les enchaîne dans l'ordre.
+// Elle n'ouvre aucune fenêtre, et c'est ce qui lui permet de tourner sans écran : la
+// suite de non-régression se juge sur des fichiers. Les images sont numérotées, donc
+// une visionneuse d'images les enchaîne dans l'ordre.
 package main
 
 import (

@@ -47,7 +47,8 @@ func NewBuffer(width, height uint16) *Buffer { return render.NewBuffer(width, he
 // Color est une couleur RVBA sur quatre octets, à alpha prémultiplié.
 type Color = render.Color
 
-// Flags porte les variantes de dessin d'un quad, un bit par variante.
+// Flags porte les variantes de dessin d'un quad : [MirrorX], [MirrorY] et [Flat], un
+// bit chacune, donc elles se combinent.
 type Flags = render.Flags
 
 const (
@@ -133,6 +134,10 @@ type Input = input.Input
 
 // Key désigne une place sur le clavier, et non le caractère qu'elle produit : la
 // touche nommée W est celle marquée Z sur un clavier français.
+//
+// Soixante-neuf places portent un nom : lettres, chiffres, flèches, modificateurs
+// distingués à gauche et à droite, touches de fonction et bloc de navigation.
+// [input.Key] les énumère, un alias ne montrant aucune des constantes du type.
 type Key = input.Key
 
 // State fabrique des entrées sans clavier, et c'est à cela qu'il sert ici : éprouver
@@ -303,8 +308,10 @@ type Aspect = scene.Aspect
 type Handle = scene.Handle
 
 // Orientation est l'un des quatre quarts de tour sous lesquels la vue présente la
-// grille. Quatre et non un angle libre : une apparence est dessinée pour un nombre
-// fini de directions.
+// grille : [NoRotation], [QuarterTurn], [HalfTurn] et [ThreeQuarters].
+//
+// Quatre et non un angle libre : une apparence est dessinée pour un nombre fini de
+// directions.
 type Orientation = scene.Orientation
 
 const (

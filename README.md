@@ -71,15 +71,15 @@ would make that exposure unusable.
 
 One package to import, and two ways to use it.
 
-To write a game in Go, the engine will own the window, the fixed-step loop and the
-input: one method will be all you write. No draw method, because the order comes
+To write a game in Go, `Run` owns the window, the fixed-step loop and the input:
+one method is all you write, `Game.Step`. No draw method, because the order comes
 from the sort key; no layout method, because the scale comes from the integer
 factor. That is what a scene described rather than drawn buys you.
 
-To embed the engine in a game that already has its own loop, the same operations
-will be called one by one, and nothing will claim a window or a thread. The first
-door adds convenience, never capability: everything it allows can also be done by
-driving the engine by hand.
+To embed the engine in a game that already has its own loop, `NewEngine` gives the
+same capability with no window and no clock, and the host calls one step per frame.
+The first door adds convenience, never capability: everything it allows can also be
+done by driving the engine by hand.
 
 Five packages are public because the documentation of their types has to be readable:
 `render`, `geometry`, `scene`, `raster` and `input`. Everything else lives under

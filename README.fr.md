@@ -69,16 +69,16 @@ quad et par image, ce qui rendrait cette exposition inutilisable.
 
 Un seul paquet à importer, et deux façons de s'en servir.
 
-Pour écrire un jeu en Go, le moteur tiendra la fenêtre, la boucle à pas fixe et les
-entrées : il ne restera qu'une méthode à écrire. Pas de méthode de dessin, parce que
-l'ordre vient de la clé de tri ; pas de méthode de mise en page, parce que
+Pour écrire un jeu en Go, `Run` tient la fenêtre, la boucle à pas fixe et les
+entrées : il ne reste qu'une méthode à écrire, `Game.Step`. Pas de méthode de dessin,
+parce que l'ordre vient de la clé de tri ; pas de méthode de mise en page, parce que
 l'échelle vient du facteur entier. C'est ce que rapporte une scène décrite plutôt
 que dessinée.
 
-Pour intégrer le moteur dans un jeu qui a déjà sa boucle, les mêmes opérations
-s'appelleront une par une, sans que rien ne réclame de fenêtre ni de thread. La
-première porte ajoute du confort, jamais de capacité : tout ce qu'elle permet se
-fait aussi en pilotant le moteur à la main.
+Pour intégrer le moteur dans un jeu qui a déjà sa boucle, `NewEngine` rend la même
+capacité sans fenêtre ni horloge, et l'hôte appelle un pas par image. La première
+porte ajoute du confort, jamais de capacité : tout ce qu'elle permet se fait aussi en
+pilotant le moteur à la main.
 
 Cinq paquets sont publics parce qu'on doit pouvoir lire la documentation de leurs
 types : `render`, `geometry`, `scene`, `raster` et `input`. Tout le reste vit sous
