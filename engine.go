@@ -34,6 +34,38 @@ type Game interface {
 	Step(in Input)
 }
 
+// Quitter est ce qu'un jeu implémente **en plus** de [Game] quand il veut pouvoir
+// partir de lui-même : une entrée « quitter » dans un menu, une touche d'échappement,
+// une fin de partie.
+//
+// Sans elle, seule la fermeture de la fenêtre arrête [Run], et un jeu qui voulait
+// partir n'avait que la sortie du processus — ce qui saute tout ce que la boucle fait
+// en se terminant, et ne veut rien dire dans un navigateur.
+//
+// **C'est la boucle qui demande, et le jeu qui répond.** Une valeur rendue par
+// [Game.Step] aurait touché la signature par laquelle un jeu écrit sa méthode unique,
+// et le jalon 5 restructurera cette boucle pour rendre la main au navigateur entre
+// deux images : une question posée traverse cette reprise, une valeur rendue par le
+// flot de contrôle serait reprise avec elle.
+//
+// Elle n'ajoute aucune capacité à [Engine], et c'est voulu : un hôte qui tient sa
+// propre boucle décide seul quand s'arrêter, et n'a personne à qui le demander. C'est
+// donc du confort de la première porte d'entrée, comme l'invariant des deux portes
+// l'exige.
+//
+// **La seule interface facultative du moteur, et elle le restera** : la fin de la
+// boucle est la seule chose que la boucle ne peut apprendre de nulle part ailleurs.
+// Tout le reste de ce qu'un jeu voudrait régler se règle par [Options], avant.
+type Quitter interface {
+	// Quitting dit que le jeu a fini. La boucle rend la main après l'image en cours,
+	// donc l'appel suivant à [Game.Step] n'a pas lieu.
+	//
+	// Appelée une fois par image, après le pas : un jeu qui décide de partir pendant
+	// son pas voit sa décision prise dans la même image, et l'image part quand même
+	// — c'est ce qui permet d'afficher un dernier écran.
+	Quitting() bool
+}
+
 // Options porte ce que l'étape et la boucle admettent de régler.
 //
 // Sa valeur zéro ne convient pas, contrairement au reste du moteur, et pour une seule

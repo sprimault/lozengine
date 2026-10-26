@@ -24,15 +24,24 @@ import (
 // petite, le décor ne se relisant que sur la portion visible.
 const side = 40
 
-// game porte l'état du jeu : la scène qu'il décrit, et où se trouve son personnage.
+// game porte l'état du jeu : la scène qu'il décrit, où se trouve son personnage, et
+// s'il a demandé à partir.
 type game struct {
 	scene *lozengine.Scene
 	pawn  lozengine.Handle
 	x, y  float64
+	done  bool
 }
 
 // Step déplace le personnage selon les touches tenues, puis recadre la vue sur lui.
 func (g *game) Step(in lozengine.Input) {
+	// Échap demande à partir, et c'est tout ce que le jeu a à faire : la boucle pose
+	// la question après l'image, donc celle-ci sort quand même.
+	if in.JustPressed(lozengine.KeyEscape) {
+		g.done = true
+		return
+	}
+
 	// La vitesse se répartit sur les deux axes, pour qu'une diagonale d'écran n'aille
 	// pas plus vite qu'un déplacement de côté.
 	const speed = 0.06
@@ -75,6 +84,13 @@ func (g *game) Step(in lozengine.Input) {
 	_, _, width, height := g.scene.View()
 	g.scene.Focus(g.x, g.y, width, height)
 }
+
+// Quitting dit au moteur que le joueur a demandé à partir.
+//
+// Elle fait de ce jeu un [lozengine.Quitter] en plus d'un [lozengine.Game], et c'est
+// tout ce qu'il y a à écrire : sans elle, seule la fermeture de la fenêtre arrêterait
+// la boucle.
+func (g *game) Quitting() bool { return g.done }
 
 // inside dit si une coordonnée reste sur la carte.
 //

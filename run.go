@@ -58,6 +58,11 @@ func Run(s *Scene, g Game, o Options) error {
 	// l'allouer par image mettrait le ramasse-miettes dans le chemin de rendu.
 	var presented *Buffer
 
+	// L'assertion se fait une fois, au montage, et non à chaque image : ce qu'un jeu
+	// implémente ne change pas en cours de route, et le vérifier soixante fois par
+	// seconde serait payer une question dont la réponse est connue.
+	quitting, _ := g.(Quitter)
+
 	// L'instant du prochain pas, tenu en absolu. C'est ce qui empêche l'erreur de
 	// s'accumuler : dormir d'une durée fixe à chaque tour ajoute à chaque fois ce
 	// que l'horloge du système arrondit — de quinze à trente et une millisecondes
@@ -86,6 +91,13 @@ func Run(s *Scene, g Game, o Options) error {
 		if presented != nil {
 			fit(engine.Frame(), presented, o.Bars)
 			window.Present(presented)
+		}
+
+		// La question vient après la présentation, et c'est ce qui permet au jeu
+		// d'afficher un dernier écran : il décide de partir pendant son pas, l'image
+		// de ce pas sort quand même, et la boucle rend la main ensuite.
+		if quitting != nil && quitting.Quitting() {
+			return nil
 		}
 
 		wait, after := pace(time.Now(), next, o.Tick)
