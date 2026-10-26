@@ -102,8 +102,12 @@ Three exclusions follow from the dependency rule, and they are deliberate:
 
 - **No GPU acceleration.** Rendering is software, and the low internal
   resolution is what keeps it affordable.
-- **No macOS.** Impossible without a dependency or a C compiler. The backend
-  boundary keeps it reachable should that constraint change.
+- **No window on macOS.** The core compiles there and computes its images, so a
+  host holding its own loop already uses it; what is missing is the window, Cocoa
+  being reachable only through the Objective-C ABI, whose entry point needs a C
+  compiler or one more dependency. iOS goes further: Go itself refuses to link
+  without cgo. Milestone 5 covers both through the browser, and the backend
+  boundary keeps them reachable should that constraint change.
 - **No native Wayland** for now. XWayland covers the need.
 
 What will be exposed to other languages is the core, never the window or the
