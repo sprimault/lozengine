@@ -56,39 +56,90 @@ const extendedKey input.Key = 0x100
 // serait faux pour **nommer** une place et qui est exactement juste pour
 // l'**interroger** : on demande le code virtuel que cette place porte sur ce clavier.
 //
+// **Un code virtuel ne suffit pas toujours à désigner une place.** Onze codes de
+// balayage en portent deux — le pavé numérique partage les siens avec le bloc
+// directionnel, et l'Entrée du pavé avec l'Entrée principale —, et la traduction rend
+// alors le même code virtuel pour les deux. Ce que le matériel répond ne dit donc pas
+// laquelle est tenue, et en poser une au hasard est pire que n'en poser aucune : le
+// relâchement portera le code de l'autre, et celle qu'on a posée restera tenue pour de
+// bon. Le verrou numérique tranche pour les chiffres, qui prennent leurs propres codes
+// virtuels quand il est allumé ; ailleurs, la paire est laissée tranquille.
+//
 // Deux cent cinquante-six places sont parcourues, ce qui fait cinq cents appels. Cela
 // n'arrive qu'à la prise de focus, jamais dans une image.
 func (w *window) resync() {
-	w.resyncWith(heldByHardware)
+	w.resyncWith(heldByHardware, numLockOn())
 }
 
-// resyncWith est la boucle seule, la lecture du matériel lui étant donnée.
+// resyncWith est la boucle seule, la lecture du matériel et l'état du verrou numérique
+// lui étant donnés.
 //
 // Séparer les deux est ce qui rend la traduction vérifiable : un cas de test fournit
 // une lecture qui répond « tenue » pour un code virtuel choisi, et contrôle que la
 // place posée est la bonne. Sans cette couture, il faudrait quelqu'un pour tenir une
-// touche pendant que la suite tourne.
-func (w *window) resyncWith(held func(vk uintptr) bool) {
+// touche pendant que la suite tourne — et quelqu'un pour basculer le verrou.
+func (w *window) resyncWith(held func(vk uintptr) bool, numLockOn bool) {
 	w.state.Forget()
 
-	for scan := uintptr(1); scan < 0x80; scan++ {
-		for _, extendedPlace := range [2]bool{false, true} {
-			code := scan
-			key := input.Key(scan)
-			if extendedPlace {
-				code |= extendedPrefix
-				key |= extendedKey
-			}
+	numpad := numpadPlaces(numLockOn)
 
-			vk, _, _ := mapVirtualKeyW.Call(code, mapvkVscToVkEx)
-			if vk == 0 {
+	// Les deux places d'un code se traitent ensemble, parce que c'est de la paire
+	// que dépend la décision : onze codes en ont deux, et le matériel ne les
+	// distingue pas toujours.
+	for scan := uintptr(1); scan < 0x80; scan++ {
+		plain, _, _ := mapVirtualKeyW.Call(scan, mapvkVscToVkEx)
+		extended, _, _ := mapVirtualKeyW.Call(scan|extendedPrefix, mapvkVscToVkEx)
+
+		if twinned := plain != 0 && plain == extended; twinned {
+			pad, separable := numpad[scan]
+			if !separable {
 				continue
 			}
-			if held(vk) {
-				w.state.Press(key)
-			}
+			plain = pad
+		}
+
+		if plain != 0 && held(plain) {
+			w.state.Press(input.Key(scan))
+		}
+		if extended != 0 && held(extended) {
+			w.state.Press(input.Key(scan) | extendedKey)
 		}
 	}
+}
+
+// numpadPlaces rend la place de chaque chiffre du pavé numérique, indexée par code de
+// balayage, et rien du tout quand le verrou numérique est éteint.
+//
+// C'est ce qui sépare une paire de places jumelles. Verrou allumé, le pavé produit ses
+// propres codes virtuels et la distinction est exacte ; verrou éteint, il produit ceux
+// du bloc directionnel et rien ne le distingue de lui.
+//
+// La correspondance est demandée au système plutôt qu'écrite ici : seuls les codes
+// virtuels du pavé sont posés, et c'est lui qui dit quelle place chacun occupe.
+func numpadPlaces(numLockOn bool) map[uintptr]uintptr {
+	if !numLockOn {
+		return nil
+	}
+
+	places := make(map[uintptr]uintptr, len(numpadKeys))
+	for _, vk := range numpadKeys {
+		if scan, _, _ := mapVirtualKeyW.Call(vk, mapvkVkToVsc); scan != 0 {
+			places[scan] = vk
+		}
+	}
+	return places
+}
+
+// numpadKeys porte les codes virtuels que le pavé numérique produit quand le verrou
+// est allumé : les dix chiffres et le séparateur décimal.
+//
+// L'Entrée du pavé n'y est pas, et c'est la raison pour laquelle sa paire reste
+// indistinguable : elle produit le code de l'Entrée principale dans les deux états du
+// verrou. Les opérateurs non plus, n'ayant pas de jumelle à départager.
+var numpadKeys = [11]uintptr{
+	0x60, 0x61, 0x62, 0x63, 0x64, // pavé 0 à 4
+	0x65, 0x66, 0x67, 0x68, 0x69, // pavé 5 à 9
+	0x6E, // séparateur décimal
 }
 
 // heldByHardware dit si le matériel rapporte la touche enfoncée.
@@ -125,4 +176,10 @@ func keyMessage(msg uint32, lParam uintptr, state *input.State) bool {
 		return true
 	}
 	return false
+}
+
+// numLockOn dit si le verrou numérique est allumé.
+func numLockOn() bool {
+	state, _, _ := getKeyState.Call(vkNumLock)
+	return state&1 != 0
 }

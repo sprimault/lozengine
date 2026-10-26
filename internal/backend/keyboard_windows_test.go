@@ -181,7 +181,7 @@ func TestResyncFindsTheHeldPlaces(t *testing.T) {
 	}
 
 	var w window
-	w.resyncWith(func(demande uintptr) bool { return demande == vk })
+	w.resyncWith(func(demande uintptr) bool { return demande == vk }, true)
 
 	frame := w.state.Frame()
 	if !frame.Held(input.KeyW) {
@@ -192,6 +192,74 @@ func TestResyncFindsTheHeldPlaces(t *testing.T) {
 	}
 }
 
+// TestResyncSeparatesTheNumpadWhenNumLockIsOn garde le cas que NumLock rend
+// distinguable : le 4 du pavé numérique et la flèche gauche portent le même code de
+// balayage, mais le pavé a son propre code virtuel quand le verrou est allumé.
+//
+// Sans cette séparation, la relecture interroge le code de la flèche pour les deux
+// places : la touche du pavé n'est pas retrouvée, et une flèche tenue poserait les
+// deux places — dont une qui ne recevrait jamais son relâchement.
+func TestResyncSeparatesTheNumpadWhenNumLockIsOn(t *testing.T) {
+	const (
+		vkNumpad4 = 0x64
+		vkLeft    = 0x25
+	)
+
+	var w window
+	w.resyncWith(func(demande uintptr) bool { return demande == vkNumpad4 }, true)
+
+	frame := w.state.Frame()
+	if !frame.Held(numpad4) {
+		t.Error("la place du pavé n'a pas été retrouvée")
+	}
+	if frame.Held(input.KeyLeft) {
+		t.Error("la flèche gauche a été posée pour une touche du pavé")
+	}
+
+	w = window{}
+	w.resyncWith(func(demande uintptr) bool { return demande == vkLeft }, true)
+
+	frame = w.state.Frame()
+	if !frame.Held(input.KeyLeft) {
+		t.Error("la flèche gauche n'a pas été retrouvée")
+	}
+	if frame.Held(numpad4) {
+		t.Error("la place du pavé a été posée pour une flèche")
+	}
+}
+
+// numpad4 est la place du 4 du pavé numérique, que le paquet des entrées ne nomme pas
+// encore. Elle s'écrit ici par son code de balayage, le cas portant sur la relecture
+// et non sur le nom.
+const numpad4 = input.Key(0x4B)
+
+// TestResyncLeavesTwinsAloneWhenNumLockIsOff garde le défaut qui rendait une touche
+// morte : verrou éteint, les deux places d'une paire rapportent le même code virtuel,
+// donc rien ne dit laquelle est tenue.
+//
+// En poser une est pire que n'en poser aucune. Le relâchement portera le code de
+// l'autre place, donc celle qu'on a posée reste tenue indéfiniment — ce que la
+// relecture existe précisément pour éviter. Le cas prend l'Entrée, seule paire dont
+// les deux places aient un usage courant.
+func TestResyncLeavesTwinsAloneWhenNumLockIsOff(t *testing.T) {
+	const vkReturn = 0x0D
+
+	var w window
+	w.resyncWith(func(demande uintptr) bool { return demande == vkReturn }, false)
+
+	frame := w.state.Frame()
+	if frame.Held(input.KeyEnter) {
+		t.Error("l'Entrée principale a été posée sans qu'on sache si elle est tenue")
+	}
+	if frame.Held(numpadEnter) {
+		t.Error("l'Entrée du pavé a été posée sans qu'on sache si elle est tenue")
+	}
+}
+
+// numpadEnter est la place de l'Entrée du pavé numérique, étendue là où l'Entrée
+// principale ne l'est pas.
+const numpadEnter = input.Key(0x1C) | extendedKey
+
 // TestResyncForgetsWhatIsNoLongerHeld vérifie que la relecture remplace l'état au lieu
 // de s'y ajouter : une touche tenue avant un aller-retour de focus, puis relâchée
 // pendant, ne doit pas revenir tenue.
@@ -199,7 +267,7 @@ func TestResyncForgetsWhatIsNoLongerHeld(t *testing.T) {
 	var w window
 	w.state.Press(input.KeySpace)
 
-	w.resyncWith(func(uintptr) bool { return false })
+	w.resyncWith(func(uintptr) bool { return false }, true)
 
 	if w.state.Frame().Held(input.KeySpace) {
 		t.Error("une touche relâchée pendant l'absence est revenue tenue")

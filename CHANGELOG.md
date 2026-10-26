@@ -45,6 +45,20 @@ notes de publication.
 
 ## [Non publié]
 
+### Corrigé
+
+- Une touche tenue au moment où la fenêtre prend le focus ne pose plus une seconde
+  place à tort. Onze codes de balayage en désignent deux, et celle qui était posée par
+  erreur ne recevait jamais son relâchement : elle restait tenue pour de bon.
+
+***
+
+### Fixed
+
+- A key held as the window takes focus no longer sets a second place by mistake.
+  Eleven scan codes name two places, and the one set in error never received its
+  release: it stayed held for good.
+
 ## [0.3.0] — 2026-10-25 — Jalon 2 · Backend Windows
 
 Un jeu s'écrit, mais sous Windows seulement : Linux par X11 est le jalon 3, le navigateur
