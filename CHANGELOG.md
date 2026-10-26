@@ -55,6 +55,8 @@ notes de publication.
 
 - Une entité passe devant la cellule qu'elle foule, où qu'elle se place dedans. Dans la
   moitié nord d'une case, le sol lui passait sur les pieds.
+- La fenêtre impose la flèche du système comme curseur. Elle gardait la forme que le
+  pointeur avait en y entrant, dont la double flèche de redimensionnement.
 
 ***
 
@@ -68,6 +70,8 @@ notes de publication.
 
 - An entity draws in front of the cell it treads, wherever it stands inside it. In the
   northern half of a cell, the ground painted over its feet.
+- The window sets the system arrow as its cursor. It kept whatever shape the pointer
+  had on entering, the resize arrow included.
 
 ## [0.3.1] — 2026-10-26
 

@@ -59,6 +59,7 @@ var (
 	getSystemMetrics   = user32.NewProc("GetSystemMetrics")
 	createIconIndirect = user32.NewProc("CreateIconIndirect")
 	destroyIcon        = user32.NewProc("DestroyIcon")
+	loadCursorW        = user32.NewProc("LoadCursorW")
 
 	// Dans kernel32 et non user32, ce qu'un `LazyProc` ne dit qu'à l'appel : la
 	// compilation et les tests sans écran laissaient passer l'erreur, et c'est la
@@ -145,6 +146,15 @@ const (
 	smCXIcon      = 11
 	smCXSmallIcon = 49
 )
+
+// idcArrow est le curseur ordinaire, celui d'une fenêtre qui n'a rien à dire du
+// pointeur.
+//
+// Une classe enregistrée sans curseur n'en impose aucun, et le système laisse alors au
+// pointeur la forme qu'il avait en entrant dans la zone utile : la flèche de
+// redimensionnement reste affichée après qu'on a tiré un bord vers l'intérieur. Le
+// défaut vient du jalon 2, où le champ existait et n'était pas rempli.
+const idcArrow = 32512
 
 // sizeMinimized est le `wParam` de `wmSize` qui annonce la réduction. C'est par lui
 // que la minimisation se lit, et non en interrogeant la fenêtre à chaque image.
