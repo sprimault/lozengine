@@ -94,6 +94,11 @@ const (
 //
 // [NewScene] et [Scene.PlaceCell] refusent au-delà. Les lire évite d'avoir à essayer
 // pour le savoir.
+//
+// Un plafond dit jusqu'où aller, jamais ce qu'un cran coûte : une strate pleine ajoute
+// un quad par cellule visible à chaque image, soit environ dix fois ce que coûtent
+// trois cents entités, et [scene.MaxTiers] porte la mesure. C'est le décor qui domine
+// une image, pas les entités.
 const (
 	MaxSide  = render.MaxSide
 	MaxTiers = scene.MaxTiers
