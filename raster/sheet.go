@@ -48,6 +48,42 @@ func NewSheet(width, height uint16) Sheet {
 	}
 }
 
+// NewSheetFromStraight rend une planche depuis des octets RVBA dont l'alpha n'est pas
+// encore appliqué, quatre par pixel, ligne par ligne depuis le haut.
+//
+// C'est la porte de qui tient déjà ses pixels ailleurs — un atlas fabriqué par ses
+// propres outils, une archive, un format maison — et qui n'a pas de PNG à donner à
+// [LoadSheet]. La disposition attendue est celle que rend n'importe quel décodeur
+// d'images, l'alpha en quatrième position.
+//
+// **La conversion a lieu en entrant, et c'est tout l'intérêt.** Remplir une planche
+// par [NewSheet] oblige à prémultiplier chaque pixel soi-même, donc à ne jamais
+// l'oublier ; ici le moteur le fait une fois pour toutes, comme [LoadSheet] le fait
+// pour un PNG. L'arrondi est celui de [render.Premultiply], donc le même que partout
+// ailleurs dans le moteur.
+//
+// La longueur doit valoir exactement quatre fois le nombre de pixels. Une tranche plus
+// courte laisserait une bande transparente au bas de la planche, et une plus longue
+// signale qu'on s'est trompé de dimensions : les deux se taisent à l'image, où l'on
+// chercherait la cause dans le rastériseur.
+func NewSheetFromStraight(width, height uint16, pixels []uint8) (Sheet, error) {
+	const channels = 4
+
+	expected := int(width) * int(height) * channels
+	if len(pixels) != expected {
+		return Sheet{}, fmt.Errorf("sheet of %d×%d: %d bytes, expected %d at four per pixel",
+			width, height, len(pixels), expected)
+	}
+
+	sheet := NewSheet(width, height)
+	for i := range sheet.Pixels {
+		o := i * channels
+		sheet.Pixels[i] = render.Premultiply(
+			pixels[o], pixels[o+1], pixels[o+2], pixels[o+3])
+	}
+	return sheet, nil
+}
+
 // CutGrid remplit Rectangles d'une grille de cases, de gauche à droite puis
 // de haut en bas. Cet ordre est celui qu'un fournisseur d'apparence suppose pour
 // numéroter ses directions et ses images d'animation.
