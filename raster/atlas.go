@@ -33,6 +33,17 @@ type Atlas struct {
 // que l'ordre de dessin ne sait plus distinguer se lirait comme une autre planche.
 // Refuser au chargement vaut mieux que ramener au plafond à l'image, ce qui
 // rangerait deux planches ensemble sans rien dire.
+//
+// **La planche se fige en entrant, et à moitié seulement.** Add reçoit une copie :
+// l'atlas a son propre encodage, ses propres dimensions et sa propre découpe, donc
+// les changer sur l'original après coup ne touche rien. Les pixels, eux, sont
+// partagés, une tranche copiée désignant le même tableau — et y écrire après l'ajout
+// se voit à l'image alors que l'encodage décrit encore les anciens : un pixel devenu
+// transparent dans une séquence opaque se recopie tel quel et efface le fond, un
+// pixel devenu opaque dans une séquence transparente n'est jamais peint.
+//
+// Le geste est donc de finir la planche, puis de l'ajouter. Pour la changer, l'ajouter
+// de nouveau — l'index est neuf — plutôt que d'écrire dedans.
 func (a *Atlas) Add(p Sheet) (uint16, error) {
 	if len(a.Sheets) >= render.MaxSheets {
 		return 0, fmt.Errorf("adding a sheet: %d at most, what a quad can address", render.MaxSheets)

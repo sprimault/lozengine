@@ -17,6 +17,18 @@ import "github.com/sprimault/lozengine/render"
 // programme s'arrête, ce qui vaut mieux qu'une image muette dont on chercherait la
 // cause dans le tri.
 //
+// **Un aplat échappe à cette règle** : le drapeau [render.Flat] peint la teinte du
+// quad sans lire l'atlas, donc sa planche n'est même pas consultée et un aplat se
+// dessine sur un atlas vide. C'est ce qui permet à un panneau d'interface, à une
+// bande ou à un fondu d'exister avant la première planche.
+//
+// **Et le rectangle de source, lui, n'est pas vérifié du tout.** Un rectangle qui
+// dépasse la planche dessine ce qu'il y trouve et s'arrête à son bord, en bas comme
+// à droite, plutôt que de lire la ligne suivante : une découpe fausse ne se signale
+// donc pas, et la bande manquante se cherche dans les rectangles, pas ici. Les bords
+// du tampon, eux, sont tenus — un quad à moitié sorti ne coûte que sa part visible,
+// et un quad entièrement dehors ne coûte rien.
+//
 // Une fonction et non une méthode : le tampon vit dans [render], que l'ABI expose, et
 // Go veut qu'une méthode soit déclarée dans le paquet de son type.
 func Draw(t *render.Buffer, r render.DrawList, a *Atlas) {

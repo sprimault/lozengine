@@ -31,6 +31,41 @@ func TestAddReturnsTheIndex(t *testing.T) {
 	}
 }
 
+// TestAddTakesItsOwnCopy garde la moitié de la règle que la godoc d'[Atlas.Add]
+// publie : l'atlas tient son propre encodage, ses propres dimensions et sa propre
+// découpe, donc changer la planche d'origine après l'ajout ne touche pas ce qui se
+// dessine.
+//
+// L'autre moitié — les pixels sont partagés — n'est pas gardée ici, et c'est délibéré :
+// c'est un piège, pas une garantie. L'éprouver reviendrait à promettre le partage,
+// alors que la godoc demande justement de ne pas s'en servir.
+//
+// Le cas ne peut pas rougir sur le code d'aujourd'hui. Il rougirait si Add prenait un
+// pointeur, changement qui rendrait toute la règle fausse sans qu'une image bouge.
+func TestAddTakesItsOwnCopy(t *testing.T) {
+	var a Atlas
+
+	p := NewSheet(2, 1)
+	p.Pixels[0] = red
+	if _, err := a.Add(p); err != nil {
+		t.Fatalf("ajout : %v", err)
+	}
+
+	p.Width, p.Height = 7, 9
+	p.Rectangles = []Rectangle{{Width: 1, Height: 1}}
+
+	stored := a.Sheets[0]
+	if stored.Width != 2 || stored.Height != 1 {
+		t.Errorf("dimensions : %d×%d, attendu 2×1", stored.Width, stored.Height)
+	}
+	if len(stored.Rectangles) != 0 {
+		t.Errorf("découpe : %d rectangles, attendu aucun", len(stored.Rectangles))
+	}
+	if len(stored.runs) == 0 {
+		t.Error("aucune séquence encodée")
+	}
+}
+
 // TestAddBeyondTheCeiling vérifie le refus de la planche qu'un quad ne saurait plus
 // désigner. L'atlas est rempli de planches vides : c'est le compte qui est éprouvé,
 // pas les pixels.
