@@ -12,11 +12,12 @@ import "sort"
 // catalog associe chaque nom de scénario à sa construction. Une fonction et non un
 // Scenario tout fait : chaque rejeu part d'un scénario neuf.
 var catalog = map[string]func() Scenario{
-	"edges":  Edges,
-	"blend":  Blend,
-	"target": Target,
-	"core":   Core,
-	"order":  Order,
+	"edges":    Edges,
+	"blend":    Blend,
+	"additive": Additive,
+	"target":   Target,
+	"core":     Core,
+	"order":    Order,
 }
 
 // ByName rend le scénario de ce nom.

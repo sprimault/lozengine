@@ -53,6 +53,9 @@ notes de publication.
 - `Options.Icons` porte l'icône de la fenêtre, une planche par taille. Le moteur retient
   la plus proche de ce que le système demande et n'en redimensionne aucune ; vide,
   la fenêtre garde l'icône du système.
+- Le drapeau `Additive` ajoute un quad au fond au lieu de l'y composer, chaque
+  composante plafonnant à sa valeur pleine. C'est le mélange de ce qui émet de la
+  lumière, et combiné à `Flat` il donne un fondu lumineux.
 
 ### Corrigé
 
@@ -70,6 +73,9 @@ notes de publication.
 - `Options.Icons` carries the window icon, one sheet per size. The engine keeps the one
   closest to what the system asks for and resizes none of them; left empty, the window
   keeps the system icon.
+- The `Additive` flag adds a quad to the background instead of compositing over it,
+  each channel capping at its full value. It is the blend for anything that emits
+  light, and combined with `Flat` it gives a luminous fade.
 
 ### Fixed
 

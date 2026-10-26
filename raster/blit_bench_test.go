@@ -105,6 +105,12 @@ func BenchmarkQuad(b *testing.B) {
 		{"miroir", func(q *render.Quad) { q.Flags = render.MirrorX }},
 		{"découpé de moitié", func(q *render.Quad) { q.X = -16 }},
 		{"aplat", func(q *render.Quad) { q.Flags = render.Flat }},
+
+		// L'additif perd la recopie d'une séquence opaque, qui est le chemin le plus
+		// court du rastériseur : c'est contre « copie » qu'il se lit, et non contre
+		// zéro.
+		{"additif", func(q *render.Quad) { q.Flags = render.Additive }},
+		{"aplat additif", func(q *render.Quad) { q.Flags = render.Flat | render.Additive }},
 	}
 
 	a := testAtlas(b)

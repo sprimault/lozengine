@@ -62,11 +62,12 @@ func TestContiguity(t *testing.T) {
 	}
 }
 
-// TestFlagsDistinct vérifie que les trois variantes de dessin occupent des
+// TestFlagsDistinct vérifie que les quatre variantes de dessin occupent des
 // bits séparés, donc qu'elles se combinent.
 func TestFlagsDistinct(t *testing.T) {
-	if MirrorX|MirrorY|Flat != 0b111 {
-		t.Errorf("drapeaux chevauchants : %#b, %#b, %#b", MirrorX, MirrorY, Flat)
+	if MirrorX|MirrorY|Flat|Additive != 0b1111 {
+		t.Errorf("drapeaux chevauchants : %#b, %#b, %#b, %#b",
+			MirrorX, MirrorY, Flat, Additive)
 	}
 }
 
