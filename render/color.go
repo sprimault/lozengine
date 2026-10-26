@@ -19,3 +19,54 @@ type Color struct{ R, G, B, A uint8 }
 // Une fonction plutôt qu'une variable de paquet : la seconde se laisserait
 // changer sous les pieds de tous ceux qui la lisent.
 func White() Color { return Color{255, 255, 255, 255} }
+
+// Premultiply rend la couleur prémultipliée que décrivent des composantes séparées,
+// celles qu'on lit dans un éditeur d'images ou dans un fichier de réglages.
+//
+// Un gris à moitié transparent s'écrit 128, 128, 128 avec un alpha de 128 partout
+// ailleurs ; le moteur le veut en 64, 64, 64 pour 128, parce qu'il applique l'alpha
+// une fois pour toutes au lieu de le refaire à chaque pixel dessiné. Cette fonction
+// est ce passage, et c'est le seul endroit où un jeu en a besoin : le chargement d'un
+// PNG le fait déjà.
+//
+// L'arrondi est au plus proche, et il importe : tronquer décale un dégradé d'un cran
+// sur toute sa longueur, et un blanc opaque y perdrait sa dernière valeur. Il coïncide
+// avec celui du rastériseur, ce qu'un cas de test vérifie sur les 65 536 couples
+// possibles — deux arrondis qui divergeraient donneraient deux teintes différentes
+// pour une même couleur décrite.
+func Premultiply(r, g, b, a uint8) Color {
+	return Color{
+		R: applyAlpha(r, a),
+		G: applyAlpha(g, a),
+		B: applyAlpha(b, a),
+		A: a,
+	}
+}
+
+// applyAlpha rend l'arrondi au plus proche de c × a / 255, sans division.
+//
+// Les deux décalages reconstituent la division par 255 à partir de celle par 256, que
+// le processeur fait gratuitement.
+func applyAlpha(c, a uint8) uint8 {
+	t := uint32(c)*uint32(a) + 128
+	return uint8((t + t>>8) >> 8)
+}
+
+// Valid dit si la couleur est un prémultiplié cohérent, c'est-à-dire si aucune de ses
+// trois composantes ne dépasse son alpha.
+//
+// Une composante au-dessus de l'alpha ne décrit aucune couleur : elle donne un aplat
+// bien plus dense que l'opacité annoncée, et rien d'autre ne le signale — ni la
+// compilation, ni le rendu, qui dessine ce qu'on lui donne.
+//
+// **Elle existe pour qui remplit la structure sans passer par [Premultiply]**, et
+// c'est d'abord un hôte dans un autre langage : les champs sont publics parce que la
+// disposition doit rester celle du C, donc du code compilé ailleurs écrira ces quatre
+// octets lui-même, sans appeler aucune fonction d'ici. Un jeu en Go qui construit ses
+// couleurs par [Premultiply] n'en a pas besoin.
+//
+// À appeler au chargement, jamais par image : le chemin de rendu ne vérifie rien et
+// n'a personne à qui se plaindre.
+func (c Color) Valid() bool {
+	return c.R <= c.A && c.G <= c.A && c.B <= c.A
+}

@@ -34,6 +34,31 @@ func TestProduct(t *testing.T) {
 	}
 }
 
+// TestProductMatchesThePublishedPremultiplication vérifie que l'arrondi du rastériseur
+// et celui que le paquet des structures publie ne divergent jamais.
+//
+// Les deux sont écrits séparément, et c'est voulu : `product` multiplie deux
+// composantes quelconques sur le chemin de rendu, [render.Premultiply] applique un
+// alpha au chargement. Les déplacer dans un seul endroit demanderait de sortir du
+// rastériseur une fonction que le compilateur y met en ligne, ce que la règle du
+// rastériseur encadre et qu'aucune charge observée ne justifie.
+//
+// Ce qui reste, c'est le risque que l'un dérive de l'autre, et ce cas le ferme : une
+// même couleur décrite donnerait sinon deux teintes selon qu'elle passe par le
+// chargement ou par la modulation. La vérification est exhaustive, les deux fonctions
+// n'ayant que 65 536 couples d'entrées.
+func TestProductMatchesThePublishedPremultiplication(t *testing.T) {
+	for a := 0; a < 256; a++ {
+		for b := 0; b < 256; b++ {
+			attendu := render.Premultiply(uint8(a), 0, 0, uint8(b)).R
+			if got := product(uint8(a), uint8(b)); got != attendu {
+				t.Fatalf("produit(%d, %d) = %d, la prémultiplication publiée rend %d",
+					a, b, got, attendu)
+			}
+		}
+	}
+}
+
 // TestModulate vérifie que l'alpha de la teinte agit aussi sur les composantes de
 // couleur : prémultipliées, les laisser en place rendrait un pixel plus sombre au
 // lieu d'un pixel translucide.
