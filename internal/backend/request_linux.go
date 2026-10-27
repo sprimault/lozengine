@@ -10,6 +10,8 @@
 
 package backend
 
+import "github.com/sprimault/lozengine/render"
+
 // internAtom demande le numéro des atomes nommés, en un seul aller-retour.
 //
 // Un atome est le nom d'une propriété tel que le serveur le numérote : les clients
@@ -79,6 +81,138 @@ func (c *conn) createWindow(id uint32, width, height uint16, events uint32) {
 	c.out = order.AppendUint32(c.out, events)
 
 	c.next()
+}
+
+// createGC crée le contexte graphique par lequel l'image entre dans la fenêtre.
+//
+// Aucune valeur n'est posée, et le masque vide est voulu : les défauts du protocole
+// conviennent exactement — la fonction de combinaison recopie, le masque de plans
+// couvre tout. Les régler reviendrait à redire ce que le serveur fait déjà.
+func (c *conn) createGC(id, drawable uint32) {
+	at := len(c.out)
+	c.out = append(c.out, opCreateGC, 0, 0, 0)
+	order.PutUint16(c.out[at+2:], 4)
+
+	c.out = order.AppendUint32(c.out, id)
+	c.out = order.AppendUint32(c.out, drawable)
+	c.out = order.AppendUint32(c.out, 0)
+
+	c.next()
+}
+
+// putImageHeader est la taille de l'en-tête d'un transfert d'image, bourrage compris
+// et avant l'éventuel mot de longueur étendue.
+const putImageHeader = 24
+
+// putImage envoie une bande de pixels dans la fenêtre, convertis au passage.
+//
+// Les pixels sont écrits **directement dans le tampon d'émission**, derrière l'en-tête
+// qu'on vient d'y poser : un tampon intermédiaire par image coûterait une copie
+// complète de plus, et le brief ne concède qu'une seule passe.
+//
+// **Aucun bourrage à écrire**, et c'est le format qui le donne : quatre octets par
+// pixel font une longueur toujours multiple de quatre. C'est la seule requête du
+// backend dont on peut l'affirmer.
+//
+// Le découpage se fait en hauteur, jamais en largeur — une ligne de l'image doit
+// rester contiguë en mémoire pour partir sans second découpage — d'où l'abscisse nulle
+// et l'ordonnée reçue.
+func (c *conn) putImage(drawable, gc uint32, depth byte, y int16, width, height uint16, pixels []render.Color) {
+	data := c.pixels.size * len(pixels)
+	words := (putImageHeader + data) / 4
+
+	at := len(c.out)
+	c.out = append(c.out, opPutImage, zPixmap, 0, 0)
+	if words > requestWordsMax {
+		// Forme étendue de `BIG-REQUESTS` : les seize bits valent zéro et la
+		// longueur suit sur trente-deux, le mot qui la porte étant compté dedans.
+		order.PutUint16(c.out[at+2:], 0)
+		c.out = order.AppendUint32(c.out, uint32(words+1))
+	} else {
+		order.PutUint16(c.out[at+2:], uint16(words))
+	}
+
+	c.out = order.AppendUint32(c.out, drawable)
+	c.out = order.AppendUint32(c.out, gc)
+	c.out = order.AppendUint16(c.out, width)
+	c.out = order.AppendUint16(c.out, height)
+	c.out = order.AppendUint16(c.out, 0)
+	c.out = order.AppendUint16(c.out, uint16(y))
+
+	// Le bourrage à gauche doit valoir zéro en zPixmap, et la profondeur doit égaler
+	// celle de la fenêtre : l'une ou l'autre fausse rend une erreur de
+	// correspondance, qui arrive plus tard et ne nomme ni l'un ni l'autre.
+	c.out = append(c.out, 0, depth, 0, 0)
+
+	c.out = c.pixels.appendPixels(c.out, pixels)
+
+	c.next()
+}
+
+// linesPerRequest dit combien de lignes d'une image de cette largeur tiennent dans une
+// requête.
+//
+// La marge de quatre octets couvre le mot de longueur étendue, pour que le compte
+// reste bon dans les deux formes de requête plutôt que de dépendre de laquelle on
+// emploiera.
+func (c *conn) linesPerRequest(width uint16) int {
+	perLine := c.pixels.size * int(width)
+	if perLine == 0 {
+		return 0
+	}
+	return (int(c.setup.maxRequest) - putImageHeader - 4) / perLine
+}
+
+// queryExtension demande si le serveur porte une extension, et sous quel opcode.
+//
+// Un serveur qui ne l'a pas répond sans erreur, avec un drapeau à faux : l'absence
+// d'une extension est un régime ordinaire et non un échec, et c'est ce qui permet au
+// repli de ne rien avoir à rattraper.
+func (c *conn) queryExtension(name string) (present bool, major byte, err error) {
+	var zeros [3]byte
+
+	words := 2 + (len(name)+pad(len(name)))/4
+
+	at := len(c.out)
+	c.out = append(c.out, opQueryExtension, 0, 0, 0, 0, 0, 0, 0)
+	order.PutUint16(c.out[at+2:], uint16(words))
+	order.PutUint16(c.out[at+4:], uint16(len(name)))
+	c.out = append(c.out, name...)
+	c.out = append(c.out, zeros[:pad(len(name))]...)
+
+	seq := c.next()
+	if err := c.flush(); err != nil {
+		return false, 0, err
+	}
+
+	m, err := c.reply(seq)
+	if err != nil {
+		return false, 0, err
+	}
+	return m[8] != 0, m[9], nil
+}
+
+// enableBigRequests lève le plafond de taille d'une requête et rend le nouveau.
+//
+// Sans elle, une requête ne peut pas dépasser quatre fois ce que seize bits portent,
+// et une image de la taille d'un écran part en dizaines de morceaux. C'est le meilleur
+// rapport entre l'effort et le résultat du jalon : une requête à l'ouverture, un champ
+// de longueur conditionnel, et le découpage disparaît.
+func (c *conn) enableBigRequests(major byte) (uint32, error) {
+	at := len(c.out)
+	c.out = append(c.out, major, bigRequestsEnable, 0, 0)
+	order.PutUint16(c.out[at+2:], 1)
+
+	seq := c.next()
+	if err := c.flush(); err != nil {
+		return 0, err
+	}
+
+	m, err := c.reply(seq)
+	if err != nil {
+		return 0, err
+	}
+	return order.Uint32(m[8:]), nil
 }
 
 // changeProperty pose une propriété sur la fenêtre.

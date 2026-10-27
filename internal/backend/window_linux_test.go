@@ -5,10 +5,13 @@ package backend
 
 import (
 	"errors"
+	"io"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/sprimault/lozengine/input"
+	"github.com/sprimault/lozengine/render"
 )
 
 // windowPair monte une fenêtre sur une connexion de test et rend le bout par lequel un
@@ -255,6 +258,118 @@ func TestFocusOutForgetsHeldKeys(t *testing.T) {
 
 	if in.Held(input.KeyA) {
 		t.Error("une touche tenue l'est restée après la perte du focus")
+	}
+}
+
+// TestPresentSplitsTheImageIntoBands vérifie qu'une image trop grande pour une requête
+// part en bandes, chacune disant où elle va.
+//
+// Le découpage n'est pas une précaution : une requête est bornée par le protocole, et
+// une image de la taille d'un écran dépasse la borne du handshake. Une bande mal
+// placée ne produit aucune erreur — elle recopie une partie de l'image au mauvais
+// endroit, ce qui ressemble à un défaut de projection.
+//
+// **L'image reste petite exprès.** Personne ne lit la socket pendant que la
+// présentation écrit, donc tout ce qu'elle envoie doit tenir dans le tampon du
+// système : au-delà, l'envoi attend un lecteur qui ne viendra qu'après. Mesuré en
+// régime rouge, où une faute supprimant le découpage a fait envoyer dix kilooctets
+// d'un bloc et bloqué l'écriture jusqu'au délai du harnais — le cas a bien rougi, mais
+// pour le blocage et non pour le compte de bandes.
+func TestPresentSplitsTheImageIntoBands(t *testing.T) {
+	w, server := windowPair(t)
+	w.gc = 0x04000002
+
+	// Un plafond qui ne laisse passer que trois lignes de soixante-quatre pixels,
+	// posé par un champ plutôt que par un vrai petit serveur : c'est le régime d'un
+	// serveur sans `BIG-REQUESTS` sur une grande fenêtre.
+	w.c.setup.maxRequest = 1024
+
+	w.Present(render.NewBuffer(64, 10))
+
+	if err := w.Err(); err != nil {
+		t.Fatalf("présentation en échec : %v", err)
+	}
+
+	// Trois bandes de trois lignes et une de une : 24 octets d'en-tête et 256 par
+	// ligne.
+	sent := make([]byte, 3*(putImageHeader+3*256)+(putImageHeader+256))
+	if _, err := io.ReadFull(server, sent); err != nil {
+		t.Fatalf("lecture côté serveur : %v", err)
+	}
+
+	var bands [][2]uint16
+	for at := 0; at < len(sent); {
+		if sent[at] != opPutImage {
+			t.Fatalf("octet %d : opcode %d, attendu un transfert d'image", at, sent[at])
+		}
+		bands = append(bands, [2]uint16{order.Uint16(sent[at+18:]), order.Uint16(sent[at+14:])})
+		at += 4 * int(order.Uint16(sent[at+2:]))
+	}
+
+	want := [][2]uint16{{0, 3}, {3, 3}, {6, 3}, {9, 1}}
+	if len(bands) != len(want) {
+		t.Fatalf("%d bande(s) envoyée(s), %d attendues : %v", len(bands), len(want), bands)
+	}
+	for i := range want {
+		if bands[i] != want[i] {
+			t.Errorf("bande %d à l'ordonnée %d sur %d ligne(s), attendu %d sur %d",
+				i, bands[i][0], bands[i][1], want[i][0], want[i][1])
+		}
+	}
+}
+
+// TestPresentSendsOneRequestWhenTheImageFits vérifie qu'une image qui tient part d'un
+// seul bloc.
+//
+// C'est ce que l'extension de taille achète, et c'est le régime courant : découper une
+// image qui tient coûterait un en-tête et un aller-retour de protocole par bande, pour
+// rien.
+func TestPresentSendsOneRequestWhenTheImageFits(t *testing.T) {
+	w, server := windowPair(t)
+	w.gc = 0x04000002
+
+	w.Present(render.NewBuffer(64, 10))
+
+	sent := make([]byte, putImageHeader+10*256)
+	if _, err := io.ReadFull(server, sent); err != nil {
+		t.Fatalf("lecture côté serveur : %v", err)
+	}
+	if got := order.Uint16(sent[14:]); got != 10 {
+		t.Errorf("hauteur de la première bande %d, attendu les dix lignes", got)
+	}
+	if got := 4 * int(order.Uint16(sent[2:])); got != len(sent) {
+		t.Errorf("la requête annonce %d octets, l'image entière en fait %d", got, len(sent))
+	}
+}
+
+// TestPresentDoesNothingOnAClosedWindow vérifie qu'une fenêtre finie n'envoie plus
+// rien.
+//
+// Présenter sur une fenêtre que le serveur a détruite produirait une erreur de
+// protocole par image, et la boucle du jeu continue d'appeler jusqu'à ce qu'elle lise
+// la fermeture.
+//
+// **Le constat se fait côté serveur, et la première version de ce cas était fausse
+// pour l'avoir fait ailleurs** : elle regardait le tampon d'émission, que [Present]
+// vide en envoyant. Le tampon était donc vide dans les deux cas, et le cas restait
+// vert même en retirant la garde qu'il prétendait éprouver — c'est le défaut que la
+// doctrine de test appelle le plus facile à ne pas voir, et il a fallu le régime rouge
+// pour le trouver.
+func TestPresentDoesNothingOnAClosedWindow(t *testing.T) {
+	w, server := windowPair(t)
+	w.gc = 0x04000002
+	w.closed = true
+
+	w.Present(render.NewBuffer(64, 10))
+
+	// Rien ne doit arriver, donc la lecture doit expirer plutôt que rendre des
+	// octets. Le délai est court et remplace celui du harnais : attendre cinq
+	// secondes pour constater un silence serait du temps perdu à chaque passage.
+	if err := server.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil {
+		t.Fatalf("délai de lecture : %v", err)
+	}
+	if n, err := server.Read(make([]byte, 64)); err == nil {
+		t.Errorf("%d octets envoyés pour une fenêtre fermée", n)
 	}
 }
 

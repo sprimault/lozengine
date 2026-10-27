@@ -12,9 +12,11 @@ package backend
 
 // Open monte une fenêtre et rend de quoi la piloter.
 //
-// Le dialogue tient en deux allers-retours : un pour demander les atomes dont les
+// Le dialogue tient en deux allers-retours ici : un pour demander les atomes dont les
 // propriétés ont besoin, un pour s'assurer que le serveur a tout accepté. Entre les
-// deux, la création, le titre, les bornes et l'apparition partent ensemble.
+// deux, la fenêtre, son contexte graphique, le titre, les bornes et l'apparition
+// partent ensemble. La connexion en a demandé deux autres avant, pour le handshake et
+// pour lever le plafond de taille d'une requête.
 //
 // **La fenêtre n'est pas encore à l'écran quand Open rend.** L'apparition est demandée
 // mais le serveur, et le gestionnaire de fenêtres derrière lui, l'accordent quand ils
@@ -44,6 +46,13 @@ func Open(o Options) (Window, error) {
 	id := c.id()
 	c.createWindow(id, o.Width, o.Height,
 		maskKeyPress|maskKeyRelease|maskKeymapState|maskStructureNotify|maskFocusChange)
+
+	// Le contexte graphique vient juste après la fenêtre, dont il a besoin comme
+	// modèle, et une seule fois : il ne porte que des défauts, donc un
+	// redimensionnement ne le périme pas.
+	gc := c.id()
+	c.createGC(gc, id)
+
 	c.setTitle(id, o.Title, netName, utf8)
 	c.setProtocols(id, protocols, deleteWindow)
 	c.setFloor(id, o.Width, o.Height)
@@ -59,6 +68,7 @@ func Open(o Options) (Window, error) {
 	return &window{
 		c:            c,
 		id:           id,
+		gc:           gc,
 		protocols:    protocols,
 		deleteWindow: deleteWindow,
 		width:        o.Width,

@@ -60,15 +60,28 @@ func connPair(t *testing.T) (*conn, *net.UnixConn) {
 		raw:  raw,
 		in:   make([]byte, 4096),
 		setup: setup{
-			root:       0x0000012C,
-			visual:     0x00000021,
-			depth:      24,
-			idBase:     0x04000000,
-			idMask:     0x001FFFFF,
-			maxRequest: 0x40000,
+			root:         0x0000012C,
+			visual:       0x00000021,
+			depth:        24,
+			bitsPerPixel: 32,
+			imageOrder:   lsbFirst,
+			redMask:      0xFF0000,
+			greenMask:    0x00FF00,
+			blueMask:     0x0000FF,
+			idBase:       0x04000000,
+			idMask:       0x001FFFFF,
+			maxRequest:   0x40000,
 		},
 	}
 	c.shift = bits.TrailingZeros32(c.setup.idMask)
+
+	// Le visuel est celui d'un serveur courant, donc la conversion est l'échange des
+	// octets extrêmes. Les cas qui éprouvent les autres dispositions posent la leur.
+	pixels, err := pixelOrderOf(c.setup)
+	if err != nil {
+		t.Fatalf("visuel de test refusé : %v", err)
+	}
+	c.pixels = pixels
 	t.Cleanup(c.Close)
 
 	return c, server
