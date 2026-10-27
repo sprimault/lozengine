@@ -45,12 +45,24 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- Linux est pris en charge, par le protocole X11 écrit à la main : le moteur y ouvre
+  une fenêtre, l'affiche, lit le clavier et porte son icône. Aucune bibliothèque C,
+  comme sous Windows.
+
 ### Corrigé
 
 - La fenêtre ne se réduit plus sous la taille de l'image. En dessous, elle se
   découpait : les bords sortaient de la vue sans que rien ne le dise.
 
 ***
+
+### Added
+
+- Linux is supported, through the X11 protocol written by hand: the engine opens a
+  window there, displays it, reads the keyboard and carries its icon. No C library,
+  just as on Windows.
 
 ### Fixed
 

@@ -149,6 +149,45 @@ func (c *conn) putImage(drawable, gc uint32, depth byte, y int16, width, height 
 	c.next()
 }
 
+// getImage relit une zone de la fenêtre telle que le serveur la détient.
+//
+// **C'est la validation du backend, et elle ne demande rien à installer.** Le serveur
+// traite les requêtes d'un même client dans l'ordre reçu, donc une relecture qui suit
+// une présentation voit forcément son résultat : il n'y a aucune synchronisation à
+// inventer, là où un outil de capture lancé à côté obligerait à savoir *quand* tirer.
+//
+// **La fenêtre doit être affichée**, sans quoi le serveur refuse par une erreur de
+// correspondance : le contenu d'une fenêtre masquée n'existe pas pour lui. C'est à
+// l'appelant d'avoir pompé les événements jusqu'à son apparition.
+//
+// Le masque de plans prend tout : on veut l'image telle qu'elle est, pas une couche.
+func (c *conn) getImage(drawable uint32, width, height uint16) ([]byte, error) {
+	at := len(c.out)
+	c.out = append(c.out, opGetImage, zPixmap, 0, 0)
+	order.PutUint16(c.out[at+2:], 5)
+
+	c.out = order.AppendUint32(c.out, drawable)
+	c.out = order.AppendUint16(c.out, 0)
+	c.out = order.AppendUint16(c.out, 0)
+	c.out = order.AppendUint16(c.out, width)
+	c.out = order.AppendUint16(c.out, height)
+	c.out = order.AppendUint32(c.out, planeMaskAll)
+
+	seq := c.next()
+	if err := c.flush(); err != nil {
+		return nil, err
+	}
+
+	m, err := c.reply(seq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Les pixels suivent trente-deux octets d'en-tête, dont la profondeur et le
+	// visuel qui les décrivent — tous deux déjà connus du handshake.
+	return m[eventSize:], nil
+}
+
 // linesPerRequest dit combien de lignes d'une image de cette largeur tiennent dans une
 // requête.
 //
