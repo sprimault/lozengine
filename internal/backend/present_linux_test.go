@@ -29,13 +29,13 @@ const displayRequired = "LOZENGINE_DISPLAY"
 // Le saut, lui, est nécessaire : ni le poste de développement ni la machine de contrôle
 // n'ont de serveur sans écran, et un cas qui y échouerait rendrait `make check`
 // inutilisable là où il tourne tous les jours.
-func requireDisplay(t *testing.T) {
-	t.Helper()
+func requireDisplay(tb testing.TB) {
+	tb.Helper()
 
 	if os.Getenv(displayRequired) != "" || os.Getenv("DISPLAY") != "" {
 		return
 	}
-	t.Skipf("aucun serveur d'affichage : ni DISPLAY ni %s ne sont posés", displayRequired)
+	tb.Skipf("aucun serveur d'affichage : ni DISPLAY ni %s ne sont posés", displayRequired)
 }
 
 // TestTheServerHoldsExactlyWhatWasPresented est la validation du backend X11, et le
@@ -137,6 +137,84 @@ func imageWord(s setup, b []byte) uint32 {
 		return binary.BigEndian.Uint32(b)
 	}
 	return binary.LittleEndian.Uint32(b)
+}
+
+// BenchmarkPresent mesure ce qu'une image remise au serveur coûte par image.
+//
+// **Il existe pour décider si MIT-SHM valait d'être écrit**, et c'est sa seule raison :
+// le transfert d'image par le protocole représente environ quatre fois la taille de
+// l'image en trafic mémoire, ce qui est peu sur une machine de bureau et beaucoup sur
+// une petite machine comme un Raspberry Pi, qui est une cible annoncée. Le dépôt
+// interdit d'optimiser sur une charge devinée,
+// donc il fallait un chiffre.
+//
+// **Le débit est ce qu'on lit, pas la durée**, parce que c'est lui qui se compare à la
+// bande passante d'une machine : une durée ne dit rien sans la taille qui l'a produite,
+// et c'est le rapport entre les deux qui est un fait du moteur plutôt qu'un fait de
+// cette machine.
+//
+// Les trois tailles ne sont pas un échantillon mais trois questions : la résolution
+// interne du moteur, un écran courant, et un écran complet — le transfert grandissant
+// avec la surface, c'est la plus grande qui décide.
+//
+// **Ce que ce banc ne dit pas** : ce que donnerait MIT-SHM. Le mesurer demanderait de
+// l'écrire, ce que ce banc existe justement pour décider. Il borne donc le coût à
+// battre, et rien de plus.
+//
+// **Le fait de structure que les deux bancs disent ensemble, et qui a décidé : la
+// conversion pèse environ quatre fois le transfert, à toutes les tailles mesurées.**
+// MIT-SHM supprime le second et garde la première, donc son gain plafonne au cinquième
+// du coût d'une présentation — soit quelques pour cent du budget d'une image, bien en
+// dessous du seuil qui autorise à optimiser ici. Le rapport est ce qu'on relit ; les
+// durées, elles, sont des faits de la machine qui les a produites.
+//
+// **Et ce que ce rapport ne couvre pas** : la mesure est prise côté client seulement.
+// Le serveur lit aussi ces octets, et MIT-SHM lui épargne une copie qu'aucun banc d'ici
+// ne compte. Le gain réel est donc supérieur à ce plafond, d'un facteur qu'il faudrait
+// mesurer de l'autre côté.
+func BenchmarkPresent(b *testing.B) {
+	requireDisplay(b)
+
+	for _, size := range []struct {
+		name          string
+		width, height uint16
+	}{
+		{"480×270, la résolution interne du moteur", 480, 270},
+		{"1280×720", 1280, 720},
+		{"1920×1080, un écran entier", 1920, 1080},
+	} {
+		b.Run(size.name, func(b *testing.B) {
+			opened, err := Open(Options{Title: "lozengine", Width: size.width, Height: size.height})
+			if err != nil {
+				b.Fatalf("ouverture de la fenêtre : %v", err)
+			}
+			defer opened.Close()
+
+			w := opened.(*window)
+			buffer := render.NewBuffer(size.width, size.height)
+			for i := range buffer.Pixels {
+				buffer.Pixels[i] = render.Color{R: uint8(i), G: uint8(i >> 8), B: uint8(i >> 16), A: 255}
+			}
+
+			// Une première présentation hors de la boucle : elle paie
+			// l'agrandissement du tampon d'émission, que les suivantes réemploient.
+			w.Present(buffer)
+
+			b.SetBytes(int64(4 * len(buffer.Pixels)))
+			b.ResetTimer()
+
+			for range b.N {
+				w.Present(buffer)
+			}
+
+			// Le relevé se lit après la boucle et jamais pendant : une écriture dans
+			// la mesure fabrique le symptôme qu'on cherche.
+			b.StopTimer()
+			if err := w.Err(); err != nil {
+				b.Fatalf("présentation : %v", err)
+			}
+		})
+	}
 }
 
 // waitMapped pompe les événements jusqu'à ce que le serveur annonce la fenêtre

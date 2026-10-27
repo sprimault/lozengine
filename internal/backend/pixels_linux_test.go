@@ -197,6 +197,50 @@ func TestPixelOrderRefusesWhatAPermutationCannotServe(t *testing.T) {
 	}
 }
 
+// BenchmarkAppendPixels mesure la conversion des pixels seule, sans serveur.
+//
+// **C'est la moitié du coût d'une présentation que MIT-SHM ne supprimerait pas**, et
+// c'est pour cela que ce banc existe : l'extension remplace le transfert par une
+// écriture dans un segment partagé, mais la conversion reste à faire dans les deux
+// cas. Si elle domine, l'extension n'achète presque rien — et c'est le rapport avec
+// le banc de présentation qui le dit, non les durées, qui sont des faits de machine.
+//
+// Il tourne partout, lui : aucun serveur n'est nécessaire pour convertir des octets.
+func BenchmarkAppendPixels(b *testing.B) {
+	o, err := pixelOrderOf(visualOf(lsbFirst, 0xFF0000, 0x00FF00, 0x0000FF))
+	if err != nil {
+		b.Fatalf("visuel refusé : %v", err)
+	}
+
+	for _, size := range []struct {
+		name          string
+		width, height int
+	}{
+		{"480×270, la résolution interne du moteur", 480, 270},
+		{"1280×720", 1280, 720},
+		{"1920×1080, un écran entier", 1920, 1080},
+	} {
+		b.Run(size.name, func(b *testing.B) {
+			pixels := make([]render.Color, size.width*size.height)
+			for i := range pixels {
+				pixels[i] = render.Color{R: uint8(i), G: uint8(i >> 8), B: uint8(i >> 16), A: 255}
+			}
+
+			// Le tampon est monté hors de la boucle, comme la présentation le fait :
+			// mesurer l'agrandissement reviendrait à mesurer la première image et
+			// non les soixante suivantes.
+			dst := o.appendPixels(nil, pixels)
+
+			b.SetBytes(int64(4 * len(pixels)))
+			b.ResetTimer()
+
+			for range b.N {
+				dst = o.appendPixels(dst[:0], pixels)
+			}
+		})
+	}
+}
+
 // TestAppendPixelsDoesNotAllocateOnAWarmBuffer vérifie que la conversion n'allègue
 // rien quand le tampon d'émission a déjà sa place.
 //
