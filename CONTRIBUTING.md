@@ -119,6 +119,24 @@ Cross-compiling proves the code compiles for the other platform, never that it
 works there. **A change touching a backend is verified on that platform**,
 natively, before it ships.
 
+**And continuous integration measures Go's floor**, which the version installed
+on a development machine almost never is. Two targets replay that regime before
+pushing:
+
+```
+make floor
+make container
+```
+
+The first reruns the check under the floor toolchain, whose number is read from
+`go.mod`; Go downloads it on first use. The second replays it in a throwaway
+container on that version's official image, where only versioned content enters
+— which is what the runner does, and it needs `docker`, the one tool the
+repository requires nowhere else.
+
+Both stay outside `make check`, which must keep passing on a fresh clone with
+nothing installed.
+
 **The `CHANGELOG` section ships with the batch**, not at release time: it is
 reviewed in the pull request, which is when it matters. Every entry is written
 in French and in English under the same version, in the same commit — an entry
