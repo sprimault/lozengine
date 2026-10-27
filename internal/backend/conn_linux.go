@@ -148,6 +148,20 @@ func connect() (*conn, error) {
 		c.setup.maxRequest = 4 * maximum
 	}
 
+	// L'extension du clavier supprime à la source les relâchements que
+	// l'auto-répétition fabrique. Son absence n'est pas un échec et son refus non
+	// plus : la fenêtre sait reconnaître ces paires de toute façon, ce qui rend ce
+	// dialogue un gain de trafic et non une condition de correction.
+	if present, major, err := c.queryExtension(xkbName); err != nil {
+		sock.Close()
+		return nil, err
+	} else if present {
+		if _, err := c.detectableAutoRepeat(major); err != nil {
+			sock.Close()
+			return nil, err
+		}
+	}
+
 	return c, nil
 }
 
