@@ -23,6 +23,11 @@ type window struct {
 	c  *conn
 	id uint32
 
+	// gc est le contexte graphique par lequel l'image entre dans la fenêtre. Créé
+	// une fois à l'ouverture : il ne porte que des défauts, donc rien n'oblige à le
+	// refaire quand la fenêtre change de taille.
+	gc uint32
+
 	// protocols et deleteWindow sont les deux atomes par lesquels se reconnaît la
 	// demande de fermeture : le type du message pour le premier, son contenu pour
 	// le second.
@@ -161,16 +166,51 @@ func (w *window) fail(err error) {
 	w.closed = true
 }
 
-// Present pose le tampon à l'écran, tel quel.
+// Present pose le tampon à l'écran, converti dans l'ordre que le serveur attend.
 //
-// **Elle ne transfère rien encore**, et c'est le découpage du jalon : le transfert
-// d'image porte l'arbitrage de l'ordre des octets — le serveur impose le sien, là où
-// Windows accepte qu'on lui décrive le nôtre —, et cet arbitrage se relit seul. Ce
-// lot livre la fenêtre, ce que le serveur en dit, et la façon dont elle se ferme.
+// **Les pixels sont recopiés, et c'est le prix de cette plateforme.** Windows n'en
+// paie aucun : il décrit ses masques au système, qui lit le tampon là où il est. X11
+// impose les siens, donc la conversion est à nous — c'est ce que la frontière du
+// noyau prévoit, chaque backend posant le tampon comme sa plateforme l'exige et
+// mesurant son coût chez lui. La copie n'a pas lieu en plus du transfert : elle
+// *est* le remplissage du tampon d'émission.
+//
+// **Le découpage en bandes n'est pas une précaution, c'est le protocole.** Une
+// requête est bornée, et une image de la taille d'un écran dépasse largement la
+// borne du handshake. L'extension qui la lève est demandée à l'ouverture, et quand
+// elle manque le découpage reste la seule voie.
 //
 // Sans erreur, comme le contrat l'exige : une présentation qui ne peut pas avoir lieu
-// ne fait rien, et il n'y a personne à qui se plaindre soixante fois par seconde.
-func (w *window) Present(t *render.Buffer) {}
+// ne fait rien, et il n'y a personne à qui se plaindre soixante fois par seconde. Un
+// lien coupé pendant l'envoi met fin à la fenêtre, et c'est [window.Err] qui le dira.
+func (w *window) Present(t *render.Buffer) {
+	if w.closed || w.gc == 0 || t == nil || len(t.Pixels) == 0 {
+		return
+	}
+
+	lines := w.c.linesPerRequest(t.Width)
+	if lines == 0 {
+		// Une seule ligne ne tient pas dans une requête, ce qui demanderait une
+		// fenêtre de plus de seize mille pixels de large sur le plafond le plus
+		// bas. Ne rien envoyer vaut mieux qu'envoyer une requête que le serveur
+		// refusera en coupant la connexion.
+		return
+	}
+
+	for y := 0; y < int(t.Height); y += lines {
+		height := lines
+		if y+height > int(t.Height) {
+			height = int(t.Height) - y
+		}
+		from, to := y*int(t.Width), (y+height)*int(t.Width)
+
+		w.c.putImage(w.id, w.gc, w.c.setup.depth, int16(y), t.Width, uint16(height), t.Pixels[from:to])
+	}
+
+	if err := w.c.flush(); err != nil {
+		w.fail(err)
+	}
+}
 
 // Size rend les dimensions de la zone utile, en pixels.
 //

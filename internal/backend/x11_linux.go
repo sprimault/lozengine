@@ -104,6 +104,9 @@ const (
 	opMapWindow      = 8
 	opInternAtom     = 16
 	opChangeProperty = 18
+	opCreateGC       = 55
+	opPutImage       = 72
+	opQueryExtension = 98
 
 	// opGetInputFocus ne sert pas à ce qu'elle nomme : c'est la requête à réponse la
 	// plus courte du protocole, et on l'emploie pour savoir que le serveur a traité
@@ -188,6 +191,41 @@ const (
 	sizeHintsWords    = 18
 	sizeHintsMinSize  = 1 << 4
 	sizeHintsMinIndex = 5
+)
+
+// zPixmap est le format d'image où les composantes d'un pixel sont contiguës, par
+// opposition aux formats par plan de bits que le protocole porte aussi.
+//
+// C'est le seul que le moteur emploie : son tampon est fait de pixels et non de plans.
+// En zPixmap, le bourrage à gauche doit valoir zéro et la profondeur doit égaler celle
+// de la fenêtre, sous peine d'une erreur de correspondance.
+const zPixmap = 2
+
+// Les deux valeurs d'`image-byte-order`, qui dit dans quel sens le serveur veut les
+// octets d'un pixel.
+//
+// Il ne suit pas l'ordre de la connexion, que le client a choisi : les images « sont
+// toujours transmises et reçues dans les formats, ordre des octets compris, que le
+// serveur spécifie ».
+const (
+	lsbFirst = 0
+	msbFirst = 1
+)
+
+// Ce que `BIG-REQUESTS` demande et ce qu'elle lève.
+//
+// Sans elle, une requête ne peut pas dépasser quatre fois ce que seize bits portent,
+// soit 256 Kio : une image 1920×1080 part alors en une trentaine de morceaux. Avec,
+// une requête dont les seize bits de longueur valent **zéro** porte sa longueur sur
+// trente-deux bits juste après — donc le découpage disparaît, mais le format d'une
+// requête change, et seulement pour celles qui dépassent l'ancienne borne.
+const (
+	bigRequestsName   = "BIG-REQUESTS"
+	bigRequestsEnable = 0
+
+	// requestWordsMax est le plus grand nombre de mots qu'une longueur de seize bits
+	// porte. Au-delà, la forme étendue est obligatoire.
+	requestWordsMax = 65535
 )
 
 // errorNames nomme les erreurs du protocole par leur code.

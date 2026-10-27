@@ -36,6 +36,11 @@ type conn struct {
 
 	setup setup
 
+	// pixels dit où les octets d'un pixel du moteur vont dans un pixel du serveur.
+	// Calculée une fois ici, parce qu'un visuel que le backend ne sait pas servir
+	// doit faire échouer l'ouverture et non la première image.
+	pixels pixelOrder
+
 	// out accumule les requêtes jusqu'au prochain envoi. Le protocole est fait pour
 	// cela : empiler quatre requêtes et les envoyer ensemble coûte un aller-retour
 	// au lieu de quatre.
@@ -115,6 +120,33 @@ func connect() (*conn, error) {
 	// justement pourquoi un décalage en dur passerait les contrôles ici pour tomber
 	// ailleurs : le compte se place dans le masque, où qu'il soit.
 	c.shift = bits.TrailingZeros32(c.setup.idMask)
+
+	if c.pixels, err = pixelOrderOf(c.setup); err != nil {
+		sock.Close()
+		return nil, err
+	}
+
+	// Le plafond de taille d'une requête se lève avant la première image. L'absence
+	// de l'extension n'est pas un échec : le plafond du handshake reste en vigueur,
+	// et le transfert d'image se découpe en bandes — ce qu'il sait faire de toute
+	// façon, puisque rien ne garantit que l'extension soit là.
+	if present, major, err := c.queryExtension(bigRequestsName); err != nil {
+		sock.Close()
+		return nil, err
+	} else if present {
+		maximum, err := c.enableBigRequests(major)
+		if err != nil {
+			sock.Close()
+			return nil, err
+		}
+		// Le nouveau plafond est rendu en mots de quatre octets, comme celui du
+		// handshake, et il se garde dans la même unité que lui : en octets. Les
+		// serveurs en annoncent quelques millions de mots, soit une quinzaine de
+		// mégaoctets ; un serveur qui en annoncerait plus de cinq cents millions
+		// ferait déborder cette multiplication, et le plafond tomberait bas au lieu
+		// de monter — le transfert se découperait davantage, sans rien casser.
+		c.setup.maxRequest = 4 * maximum
+	}
 
 	return c, nil
 }

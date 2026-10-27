@@ -6,6 +6,8 @@ package backend
 import (
 	"io"
 	"testing"
+
+	"github.com/sprimault/lozengine/render"
 )
 
 // TestCreateWindowWritesValuesInBitOrder verrouille le piège qui coûte le plus cher à
@@ -91,6 +93,10 @@ func TestRequestsDeclareTheLengthTheyWrote(t *testing.T) {
 		}},
 		{"les bornes de taille", func(c *conn) { c.setFloor(0x04000001, 480, 270) }},
 		{"la liste des protocoles", func(c *conn) { c.setProtocols(0x04000001, 100, 101) }},
+		{"le contexte graphique", func(c *conn) { c.createGC(0x04000002, 0x04000001) }},
+		{"un transfert d'image", func(c *conn) {
+			c.putImage(0x04000001, 0x04000002, 24, 0, 2, 2, make([]render.Color, 4))
+		}},
 	}
 
 	for _, tc := range cases {
@@ -210,6 +216,102 @@ func TestInternAtomAsksEveryNameInOneRound(t *testing.T) {
 	}
 	if sent[39] != 0 {
 		t.Errorf("l'octet de bourrage du second nom vaut %d", sent[39])
+	}
+}
+
+// TestPutImageCarriesTheFieldsThatWouldShiftTheImage vérifie les champs dont une
+// erreur ne lève rien et décale l'image.
+//
+// Trois d'entre eux sont nommés par le brief comme des pièges chers : le bourrage à
+// gauche doit valoir zéro en ZPixmap, la profondeur doit égaler celle de la fenêtre, et
+// les pixels doivent commencer là où l'en-tête s'arrête. Une erreur sur l'un des trois
+// ne rend pas une image fausse à moitié — elle rend un escalier diagonal, qui est le
+// symptôme d'un défaut de projection ou d'ancre.
+func TestPutImageCarriesTheFieldsThatWouldShiftTheImage(t *testing.T) {
+	c, _ := connPair(t)
+
+	c.putImage(0x04000001, 0x04000002, 24, 7, 2, 1, []render.Color{
+		{R: 1, G: 2, B: 3, A: 255},
+		{R: 4, G: 5, B: 6, A: 255},
+	})
+
+	out := c.out
+	if out[0] != opPutImage || out[1] != zPixmap {
+		t.Fatalf("opcode %d et format %d, attendus %d et %d", out[0], out[1], opPutImage, zPixmap)
+	}
+	if got := order.Uint16(out[12:]); got != 2 {
+		t.Errorf("largeur %d, attendu 2", got)
+	}
+	if got := order.Uint16(out[14:]); got != 1 {
+		t.Errorf("hauteur %d, attendu 1", got)
+	}
+	if got := order.Uint16(out[16:]); got != 0 {
+		t.Errorf("abscisse %d, attendu 0 — le découpage se fait en hauteur", got)
+	}
+	if got := order.Uint16(out[18:]); got != 7 {
+		t.Errorf("ordonnée %d, attendu 7", got)
+	}
+	if out[20] != 0 {
+		t.Errorf("bourrage à gauche %d, attendu 0, que le format impose", out[20])
+	}
+	if out[21] != 24 {
+		t.Errorf("profondeur %d, attendu celle de la fenêtre", out[21])
+	}
+
+	// Les pixels commencent à la fin de l'en-tête, et le visuel du harnais demande
+	// l'échange des octets extrêmes.
+	if got := out[putImageHeader : putImageHeader+8]; got[0] != 3 || got[1] != 2 || got[2] != 1 || got[4] != 6 {
+		t.Errorf("premiers octets de l'image %v, attendus les composantes échangées", got)
+	}
+	if len(out) != putImageHeader+8 {
+		t.Errorf("requête de %d octets, attendu %d — quatre octets par pixel ne demandent aucun bourrage",
+			len(out), putImageHeader+8)
+	}
+}
+
+// TestPutImageSwitchesToTheExtendedFormWhenItMustGrow vérifie la forme étendue de
+// `BIG-REQUESTS`.
+//
+// Au-delà de ce que seize bits portent, la longueur passe sur trente-deux et les seize
+// bits valent zéro. Un serveur qui n'a pas l'extension lirait alors une requête de
+// longueur nulle, donc le découpage reste obligatoire tant qu'elle n'est pas activée —
+// c'est ce que le compte de lignes garantit, et ce cas-ci ne vérifie que la forme.
+func TestPutImageSwitchesToTheExtendedFormWhenItMustGrow(t *testing.T) {
+	c, _ := connPair(t)
+
+	// Juste assez de pixels pour dépasser la borne des seize bits.
+	pixels := make([]render.Color, requestWordsMax)
+	c.putImage(0x04000001, 0x04000002, 24, 0, uint16(len(pixels)), 1, pixels)
+
+	out := c.out
+	if got := order.Uint16(out[2:]); got != 0 {
+		t.Fatalf("longueur courte %d, attendu 0 pour annoncer la forme étendue", got)
+	}
+
+	// La longueur étendue compte le mot qui la porte, donc la requête entière.
+	if got := 4 * int(order.Uint32(out[4:])); got != len(out) {
+		t.Errorf("longueur étendue %d octets, %d écrits", got, len(out))
+	}
+}
+
+// TestLinesPerRequestLeavesRoomForTheExtendedLength vérifie que le compte de lignes
+// tient dans une requête, marge de la forme étendue comprise.
+//
+// Un compte trop généreux ne produit pas une image fausse : le serveur refuse la
+// requête et coupe la connexion, ce qui se rapporte comme un affichage perdu.
+func TestLinesPerRequestLeavesRoomForTheExtendedLength(t *testing.T) {
+	c, _ := connPair(t)
+	c.setup.maxRequest = 1024
+
+	lines := c.linesPerRequest(64)
+	if lines != 3 {
+		t.Fatalf("%d ligne(s) par requête, attendu 3", lines)
+	}
+
+	// La bande la plus grande, en-tête et marge comprises, doit tenir sous le
+	// plafond.
+	if got := putImageHeader + 4 + 4*64*lines; got > int(c.setup.maxRequest) {
+		t.Errorf("une bande de %d lignes fait %d octets, au-delà du plafond de %d", lines, got, c.setup.maxRequest)
 	}
 }
 
