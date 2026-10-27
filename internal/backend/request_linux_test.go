@@ -315,6 +315,138 @@ func TestLinesPerRequestLeavesRoomForTheExtendedLength(t *testing.T) {
 	}
 }
 
+// iconOf fabrique une icône opaque dont chaque pixel porte la valeur donnée sur ses
+// trois composantes, pour qu'un mot assemblé se reconnaisse d'un coup d'œil.
+func iconOf(width, height uint16, shade uint8) *render.Buffer {
+	icon := render.NewBuffer(width, height)
+	for i := range icon.Pixels {
+		icon.Pixels[i] = render.Color{R: shade, G: shade, B: shade, A: 255}
+	}
+	return icon
+}
+
+// TestSetIconsCarriesEverySizeInOneProperty vérifie que toutes les tailles partent
+// ensemble, chacune annoncée par ses dimensions.
+//
+// C'est la différence de fond avec Windows, qui veut une icône par emplacement et
+// oblige à choisir : ici la propriété porte une suite d'images et le gestionnaire de
+// fenêtres prend celle qui lui convient. Envoyer une seule taille marcherait et
+// donnerait une icône floue partout où le gestionnaire en veut une autre.
+func TestSetIconsCarriesEverySizeInOneProperty(t *testing.T) {
+	c, _ := connPair(t)
+
+	c.setIcons(0x04000001, 0x130, []*render.Buffer{
+		iconOf(1, 1, 0x0A),
+		iconOf(2, 1, 0x0B),
+	})
+
+	// Une image de 1×1 occupe trois mots — largeur, hauteur, un pixel — et une de
+	// 2×1 en occupe quatre.
+	if got := order.Uint32(c.out[20:]); got != 7 {
+		t.Fatalf("longueur annoncée %d éléments, attendu 7 pour deux icônes", got)
+	}
+	if got := c.out[16]; got != 32 {
+		t.Errorf("format %d, attendu 32 — la propriété porte des mots", got)
+	}
+
+	data := c.out[changePropertyHeader:]
+	if w, h := order.Uint32(data[0:]), order.Uint32(data[4:]); w != 1 || h != 1 {
+		t.Errorf("première icône annoncée %d×%d, attendu 1×1", w, h)
+	}
+	if got := order.Uint32(data[8:]); got != 0xFF0A0A0A {
+		t.Errorf("pixel de la première icône %#x, attendu 0xff0a0a0a", got)
+	}
+	if w, h := order.Uint32(data[12:]), order.Uint32(data[16:]); w != 2 || h != 1 {
+		t.Errorf("seconde icône annoncée %d×%d, attendu 2×1", w, h)
+	}
+	if got := order.Uint32(data[20:]); got != 0xFF0B0B0B {
+		t.Errorf("pixel de la seconde icône %#x, attendu 0xff0b0b0b", got)
+	}
+}
+
+// TestSetIconsSkipsAnIconThatWouldShiftTheRest vérifie qu'une icône dont les pixels ne
+// remplissent pas ses dimensions est écartée, et que celle qui suit reste lisible.
+//
+// La propriété se lit en suivant les tailles annoncées : une image trop courte
+// décalerait toutes les suivantes, et le gestionnaire afficherait du bruit à partir de
+// là. Le filtre n'est donc pas une politesse — c'est ce qui empêche une planche mal
+// remplie par un jeu d'abîmer les icônes voisines.
+func TestSetIconsSkipsAnIconThatWouldShiftTheRest(t *testing.T) {
+	c, _ := connPair(t)
+
+	c.setIcons(0x04000001, 0x130, []*render.Buffer{
+		{Width: 2, Height: 2, Pixels: make([]render.Color, 1)},
+		iconOf(1, 1, 0x0C),
+	})
+
+	if got := order.Uint32(c.out[20:]); got != 3 {
+		t.Fatalf("longueur annoncée %d éléments, attendu 3 pour la seule icône valable", got)
+	}
+
+	data := c.out[changePropertyHeader:]
+	if w, h := order.Uint32(data[0:]), order.Uint32(data[4:]); w != 1 || h != 1 {
+		t.Errorf("icône annoncée %d×%d, attendu celle qui suivait l'écartée", w, h)
+	}
+	if got := order.Uint32(data[8:]); got != 0xFF0C0C0C {
+		t.Errorf("pixel %#x, attendu celui de l'icône valable", got)
+	}
+}
+
+// TestSetIconsPostsNothingWithoutIcons vérifie qu'aucune propriété n'est posée quand le
+// jeu n'en fournit pas.
+//
+// Poser une propriété vide dirait au gestionnaire de fenêtres que ce jeu n'a pas
+// d'icône, là que l'absence de propriété le laisse prendre celle du système — qui est
+// le bon défaut.
+func TestSetIconsPostsNothingWithoutIcons(t *testing.T) {
+	cases := []struct {
+		name  string
+		icons []*render.Buffer
+	}{
+		{"aucune icône", nil},
+		{"une tranche vide", []*render.Buffer{}},
+		{"une icône absente", []*render.Buffer{nil}},
+		{"une icône sans surface", []*render.Buffer{{Width: 0, Height: 4}}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c, _ := connPair(t)
+			c.setIcons(0x04000001, 0x130, tc.icons)
+
+			if len(c.out) != 0 {
+				t.Errorf("%d octets écrits alors qu'il n'y a pas d'icône à poser", len(c.out))
+			}
+		})
+	}
+}
+
+// TestSetIconsWritesStraightAlpha vérifie que les mots partent à alpha non
+// prémultiplié.
+//
+// Le moteur prémultiplie pour que le mélange d'un pixel soit une multiplication, et la
+// propriété demande l'inverse. Envoyer le tampon tel quel donnerait une icône assombrie
+// partout où elle est translucide — un contour adouci sortirait terne, ce qui ressemble
+// à un défaut du dessin et non du backend.
+func TestSetIconsWritesStraightAlpha(t *testing.T) {
+	c, _ := connPair(t)
+
+	// Un blanc à demi transparent : prémultiplié il vaut 128 sur chaque composante,
+	// et la propriété doit recevoir 255.
+	icon := render.NewBuffer(1, 1)
+	icon.Pixels[0] = render.Premultiply(255, 255, 255, 128)
+
+	c.setIcons(0x04000001, 0x130, []*render.Buffer{icon})
+
+	got := order.Uint32(c.out[changePropertyHeader+8:])
+	if got>>24 != 128 {
+		t.Errorf("alpha %d, attendu 128", got>>24)
+	}
+	if red := (got >> 16) & 0xFF; red != 255 {
+		t.Errorf("rouge %d, attendu 255 — la composante n'a pas été ramenée à sa pleine valeur", red)
+	}
+}
+
 // TestSyncReportsAnErrorFromARequestWithoutReply vérifie que la synchronisation est ce
 // qui fait rendre les erreurs d'ouverture à l'ouverture.
 //
