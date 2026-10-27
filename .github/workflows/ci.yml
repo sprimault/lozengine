@@ -130,6 +130,27 @@ jobs:
   affichage:
     name: Affichage — ${{ matrix.serveur }}
     runs-on: ubuntu-latest
+
+    # **Une borne, parce que ce job peut attendre indéfiniment.** Le 27 octobre 2026,
+    # l'installation des paquets de Xwayland a tenu dix-huit minutes sans avancer — et
+    # sans borne elle aurait tenu les six heures que la plateforme accorde. Un job qui
+    # échoue se lit ; un job qui attend ne dit rien et bloque la pull request derrière
+    # lui.
+    #
+    # C'est la même leçon que le harnais de test a apprise le même jour, sur un cas qui
+    # a figé un paquet dix minutes : ce qui peut attendre sans fin se borne.
+    #
+    # **Quatre minutes, et le chiffre vient d'une mesure** : les quatre passages
+    # réussis tiennent entre 47 et 66 secondes. Près de quatre fois la durée observée
+    # absorbe un runner chargé ; un plafond plus large ne protégerait pas mieux et
+    # ferait seulement attendre plus longtemps avant de dire qu'il y a un problème —
+    # le premier était à douze minutes, posé avant d'avoir mesuré quoi que ce soit.
+    #
+    # Il tient compte du délai sur le verrou de l'étape suivante, qui doit rester bien
+    # dedans : les deux bornes se marcheraient dessus si l'attente permise à l'une
+    # consommait le budget de l'autre.
+    timeout-minutes: 4
+
     strategy:
       fail-fast: false
       matrix:
@@ -154,10 +175,42 @@ jobs:
           go-version-file: go.mod
           check-latest: true
 
+      # **`DEBIAN_FRONTEND` n'est pas une politesse, c'est ce qui empêche l'attente.**
+      # Une dépendance de weston pose une question de configuration, et sans cette
+      # variable l'installation attend une réponse que personne ne donnera jamais.
+      # C'est ce qui a bloqué le job de Xwayland le 27 octobre 2026, là où celui de
+      # Xvfb passait : seul le premier tire le paquet qui demande.
+      #
+      # **Cette étape n'est pas silencieuse, et c'est ce qui a donné la cause.** Le
+      # 27 octobre 2026 elle a attendu cinq minutes sans écrire une ligne avant que le
+      # plafond du job la coupe : `-qq` taisait tout, si bien qu'on ne pouvait pas
+      # distinguer un travail en cours d'une attente. Rendue bavarde, elle a répondu au
+      # passage suivant.
+      #
+      # **Ce que la mesure dit, et qui n'était aucune des causes supposées** : aucun
+      # verrou n'était tenu, et deux téléchargements du même job sont allés à
+      # 9 948 kB/s et à 73 kB/s — un facteur cent trente-cinq. C'est la vitesse du
+      # réseau du runner qui varie, non `debconf` ni la contention de verrous.
+      #
+      # **Donc la parade qui compte est le plafond du job**, qui transforme une attente
+      # réseau en échec lisible et laisse une relance repartir sur un autre miroir.
+      # Rien ici ne rendra le réseau fiable.
+      #
+      # Ce qui suit reste quand même, parce que cela ferme deux autres causes possibles
+      # sans rien coûter : le frontend non interactif, pour qu'une question de
+      # configuration n'attende jamais de réponse ; l'arrêt des minuteries du runner et
+      # le relevé des verrous, pour que le journal tranche tout de suite si une
+      # prochaine fois ce sont eux.
       - name: Paquets du serveur
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ${{ matrix.paquets }}
+          sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+          sudo systemctl stop unattended-upgrades.service 2>/dev/null || true
+          sudo fuser -v /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock 2>&1 || echo "aucun verrou tenu"
+
+          sudo apt-get update -o DPkg::Lock::Timeout=60
+          sudo apt-get install -y -o DPkg::Lock::Timeout=60 ${{ matrix.paquets }}
 
       # Les deux répertoires sont créés à la main, et ce n'est pas une précaution :
       # mesuré en conteneur le 27 octobre 2026, Xwayland échoue par
