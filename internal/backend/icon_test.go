@@ -75,19 +75,19 @@ func TestPickIconIgnoresWhatCannotBeDrawn(t *testing.T) {
 	}
 }
 
-// TestStraightBGRAUndoesThePremultiplication vérifie les deux conversions d'une passe :
-// l'alpha qu'on rend à sa valeur pleine, et l'ordre des octets.
+// TestStraightARGBUndoesThePremultiplication vérifie les deux conversions d'une passe :
+// l'alpha qu'on rend à sa valeur pleine, et la place des composantes dans le mot.
 //
 // C'est le calcul dont une erreur ne se verrait qu'à l'œil, sur une icône posée dans
 // une barre des tâches : un rouge à demi transparent sortirait sombre, ou bleu.
-func TestStraightBGRAUndoesThePremultiplication(t *testing.T) {
+func TestStraightARGBUndoesThePremultiplication(t *testing.T) {
 	icon := render.NewBuffer(2, 2)
 	icon.Pixels[0] = render.Color{R: 255, G: 0, B: 0, A: 255} // rouge opaque
 	icon.Pixels[1] = render.Color{R: 128, G: 0, B: 0, A: 128} // rouge à demi, prémultiplié
 	icon.Pixels[2] = render.Color{R: 0, G: 0, B: 0, A: 0}     // rien
 	icon.Pixels[3] = render.Color{R: 0, G: 64, B: 32, A: 64}  // vert sur fond de bleu, à un quart
 
-	got := straightBGRA(icon)
+	got := straightARGB(icon)
 
 	cases := []struct {
 		name string
@@ -107,17 +107,17 @@ func TestStraightBGRAUndoesThePremultiplication(t *testing.T) {
 	}
 }
 
-// TestStraightBGRAKeepsABadPixelInItsOwnBytes garde le plafond de la conversion.
+// TestStraightARGBKeepsABadPixelInItsOwnBytes garde le plafond de la conversion.
 //
 // Une planche qu'un jeu remplit lui-même peut porter une composante plus grande que
 // son alpha, ce qu'un prémultiplié correct ne fait jamais. Le quotient dépasse alors
 // 255 et, sans plafond, débordait de son octet pour écraser les voisins : un pixel
 // faux en abîmait trois autres.
-func TestStraightBGRAKeepsABadPixelInItsOwnBytes(t *testing.T) {
+func TestStraightARGBKeepsABadPixelInItsOwnBytes(t *testing.T) {
 	icon := render.NewBuffer(1, 1)
 	icon.Pixels[0] = render.Color{R: 255, G: 0, B: 0, A: 1}
 
-	if got := straightBGRA(icon)[0]; got != 0x01_FF0000 {
+	if got := straightARGB(icon)[0]; got != 0x01_FF0000 {
 		t.Errorf("pixel : %#08x, attendu %#08x", got, 0x01_FF0000)
 	}
 }

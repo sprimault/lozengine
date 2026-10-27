@@ -86,7 +86,7 @@ func createIcon(icon *render.Buffer) uintptr {
 	// là où le moteur les compte depuis le haut. La présentation s'en tire par une
 	// hauteur négative ; ici elle ne peut pas, l'appel refusant un DIB inversé, donc
 	// la recopie remet les lignes dans l'ordre qu'il attend.
-	rows := straightBGRA(icon)
+	rows := straightARGB(icon)
 	width := int(icon.Width)
 	out := unsafe.Slice(bits, len(rows))
 	for y := 0; y < int(icon.Height); y++ {

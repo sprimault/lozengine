@@ -84,6 +84,10 @@ same capability with no window and no clock, and the host calls one step per fra
 The first door adds convenience, never capability: everything it allows can also be
 done by driving the engine by hand.
 
+**The engine's window is not driven from the outside**: nothing lets you resize it,
+move it or take it fullscreen, and nothing will. A game that wants a window of its
+own already has the second door, where the engine opens none.
+
 Five packages are public because the documentation of their types has to be readable:
 `render`, `geometry`, `scene`, `raster` and `input`. Everything else lives under
 `internal/`,

@@ -83,6 +83,11 @@ capacité sans fenêtre ni horloge, et l'hôte appelle un pas par image. La prem
 porte ajoute du confort, jamais de capacité : tout ce qu'elle permet se fait aussi en
 pilotant le moteur à la main.
 
+**La fenêtre du moteur ne se pilote pas depuis l'extérieur** : rien ne permet de la
+redimensionner, de la déplacer ni de la passer en plein écran, et rien ne le
+permettra. Un jeu qui veut sa propre fenêtre a déjà la seconde porte, où le moteur
+n'en ouvre aucune.
+
 Cinq paquets sont publics parce qu'on doit pouvoir lire la documentation de leurs
 types : `render`, `geometry`, `scene`, `raster` et `input`. Tout le reste vit sous
 `internal/`,

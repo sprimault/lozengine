@@ -144,6 +144,24 @@ func TestCloseTwiceIsHarmless(t *testing.T) {
 	}
 }
 
+// TestOrdinaryCloseIsNotAnError garde ce que la boucle en tire : une fenêtre que le
+// joueur ferme ne rapporte aucune erreur, et c'est ce qui permet de rendre Err sans
+// trier les causes de sortie.
+//
+// Le cas ne peut pas rougir sur le fond — cette plateforme n'a aucun échec terminal à
+// rapporter, ce que la godoc d'Err dit — mais il rougirait si quelqu'un faisait un jour
+// rendre une erreur à la fermeture ordinaire, et c'est le régime qu'il garde.
+func TestOrdinaryCloseIsNotAnError(t *testing.T) {
+	var w window
+	track(t, &w)
+
+	windowProc(w.hwnd, wmClose, 0, 0)
+
+	if err := w.Err(); err != nil {
+		t.Errorf("une fermeture ordinaire rapporte une erreur : %v", err)
+	}
+}
+
 // TestUnknownWindowIsDelegated vérifie qu'un message portant une poignée inconnue ne
 // fait rien de fâcheux : le système en envoie avant que CreateWindowExW ait rendu la
 // poignée, donc le cas est normal et non défensif.

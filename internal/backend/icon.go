@@ -12,6 +12,12 @@ import "github.com/sprimault/lozengine/render"
 // pickIcon rend l'icône dont le côté approche le plus la taille demandée, et nil quand
 // le jeu n'en fournit aucune.
 //
+// **Choisir une taille est propre à Windows**, qui veut une icône par emplacement — une
+// grande pour Alt-Tab, une petite pour la barre de titre. X11 envoie au contraire toutes
+// les tailles dans une seule propriété et laisse le gestionnaire de fenêtres prendre ce
+// qui lui convient, donc il ne passe pas par ici. Ce qui est commun à tous est la
+// conversion des pixels, par straightARGB.
+//
 // **Le moteur ne redimensionne pas**, et c'est la règle d'échelle qui l'impose : un
 // agrandissement entier ne sait pas passer de 24 à 16 pixels, et une réduction douce
 // brouillerait un dessin fait pixel par pixel. On prend donc la taille la plus proche
@@ -41,13 +47,19 @@ func pickIcon(icons []*render.Buffer, side uint16) *render.Buffer {
 	return best
 }
 
-// straightBGRA rend les pixels d'une icône en BGRA à alpha **non** prémultiplié, la
+// straightARGB rend les pixels d'une icône en mots ARGB à alpha **non** prémultiplié, la
 // disposition que les plateformes attendent d'une icône.
 //
-// Deux conversions en une passe. L'ordre des octets d'abord : le moteur tient du RVBA
-// et Windows lit un pixel de DIB comme un entier de trente-deux bits, donc le bleu y
-// occupe l'octet de poids faible. L'alpha ensuite : le moteur prémultiplie pour que le
-// mélange d'un pixel soit une multiplication, et une icône se décrit à l'envers.
+// **C'est la valeur du mot qui compte, pas son image en mémoire** : l'alpha occupe les
+// huit bits de poids fort, puis le rouge, le vert et le bleu. C'est ce que Windows lit
+// dans un pixel de DIB et c'est aussi ce que la propriété `_NET_WM_ICON` d'X11 demande,
+// donc les deux plateformes consomment ces mots tels quels. Nommer cette disposition
+// BGRA décrirait l'ordre où les octets tombent sur une machine petit-boutienne, ce qui
+// n'est ni ce qu'on écrit ni ce que les deux formats spécifient.
+//
+// Deux conversions en une passe. L'ordre des composantes d'abord : le moteur tient du
+// RVBA, où le rouge vient en premier. L'alpha ensuite : le moteur prémultiplie pour que
+// le mélange d'un pixel soit une multiplication, et une icône se décrit à l'envers.
 //
 // **La division arrondit au plus proche, et ce n'est pas du luxe.** Tronquer coûte un
 // cran sur un tiers des valeurs à alpha partiel — un vert de 32 à alpha 64 ressort à
@@ -55,7 +67,7 @@ func pickIcon(icons []*render.Buffer, side uint16) *render.Buffer {
 // demi-division ajoutée avant de diviser la supprime là où elle peut l'être.
 //
 // Un pixel entièrement transparent n'a pas de couleur à retrouver et ressort nul.
-func straightBGRA(icon *render.Buffer) []uint32 {
+func straightARGB(icon *render.Buffer) []uint32 {
 	out := make([]uint32, len(icon.Pixels))
 
 	for i, pixel := range icon.Pixels {

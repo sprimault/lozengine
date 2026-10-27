@@ -8,9 +8,14 @@ package input
 
 // Key désigne une place sur le clavier, et non le caractère qu'elle produit.
 //
-// La valeur est le code de balayage que le système rapporte, et les noms que le moteur
-// en donne portent la légende d'un clavier américain : c'est la convention de tout le
-// monde, et la seule qui reste vraie quand la disposition change.
+// **La valeur est la convention du moteur, et non celle d'un système.** Elle coïncide
+// avec les codes de balayage du jeu 1, ceux que les claviers rapportent depuis toujours
+// et que Windows transmet tels quels ; chaque backend traduit vers elle ce que sa
+// plateforme lui donne, et sous X11 cette traduction est une soustraction de huit. Un
+// jeu lit donc les mêmes valeurs partout.
+//
+// Les noms que le moteur en donne portent la légende d'un clavier américain : c'est la
+// convention de tout le monde, et la seule qui reste vraie quand la disposition change.
 //
 // Quatre-vingt-six places portent un nom : les lettres de [KeyA] à [KeyZ], les chiffres
 // de [Key1] à [Key9] puis [Key0] dans l'ordre de la rangée, les quatre flèches,
@@ -20,7 +25,9 @@ package input
 // [KeyNumLock]. Elles sont nommées ici parce qu'interroger le type ne montre que la
 // première de chaque bloc, la documentation s'abrégeant ensuite.
 //
-// Une place sans nom se lit quand même, par son code de balayage.
+// Une place sans nom se lit quand même, par sa valeur dans cette convention : elle
+// désigne la même place sur toutes les plateformes, puisque c'est vers elle que les
+// backends traduisent.
 type Key uint16
 
 // keysMax est le nombre de places que l'état sait distinguer.
