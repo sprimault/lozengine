@@ -14,7 +14,7 @@ export CGO_ENABLED := 0
 -include makefile.local
 
 .PHONY: build example test bench cover depot fmt vet deps entetes frontiere cross check \
-        floor container references journal notes titre clean
+        floor container container-clean references journal notes titre clean
 
 build:
 	go build ./...
@@ -389,6 +389,12 @@ floor:
 	@echo "contrôle complet sous Go $(PLANCHER), le plancher du module"
 	@GOTOOLCHAIN=go$(PLANCHER) $(MAKE) check
 
+# Le volume qui porte le cache de compilation du conteneur, et le chemin où il est
+# monté. Le nom est préfixé par le dépôt : un démon partagé doit dire à qui appartient
+# ce qu'il garde, et c'est ce qui permet de le retrouver sans le chercher.
+CACHE_VOLUME = lozengine-gocache
+CACHE_MONTE = /gocache
+
 # `check` rejoué dans un conteneur jetable, sur l'image officielle du plancher.
 #
 # Ce qu'il apporte en plus de `floor` : un système nu. Ni la toolchain résolue du
@@ -414,23 +420,58 @@ floor:
 #
 # **Le démon peut être ailleurs**, et c'est le cas ici : `DOCKER_HOST` vit dans
 # `makefile.local` avec le reste de ce qui est propre au poste. Rien dans cette cible
-# ne nomme de machine, et un montage de volume serait de toute façon résolu du côté du
-# démon, donc ne verrait pas ce dépôt — d'où le flux sur l'entrée standard.
+# ne nomme de machine. **Les sources entrent donc par l'entrée standard** : un montage
+# serait résolu du côté du démon, et ne verrait pas ce dépôt.
 #
-# **La machine qui porte le démon est partagée.** Tout ce que cette cible crée est
-# préfixé et éphémère : un conteneur `--rm`, nommé par le dépôt et l'instant, et rien
-# d'autre. Aucune commande de nettoyage global n'a sa place ici — ni `prune`, ni une
-# suppression d'image, l'image du plancher pouvant servir à d'autres.
+# **Le cache de compilation, lui, est exactement ce qu'on veut du côté du démon**, et
+# c'est la nuance à ne pas confondre avec la précédente. Il vit dans un volume nommé,
+# ce qui fait passer la cible de 18 à 3 secondes — mesuré le 27 octobre 2026, et les
+# chiffres encadrés par deux mesures sans cache qui donnent le même temps.
+#
+# Il ne rend pas le contrôle complaisant, et la raison est précise : **un cache Go est
+# indexé par hachage de contenu**, donc une entrée qui ne correspond plus est ignorée
+# et non réutilisée. C'est ce qui le distingue d'un conteneur réutilisé, qui garderait
+# des sources, un index git et les fichiers du lot précédent — et c'est cette phrase
+# qu'il faut relire avant d'être tenté d'y persister autre chose.
+#
+# **`-count=1` force la réexécution des tests malgré ce cache**, qui porte aussi leurs
+# résultats. Sans lui, un passage sans changement les sauterait tous — et la cible
+# cesserait de rejouer le régime du runner, qui part d'un cache vide et les exécute.
+# Ce qui a décidé est la mesure : la réexécution est **gratuite**, 3 secondes avec ou
+# sans, parce que le temps était dans la compilation et non dans des tests qui durent
+# des millisecondes. Un test non déterministe reste donc attrapé ici.
+#
+# **La machine qui porte le démon est partagée.** Tout ce que cette cible crée porte
+# le préfixe du dépôt : un conteneur `--rm` nommé par le dépôt et l'instant, et ce
+# volume. Aucune commande de nettoyage global n'a sa place ici — ni `prune`, ni une
+# suppression d'image, l'image du plancher pouvant servir à d'autres. Le volume se
+# vide par `container-clean`, et rien n'en dépend.
+#
+# `MSYS_NO_PATHCONV` empêche le shell de Git Bash de convertir les chemins destinés au
+# conteneur en chemins Windows avant que `docker` les voie. Sans elle, Go rapporte
+# « GOCACHE is not an absolute path » et la cible échoue sur un contrôle sans rapport.
+# La variable n'a de sens que sur ce shell, et Linux l'ignore.
 container:
 	@command -v docker >/dev/null || { echo "docker est absent, et cette cible seule en a besoin"; exit 1; }
 	@echo "contrôle complet dans un conteneur, Go $(PLANCHER)"
-	@git ls-files -z | tar -cf - --null -T - | docker run --rm -i \
+	@git ls-files -z | tar -cf - --null -T - | MSYS_NO_PATHCONV=1 docker run --rm -i \
 	  --name lozengine-check-$$$$ \
 	  --label projet=lozengine \
 	  -e CGO_ENABLED=0 \
 	  -e GOTOOLCHAIN=local \
+	  -e GOCACHE=$(CACHE_MONTE) \
+	  -e GOFLAGS=-count=1 \
+	  -v $(CACHE_VOLUME):$(CACHE_MONTE) \
 	  golang:$(PLANCHER) \
 	  sh -c 'mkdir -p /src && cd /src && tar -x && git init -q . && git add -A && make check'
+
+# Vide le cache du conteneur, et c'est le pendant obligé de sa persistance : ce qui
+# survit à une commande doit avoir un moyen de partir qui ne demande pas de connaître
+# la machine. Rien n'en dépend — le contrôle suivant le remplit en 18 secondes.
+container-clean:
+	@command -v docker >/dev/null || { echo "docker est absent, et cette cible seule en a besoin"; exit 1; }
+	@docker volume rm -f $(CACHE_VOLUME) >/dev/null
+	@echo "cache du conteneur vidé"
 
 # Le paquet qui porte la suite de non-régression visuelle, et lui seul : un
 # drapeau de test n'existe que pour le paquet qui le déclare, donc `./...` ferait

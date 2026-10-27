@@ -135,6 +135,15 @@ un conteneur jetable sur l'image officielle de cette version, où seul le conten
 versionné entre — c'est ce que fait le runner, et elle demande `docker`, le seul
 outil que le dépôt n'exige nulle part ailleurs.
 
+Le conteneur est détruit à chaque fois, mais son **cache de compilation** est gardé
+dans un volume nommé : le contrôle passe ainsi de dix-huit secondes à trois. Le
+système reste donc neuf à chaque appel, et ce qui est gardé ne peut pas faire passer
+un contrôle au vert à tort — Go retrouve une entrée de cache par le contenu qu'elle
+décrit, donc une entrée qui ne correspond plus est ignorée. Les tests, eux, sont
+**réexécutés à chaque appel** malgré ce cache, qui porterait aussi leurs résultats :
+c'est gratuit, et sans cela la cible cesserait d'éprouver quoi que ce soit lorsque
+rien n'a changé. `make container-clean` vide ce cache, et rien n'en dépend.
+
 Les deux restent hors de `make check`, qui doit continuer à passer sur un clone
 neuf sans rien installer.
 
