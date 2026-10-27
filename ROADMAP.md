@@ -3,7 +3,7 @@
 Moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance. Rendu
 logiciel. Cibles : Windows, Linux et le navigateur en WebAssembly.
 
-État : jalon 2 franchi, jalon 3 pas encore ouvert. Un jeu s'écrit : le moteur ouvre une
+État : jalon 2 franchi, jalon 3 en cours. Un jeu s'écrit : le moteur ouvre une
 fenêtre, lit le clavier, tient une boucle à pas fixe et n'attend du jeu qu'une seule
 méthode. Sous Windows uniquement — Linux et le navigateur viennent aux jalons 3 et 5.
 
