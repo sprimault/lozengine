@@ -144,6 +144,42 @@ func TestCloseTwiceIsHarmless(t *testing.T) {
 	}
 }
 
+// TestMinTrackSizeCarriesTheFloor vérifie que le plancher arrive au système dans la
+// structure qu'il a passée, et en taille de fenêtre entière.
+//
+// Le cas est le seul à pouvoir faire échouer une erreur de décalage dans minMaxInfo :
+// écrire au mauvais champ bornerait la position ou la taille maximale, ce qui ne se
+// verrait qu'en tirant le bord d'une vraie fenêtre.
+func TestMinTrackSizeCarriesTheFloor(t *testing.T) {
+	var w window
+	track(t, &w)
+	w.minW, w.minH = 496, 319
+
+	var info minMaxInfo
+	windowProc(w.hwnd, wmGetMinMaxInfo, 0, uintptr(unsafe.Pointer(&info)))
+
+	if info.minTrack != (point{x: 496, y: 319}) {
+		t.Errorf("plancher posé : %+v, attendu {496 319}", info.minTrack)
+	}
+	if info.maxTrack != (point{}) || info.maxSize != (point{}) || info.maxPosition != (point{}) {
+		t.Error("un champ voisin a été écrit")
+	}
+}
+
+// TestNoFloorLeavesTheBoundsAlone vérifie le régime de la création : sans plancher
+// connu, la structure ressort telle quelle plutôt que bornée à zéro.
+func TestNoFloorLeavesTheBoundsAlone(t *testing.T) {
+	var w window
+	track(t, &w)
+
+	info := minMaxInfo{minTrack: point{x: 120, y: 80}}
+	windowProc(w.hwnd, wmGetMinMaxInfo, 0, uintptr(unsafe.Pointer(&info)))
+
+	if info.minTrack != (point{x: 120, y: 80}) {
+		t.Errorf("la structure a été touchée : %+v", info.minTrack)
+	}
+}
+
 // TestOrdinaryCloseIsNotAnError garde ce que la boucle en tire : une fenêtre que le
 // joueur ferme ne rapporte aucune erreur, et c'est ce qui permet de rendre Err sans
 // trier les causes de sortie.

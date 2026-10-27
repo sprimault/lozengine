@@ -115,6 +115,10 @@ const (
 	// La prise de focus, par laquelle on rattrape ce qu'un doigt déjà posé n'a pas
 	// envoyé ici.
 	wmSetFocus = 0x0007
+
+	// La demande des bornes de redimensionnement, par laquelle le plancher se pose.
+	// Elle ouvre la séquence de création, avant que la poignée soit connue d'ici.
+	wmGetMinMaxInfo = 0x0024
 )
 
 // mapvkVscToVkEx demande le code virtuel d'une place, préfixe des touches étendues
@@ -220,10 +224,25 @@ type rect struct {
 	left, top, right, bottom int32
 }
 
-// point est la position que portent les messages de souris, dont la pompe n'a pas
-// l'usage mais que la structure d'un message contient.
+// point est la paire de coordonnées de Win32 : la position que portent les messages de
+// souris, dont la pompe n'a pas l'usage mais que la structure d'un message contient, et
+// les cinq tailles de [minMaxInfo].
 type point struct {
 	x, y int32
+}
+
+// minMaxInfo porte les bornes de taille et de position qu'une fenêtre accepte, et le
+// système la passe par adresse dans le `lParam` de `wmGetMinMaxInfo`.
+//
+// Les cinq champs y sont pour la disposition seule : le système lit la structure
+// entière au retour du message, donc en omettre un décalerait les suivants. Seul
+// minTrack est écrit.
+type minMaxInfo struct {
+	reserved    point
+	maxSize     point
+	maxPosition point
+	minTrack    point
+	maxTrack    point
 }
 
 // message est ce que la pompe reçoit.
