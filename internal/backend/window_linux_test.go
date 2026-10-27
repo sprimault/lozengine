@@ -261,6 +261,115 @@ func TestFocusOutForgetsHeldKeys(t *testing.T) {
 	}
 }
 
+// keyEventOf fabrique un événement de touche portant son code et son instant.
+//
+// L'instant compte autant que le code : c'est lui qui sépare une auto-répétition d'un
+// vrai relâchement.
+func keyEventOf(kind, keycode byte, at uint32) []byte {
+	m := eventOf(kind, 1)
+	m[1] = keycode
+	order.PutUint32(m[4:], at)
+	return m
+}
+
+// codeA est le code de touche que le serveur envoie pour la lettre A : le code 30 du
+// noyau, plus les huit que le protocole réserve.
+const codeA = 30 + keycodeShift
+
+// TestAutoRepeatDoesNotFlickerTheKey vérifie qu'une auto-répétition ne fait ni
+// clignoter la touche ni rearmer son front montant.
+//
+// Doigt posé, le serveur produit appui, relâchement, appui, relâchement — le brief du
+// jalon l'annonçait comme un piège cher, parade comprise. **La mesure a montré que le
+// backend n'a rien à faire pour cela** : le front montant du moteur se calcule par
+// comparaison entre deux pas et non sur une transition, et l'état retient ce qui a été
+// enfoncé pendant le pas même si le doigt s'est relevé. Les deux événements tombent à
+// quelques millisecondes dans un pas de seize, donc ils s'annulent sans rien laisser.
+//
+// **Ce que ce cas garde est donc la liaison et non une parade** : que le décodage
+// traduise bien les deux événements vers la même place, et que l'état s'y comporte
+// comme on le croit. Il rougit si l'un des deux décodages disparaît, ce qui a été
+// vérifié ; il ne rougirait pas si l'on retirait une parade, puisqu'il n'y en a pas.
+//
+// Le cas résiduel qu'il ne couvre pas : les deux événements séparés par une frontière
+// de pas, qui coûte un pas d'extinction. C'est l'extension du clavier, demandée à
+// l'ouverture, qui le ferme en supprimant ces relâchements à la source.
+func TestAutoRepeatDoesNotFlickerTheKey(t *testing.T) {
+	w, server := windowPair(t)
+
+	sendEvent(t, server, keyEventOf(eventKeyPress, codeA, 100))
+	in := w.Input()
+	if !in.Held(input.KeyA) {
+		t.Fatal("la touche n'est pas tenue après son appui")
+	}
+	if !in.JustPressed(input.KeyA) {
+		t.Fatal("le front montant manque au premier appui")
+	}
+
+	// Ce que le serveur envoie pour un doigt qui reste posé : les deux événements
+	// portent le même instant, et c'est tout ce qui les distingue d'un relâchement
+	// suivi d'un nouvel appui.
+	repeat := keyEventOf(eventKeyRelease, codeA, 200)
+	repeat = append(repeat, keyEventOf(eventKeyPress, codeA, 200)...)
+	sendEvent(t, server, repeat)
+
+	in = w.Input()
+	if !in.Held(input.KeyA) {
+		t.Error("une auto-répétition a relâché la touche")
+	}
+	if in.JustPressed(input.KeyA) {
+		t.Error("une auto-répétition a rearmé le front montant")
+	}
+}
+
+// TestAReleaseStopsTheKeyInTheSameStep vérifie qu'un relâchement compte dans le pas
+// où il arrive.
+//
+// C'est le pendant du cas précédent et il porte la limite de l'autre : un relâchement
+// seul, arrivé en dernier, doit éteindre la touche avant que la fenêtre rende la main.
+// S'il était différé — ce qu'une parade contre l'auto-répétition serait tentée de
+// faire —, le jeu verrait la touche tenue un pas de trop, soit un personnage qui
+// glisse après qu'on a lâché la flèche.
+func TestAReleaseStopsTheKeyInTheSameStep(t *testing.T) {
+	w, server := windowPair(t)
+
+	sendEvent(t, server, keyEventOf(eventKeyPress, codeA, 100))
+	w.Input()
+
+	sendEvent(t, server, keyEventOf(eventKeyRelease, codeA, 200))
+
+	if w.Input().Held(input.KeyA) {
+		t.Error("la touche est encore tenue après son relâchement")
+	}
+}
+
+// TestKeymapNotifyRestoresTheKeyboard vérifie la reprise de l'état sur l'événement que
+// le serveur envoie après chaque prise de focus.
+//
+// Il porte un piège de forme que le brief a nommé : **c'est le seul événement du
+// protocole sans numéro de séquence**, ses deux octets de séquence portant déjà de
+// l'état de clavier. Lire un numéro là déplacerait le vecteur d'autant, et les touches
+// tenues seraient les voisines de celles qu'on croit.
+func TestKeymapNotifyRestoresTheKeyboard(t *testing.T) {
+	w, server := windowPair(t)
+	w.state.Press(input.KeyLeft)
+
+	// Construit à la main, et pas par le fabricant d'événements ordinaire : celui-ci
+	// écrirait un numéro de séquence là où cet événement porte des touches.
+	m := make([]byte, eventSize)
+	m[0] = eventKeymapNotify
+	m[1+3] |= 1 << 6 // la lettre A, code 38 pour le serveur
+	sendEvent(t, server, m)
+
+	in := w.Input()
+	if !in.Held(input.KeyA) {
+		t.Error("la lettre A n'est pas tenue alors que le serveur la nomme")
+	}
+	if in.Held(input.KeyLeft) {
+		t.Error("une touche absente du vecteur est restée tenue")
+	}
+}
+
 // TestPresentSplitsTheImageIntoBands vérifie qu'une image trop grande pour une requête
 // part en bandes, chacune disant où elle va.
 //

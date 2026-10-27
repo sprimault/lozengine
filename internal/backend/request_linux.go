@@ -215,6 +215,59 @@ func (c *conn) enableBigRequests(major byte) (uint32, error) {
 	return order.Uint32(m[8:]), nil
 }
 
+// detectableAutoRepeat demande au serveur de ne plus fabriquer de relâchements entre
+// les répétitions, et dit s'il a accepté.
+//
+// **Le résultat se lit, il ne se suppose pas** : la spécification prévient que ce
+// drapeau n'est pas garanti, et un serveur qui le refuse continue d'envoyer appui,
+// relâchement, appui, relâchement pour un doigt posé. C'est pourquoi la fenêtre sait
+// reconnaître ces paires de toute façon — ce dialogue épargne le trafic, il ne porte
+// pas la correction.
+//
+// Deux requêtes et non une : l'extension refuse tout avant que les versions se soient
+// accordées.
+func (c *conn) detectableAutoRepeat(major byte) (bool, error) {
+	at := len(c.out)
+	c.out = append(c.out, major, xkbUseExtension, 0, 0)
+	order.PutUint16(c.out[at+2:], 2)
+	c.out = order.AppendUint16(c.out, xkbMajorVersion)
+	c.out = order.AppendUint16(c.out, xkbMinorVersion)
+	version := c.next()
+
+	at = len(c.out)
+	c.out = append(c.out, major, xkbPerClientFlags, 0, 0)
+	order.PutUint16(c.out[at+2:], 7)
+	c.out = order.AppendUint16(c.out, xkbCoreKeyboard)
+	c.out = order.AppendUint16(c.out, 0)
+	c.out = order.AppendUint32(c.out, xkbDetectableAutoRepeat) // ce qu'on change
+	c.out = order.AppendUint32(c.out, xkbDetectableAutoRepeat) // la valeur voulue
+	c.out = order.AppendUint32(c.out, 0)                       // aucun contrôle booléen
+	c.out = order.AppendUint32(c.out, 0)
+	c.out = order.AppendUint32(c.out, 0)
+	flags := c.next()
+
+	if err := c.flush(); err != nil {
+		return false, err
+	}
+
+	// La réponse au dialogue de version porte son accord au deuxième octet. Un
+	// serveur qui n'accorde pas sa version ne traitera pas la requête suivante, mais
+	// il y répondra : on lit les deux réponses dans l'ordre.
+	accord, err := c.reply(version)
+	if err != nil {
+		return false, err
+	}
+
+	supported, err := c.reply(flags)
+	if err != nil {
+		return false, err
+	}
+	if accord[1] == 0 {
+		return false, nil
+	}
+	return order.Uint32(supported[8:])&xkbDetectableAutoRepeat != 0, nil
+}
+
 // changeProperty pose une propriété sur la fenêtre.
 //
 // Le format est la taille d'un élément en bits — huit pour du texte, trente-deux pour

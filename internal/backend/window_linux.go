@@ -34,9 +34,23 @@ type window struct {
 	protocols    uint32
 	deleteWindow uint32
 
-	// state accumule ce que le clavier a fait. Le décodage des touches vient avec le
-	// lot qui lit le clavier ; ce qui est déjà câblé est l'oubli à la perte du
-	// focus, parce que sans lui une touche tenue le reste pour toujours.
+	// state accumule ce que le clavier a fait.
+	//
+	// **L'auto-répétition ne demande aucune parade ici, et c'est une mesure qui l'a
+	// établi contre le brief du jalon.** Celui-ci annonçait que le serveur envoie un
+	// relâchement que personne n'a demandé entre chaque répétition — c'est vrai — et
+	// que l'état du moteur absorberait les appuis répétés mais pas ces relâchements,
+	// si bien qu'une place clignoterait des dizaines de fois par seconde. Ce second
+	// point est faux : le front montant se calcule par comparaison entre deux pas et
+	// non sur une transition, et l'état retient ce qui a été enfoncé pendant le pas
+	// même si le doigt s'est relevé. Un relâchement suivi d'un appui dans le même pas
+	// ne produit donc ni clignotement ni front neuf.
+	//
+	// Un dispositif de différé a été écrit pour ce défaut, puis retiré : il s'est
+	// révélé **strictement sans effet observable** dans les deux régimes. Ce qui
+	// ferme le cas résiduel — les deux événements séparés par une frontière de pas,
+	// qui coûterait un pas d'extinction — est l'extension du clavier, demandée à
+	// l'ouverture.
 	state input.State
 
 	// closed retient que la fenêtre ne présentera plus rien. Il ne se relève jamais.
@@ -145,6 +159,26 @@ func (w *window) handle(m []byte) {
 		if order.Uint32(m[8:]) == w.protocols && order.Uint32(m[12:]) == w.deleteWindow {
 			w.closed = true
 		}
+
+	case eventKeyPress:
+		if k, ok := keyOf(m[1]); ok {
+			w.state.Press(k)
+		}
+
+	case eventKeyRelease:
+		if k, ok := keyOf(m[1]); ok {
+			w.state.Release(k)
+		}
+
+	case eventKeymapNotify:
+		// **Le seul événement du protocole sans numéro de séquence** : ses deux
+		// octets de séquence portent déjà de l'état de clavier. Tout ce qui lit ce
+		// numéro doit donc l'exclure, et le vecteur commence au deuxième octet.
+		//
+		// Il arrive après chaque prise de focus parce que la création de la fenêtre
+		// l'a demandé, et il remplace à lui seul la relecture touche par touche que
+		// Windows doit faire.
+		w.relearnKeys(m[1:])
 
 	case eventFocusOut:
 		// Le relâchement d'une touche tenue est perdu, pas différé : la fenêtre ne

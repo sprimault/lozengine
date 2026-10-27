@@ -228,6 +228,30 @@ const (
 	requestWordsMax = 65535
 )
 
+// Ce que l'extension du clavier sert à demander ici, et rien de plus.
+//
+// Un seul drapeau nous intéresse : celui qui fait cesser les relâchements que
+// l'auto-répétition fabrique. La spécification prévient qu'il n'est pas garanti, d'où
+// le champ de la réponse qu'il faut lire au lieu de supposer.
+const (
+	xkbName           = "XKEYBOARD"
+	xkbUseExtension   = 0
+	xkbPerClientFlags = 21
+
+	// La version que le client annonce. Le dialogue de version est obligatoire avant
+	// toute autre requête de l'extension, qui refuse sinon.
+	xkbMajorVersion = 1
+	xkbMinorVersion = 0
+
+	// xkbCoreKeyboard désigne le clavier que le serveur présente à tous ses clients,
+	// par opposition à un périphérique nommé.
+	xkbCoreKeyboard = 0x0100
+
+	// xkbDetectableAutoRepeat fait que le serveur n'envoie plus qu'un relâchement,
+	// à la fin, au lieu d'un entre chaque répétition.
+	xkbDetectableAutoRepeat = 1 << 0
+)
+
 // errorNames nomme les erreurs du protocole par leur code.
 //
 // Le nom entre dans le message que rend [Window.Err], et il porte beaucoup plus que le
