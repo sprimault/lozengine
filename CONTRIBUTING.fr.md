@@ -120,6 +120,24 @@ Une compilation croisée prouve que le code compile pour l'autre plateforme,
 jamais qu'il y fonctionne. **Un changement qui touche un backend se vérifie sur
 la plateforme concernée**, nativement, avant d'être livré.
 
+**Et l'intégration continue mesure le plancher de Go**, que la version installée
+sur une machine de développement n'est presque jamais. Deux cibles rejouent ce
+régime avant la poussée :
+
+```
+make floor
+make container
+```
+
+La première relance le contrôle sous la toolchain du plancher, dont le numéro se
+lit dans `go.mod` ; Go la télécharge au premier appel. La seconde le rejoue dans
+un conteneur jetable sur l'image officielle de cette version, où seul le contenu
+versionné entre — c'est ce que fait le runner, et elle demande `docker`, le seul
+outil que le dépôt n'exige nulle part ailleurs.
+
+Les deux restent hors de `make check`, qui doit continuer à passer sur un clone
+neuf sans rien installer.
+
 **La section du `CHANGELOG` part avec le lot**, pas au moment de la publication :
 elle est relue en pull request, donc au moment où elle compte. Chaque entrée est
 écrite en français et en anglais sous la même version, dans le même commit —

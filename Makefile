@@ -14,7 +14,7 @@ export CGO_ENABLED := 0
 -include makefile.local
 
 .PHONY: build example test bench cover depot fmt vet deps entetes frontiere cross check \
-        references journal notes titre clean
+        floor container references journal notes titre clean
 
 build:
 	go build ./...
@@ -167,6 +167,7 @@ vet:
 	  if [ "$$vus" != "$$attendus" ]; then \
 	    echo "unsafeptr : $$vus site(s) dans $$fichier, $$attendus attendu(s)"; \
 	    echo "une conversion de plus se décide en pull request, elle ne s'ajoute pas"; \
+	    if [ -n "$$sortie" ]; then echo "--- ce que go vet a dit ---"; echo "$$sortie"; fi; \
 	    exit 1; \
 	  fi; \
 	  reste=$$(printf '%s\n' "$$reste" | grep -v "$$motif" || true); \
@@ -363,6 +364,73 @@ entetes: depot
 	fi
 
 check: fmt vet deps entetes frontiere journal cross test
+
+# Le plancher du module, lu dans `go.mod` et nulle part ailleurs.
+#
+# Par `awk` et non par `go list -m`, pour une raison de circularité : déterminer avec
+# quelle toolchain appeler `go` ne peut pas demander d'appeler `go`. C'est la commande
+# qu'emploie déjà le job `Plancher` du workflow, donc une seule façon de lire ce
+# numéro dans tout le dépôt.
+PLANCHER = $(shell awk '/^go /{print $$2; exit}' go.mod)
+
+# `check` rejoué sous la toolchain du plancher, qui est celle que l'intégration
+# continue mesure.
+#
+# **Le poste et la machine de contrôle ne la voient jamais** : le premier tourne la
+# version qu'il a installée, la seconde résout `GOTOOLCHAIN=auto`. Les deux passent
+# donc au vert sur un Go que le runner n'emploie pas. Le 27 octobre 2026, la cible
+# `vet` y est passée deux fois avant d'échouer en intégration continue, `go vet` du
+# plancher préfixant ses diagnostics d'une ligne que les versions récentes n'émettent
+# pas.
+#
+# Hors de `check`, et pas seulement par prudence : `check` l'appelant relancerait
+# `check`.
+floor:
+	@echo "contrôle complet sous Go $(PLANCHER), le plancher du module"
+	@GOTOOLCHAIN=go$(PLANCHER) $(MAKE) check
+
+# `check` rejoué dans un conteneur jetable, sur l'image officielle du plancher.
+#
+# Ce qu'il apporte en plus de `floor` : un système nu. Ni la toolchain résolue du
+# poste, ni ce que la machine de contrôle porte en propre, ni `makefile.local`.
+#
+# **Le périmètre vient de `git ls-files`, donc de git et non d'une liste tenue à la
+# main.** C'est ce qui épargne une troisième liste d'exclusion à tenir d'accord avec
+# les deux autres, et le piège est celui que `poste.md` relève déjà pour `entetes` :
+# un fichier créé dans le lot et non encore indexé n'est pas transporté, donc
+# `git add` avant d'éprouver.
+#
+# Les fichiers suivis **tels qu'ils sont**, et non `git archive HEAD` : celui-ci rend
+# le dernier commit, si bien que la cible éprouverait l'état précédent alors qu'on
+# l'appelle justement avant de commiter.
+#
+# Ce qu'il n'apporte pas, et il faut le dire : l'image est une Debian, le runner une
+# Ubuntu. On reproduit la version de Go et la nature jetable, pas la distribution.
+#
+# `GOTOOLCHAIN=local` et `CGO_ENABLED=0` comme le job `Contrôles`. Un index git est
+# reconstitué sur place pour la raison qui vaut déjà à distance : sans lui, `entetes`
+# tire son périmètre d'un `git ls-files` qui ne rend rien, et la cible passe au vert
+# sans avoir lu un seul fichier.
+#
+# **Le démon peut être ailleurs**, et c'est le cas ici : `DOCKER_HOST` vit dans
+# `makefile.local` avec le reste de ce qui est propre au poste. Rien dans cette cible
+# ne nomme de machine, et un montage de volume serait de toute façon résolu du côté du
+# démon, donc ne verrait pas ce dépôt — d'où le flux sur l'entrée standard.
+#
+# **La machine qui porte le démon est partagée.** Tout ce que cette cible crée est
+# préfixé et éphémère : un conteneur `--rm`, nommé par le dépôt et l'instant, et rien
+# d'autre. Aucune commande de nettoyage global n'a sa place ici — ni `prune`, ni une
+# suppression d'image, l'image du plancher pouvant servir à d'autres.
+container:
+	@command -v docker >/dev/null || { echo "docker est absent, et cette cible seule en a besoin"; exit 1; }
+	@echo "contrôle complet dans un conteneur, Go $(PLANCHER)"
+	@git ls-files -z | tar -cf - --null -T - | docker run --rm -i \
+	  --name lozengine-check-$$$$ \
+	  --label projet=lozengine \
+	  -e CGO_ENABLED=0 \
+	  -e GOTOOLCHAIN=local \
+	  golang:$(PLANCHER) \
+	  sh -c 'mkdir -p /src && cd /src && tar -x && git init -q . && git add -A && make check'
 
 # Le paquet qui porte la suite de non-régression visuelle, et lui seul : un
 # drapeau de test n'existe que pour le paquet qui le déclare, donc `./...` ferait
