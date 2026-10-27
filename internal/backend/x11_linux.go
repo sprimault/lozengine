@@ -171,6 +171,7 @@ const (
 // soit la propriété.
 const (
 	atomAtom          = 4
+	atomCardinal      = 6
 	atomString        = 31
 	atomWMName        = 39
 	atomWMNormalHints = 40

@@ -25,8 +25,9 @@ package backend
 // plus — ses premières images partent dans une fenêtre qui n'est pas visible, et le
 // protocole les laisse tomber sans erreur.
 //
-// Les icônes de [Options] ne sont pas encore posées : la propriété qui les porte vient
-// avec son propre lot, et une icône absente laisse celle du système.
+// Les icônes de [Options] partent toutes, et non la mieux dimensionnée : la propriété
+// d'X11 porte une suite d'images et le gestionnaire de fenêtres prend celle qui lui
+// convient. Aucune icône laisse celle du système.
 func Open(o Options) (Window, error) {
 	c, err := connect()
 	if err != nil {
@@ -36,12 +37,12 @@ func Open(o Options) (Window, error) {
 	// Les quatre noms dont les propriétés de la fenêtre ont besoin. Ils se demandent
 	// avant tout le reste parce que leurs numéros entrent dans les requêtes qui
 	// suivent.
-	atoms, err := c.internAtom("WM_PROTOCOLS", "WM_DELETE_WINDOW", "_NET_WM_NAME", "UTF8_STRING")
+	atoms, err := c.internAtom("WM_PROTOCOLS", "WM_DELETE_WINDOW", "_NET_WM_NAME", "UTF8_STRING", "_NET_WM_ICON")
 	if err != nil {
 		c.Close()
 		return nil, err
 	}
-	protocols, deleteWindow, netName, utf8 := atoms[0], atoms[1], atoms[2], atoms[3]
+	protocols, deleteWindow, netName, utf8, icon := atoms[0], atoms[1], atoms[2], atoms[3], atoms[4]
 
 	id := c.id()
 	c.createWindow(id, o.Width, o.Height,
@@ -56,6 +57,11 @@ func Open(o Options) (Window, error) {
 	c.setTitle(id, o.Title, netName, utf8)
 	c.setProtocols(id, protocols, deleteWindow)
 	c.setFloor(id, o.Width, o.Height)
+
+	// Les icônes se posent avant l'apparition, comme le titre : ce qui se verrait
+	// changer après n'a pas à être posé après.
+	c.setIcons(id, icon, o.Icons)
+
 	c.mapWindow(id)
 
 	// La synchronisation est ce qui fait rendre ici les erreurs des cinq requêtes

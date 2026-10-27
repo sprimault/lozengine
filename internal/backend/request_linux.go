@@ -268,6 +268,14 @@ func (c *conn) detectableAutoRepeat(major byte) (bool, error) {
 	return order.Uint32(supported[8:])&xkbDetectableAutoRepeat != 0, nil
 }
 
+// changePropertyHeader est la taille de l'en-tête d'une pose de propriété, avant ses
+// données.
+//
+// Elle vaut autant que celle d'un transfert d'image, et c'est une coïncidence : les
+// deux requêtes n'ont ni les mêmes champs ni le même nombre. Les nommer séparément
+// évite qu'une relecture croie à un en-tête commun.
+const changePropertyHeader = 24
+
 // changeProperty pose une propriété sur la fenêtre.
 //
 // Le format est la taille d'un élément en bits — huit pour du texte, trente-deux pour
@@ -369,6 +377,56 @@ func (c *conn) setProtocols(window uint32, protocols, deleteWindow uint32) {
 	var data [4]byte
 	order.PutUint32(data[:], deleteWindow)
 	c.changeProperty(window, protocols, atomAtom, 32, data[:])
+}
+
+// setIcons pose toutes les tailles d'icône que le jeu fournit, dans la propriété que
+// les gestionnaires de fenêtres lisent.
+//
+// **Toutes les tailles et non une**, et c'est la différence avec Windows : là-bas il
+// faut choisir par emplacement — une grande pour le changement de fenêtre, une petite
+// pour la barre de titre —, ici la propriété porte une suite d'images et le
+// gestionnaire prend celle qui lui convient. C'est pourquoi le choix de taille
+// partagé entre backends ne sert pas à ce lot.
+//
+// Chaque image s'annonce par sa largeur et sa hauteur, puis ses pixels, un mot par
+// pixel. Les mots sont de l'ARGB à alpha **non** prémultiplié, ce que la conversion
+// partagée rend déjà tel quel — le moteur prémultiplie pour que le mélange d'un pixel
+// soit une multiplication, et une icône se décrit à l'envers.
+//
+// **Une icône dont les pixels ne remplissent pas ses dimensions est écartée.** Ce n'est
+// pas de la défensive en trop : la propriété se lit en suivant les tailles annoncées,
+// donc une image trop courte décalerait toutes les suivantes et le gestionnaire
+// afficherait du bruit. Un jeu qui remplit une planche à la main peut produire ce cas.
+//
+// **La propriété entière doit tenir dans une requête**, et rien ne la découpe ici :
+// deux icônes de 48 pixels font moins de vingt kilooctets, mais une de 256 en fait
+// deux cent cinquante. Au-delà du plafond, le serveur rend une erreur de longueur que
+// la synchronisation de l'ouverture rapporte — donc à l'ouverture, et non plus tard.
+func (c *conn) setIcons(window, atom uint32, icons []*render.Buffer) {
+	var data []byte
+
+	for _, icon := range icons {
+		if icon == nil || icon.Width == 0 || icon.Height == 0 {
+			continue
+		}
+		if len(icon.Pixels) != int(icon.Width)*int(icon.Height) {
+			continue
+		}
+
+		data = order.AppendUint32(data, uint32(icon.Width))
+		data = order.AppendUint32(data, uint32(icon.Height))
+		for _, word := range straightARGB(icon) {
+			data = order.AppendUint32(data, word)
+		}
+	}
+
+	// Rien à poser laisse l'icône du système, ce qui est le bon défaut : une
+	// propriété vide dirait au gestionnaire que le jeu n'a pas d'icône plutôt que
+	// qu'il n'en fournit pas.
+	if len(data) == 0 {
+		return
+	}
+	c.changeProperty(window, atom, atomCardinal, 32, data)
 }
 
 // setFloor dit au gestionnaire de fenêtres sous quelle taille la fenêtre ne doit pas
