@@ -176,8 +176,9 @@ commit messages and pull request descriptions. Each pair is kept in agreement
 within the same commit: a version that moves on its own is an oversight, not a
 translation for later. Licence notices, for their part, are in English.
 
-The roadmap and `docs/` stay in French only: they address whoever already works
-on the engine.
+The roadmap and `docs/` stay in French only: they are the two documents for which
+no English-speaking readership is expected, where the README and this guide have
+one.
 
 Contributions written in English are welcome and are not subject to the
 bilingual rule.

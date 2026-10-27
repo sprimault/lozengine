@@ -36,10 +36,18 @@ import (
 // Elle ne rend la main qu'à la fermeture, ce qui convient à un jeu écrit en Go et à
 // lui seul : un hôte qui possède sa boucle emploie [Engine] et appelle un pas par
 // image.
+//
+// **Elle rend nil quand la fenêtre s'est fermée normalement** — le joueur a cliqué la
+// croix, ou le jeu a demandé à partir — et une erreur sinon : la fenêtre n'a pas pu
+// s'ouvrir, ou ce qui l'affichait a cessé de répondre. Un jeu a donc de quoi distinguer
+// une sortie voulue d'un affichage perdu, au lieu de recevoir nil dans les deux cas.
 func Run(s *Scene, g Game, o Options) error {
-	// La file de messages d'une fenêtre appartient au thread qui l'a créée, et
-	// Windows l'impose. Sans cela, un changement de goroutine ferait pomper depuis
-	// un thread qui ne reçoit rien, et la fenêtre paraîtrait figée.
+	// Le contrat de fenêtre veut que tout se passe sur le thread qui l'a ouverte.
+	// Windows l'exige — la file de messages appartient au thread créateur, et sans
+	// le verrou un changement de goroutine ferait pomper depuis un thread qui ne
+	// reçoit rien, la fenêtre paraissant figée. Ailleurs le verrou est gratuit, et
+	// une famille future le réclamera à son tour : le poser une fois ici épargne
+	// d'avoir à décider par plateforme.
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
@@ -80,7 +88,7 @@ func Run(s *Scene, g Game, o Options) error {
 	for {
 		in := window.Input()
 		if window.Closed() {
-			return nil
+			return window.Err()
 		}
 
 		engine.Step(g, in)
@@ -104,7 +112,7 @@ func Run(s *Scene, g Game, o Options) error {
 		// d'afficher un dernier écran : il décide de partir pendant son pas, l'image
 		// de ce pas sort quand même, et la boucle rend la main ensuite.
 		if quitting != nil && quitting.Quitting() {
-			return nil
+			return window.Err()
 		}
 
 		wait, after := pace(time.Now(), next, o.Tick)

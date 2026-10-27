@@ -207,7 +207,12 @@ internal/backend/…    contrat de fenêtre, familles, présentation  input, ren
 internal/audio        mixeur et sorties système                 aucune
 internal/viewer       scènes scriptées, rejeu, images           tous les précédents
 cmd/viewer            commande de rejeu                         viewer
+examples/…            ce qu'un jeu écrit, en entier             lozengine
 ```
+
+Les exemples sont dans ce tableau parce qu'ils sont la mesure du critère de fin d'un
+jalon : ils n'importent que le paquet racine, et le jour où l'un d'eux doit atteindre un
+paquet interne, c'est que la racine ne donne pas ce qu'elle promet.
 
 `scene` et `sorting` atteignent `render` parce que l'un décrit des entités qui portent
 une teinte et des drapeaux, et que l'autre produit la liste de quads : sans cela, le

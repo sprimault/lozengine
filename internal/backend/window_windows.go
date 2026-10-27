@@ -212,6 +212,19 @@ func (w *window) Closed() bool {
 	return w.closed
 }
 
+// Err rend toujours nil : sous Windows, une fenêtre ne meurt que parce qu'on la ferme.
+//
+// Rien de ce que le backend appelle après l'ouverture ne rapporte un échec dont la
+// boucle pourrait faire quelque chose. La présentation sur une fenêtre réduite n'en est
+// pas un, et la file de messages ne se coupe pas. Ce qui pouvait échouer l'a fait dans
+// Open, qui rend son erreur.
+//
+// Le membre du contrat existe pour les familles qui parlent à un serveur par une
+// socket, où le lien se perd sans que personne n'ait rien fermé.
+func (w *window) Err() error {
+	return nil
+}
+
 // Close rend au système ce qu'Open a pris. Appeler deux fois est sans effet.
 func (w *window) Close() {
 	// L'état se pose d'abord : une fenêtre fermée ne présentera plus rien, et c'est

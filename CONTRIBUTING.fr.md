@@ -179,8 +179,9 @@ pull request. Chaque paire est tenue d'accord dans le même commit : une version
 qui avance seule est un oubli, pas une traduction à faire plus tard. Les mentions
 de licence, elles, sont en anglais.
 
-La feuille de route et `docs/` restent en français seulement : ils s'adressent à
-qui travaille déjà sur le moteur.
+La feuille de route et `docs/` restent en français seulement : ce sont les deux
+documents dont on n'attend pas de lectorat anglophone, là où le README et ce guide
+en ont un.
 
 Les contributions rédigées en anglais sont les bienvenues et ne sont pas
 soumises à la règle bilingue.

@@ -14,12 +14,28 @@ import (
 
 // Window est ce qu'une famille de plateformes doit savoir faire, et rien de plus.
 //
-// Cinq méthodes, parce que la boucle n'a besoin que de cela : lire le clavier,
-// présenter une image, savoir dans quoi elle présente, savoir si on lui a demandé de
-// partir, et partir.
+// Six méthodes, parce que la boucle n'a besoin que de cela : lire le clavier, présenter
+// une image, savoir dans quoi elle présente, savoir si on lui a demandé de partir, dire
+// ce qui l'a fait partir, et partir.
+//
+// **L'ordre d'appel fait partie du contrat, et Input vient en premier** : c'est elle qui
+// vide la file d'événements, donc tout ce que les autres rapportent d'un pas a été
+// appris là. Les interroger avant elle rend l'état du pas précédent, ce qui fait une
+// fenêtre en retard d'une image.
+//
+// **Tout se passe sur le thread qui a ouvert la fenêtre**, et aucune méthode n'est sûre
+// depuis une autre goroutine. La boucle du paquet racine verrouille le sien pour cela.
+//
+// **Size et Closed sont des accesseurs purs** : elles rendent ce que la dernière Input a
+// appris, sans interroger le système. Une famille qui parle par une socket paierait
+// autrement un aller-retour complet par image pour une valeur que le serveur lui a déjà
+// annoncée par un événement.
 type Window interface {
 	// Input rend l'état du clavier pour le pas qui commence, les touches tenues
 	// comme celles qui viennent d'être enfoncées.
+	//
+	// C'est elle qui vide la file d'événements de la plateforme, donc elle s'appelle
+	// une fois par pas et en premier.
 	Input() input.Input
 
 	// Present pose le tampon à l'écran, tel quel.
@@ -27,7 +43,8 @@ type Window interface {
 	// Sans erreur : le chemin d'une image n'en rend pas, et il n'y a personne à qui
 	// se plaindre soixante fois par seconde. Une présentation qui ne peut pas avoir
 	// lieu — fenêtre minimisée, par exemple — ne fait rien, ce qui est le bon
-	// comportement et non un échec. Ce qui est terminal se lit par Closed.
+	// comportement et non un échec. Ce qui est terminal se lit par Closed, et sa
+	// cause par Err.
 	Present(t *render.Buffer)
 
 	// Size rend les dimensions de la zone utile, en pixels, hors bordures et
@@ -37,6 +54,17 @@ type Window interface {
 	// Closed dit que la fenêtre ne présentera plus rien : le joueur l'a fermée, ou
 	// le système l'a reprise.
 	Closed() bool
+
+	// Err dit ce qui a mis fin à la fenêtre, et nil quand c'est le joueur.
+	//
+	// Elle sépare des sorties que la boucle voit sinon identiques : la croix
+	// cliquée, qui est le régime normal, une erreur de protocole, un lien coupé.
+	// Sans elle, un serveur d'affichage qui meurt se rapporte comme un arrêt
+	// propre — et c'est le régime courant du développement d'un backend.
+	//
+	// Elle se lit à la sortie de la boucle, quelle qu'en soit la cause. Ce qui
+	// échoue avant que la fenêtre existe est rendu par Open.
+	Err() error
 
 	// Close rend au système ce qu'Open a pris. Appeler deux fois est sans effet.
 	Close()
