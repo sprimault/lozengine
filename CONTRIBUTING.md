@@ -134,6 +134,15 @@ container on that version's official image, where only versioned content enters
 — which is what the runner does, and it needs `docker`, the one tool the
 repository requires nowhere else.
 
+The container is destroyed every time, but its **build cache** is kept in a named
+volume: the check goes from eighteen seconds to three. The system therefore stays
+fresh on every call, and what is kept cannot let a check pass on a green run by
+mistake — Go finds a cache entry by the content it describes, so an entry that no
+longer matches is ignored. The tests themselves are **rerun on every call** despite
+that cache, which would otherwise hold their results too: it costs nothing, and
+without it the target would stop proving anything whenever nothing had changed.
+`make container-clean` empties that cache, and nothing depends on it.
+
 Both stay outside `make check`, which must keep passing on a fresh clone with
 nothing installed.
 
