@@ -106,6 +106,7 @@ const (
 	opChangeProperty = 18
 	opCreateGC       = 55
 	opPutImage       = 72
+	opGetImage       = 73
 	opQueryExtension = 98
 
 	// opGetInputFocus ne sert pas à ce qu'elle nomme : c'est la requête à réponse la
@@ -193,6 +194,11 @@ const (
 	sizeHintsMinSize  = 1 << 4
 	sizeHintsMinIndex = 5
 )
+
+// planeMaskAll demande toutes les couches de bits d'une image, par opposition à une
+// seule — ce qui n'a de sens que sur un affichage par plans, que le moteur n'emploie
+// pas.
+const planeMaskAll = 0xFFFFFFFF
 
 // zPixmap est le format d'image où les composantes d'un pixel sont contiguës, par
 // opposition aux formats par plan de bits que le protocole porte aussi.

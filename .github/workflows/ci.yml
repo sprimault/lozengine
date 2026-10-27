@@ -98,10 +98,213 @@ jobs:
           go-version: ${{ steps.go.outputs.version }}
 
       # La suite de non-régression est visuelle mais passe par le rastériseur
-      # logiciel : aucun test n'ouvre de fenêtre, et les runners n'ont pas
-      # d'écran.
+      # logiciel : elle n'ouvre aucune fenêtre, et les runners n'ont pas d'écran.
+      #
+      # Un cas en ouvre une depuis le jalon 3, et il se saute ici faute de serveur
+      # d'affichage — c'est le job `Affichage` qui lui en fournit un et lui interdit
+      # de se sauter.
       - name: Tests
         run: go test ./...
+        env:
+          CGO_ENABLED: 0
+
+  # Tout ce qui précède éprouve le moteur sans écran. Ce job est le seul qui parle à
+  # un vrai serveur d'affichage, et c'est lui qui dit si le backend X11 parle
+  # correctement le protocole : le reste ne le vérifie que contre une paire de
+  # sockets qui joue le serveur.
+  #
+  # **Les deux serveurs sans écran, dans une matrice, parce que c'est le même
+  # harnais** : seul ce qui écoute derrière change. Xvfb est un serveur X complet et
+  # autonome ; Xwayland est un client Wayland, donc il lui faut un compositeur, et
+  # c'est pourquoi la seconde ligne installe weston. Ni l'un ni l'autre n'a de
+  # gestionnaire de fenêtres, donc ce job ne dit rien du reparentage, des décorations
+  # ni du vrai chemin de fermeture.
+  #
+  # **`fail-fast: false` parce que les deux verdicts sont distincts** : un backend qui
+  # marche sous Xvfb et pas sous Xwayland est précisément ce qu'on veut apprendre, et
+  # couper la matrice au premier échec le cacherait.
+  #
+  # Le dispositif s'installe ici et nulle part ailleurs : un runner s'installe,
+  # s'éprouve et se jette, là où une machine de développement partagée garderait les
+  # paquets sans que personne ne sache plus pourquoi.
+  affichage:
+    name: Affichage — ${{ matrix.serveur }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # `clavier` dit si une touche injectée peut atteindre la fenêtre. Sous Xvfb
+          # oui, le focus se posant par une requête du protocole. Sous Xwayland non :
+          # le focus clavier appartient au compositeur, et un compositeur sans écran
+          # ni shell interactif n'en donne à personne — mesuré le 27 octobre 2026, la
+          # touche part et n'arrive nulle part. Ce n'est pas un défaut du moteur, et
+          # prétendre l'éprouver là serait faux.
+          - serveur: Xvfb
+            paquets: xvfb x11-utils xdotool
+            clavier: "oui"
+          - serveur: Xwayland
+            paquets: weston xwayland x11-utils xdotool
+            clavier: "non"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Paquets du serveur
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ${{ matrix.paquets }}
+
+      # Les deux répertoires sont créés à la main, et ce n'est pas une précaution :
+      # mesuré en conteneur le 27 octobre 2026, Xwayland échoue par
+      # « failed to bind to /tmp/.X11-unix/X0: No such file or directory » quand le
+      # premier manque, et weston refuse de démarrer sans le second.
+      #
+      # **Mais la création tolère qu'il soit déjà là, et c'est un fait de runner qu'un
+      # conteneur ne reproduit pas** : ici le répertoire existe et appartient à root,
+      # donc en changer les droits est refusé — et avec `bash -e`, l'étape s'arrêtait
+      # là. Les deux jobs ont échoué ainsi au premier passage, sur une ligne de
+      # préparation et non sur le serveur.
+      #
+      # Taire ce refus ne cache rien : si le répertoire manquait vraiment, le serveur
+      # ne pourrait pas y ouvrir sa socket, et c'est l'attente ci-dessous qui le dirait
+      # — avec le journal du serveur, donc mieux.
+      #
+      # L'attente se fait sur la socket et non sur une durée fixe : un `sleep` assez
+      # long pour être sûr serait du temps perdu à chaque passage, et un `sleep` trop
+      # court donnerait un échec intermittent qu'on chercherait dans le backend.
+      - name: Serveur sans écran
+        run: |
+          mkdir -p /tmp/.X11-unix 2>/dev/null || true
+          chmod 1777 /tmp/.X11-unix 2>/dev/null || true
+          export XDG_RUNTIME_DIR=/tmp/lozengine-run
+          mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
+          echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >> "$GITHUB_ENV"
+
+          case "${{ matrix.serveur }}" in
+            Xvfb)
+              Xvfb :99 -screen 0 1280x1024x24 >/tmp/serveur.log 2>&1 &
+              echo "DISPLAY=:99" >> "$GITHUB_ENV"
+              attendu=/tmp/.X11-unix/X99
+              ;;
+            Xwayland)
+              weston --backend=headless-backend.so --xwayland \
+                     --socket=lozengine-wayland >/tmp/serveur.log 2>&1 &
+              echo "DISPLAY=:0" >> "$GITHUB_ENV"
+              attendu=/tmp/.X11-unix/X0
+              ;;
+          esac
+
+          for _ in $(seq 100); do
+            [ -e "$attendu" ] && break
+            sleep 0.2
+          done
+          if [ ! -e "$attendu" ]; then
+            echo "le serveur n'a pas ouvert $attendu :"
+            cat /tmp/serveur.log
+            exit 1
+          fi
+
+      # Le relevé que le brief du jalon attendait, et qui ne coûte rien ici : il dit
+      # l'ordre des octets d'image, la taille maximale d'une requête et les masques
+      # des visuels — dont tout le transfert d'image dépend — et quelles extensions
+      # le serveur porte. Il est consigné dans le journal du job plutôt que vérifié,
+      # parce que c'est une observation et non une promesse.
+      - name: Relevé du serveur
+        run: |
+          xdpyinfo | grep -iE "name of display|version number|image byte order|maximum request size|depth of root window"
+          xdpyinfo | grep -i "red, green, blue masks" | head -1
+          xdpyinfo -queryExtensions | grep -E "^    (MIT-SHM|BIG-REQUESTS|XKEYBOARD)" || true
+
+      # `LOZENGINE_DISPLAY` interdit au cas de se sauter. Sans elle, un serveur qui
+      # n'aurait pas démarré laisserait ce job vert en sautant le seul cas qu'il
+      # existe pour exécuter — et un saut n'est pas un échec.
+      - name: Le serveur détient ce qu'on lui a remis
+        run: go test -count=1 -v -run TestTheServerHoldsExactlyWhatWasPresented ./internal/backend/
+        env:
+          CGO_ENABLED: 0
+          LOZENGINE_DISPLAY: 1
+
+      # Le critère de fin du jalon demande que **l'exemple** tourne, et non qu'un cas
+      # de test passe : celui-ci ouvre la fenêtre directement, sans traverser la
+      # boucle à pas fixe ni l'agrandissement vers la fenêtre. Cette étape éprouve
+      # l'assemblage entier, et c'est la seule du dépôt qui le fasse.
+      #
+      # **Les deux assertions portent sur un contenu connu, jamais sur une absence
+      # d'erreur** : un job sans écran ne remarque pas que rien ne s'affiche, donc
+      # « le processus n'a pas planté » ne vaudrait presque rien.
+      #
+      #   1. le serveur porte une fenêtre dont le nom est celui que l'exemple pose,
+      #      ce qui dit que l'ouverture et le titre ont abouti ;
+      #   2. une vraie touche d'échappement le fait **sortir avec un code nul**, ce
+      #      qui dit que la boucle tourne, que le clavier arrive jusqu'au jeu et que
+      #      la sortie est propre. Aucun test ne traverse ce chemin.
+      #
+      # La touche part par le serveur lui-même et non par un signal : c'est ce qui
+      # fait la différence entre éprouver le clavier et éprouver `kill`.
+      #
+      # **La fenêtre se cherche par `xdotool` et non en filtrant la liste des
+      # fenêtres**, et ce détail a coûté un essai : l'outil d'inspection lit la
+      # propriété de nom d'origine, dont le type ne porte que du latin-1, alors que le
+      # titre de l'exemple contient un tiret cadratin. Le nom n'y apparaît donc pas,
+      # là où `xdotool` lit aussi la propriété UTF-8 que le backend pose en second.
+      - name: L'exemple ouvre sa fenêtre et répond au clavier
+        run: |
+          go build -o /tmp/lozengine-walk ./examples/walk
+          /tmp/lozengine-walk &
+          exemple=$!
+
+          fenetre=
+          for _ in $(seq 100); do
+            fenetre=$(xdotool search --name lozengine 2>/dev/null | head -1 || true)
+            [ -n "$fenetre" ] && break
+            kill -0 "$exemple" 2>/dev/null || break
+            sleep 0.2
+          done
+
+          if [ -z "$fenetre" ]; then
+            echo "le serveur ne porte aucune fenêtre nommée par l'exemple"
+            kill "$exemple" 2>/dev/null || true
+            exit 1
+          fi
+          echo "fenêtre de l'exemple : $fenetre"
+
+          if [ "${{ matrix.clavier }}" != "oui" ]; then
+            # Là où le focus clavier n'existe pour personne, l'assertion s'arrête à
+            # ce qui est vérifiable : l'exemple a ouvert sa fenêtre nommée et il la
+            # tient encore. C'est moins que sous l'autre serveur, et c'est dit.
+            if ! kill -0 "$exemple" 2>/dev/null; then
+              echo "l'exemple s'est arrêté après avoir ouvert sa fenêtre"
+              exit 1
+            fi
+            kill "$exemple"
+            exit 0
+          fi
+
+          # Le focus se pose explicitement : sans gestionnaire de fenêtres personne ne
+          # l'attribue, et une touche injectée irait à ce qui se trouve sous le
+          # pointeur. Cela marche par hasard quand la fenêtre est placée à l'origine,
+          # et se casserait au premier changement de placement.
+          xdotool windowfocus "$fenetre"
+          xdotool key --clearmodifiers Escape
+
+          # C'est l'exemple qui décide de partir : on attend sa sortie plutôt que de
+          # la provoquer, et son code nul est l'assertion.
+          for _ in $(seq 50); do
+            kill -0 "$exemple" 2>/dev/null || break
+            sleep 0.2
+          done
+
+          if kill -0 "$exemple" 2>/dev/null; then
+            kill "$exemple" 2>/dev/null || true
+            echo "l'exemple n'a pas répondu à l'échappement"
+            exit 1
+          fi
+          wait "$exemple"
         env:
           CGO_ENABLED: 0
 
@@ -180,14 +383,20 @@ jobs:
   bilan:
     name: Bilan
     if: always()
-    needs: [controles, tests, plancher]
+    needs: [controles, tests, affichage, plancher]
     runs-on: ubuntu-latest
     steps:
+      # Un job ajouté à la liste des dépendances sans l'être à celle des tests
+      # serait attendu sans être lu : le bilan passerait au vert sur son échec, et
+      # la protection de branche n'y verrait rien. Les deux listes se tiennent donc
+      # d'accord, et c'est la seule chose à vérifier en ajoutant un job.
       - name: Résultat des contrôles
         run: |
           echo "contrôles : ${{ needs.controles.result }}"
           echo "tests     : ${{ needs.tests.result }}"
+          echo "affichage : ${{ needs.affichage.result }}"
           echo "plancher  : ${{ needs.plancher.result }}"
           [ "${{ needs.controles.result }}" = "success" ] || exit 1
           [ "${{ needs.tests.result }}" = "success" ] || exit 1
+          [ "${{ needs.affichage.result }}" = "success" ] || exit 1
           [ "${{ needs.plancher.result }}" = "success" ] || exit 1
