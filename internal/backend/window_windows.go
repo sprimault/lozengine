@@ -65,6 +65,18 @@ type window struct {
 	lastW     uint16
 	lastH     uint16
 
+	// minW et minH sont le plancher de redimensionnement, en taille de fenêtre
+	// entière et non en zone utile : c'est ce que `wmGetMinMaxInfo` attend. En
+	// dessous, l'agrandissement entier ne tiendrait plus l'image et elle se
+	// découperait sans que rien ne le dise.
+	//
+	// La mesure est prise à l'ouverture, bordures du thème comprises. Un écran à
+	// autre densité en changerait l'épaisseur, et le plancher serait alors faux de
+	// quelques pixels : le backend ne suit pas `WM_DPICHANGED`, et le découpage que
+	// ces pixels donneraient coûte moins que de poursuivre une taille qui bouge.
+	minW uint16
+	minH uint16
+
 	// icons porte les poignées d'icône posées sur la fenêtre, à rendre au système
 	// avec elle. Le système ne les libère pas de lui-même : elles survivraient à la
 	// fenêtre, et un jeu qui rouvre la sienne en fuirait deux par ouverture.
@@ -91,6 +103,24 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	}
 
 	switch msg {
+	case wmGetMinMaxInfo:
+		// Le système passe l'adresse de la structure dans le `lParam`, et c'est la
+		// convention de la procédure de fenêtre : il n'y a pas d'autre façon de
+		// l'atteindre. La valeur est lue dans le message et jamais gardée, donc le
+		// pointeur ne survit pas à l'appel.
+		//
+		// Le plancher nul est le régime de la création : ce message ouvre la
+		// séquence, avant que la poignée soit enregistrée ici, et `byHandle` rend
+		// alors nil — le cas ne passe donc pas par ici. Un plancher nul resterait
+		// sans effet de toute façon, le système n'imposant rien en dessous de ses
+		// propres minimums.
+		if w.minW == 0 || w.minH == 0 {
+			break
+		}
+		info := (*minMaxInfo)(unsafe.Pointer(lParam))
+		info.minTrack = point{x: int32(w.minW), y: int32(w.minH)}
+		return 0
+
 	case wmClose:
 		// La fermeture demandée par le joueur n'est pas la destruction : on note, et
 		// c'est la boucle qui décide quand s'arrêter.

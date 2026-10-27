@@ -45,6 +45,18 @@ notes de publication.
 
 ## [Non publié]
 
+### Corrigé
+
+- La fenêtre ne se réduit plus sous la taille de l'image. En dessous, elle se
+  découpait : les bords sortaient de la vue sans que rien ne le dise.
+
+***
+
+### Fixed
+
+- The window no longer shrinks below the size of the image. Under it, the image was
+  cropped: its edges left the view with nothing to say so.
+
 ## [0.3.2] — 2026-10-26
 
 ### Ajouté

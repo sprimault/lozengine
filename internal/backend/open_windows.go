@@ -60,6 +60,8 @@ func Open(o Options) (Window, error) {
 	w := &window{
 		lastW: o.Width,
 		lastH: o.Height,
+		minW:  outerW,
+		minH:  outerH,
 		info:  newBitmapInfo(),
 		args:  newPresentArgs(),
 	}

@@ -118,8 +118,64 @@ fmt: depot
 	  exit 1; \
 	fi
 
+# Les sites où `unsafeptr` signale une conversion voulue, par fichier et par compte.
+#
+# Le contrôle attrape la lecture d'une structure que Win32 passe par adresse dans un
+# `lParam` : c'est la convention de la procédure de fenêtre, dont il n'existe pas
+# d'autre voie, et `go vet` ne sait pas la distinguer d'un `uintptr` gardé puis
+# reconverti — le défaut qu'il cherche vraiment.
+#
+# La liste est close et on **exige** ce qu'elle décrit : un site de plus échoue, un
+# site qui disparaît aussi. C'est la forme du job `Plancher`, qui ne garde le plancher
+# de Go qu'en exigeant un échec — un contrôle qui ne peut pas échouer n'en est pas un,
+# et une liste qui survit à ce qu'elle décrit ne garde rien. Désactiver `unsafeptr`
+# pour le paquet aurait couvert d'avance les backends qu'il va accueillir.
+#
+# Par fichier et par compte, jamais par ligne : un numéro de ligne se décale à la
+# première édition au-dessus du site, et le contrôle rougirait sans défaut.
+UNSAFEPTR = internal/backend/window_windows.go=1
+
+# Les deux plateformes, pour la raison de `deps` : un fichier sous contrainte de
+# construction ne se voit pas depuis l'autre. Les comptes portent donc sur l'union des
+# deux passes, les fichiers étant disjoints par leur suffixe.
+#
+# Les séparateurs sont normalisés avant comparaison, la sortie portant des antislashs
+# sous Windows. L'antislash se donne à `tr` en octal : écrit tel quel, il traverse la
+# recette et le shell, et `tr` avertit qu'il en reste un seul en fin de chaîne.
+#
+# **Les lignes de titre de paquet sont retirées, et c'est la version de Go qui les
+# décide.** Sous 1.22, le plancher du module, `go vet` annonce chaque paquet par une
+# ligne `# chemin` — et une seconde entre crochets pour un résultat qui remonte de son
+# cache. Sous 1.27 il n'en émet aucune. Rien n'est perdu à les jeter : un diagnostic
+# est une ligne `fichier:ligne:colonne:`, et une erreur de compilation garde la sienne.
+#
+# Le défaut a traversé le poste et la machine de contrôle sans mordre, les deux
+# résolvant une toolchain récente là que l'intégration continue mesure le plancher.
+# Pour l'éprouver ici : `GOTOOLCHAIN=go1.22.0 make vet`.
+#
+# Et le code de sortie de `go vet` est ignoré au profit de sa sortie : ce qui n'est pas
+# dans la liste reste affiché et fait échouer la cible, y compris une erreur de
+# compilation.
 vet:
-	go vet ./...
+	@sortie=$$(for os in windows linux; do GOOS=$$os go vet ./... 2>&1; done \
+	  | tr '\134' '/' | grep -v '^#' || true); \
+	reste="$$sortie"; \
+	for site in $(UNSAFEPTR); do \
+	  fichier=$${site%=*}; attendus=$${site#*=}; \
+	  motif="^$$fichier:[0-9][0-9]*:[0-9][0-9]*: possible misuse of unsafe\.Pointer$$"; \
+	  vus=$$(printf '%s\n' "$$sortie" | grep -c "$$motif" || true); \
+	  if [ "$$vus" != "$$attendus" ]; then \
+	    echo "unsafeptr : $$vus site(s) dans $$fichier, $$attendus attendu(s)"; \
+	    echo "une conversion de plus se décide en pull request, elle ne s'ajoute pas"; \
+	    exit 1; \
+	  fi; \
+	  reste=$$(printf '%s\n' "$$reste" | grep -v "$$motif" || true); \
+	done; \
+	reste=$$(printf '%s\n' "$$reste" | grep -v '^$$' || true); \
+	if [ -n "$$reste" ]; then \
+	  echo "$$reste"; \
+	  exit 1; \
+	fi
 
 # Les dépendances admises, et elles seules. La liste est close : docs/go.md dit ce
 # que chacune doit passer pour y entrer, et pourquoi ces deux-là y sont.
