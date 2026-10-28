@@ -45,6 +45,22 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.2] — 2026-10-28
+
+### Corrigé
+
+- La documentation d'`Aspect.Reveal` annonçait que l'origine du recouvrement ne se
+  distinguait pas, dans la version même qui ajoutait `RevealOptions.TintByDecor` pour
+  la distinguer. Elle renvoie désormais aux options au lieu d'énoncer un état.
+
+***
+
+### Fixed
+
+- The documentation of `Aspect.Reveal` stated that the origin of the overlap could not
+  be told apart, in the very release adding `RevealOptions.TintByDecor` to tell it
+  apart. It now points at the options instead of stating a state.
+
 ## [0.5.1] — 2026-10-28
 
 Ce que le premier usage du moteur par un jeu a renvoyé sur la `0.5.0`, et qu'il valait
