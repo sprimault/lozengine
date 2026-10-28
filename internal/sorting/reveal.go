@@ -15,8 +15,9 @@ import (
 // quad d'elle-même dans la couche qu'elle a demandée.
 //
 // **Elle passe avant le tri, et c'est ce qui la rend simple.** Savoir ce qui cache une
-// chose demande de savoir ce qui passe devant elle — mais la clé le dit déjà, une clé
-// plus grande se peignant après. Attendre l'ordre final obligerait à réinsérer les
+// chose demande de savoir ce qui passe devant elle — mais tout l'ordre est déjà connu :
+// une clé plus grande se peint après, et ce qu'elle laisse à égalité se départage sur
+// des pièces que la collecte a posées. Attendre l'ordre final obligerait à réinsérer les
 // quads produits dans une liste déjà rangée ; produits ici, ils se rangent avec les
 // autres et rien n'a à les traiter à part.
 //
@@ -26,9 +27,9 @@ import (
 //
 // **Ce qui cache est ce qui se peint après, et rien d'autre ne le qualifie** : une
 // cellule de décor, une entité qui s'interpose, une pièce d'écran posée plus bas que
-// la couche de révélation. La comparaison porte sur la clé, donc l'origine du quad
-// n'entre jamais en compte — ce qui est voulu, l'encerclement par des créatures étant
-// le cas que la révélation sert d'abord.
+// la couche de révélation. La comparaison porte sur l'ordre de dessin, donc l'origine
+// du quad n'entre jamais en compte — ce qui est voulu, l'encerclement par des créatures
+// étant le cas que la révélation sert d'abord.
 //
 // Ce qui est révélé est la chose, jamais ce qui la cache. Rendre un mur transparent
 // découvrirait ce qui se tient derrière lui autant que ce qui s'y trouve, et cohue a
@@ -90,11 +91,18 @@ func (t *Sorter) revealHidden() {
 // Le cumul compte deux fois ce que deux choses se recouvrant entre elles cachent au
 // même endroit, et c'est assumé : corriger demanderait de tenir la surface déjà
 // couverte, pour un seuil que le jeu règle de toute façon à l'œil.
+//
+// **L'ordre de dessin ne se lit pas sur la clé seule.** Deux choses de même couche,
+// étage, profondeur, hauteur et planche ont des clés égales, l'index stable n'étant pas
+// encore écrit : c'est le départage qui range leur groupe, et il est déjà connu ici
+// puisque [Sorter.before] ne lit que ce que la collecte a posé. Le quad de rang i
+// s'écarte du même geste, le départage d'une chose avec elle-même rendant faux.
 func (t *Sorter) hiddenEnough(i, n, after int) (hidden, byDecor bool) {
 	total, decor := 0, 0
+	key := t.keys[i]
 
 	for j := range n {
-		if t.keys[j] <= t.keys[i] {
+		if key > t.keys[j] || (key == t.keys[j] && !t.before(uint32(i), uint32(j))) {
 			continue
 		}
 

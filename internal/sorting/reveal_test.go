@@ -124,6 +124,58 @@ func TestRevealCountsAnyOrigin(t *testing.T) {
 	}
 }
 
+// TestRevealCountsWhatSharesItsKey garde que la révélation compte ce qui porte la même
+// clé qu'elle et que le départage peint après.
+//
+// **C'est le seul cas à pouvoir faire échouer cette moitié du relevé**, et les autres ne
+// l'approchent pas : ils posent la chose qui cache plus profond, donc les clés diffèrent
+// et les comparer suffit à les ordonner. Ici les deux choses partagent couche, étage,
+// planche et profondeur — `x+y` vaut dix-sept et demi des deux côtés —, donc leurs clés
+// sont strictement égales au moment du relevé, qui tourne avant le tri et avant que
+// l'index stable soit écrit. Ce qui range le groupe est alors le départage, et celle des
+// deux qu'il peint en second cache bel et bien l'autre.
+//
+// L'égalité des profondeurs se vérifie au lieu de se supposer : si la quantification
+// changeait, les clés cesseraient d'être égales et le cas passerait au vert en
+// n'éprouvant plus rien.
+func TestRevealCountsWhatSharesItsKey(t *testing.T) {
+	// L'abscisse écran croît avec `y - x` et le départage peint de la gauche vers la
+	// droite : la chose cachée est donc celle dont `x` est le plus grand.
+	const (
+		markedX, markedY = 9.0, 8.5
+		coverX, coverY   = 8.5, 9.0
+	)
+
+	m := geometry.Dimetric(32, 16)
+	_, _, markedDepth, _ := m.Project(markedX, markedY, 0)
+	if _, _, coverDepth, _ := m.Project(coverX, coverY, 0); markedDepth != coverDepth {
+		t.Fatalf("profondeurs %d et %d, attendues égales", markedDepth, coverDepth)
+	}
+
+	s := testScene(t, 16, 4)
+
+	hidden := figure()
+	hidden.Reveal = 2
+	if _, ok := s.Place(scene.Entity{X: markedX, Y: markedY, Aspect: hidden}); !ok {
+		t.Fatal("entité cachée refusée")
+	}
+	if _, ok := s.Place(scene.Entity{X: coverX, Y: coverY, Aspect: figure()}); !ok {
+		t.Fatal("entité qui cache refusée")
+	}
+
+	image := New(s).Frame()
+	if len(image) != 3 {
+		t.Fatalf("%d quads, attendu 3", len(image))
+	}
+
+	// La révélation se peint en dernier, sa couche dominant celle des deux autres, et
+	// elle reprend la position de la chose cachée.
+	if first, revealed := image[0], image[2]; first.X != revealed.X || first.Y != revealed.Y {
+		t.Errorf("révélation en (%d, %d), attendu (%d, %d)",
+			revealed.X, revealed.Y, first.X, first.Y)
+	}
+}
+
 // TestRevealHoldsUnderItsThreshold vérifie qu'un recouvrement sous le seuil ne
 // déclenche rien.
 //
