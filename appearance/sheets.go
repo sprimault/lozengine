@@ -14,9 +14,10 @@ import (
 // Directions est le nombre de directions que portent des planches dessinées : les
 // quatre cardinales de l'écran et les quatre diagonales.
 //
-// **C'est la seule occurrence de ce nombre dans le moteur**, et un contrôle le
-// vérifie. Un fournisseur qui en porte un autre — seize pour une fabrique volumique —
-// déclare le sien, et rien ailleurs ne suppose l'un ou l'autre.
+// **Le nombre ne vit que dans cette constante**, et [Provider] le prend en paramètre
+// plutôt que de le supposer : un fournisseur qui en porte un autre — seize pour une
+// fabrique volumique — déclare le sien, et rien hors de ce paquet ne suppose l'un ou
+// l'autre.
 //
 // Huit parce que c'est ce qu'un jeu dessine à la main sans y passer sa vie, et parce
 // que [render.MirrorX] permet d'en tirer la moitié : l'est se déduit de l'ouest sans

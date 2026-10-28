@@ -88,12 +88,11 @@ redimensionner, de la déplacer ni de la passer en plein écran, et rien ne le
 permettra. Un jeu qui veut sa propre fenêtre a déjà la seconde porte, où le moteur
 n'en ouvre aucune.
 
-Cinq paquets sont publics parce qu'on doit pouvoir lire la documentation de leurs
-types : `render`, `geometry`, `scene`, `raster` et `input`. Tout le reste vit sous
-`internal/`,
-que le compilateur interdit d'importer depuis un autre module — un hôte ne peut donc
-pas se lier à un backend en contournant la frontière. Le paquet racine republie
-l'essentiel, pour qu'un jeu n'ait qu'un seul import à écrire.
+Six paquets sont publics parce qu'on doit pouvoir lire la documentation de leurs
+types : `render`, `geometry`, `scene`, `raster`, `input` et `appearance`. Tout le reste
+vit sous `internal/`, que le compilateur interdit d'importer depuis un autre module —
+un hôte ne peut donc pas se lier à un backend en contournant la frontière. Le paquet
+racine republie l'essentiel, pour qu'un jeu n'ait qu'un seul import à écrire.
 
 ## Ce qu'il ne fait pas
 
@@ -158,7 +157,7 @@ make example   # lance le plus petit exemple, dans une fenêtre
 make test      # la suite de non-régression, qui tourne sans écran
 make check     # ce qui doit passer avant un commit
 make frontiere # le noyau ne touche ni au système ni à un backend
-make cover     # couverture, ouverte dans le navigateur
+make cover     # couverture, écrite dans .tmp/couverture.html
 make bench     # bancs d'essai, un profil par paquet
 make clean
 ```

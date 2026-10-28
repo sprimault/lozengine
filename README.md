@@ -88,12 +88,11 @@ done by driving the engine by hand.
 move it or take it fullscreen, and nothing will. A game that wants a window of its
 own already has the second door, where the engine opens none.
 
-Five packages are public because the documentation of their types has to be readable:
-`render`, `geometry`, `scene`, `raster` and `input`. Everything else lives under
-`internal/`,
-which the compiler forbids importing from another module — so a host cannot bind to a
-backend by going around the boundary. The root package republishes the essentials, so
-that a game has a single import to write.
+Six packages are public because the documentation of their types has to be readable:
+`render`, `geometry`, `scene`, `raster`, `input` and `appearance`. Everything else
+lives under `internal/`, which the compiler forbids importing from another module — so
+a host cannot bind to a backend by going around the boundary. The root package
+republishes the essentials, so that a game has a single import to write.
 
 ## What it does not do
 
@@ -157,7 +156,7 @@ make example   # runs the smallest example, in a window
 make test      # the regression suite, which runs headless
 make check     # what has to pass before a commit
 make frontiere # the core touches neither the system nor a backend
-make cover     # coverage, opened in the browser
+make cover     # coverage, written to .tmp/couverture.html
 make bench     # benchmarks, one profile per package
 make clean
 ```

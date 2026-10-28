@@ -497,8 +497,8 @@ func NewSheets() *Sheets { return appearance.NewSheets() }
 //
 // Republié parce que c'est le nombre de colonnes qu'une planche doit porter, donc ce
 // qu'il faut connaître avant d'appeler [Sheet.CutGrid]. Le retenir obligeait un jeu à
-// écrire le huit chez lui, c'est-à-dire à créer la seconde occurrence que le contrôle
-// d'unicité ne voit pas — l'inverse de ce qu'on cherchait.
+// écrire le huit chez lui, c'est-à-dire à le dupliquer hors du paquet qui le déclare —
+// l'inverse de ce qu'on cherchait.
 const Directions = appearance.Directions
 
 // Font décrit une planche de glyphes à cellule fixe, et c'est tout ce qu'il faut au

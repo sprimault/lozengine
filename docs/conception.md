@@ -228,10 +228,10 @@ scénario de non-régression construit une scène, la fait trier, puis la rasté
 Le paquet racine est le seul à tout connaître, et rien ne dépend de lui.
 
 **Un paquet sort d'`internal/` quand un consommateur doit lire la documentation de ses
-types, et c'est une décision, pas un rangement.** Quatre y sont : `render`,
-`geometry`, `scene` et `raster`. Le reste — le tri, les backends, la visionneuse —
-n'a aucune raison d'être lu par qui écrit un jeu, et le compilateur Go interdit de
-l'importer depuis un autre module.
+types, et c'est une décision, pas un rangement.** Le tableau ci-dessus dit lesquels, et
+c'est le seul endroit qui les énumère : une seconde liste a divergé deux fois. Le reste
+— le tri, les backends, la visionneuse — n'a aucune raison d'être lu par qui écrit un
+jeu, et le compilateur Go interdit de l'importer depuis un autre module.
 
 **`raster` est sorti en entier, faute de découpe possible.** Un jeu construit ses
 planches et son atlas, donc leurs champs doivent se lire ; mais le rastériseur emploie
