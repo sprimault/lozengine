@@ -203,7 +203,7 @@ scene                 grille, entités, couches, caméra          geometry, rend
 internal/sorting      retrait hors image, clé, départage        geometry, scene, render
 render                structures Quad et DrawList, publiques    aucune
 raster                planches, atlas, rastériseur, PNG         render
-internal/appearance   interface fournisseur, animation          geometry, render
+appearance            interface fournisseur, animation          geometry, render, raster, scene
 input                 touches, état du clavier                  aucune
 internal/backend/…    contrat de fenêtre, familles, présentation  input, render
 internal/audio        mixeur et sorties système                 aucune

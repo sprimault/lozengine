@@ -10,6 +10,7 @@ package lozengine
 import (
 	"io"
 
+	"github.com/sprimault/lozengine/appearance"
 	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/input"
 	"github.com/sprimault/lozengine/raster"
@@ -405,4 +406,25 @@ type SceneOptions = scene.Options
 // chemin d'une image n'en rend, parce qu'une image n'a nulle part où la mettre.
 func NewScene(width, height int, projection Matrix, o SceneOptions) (*Scene, error) {
 	return scene.New(width, height, projection, o)
+}
+
+// Provider résout ce qu'une chose montre, à partir de ce qu'elle est, de son état, de
+// sa direction et du moment de son animation.
+//
+// Le moteur ne l'appelle jamais : c'est le jeu qui le consulte quand une apparence
+// change, puis écrit le résultat par [Scene.SetAspect]. Tout y est facultatif, et un
+// jeu qui compose ses aspects à la main ne le rencontre pas.
+type Provider = appearance.Provider
+
+// Facing est une direction, comptée en pas dans le sens horaire à l'écran depuis le
+// sud.
+//
+// Un pas vaut un tour divisé par le nombre de directions que le fournisseur déclare,
+// donc le même nombre ne désigne pas le même angle chez deux fournisseurs.
+type Facing = appearance.Facing
+
+// Turn rend la direction sous laquelle l'orientation courante de la caméra présente
+// une direction du monde. C'est ce qu'on passe à [Provider.Aspect] quand la vue tourne.
+func Turn(f Facing, o Orientation, directions int) Facing {
+	return appearance.Turn(f, o, directions)
 }
