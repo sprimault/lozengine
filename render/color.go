@@ -56,10 +56,9 @@ func applyAlpha(c, a uint8) uint8 {
 // seule façon de l'atténuer : 255 la laisse intacte, 128 la met à moitié, 0 l'efface.
 //
 // **Les quatre composantes ensemble, alpha compris.** Amputer les trois couleurs sans
-// toucher l'alpha donnerait quelque chose qui n'est plus une couleur prémultipliée du
-// tout — la cohérence que [Color.Valid] exige serait rompue —, et à l'image cela
-// assombrit au lieu d'estomper : un éclat qui s'éteint deviendrait une tache noire
-// avant de disparaître.
+// toucher l'alpha assombrit au lieu d'estomper : un éclat qui s'éteint deviendrait une
+// tache noire avant de disparaître. Et cela ne se voit qu'à l'image — des composantes
+// qui baissent restent sous leur alpha, donc rien ne les refuse.
 //
 // Une fraction de 255 plutôt qu'un nombre à virgule, et c'est la doctrine du moteur
 // autant qu'une commodité : tout ce qui touche une couleur ici est entier, donc une
