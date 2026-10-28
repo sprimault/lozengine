@@ -102,6 +102,12 @@ type Scene struct {
 	// jeu qui n'en empile qu'une ne paie que celle-là.
 	decor [][]Aspect
 
+	// Ce qui est posé en pixels de l'image, dans l'ordre de pose. Rien n'est alloué
+	// d'avance : un jeu sans interface ne paie pas cette tranche, et un jeu qui en a
+	// une la repose chaque image sans réallouer, [Scene.ClearScreen] gardant la
+	// capacité.
+	screen []ScreenPiece
+
 	// La vue. Le point visé est gardé en cellules plutôt qu'en pixels, parce qu'une
 	// rotation le change de place à l'écran sans le changer de place dans le monde.
 	focusX, focusY        float64
