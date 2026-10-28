@@ -170,9 +170,9 @@ de référence versionnée.
 - **Toute régénération est justifiée dans le message de commit.** Une image de
   référence qui change sans raison énoncée est un défaut accepté par erreur.
 
-Les scénarios couvrent en priorité ce qui casse en silence : chevauchements
-cycliques, objets multi-cellules, étages, occlusion, entités à cheval sur deux
-cellules, caméra dans les quatre orientations.
+Les scénarios couvrent en priorité ce qui casse en silence : objets
+multi-cellules, étages, occlusion, entités à cheval sur deux cellules, caméra dans
+les quatre orientations.
 
 ### Quand ajouter un scénario
 
@@ -187,8 +187,8 @@ Un défaut de rendu qui n'a pas laissé de scénario derrière lui reviendra.
 - `geometry` : aller-retour monde vers écran et retour, sur le dimétrique,
   l'isométrie vraie et un ratio arbitraire. La même suite doit passer sur les
   trois.
-- `sorting` : ordre attendu sur des scènes construites à la main, et détection des
-  cycles.
+- `sorting` : ordre attendu sur des scènes construites à la main, et départage de ce
+  que la profondeur laisse à égalité.
 - Tables de cas, sans bibliothèque d'assertions — la règle de dépendance vaut
   aussi pour les tests.
 
