@@ -45,6 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.3] — 2026-10-28
+
 ### Corrigé
 
 - Une chose marquée se révèle aussi quand ce qui la cache se dessine au même rang
