@@ -161,6 +161,15 @@ type staying struct{ steps int }
 
 func (g *staying) Step(Input) { g.steps++ }
 
+// watching est un jeu qui reçoit le relevé de recouvrement, donc avec [Overlapped].
+type watching struct {
+	steps  int
+	served int
+}
+
+func (g *watching) Step(Input)                { g.steps++ }
+func (g *watching) Overlaps(list OverlapList) { g.served++; _ = list }
+
 // TestQuitterIsOptional vérifie que l'assertion de la boucle ne réclame rien : un jeu
 // qui n'écrit que sa méthode unique reste un jeu valide.
 //
@@ -176,6 +185,64 @@ func TestQuitterIsOptional(t *testing.T) {
 	var asking Game = &leaving{}
 	if _, ok := asking.(Quitter); !ok {
 		t.Error("un jeu avec Quitting n'a pas été reconnu")
+	}
+}
+
+// TestOverlappedIsOptional garde la même propriété pour la seconde interface
+// facultative : un jeu qui ne veut pas du relevé n'écrit rien de plus.
+//
+// Les deux sens sont vérifiés, et c'est ce qui compte : une assertion devenue exigence
+// casserait tous les jeux écrits jusqu'ici, et une assertion qui ne reconnaîtrait pas
+// un jeu qui la porte lui retirerait sans un mot ce qu'il a écrit pour recevoir.
+func TestOverlappedIsOptional(t *testing.T) {
+	var plain Game = &staying{}
+	if _, ok := plain.(Overlapped); ok {
+		t.Error("un jeu sans Overlaps a été pris pour un Overlapped")
+	}
+
+	var served Game = &watching{}
+	if _, ok := served.(Overlapped); !ok {
+		t.Error("un jeu avec Overlaps n'a pas été reconnu")
+	}
+}
+
+// TestEngineServesTheOverlapsItMeasured garde que le relevé traverse bien la seconde
+// porte d'entrée, celle qu'un hôte emploie sans boucle du moteur.
+//
+// Sans ce cas, le relevé pourrait n'être rendu que par la boucle de [Run] — que la suite
+// ne peut pas exercer sans fenêtre —, et un hôte le trouverait vide sans rien pour le
+// lui dire. Il garde aussi le décalage d'une image que la godoc annonce : rien avant le
+// premier pas, le relevé du pas après.
+func TestEngineServesTheOverlapsItMeasured(t *testing.T) {
+	s, atlas := scenario(t)
+
+	figure := Aspect{Width: 16, Height: 16, Tint: White()}
+
+	h, ok := s.Place(Entity{X: 3.5, Y: 3.5, Aspect: figure, Measure: true})
+	if !ok {
+		t.Fatal("entité suivie refusée")
+	}
+	if _, ok := s.Place(Entity{X: 3.5, Y: 4.5, Aspect: figure}); !ok {
+		t.Fatal("entité qui cache refusée")
+	}
+
+	e, err := NewEngine(s, Options{Atlas: atlas})
+	if err != nil {
+		t.Fatalf("montage du moteur : %v", err)
+	}
+
+	if n := len(e.Overlaps()); n != 0 {
+		t.Errorf("%d relevés avant le premier pas, attendu aucun", n)
+	}
+
+	e.Step(&staying{}, Input{})
+
+	list := e.Overlaps()
+	if len(list) != 1 {
+		t.Fatalf("%d relevés après un pas, attendu 1", len(list))
+	}
+	if list[0].Identity != uint32(h) {
+		t.Errorf("poignée %d, attendu %d", list[0].Identity, uint32(h))
 	}
 }
 

@@ -354,7 +354,7 @@ func TestOverlapCountsSharedPixels(t *testing.T) {
 			render.Quad{X: -8, Y: -4, Width: 10, Height: 10},
 			render.Quad{X: 0, Y: 0, Width: 10, Height: 10}, 12},
 	} {
-		if got := overlap(c.a, c.b); got != c.want {
+		if got := shared(c.a, c.b); got != c.want {
 			t.Errorf("%s : %d pixels, attendu %d", c.name, got, c.want)
 		}
 	}

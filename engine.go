@@ -53,9 +53,10 @@ type Game interface {
 // donc du confort de la première porte d'entrée, comme l'invariant des deux portes
 // l'exige.
 //
-// **La seule interface facultative du moteur, et elle le restera** : la fin de la
-// boucle est la seule chose que la boucle ne peut apprendre de nulle part ailleurs.
-// Tout le reste de ce qu'un jeu voudrait régler se règle par [Options], avant.
+// **Une interface facultative porte ce qu'[Options] ne peut pas porter**, et il n'y en a
+// que deux : celle-ci, parce que la fin de la boucle est une décision que la boucle ne
+// peut apprendre de nulle part ailleurs, et [Overlapped], parce qu'un relevé est un
+// résultat et non un réglage. Tout ce qui *se règle* se règle par [Options], avant.
 type Quitter interface {
 	// Quitting dit que le jeu a fini. La boucle rend la main après l'image en cours,
 	// donc l'appel suivant à [Game.Step] n'a pas lieu.
@@ -64,6 +65,29 @@ type Quitter interface {
 	// son pas voit sa décision prise dans la même image, et l'image part quand même
 	// — c'est ce qui permet d'afficher un dernier écran.
 	Quitting() bool
+}
+
+// Overlapped est ce qu'un jeu implémente **en plus** de [Game] quand il veut savoir ce
+// qui recouvre les entités qu'il suit, pour en dessiner son propre rappel.
+//
+// Elle existe parce que [Game.Step] ne reçoit que les entrées, et qu'un jeu qui passe
+// par [Run] n'a donc aucune poignée vers [Engine.Overlaps] — qui est la même capacité
+// pour un hôte tenant sa propre boucle. La première porte n'ajoute ici que le confort de
+// recevoir, comme l'invariant des deux portes l'exige.
+//
+// Ce qu'un jeu en fait est à lui : un contour, une flèche, une silhouette tirée d'un
+// autre dessin, ou rien du tout si le seuil qu'il se donne n'est pas atteint. Pour le
+// seul rappel que le moteur sait dessiner — la chose elle-même sous une teinte —,
+// [Aspect.Reveal] suffit et ne demande pas cette interface.
+type Overlapped interface {
+	// Overlaps reçoit le relevé du pas précédent, et la tranche n'est valable que
+	// pendant l'appel : un jeu qui veut la garder en fait une copie.
+	//
+	// Appelée une fois par image, **avant** le pas, et c'est ce qui rend le décalage
+	// lisible : le recouvrement ne se connaît qu'après un tri, donc le relevé le plus
+	// récent est celui de l'image précédente. La recevoir avant le pas la met entre les
+	// mains du jeu au moment où il décide.
+	Overlaps(list OverlapList)
 }
 
 // Options porte ce que l'étape et la boucle admettent de régler.
@@ -279,4 +303,25 @@ func (e *Engine) Frame() *Buffer {
 // jeu suppose, et le lui cacher l'obligerait à le deviner.
 func (e *Engine) Tick() time.Duration {
 	return e.tick
+}
+
+// Overlaps rend, pour chaque entité qu'un jeu a marquée par le champ `Measure` d'une
+// [Entity], combien de ses pixels le dernier pas a recouverts et quelle part vient du
+// décor.
+//
+// **C'est la mesure que le tri fait de toute façon pour décider d'une révélation.** Le
+// champ `Reveal` d'un [Aspect] n'en connaît qu'un usage — redessiner la chose —, et un
+// rappel d'une autre nature, un contour, une flèche, une silhouette tirée d'un autre
+// dessin, demandait de refaire ce calcul en entier. Le relevé le rend : l'hôte y prend son
+// propre seuil et dessine ce qu'il veut.
+//
+// **Il porte le pas précédent**, et c'est inhérent : le recouvrement ne se connaît
+// qu'après le tri, donc après le pas. Sans conséquence pour un rappel de lisibilité à
+// soixante images par seconde, mais un jeu qui compare ce relevé à une position l'y
+// comparera décalé d'un pas.
+//
+// La tranche est celle du moteur et elle est réécrite au pas suivant. Elle est vide avant
+// le premier pas, et un jeu qui ne marque rien n'y trouve jamais rien.
+func (e *Engine) Overlaps() OverlapList {
+	return e.sorter.Overlaps()
 }

@@ -111,15 +111,20 @@ type RevealOptions struct {
 	// même du seuil : un pixel caché ne porte aucun indice de profondeur, puisqu'on ne
 	// voit pas qu'il y a quelque chose devant.
 	//
-	// **Une limite, et elle ne vise qu'un aspect portant déjà sa propre teinte.** Zéro
-	// veut dire « celle de l'aspect » sur Tint et « comme Tint » ici, donc le sprite
-	// net sous le décor passe par [render.White], la teinte neutre : une Tint sourde
-	// avec TintByDecor neutre redessine telle quelle une chose cachée par un mur et
-	// assourdit celle qu'une créature cache. Ce qui reste hors d'atteinte est le même
-	// effet sur un aspect qui porte déjà une teinte à lui — un personnage empoisonné —,
-	// que la teinte neutre écraserait au lieu de la laisser. Cela se rouvrirait en
-	// distinguant « non renseigné » de « transparent », ce qui coûterait un champ de
-	// présence ou un pointeur.
+	// **Le sprite net sous le décor passe par [render.White], la teinte neutre** : zéro
+	// veut dire « celle de l'aspect » sur Tint et « comme Tint » ici, donc une Tint
+	// sourde avec TintByDecor neutre redessine telle quelle une chose cachée par un mur
+	// et assourdit celle qu'une créature cache.
+	//
+	// Ce que cette chaîne de valeurs zéro laisse hors d'atteinte est le même effet sur
+	// un aspect qui porte déjà une teinte à lui — un personnage empoisonné —, que la
+	// teinte neutre écraserait au lieu de la laisser. Cela se rouvrirait en distinguant
+	// « non renseigné » de « transparent », ce qui coûterait un champ de présence ou un
+	// pointeur.
+	//
+	// **Et la teinte n'est pas la seule forme de rappel.** Celui-ci redessine la chose,
+	// et rien d'autre ; un rappel d'une autre nature se dessine par le jeu, à qui
+	// [Entity.Measure] rend la mesure de recouvrement qui décide ici.
 	TintByDecor render.Color
 }
 
@@ -348,6 +353,18 @@ func Entities(s *Scene) []Entity { return s.entities }
 //
 // Fonction et non méthode, pour la raison qui vaut pour [Entities].
 func Identities(s *Scene) []uint32 { return s.slots }
+
+// HandleAt rend la poignée de l'entité à la place donnée dans [Entities].
+//
+// Elle existe parce qu'[Identities] ne rend qu'un rang, là que le relevé de
+// recouvrement doit nommer une entité par ce qu'un jeu détient : une poignée complète,
+// rang et génération, qu'il peut comparer à celle que sa pose lui a rendue.
+//
+// Fonction et non méthode, pour la raison qui vaut pour [Entities].
+func HandleAt(s *Scene, place int) Handle {
+	rank := s.slots[place]
+	return compose(rank, s.generations[rank])
+}
 
 // PlaceCell pose un aspect sur une cellule de la grille, à la strate donnée, et
 // rend faux si la cellule ou la strate sort des bornes, ou si la couche ou l'étage de
