@@ -161,9 +161,11 @@ func (t *Sorter) collectEntities() {
 		// arrondiraient chacune de son côté.
 		ex, ey, depth, height := m.Project(rx, ry, e.Z+float64(e.Floor))
 
-		// Une entité n'est posée sur aucune strate : elle se tient sur le décor, pas
-		// dedans, et la strate zéro la met donc sous tout ce qui s'y empile.
-		rank := t.place(e.Aspect, ex, ey, depth, height, identities[i], 0)
+		// La strate d'une entité départage ce que la clé laisse à égalité, et sa valeur
+		// zéro la met sous tout ce qui s'empile au même point. C'est le même champ que
+		// pour le décor, et c'est voulu : les deux disent ce qui se superpose à un
+		// endroit sans s'y effacer.
+		rank := t.place(e.Aspect, ex, ey, depth, height, identities[i], e.Tier)
 
 		// La demande s'enregistre après la pose, et seulement si elle a produit un
 		// quad : une entité hors de la vue n'a rien à faire relever.

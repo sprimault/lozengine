@@ -99,9 +99,10 @@ type Aspect struct {
 	// Porter la hauteur dans les deux serait deux valeurs à tenir d'accord, et rien
 	// ne le dirait au jeu. La couche, elle, ne déplace rien ; elle ne fait que ranger.
 	//
-	// Ni l'une ni l'autre n'est la strate de [Scene.PlaceCell], qui dit seulement
-	// ce qui s'empile sur une même cellule. Une couche passe devant toute l'image, une
-	// strate ne passe devant que ce qu'elle recouvre.
+	// Ni l'une ni l'autre n'est la strate — celle de [Scene.PlaceCell] pour une
+	// cellule, [Entity.Tier] pour une entité —, qui dit seulement ce qui se superpose
+	// au même endroit. Une couche passe devant toute l'image, une strate ne passe
+	// devant que ce qu'elle recouvre.
 	Layer uint8
 	Floor uint8
 }
@@ -168,4 +169,33 @@ type Entity struct {
 	// le décor n'en a pas. C'est pourquoi ce champ est ici plutôt que sur l'aspect, que
 	// les deux partagent.
 	Measure bool
+
+	// Tier départage deux entités que l'ordre de dessin laisse à égalité : le plus
+	// grand se peint par-dessus, et sa valeur zéro les laisse dans un ordre que le
+	// moteur choisit.
+	//
+	// **C'est ce qui rend une superposition exprimable**, et sans lui elle ne l'était
+	// pas : deux entités au même point, même hauteur et même couche se départageaient
+	// sur un rang de poignée, que [Scene.Place] réemploie après un retrait. Poser A,
+	// poser B, retirer A puis poser C faisait reprendre à C le rang de A, donc C se
+	// peignait avant B bien qu'il ait été posé après. L'ordre dépendait de l'historique
+	// des retraits, et aucune valeur n'était fausse pour autant.
+	//
+	// Le besoin est ordinaire : une teinte additive par-dessus un sprite, qu'une teinte
+	// multiplicative ne peut pas éclaircir ; un liseré par-dessous pour détacher une
+	// chose d'un fond de même gamme. Les voies de contournement sont fermées ailleurs —
+	// composer dans la planche bute sur [render.MaxSheets], décaler la hauteur déplace
+	// l'image, monter d'une couche passe devant le décor aussi.
+	//
+	// **Les deux cent cinquante-six valeurs sont libres**, là que la strate du décor
+	// s'arrête à [MaxTiers] : cette borne vient de ce qu'une strate pleine ajoute un
+	// quad par cellule visible, donc de la grille. Une entité n'alloue rien, et rien ne
+	// lui impose la borne d'autre chose.
+	//
+	// **Une conséquence à connaître, parce que le départage est partagé avec le
+	// décor** : une entité posée exactement sur le coin d'une cellule — en (3, 4) et non
+	// en (3,5 ; 4,5) — porte la profondeur de cette cellule, donc à hauteur et planche
+	// égales leurs clés le sont aussi, et ce champ les départage l'une contre l'autre.
+	// Un Tier élevé range alors l'entité après la cellule.
+	Tier uint8
 }

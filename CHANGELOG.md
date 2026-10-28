@@ -53,6 +53,9 @@ notes de publication.
 - `Engine.Overlaps` rend ce relevé à un hôte qui tient sa boucle, et l'interface
   facultative `Overlapped` le porte au jeu qui passe par `Run`. Il décrit le pas
   précédent : un recouvrement ne se connaît qu'après l'ordre de dessin.
+- `Entity.Tier` choisit l'ordre entre deux entités superposées, le plus grand par-dessus
+  — une teinte additive sur un sprite, un liseré dessous. Cet ordre dépendait auparavant
+  de l'historique des retraits, donc rien ne permettait de le fixer.
 
 ### Corrigé
 
@@ -78,6 +81,9 @@ notes de publication.
 - `Engine.Overlaps` hands that report to a host holding its own loop, and the optional
   `Overlapped` interface carries it to a game going through `Run`. It describes the
   previous step: an overlap is only known once the draw order is settled.
+- `Entity.Tier` picks the order between two superposed entities, the greater on top — an
+  additive tint over a sprite, an outline beneath. That order used to follow the history
+  of removals, so nothing could pin it down.
 
 ### Fixed
 

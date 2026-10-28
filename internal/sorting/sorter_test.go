@@ -261,6 +261,56 @@ func TestHeightOrdersUpward(t *testing.T) {
 	}
 }
 
+// TestTierOrdersSuperposedEntities garde ce que la strate d'une entité achète : un ordre
+// que le jeu choisit entre deux choses que la clé laisse à égalité.
+//
+// **C'est le seul cas à pouvoir faire échouer cette propriété**, et ce qu'il garde n'est
+// pas qu'un ordre mais sa *stabilité devant un retrait*. Sans la strate, le départage
+// retombe sur le rang de poignée, que [scene.Scene.Place] réemploie : le cas retire une
+// entité et en pose une autre, ce qui fait reprendre le rang libéré et inverse l'ordre.
+// Un cas qui ne poserait que deux entités passerait sans la strate, les rangs étant
+// croissants tant que rien n'est retiré.
+//
+// **Les deux entités partagent leur planche, et c'est obligatoire** : la planche est un
+// champ de la clé de tri, donc deux planches différentes donnent deux clés différentes
+// et le départage n'est jamais consulté. Une première version de ce cas distinguait les
+// entités par leur planche et passait sans la strate, en ne mesurant que l'ordre des
+// planches. Le marqueur est donc l'abscisse de source, que la clé ne porte pas.
+func TestTierOrdersSuperposedEntities(t *testing.T) {
+	s := testScene(t, 16, 4)
+
+	// Le liseré dessous, le sprite dessus, posés dans l'ordre inverse de celui attendu.
+	over := figure()
+	over.SourceX = 2
+	if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: over, Tier: 2}); !ok {
+		t.Fatal("entité du dessus refusée")
+	}
+
+	doomed, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: figure(), Tier: 1})
+	if !ok {
+		t.Fatal("entité intermédiaire refusée")
+	}
+
+	// Le retrait libère un rang de poignée, que la pose suivante reprend : c'est ce qui
+	// rendait l'ordre dépendant de l'historique.
+	s.Remove(doomed)
+
+	under := figure()
+	under.SourceX = 1
+	if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: under, Tier: 0}); !ok {
+		t.Fatal("entité du dessous refusée")
+	}
+
+	image := New(s).Frame()
+	if len(image) != 2 {
+		t.Fatalf("%d quads, attendu 2", len(image))
+	}
+	if image[0].SourceX != 1 || image[1].SourceX != 2 {
+		t.Errorf("ordre des sources %d puis %d, attendu 1 puis 2 : la strate ne départage "+
+			"pas, ou le rang réemployé l'emporte", image[0].SourceX, image[1].SourceX)
+	}
+}
+
 // TestOffScreenIsRemoved vérifie que ce qui ne touche pas la vue n'entre pas
 // dans la liste, et que ce qui dépasse d'un bord y entre encore.
 func TestOffScreenIsRemoved(t *testing.T) {
