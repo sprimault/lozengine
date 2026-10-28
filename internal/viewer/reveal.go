@@ -83,7 +83,10 @@ func Reveal() Scenario {
 // revealScene monte le sol, le mur et le personnage qu'il cache.
 func revealScene() *scene.Scene {
 	s, err := scene.New(revealSide, revealSide, geometry.Dimetric(tileW, tileH),
-		scene.Options{Entities: 4, RevealAfter: revealAfter})
+		scene.Options{
+			Entities:  4,
+			Revealing: scene.RevealOptions{After: revealAfter},
+		})
 	if err != nil {
 		panic(err)
 	}

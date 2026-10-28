@@ -99,7 +99,10 @@ func Crossing() Scenario {
 // doit pouvoir se rendre seule, deux fois, et donner les mêmes pixels.
 func crossingScene(frame int) *scene.Scene {
 	s, err := scene.New(crossingSide, crossingSide, geometry.Dimetric(tileW, tileH),
-		scene.Options{Entities: 4, RevealAfter: crossingRevealAfter})
+		scene.Options{
+			Entities:  4,
+			Revealing: scene.RevealOptions{After: crossingRevealAfter},
+		})
 	if err != nil {
 		panic(err)
 	}

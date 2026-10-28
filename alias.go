@@ -415,6 +415,14 @@ const (
 	ThreeQuarters = scene.ThreeQuarters
 )
 
+// RevealOptions porte les conventions de lisibilité de la révélation : à partir de
+// quel recouvrement une chose cachée se redessine, et sous quelle teinte.
+//
+// Une structure et non des paramètres : ses deux couleurs s'inverseraient sans que
+// rien ne refuse, et l'image qui en sortirait serait plausible. [Scene.SetRevealing]
+// les change en cours de partie.
+type RevealOptions = scene.RevealOptions
+
 // SceneOptions porte ce qu'une scène admet de régler, et sa valeur zéro convient.
 //
 // Le nom est qualifié parce que la boucle a les siennes : deux structures d'options

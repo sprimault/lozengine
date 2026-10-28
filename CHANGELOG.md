@@ -45,6 +45,50 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `RevealOptions.TintByDecor` teinte autrement ce qui est caché par le décor : un mur
+  dit « la chose est derrière », une créature non. La bascule emploie le seuil — teinte
+  du décor dès qu'il suffirait seul —, sinon une silhouette battrait au moindre
+  frôlement de pilier.
+- `Scene.SetRevealing` change ces conventions en cours de partie, que les options ne
+  posaient qu'à la construction.
+
+### Modifié
+
+- Les réglages de révélation passent dans `SceneOptions.Revealing`, une structure
+  nommée : deux couleurs voisines et de même type s'inverseraient sans que rien ne
+  refuse, et l'image qui en sortirait serait plausible.
+
+### Corrigé
+
+- La révélation compte tout ce qui passe devant une chose, entités comprises, et sa
+  documentation le dit enfin : elle annonçait le décor seul, donc elle décourageait le
+  cas qu'elle promettait — être encerclé.
+
+***
+
+### Added
+
+- `RevealOptions.TintByDecor` tints differently what the decor hides: a wall says «the
+  thing is behind it», a creature does not. The switch uses the threshold — decor tint
+  as soon as the decor alone would reach it — or a silhouette would flicker at the
+  slightest brush against a pillar.
+- `Scene.SetRevealing` changes those conventions mid-game, which the options only set
+  at construction.
+
+### Changed
+
+- Reveal settings move into `SceneOptions.Revealing`, a named struct: two adjacent
+  colours of the same type would swap with nothing refusing, and the resulting image
+  would look plausible.
+
+### Fixed
+
+- Revealing counts everything drawn in front of a thing, entities included, and its
+  documentation finally says so: it announced the decor alone, discouraging the very
+  case it promised — being surrounded.
+
 ## [0.5.0] — 2026-10-28 — Jalon 4 · Apparence et interaction
 
 Une scène se décrit maintenant en entier : ce qu'une chose montre et vers où elle

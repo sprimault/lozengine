@@ -41,6 +41,17 @@ type Sorter struct {
 	reveals   []uint8
 	revealing int
 
+	// Ce que chaque quad vient du décor, pour que la révélation sache lequel de ses
+	// deux compteurs incrémenter. Ici et non dans le quad : la disposition compatible
+	// C n'a pas de place à donner à un détail de relevé, et ce bit ne sort jamais du
+	// trieur.
+	fromDecor []bool
+
+	// collectingDecor dit à place d'où vient ce qu'elle reçoit. Un état plutôt qu'un
+	// paramètre de plus : place en porte déjà sept, et les trois relevés qui
+	// l'appellent le font chacun dans une boucle serrée.
+	collectingDecor bool
+
 	out render.DrawList
 
 	// La vue de l'image en cours, gardée le temps du relevé pour ne pas la traîner
@@ -79,7 +90,7 @@ func New(s *scene.Scene) *Sorter {
 // plaindre. Ce qui peut échouer a échoué au montage de la scène.
 func (t *Sorter) Frame() render.DrawList {
 	t.raw, t.keys, t.sources, t.ties = t.raw[:0], t.keys[:0], t.sources[:0], t.ties[:0]
-	t.reveals, t.revealing = t.reveals[:0], 0
+	t.reveals, t.revealing, t.fromDecor = t.reveals[:0], 0, t.fromDecor[:0]
 
 	t.viewX, t.viewY, t.viewWidth, t.viewHeight = t.scene.View()
 	if t.viewWidth <= 0 || t.viewHeight <= 0 {
@@ -150,6 +161,9 @@ func (t *Sorter) collectDecor() {
 	m := t.scene.Projection()
 	width, _ := t.scene.Dimensions()
 	u0, v0, u1, v1 := t.window()
+
+	t.collectingDecor = true
+	defer func() { t.collectingDecor = false }()
 
 	for tier := range tiers {
 		for v := v0; v <= v1; v++ {
@@ -255,6 +269,7 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 	t.keys = append(t.keys, Compose(a.Layer, a.Floor, depth, height, a.Sheet, 0))
 	t.ties = append(t.ties, tie{x: ex, identity: identity, tier: tier})
 	t.reveals = append(t.reveals, a.Reveal)
+	t.fromDecor = append(t.fromDecor, t.collectingDecor)
 	t.raw = append(t.raw, render.Quad{
 		X: int16(x), Y: int16(y),
 		SourceX: a.SourceX, SourceY: a.SourceY,

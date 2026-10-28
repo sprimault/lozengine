@@ -24,7 +24,13 @@ import (
 // — son personnage —, et le compte tenu à la pose évite même ce parcours quand il n'y
 // en a aucune, ce qui est le cas courant.
 //
-// Ce qui est révélé est la chose, jamais le décor. Rendre un mur transparent
+// **Ce qui cache est ce qui se peint après, et rien d'autre ne le qualifie** : une
+// cellule de décor, une entité qui s'interpose, une pièce d'écran posée plus bas que
+// la couche de révélation. La comparaison porte sur la clé, donc l'origine du quad
+// n'entre jamais en compte — ce qui est voulu, l'encerclement par des créatures étant
+// le cas que la révélation sert d'abord.
+//
+// Ce qui est révélé est la chose, jamais ce qui la cache. Rendre un mur transparent
 // découvrirait ce qui se tient derrière lui autant que ce qui s'y trouve, et cohue a
 // payé deux défauts pour avoir cru que l'élévation pouvait servir de critère : un sol
 // surélevé reste du sol, et ne cache rien.
@@ -33,7 +39,7 @@ func (t *Sorter) revealHidden() {
 		return
 	}
 
-	after, tint := scene.Revealing(t.scene)
+	o := scene.Revealing(t.scene)
 
 	// La borne est figée : la boucle ajoute à la même tranche qu'elle parcourt, et une
 	// chose révélée n'a pas à l'être une seconde fois.
@@ -43,8 +49,14 @@ func (t *Sorter) revealHidden() {
 			continue
 		}
 
-		if !t.hiddenEnough(i, n, after) {
+		hidden, byDecor := t.hiddenEnough(i, n, o.After)
+		if !hidden {
 			continue
+		}
+
+		tint := o.Tint
+		if byDecor && o.TintByDecor.A != 0 {
+			tint = o.TintByDecor
 		}
 
 		q := t.raw[i]
@@ -61,24 +73,40 @@ func (t *Sorter) revealHidden() {
 }
 
 // hiddenEnough dit si ce qui se peint après le quad de rang i le recouvre de plus de
-// `after` pixels.
+// `after` pixels, et si le décor y suffirait à lui seul.
+//
+// **Le second résultat emploie le même seuil que le premier, et c'est ce qui le
+// justifie.** La teinte ne bascule pas parce qu'un pixel de décor s'est glissé dans le
+// recouvrement : un pixel caché ne porte aucun indice de profondeur, puisqu'on ne voit
+// pas qu'il y a quelque chose devant — l'argument même du seuil. Sans cela, un
+// personnage encerclé qui tourne autour d'un pilier verrait sa teinte battre à chaque
+// frôlement alors que l'essentiel du recouvrement vient de la mêlée, et un signal qui
+// clignote sur un écran chargé est pire que pas de signal.
+//
+// La boucle ne peut donc plus sortir dès que le total dépasse : il reste à savoir si
+// le décor seul y arrive. Elle sort en revanche dès que **lui** dépasse, puisque plus
+// rien ne peut alors changer la réponse.
 //
 // Le cumul compte deux fois ce que deux choses se recouvrant entre elles cachent au
 // même endroit, et c'est assumé : corriger demanderait de tenir la surface déjà
-// couverte, pour un seuil que le jeu règle de toute façon à l'œil. La somme s'arrête
-// dès qu'elle dépasse, donc l'approximation ne coûte même pas de temps.
-func (t *Sorter) hiddenEnough(i, n, after int) bool {
-	hidden := 0
+// couverte, pour un seuil que le jeu règle de toute façon à l'œil.
+func (t *Sorter) hiddenEnough(i, n, after int) (hidden, byDecor bool) {
+	total, decor := 0, 0
 
 	for j := range n {
 		if t.keys[j] <= t.keys[i] {
 			continue
 		}
-		if hidden += overlap(t.raw[i], t.raw[j]); hidden > after {
-			return true
+
+		covered := overlap(t.raw[i], t.raw[j])
+		total += covered
+		if t.fromDecor[j] {
+			if decor += covered; decor > after {
+				return true, true
+			}
 		}
 	}
-	return false
+	return total > after, false
 }
 
 // overlap rend le nombre de pixels que deux quads se partagent.
