@@ -96,6 +96,32 @@ func (s *Scene) Unremap(x, y float64) (float64, float64) {
 	return x, y
 }
 
+// At rend le point du monde qu'un pixel de l'image désigne, à l'étage donné.
+//
+// C'est le chemin complet de la désignation au pointeur, et il a quatre étages qu'un
+// jeu n'a pas à connaître : le pixel reçu est relatif à la vue, donc l'origine de
+// celle-ci s'y ajoute ; un étage se dessine plus haut que le sol, donc le pixel
+// redescend d'autant avant qu'on inverse ; l'inverse rend des coordonnées remappées ;
+// et le remappage se défait pour revenir au repère où le jeu a posé sa grille.
+//
+// **Le pixel est celui de l'image, pas celui de la fenêtre.** C'est exactement ce que
+// [input.Input.Pointer] rend, la boucle ayant déjà défait l'agrandissement et les
+// bandes.
+//
+// Le résultat est en cellules flottantes, dont la partie entière est la case : un
+// point rendu à (3,7 ; 2,2) désigne la case (3, 2). L'aller-retour n'est pas exact —
+// l'inverse d'une matrice en virgule fixe ne l'est pas — et la godoc de
+// [geometry.Matrix.Unproject] dit ce que vaut ce quantum ; il est très inférieur à la
+// cellule, donc il ne change pas la case désignée sauf exactement sur une bordure.
+//
+// Rien n'est borné à la grille : un pixel hors de la carte rend un point hors de la
+// carte, négatif au besoin. C'est au jeu de décider si cela désigne quelque chose,
+// puisque lui seul sait ce qu'il y a au-delà.
+func (s *Scene) At(ex, ey int32, floor uint8) (x, y float64) {
+	rx, ry := s.projection.Unproject(s.viewX+ex, s.viewY+ey+s.projection.Rise(float64(floor)))
+	return s.Unremap(rx, ry)
+}
+
 // Extent rend les côtés de la grille tels que l'orientation courante les présente :
 // un quart de tour les échange.
 func (s *Scene) Extent() (width, height int) {

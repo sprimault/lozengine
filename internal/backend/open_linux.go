@@ -64,6 +64,10 @@ func Open(o Options) (Window, error) {
 	// changer après n'a pas à être posé après.
 	c.setIcons(id, icon, o.Icons)
 
+	if o.HideCursor {
+		c.hideCursor(id)
+	}
+
 	c.mapWindow(id)
 
 	// La synchronisation est ce qui fait rendre ici les erreurs des cinq requêtes

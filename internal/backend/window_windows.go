@@ -49,6 +49,11 @@ type window struct {
 	// closed retient que la fenêtre ne présentera plus rien. Il ne se relève jamais.
 	closed bool
 
+	// hideCursor dit de ne poser aucun curseur sur la zone de jeu. Un jeu qui dessine
+	// le sien dans son image le demande, sans quoi deux pointeurs se suivraient — le
+	// sien, agrandi avec l'image, et celui du système, net et décalé.
+	hideCursor bool
+
 	// info décrit au système la disposition des pixels. Elle est montée une fois :
 	// seules ses dimensions changent d'une présentation à l'autre, et la construire
 	// par image allouerait dans le chemin de rendu.
@@ -110,6 +115,14 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	}
 
 	switch msg {
+	case wmSetCursor:
+		// Seulement sur la zone de jeu : les bordures et la barre de titre gardent
+		// les curseurs du système, qui disent ce qu'on peut y faire.
+		if w.hideCursor && uint16(lParam) == htClient {
+			setCursor.Call(0)
+			return 1
+		}
+
 	case wmGetMinMaxInfo:
 		// Le système passe l'adresse de la structure dans le `lParam`, et c'est la
 		// convention de la procédure de fenêtre : il n'y a pas d'autre façon de

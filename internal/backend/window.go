@@ -92,4 +92,12 @@ type Options struct {
 	// elle-même une suite d'images de tailles différentes. Chacune choisit, et
 	// aucune ne redimensionne — la règle d'échelle entière l'interdit au moteur.
 	Icons []*render.Buffer
+
+	// HideCursor retire le curseur du système sur la zone de jeu.
+	//
+	// C'est ce qu'un jeu demande quand il dessine le sien dans son image : sans cela
+	// deux pointeurs se suivraient, celui du jeu agrandi avec l'image et celui du
+	// système net et décalé d'un pixel sur sept. Les bordures et la barre de titre
+	// gardent les leurs, qui disent ce qu'on peut y faire.
+	HideCursor bool
 }

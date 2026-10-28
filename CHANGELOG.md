@@ -65,6 +65,9 @@ notes de publication.
   pixels de l'image**, la boucle défaisant l'agrandissement et les bandes.
   `ButtonHeld` et `ButtonJustPressed` ont les deux régimes des touches, et `Wheel`
   compte les crans du pas.
+- `Scene.At` rend la case qu'un pixel désigne, à l'étage demandé : c'est le pixel que
+  `Input.Pointer` donne, sans conversion à faire. `Options.HideCursor` retire le
+  curseur du système pour un jeu qui dessine le sien.
 
 ### Modifié
 
@@ -92,6 +95,9 @@ notes de publication.
   pixels**, the loop undoing the upscale and the bars. `ButtonHeld` and
   `ButtonJustPressed` have the two regimes of keys, and `Wheel` counts the step's
   notches.
+- `Scene.At` gives the cell a pixel points at, on the requested floor: that pixel is
+  what `Input.Pointer` returns, with no conversion to do. `Options.HideCursor` removes
+  the system cursor for a game that draws its own.
 
 ### Changed
 
