@@ -4,12 +4,12 @@
 // Package lozengine est la porte d'entrée du moteur : un seul import pour écrire un
 // jeu, les types du noyau étant republiés ici.
 //
-// Cinq paquets l'accompagnent, et ils sont publics pour être lus : geometry porte la
+// Six paquets l'accompagnent, et ils sont publics pour être lus : geometry porte la
 // projection, scene la description du monde, render les structures qu'un quad
-// remplit, raster les planches et le dessin, input le clavier. Un alias ne montre ni
-// champ ni méthode, donc la documentation de [Matrix], de [Quad] ou de [Scene] se lit
-// chez eux. Le reste vit sous internal/, que le compilateur rend impossible à
-// importer depuis un autre module.
+// remplit, raster les planches et le dessin, appearance ce qu'une chose montre, input
+// les entrées. Un alias ne montre ni champ ni méthode, donc la documentation de
+// [Matrix], de [Quad] ou de [Scene] se lit chez eux. Le reste vit sous internal/, que
+// le compilateur rend impossible à importer depuis un autre module.
 //
 // Les types du noyau sont republiés par alias et non par enveloppe. Un alias
 // désigne le même type, sans conversion ni copie — ce qui compte pour des
@@ -23,8 +23,11 @@
 // fenêtre ni horloge, un [Engine.Step] par image. La première porte ajoute du
 // confort, jamais de capacité : tout ce qu'elle permet se fait aussi par la seconde.
 //
-// La fenêtre, elle, n'existe que sous Windows : ailleurs [Run] rend une erreur qui
-// nomme ce qui manque, là où [NewEngine] calcule ses images partout.
+// **La fenêtre ne s'ouvre que là où un backend existe**, et [Run] y rend sinon une
+// erreur qui nomme ce qui manque ; [NewEngine] calcule ses images partout, n'ayant
+// besoin d'aucun écran. Quelles plateformes sont servies se lit dans le journal des
+// versions et dans la feuille de route, et nulle part ailleurs : énuméré ici, l'état
+// se périmerait à la publication suivante — ce qu'il a fait deux fois.
 //
 // MIT ou Apache-2.0, au choix de qui emploie le moteur : l'une des deux suffit, elles
 // ne se cumulent pas. Les annuaires de paquets les affichent côte à côte sans le

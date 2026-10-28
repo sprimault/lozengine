@@ -154,12 +154,17 @@ func Grid(side int) Matrix { return geometry.Grid(side) }
 // c·x + d·y. Sans translation, la vue étant cadrée ailleurs.
 func Raw(a, b, c, d float64) Matrix { return geometry.Raw(a, b, c, d) }
 
-// Input est ce que le clavier dit à une image : les touches tenues, et celles qui
-// viennent d'être enfoncées.
+// Input est ce que les entrées disent à une image : les touches et les boutons tenus,
+// ceux qui viennent d'être enfoncés, la position du pointeur et les crans de molette
+// du pas.
 //
-// Les deux régimes n'ont pas le même usage. Held sert au déplacement, tant que la
-// touche est tenue ; JustPressed sert à ce qui se consomme — tirer, ramasser,
-// valider —, et ne vaut qu'une fois par appui.
+// Les deux régimes n'ont pas le même usage, et ils valent pour une touche comme pour
+// un bouton. Held sert au déplacement, tant que la touche est tenue ; JustPressed sert
+// à ce qui se consomme — tirer, ramasser, désigner une case —, et ne vaut qu'une fois
+// par appui.
+//
+// La position du pointeur est en pixels de l'image, la boucle ayant défait
+// l'agrandissement et les bandes : elle se donne telle quelle à [Scene.At].
 type Input = input.Input
 
 // Key désigne une place sur le clavier, et non le caractère qu'elle produit : la
@@ -481,6 +486,20 @@ type Sheets = appearance.Sheets
 
 // NewSheets monte un fournisseur de référence sans aucune entrée.
 func NewSheets() *Sheets { return appearance.NewSheets() }
+
+// Directions est le nombre de directions que [Sheets] attend de ses planches : les
+// quatre cardinales de l'écran et les quatre diagonales.
+//
+// **C'est le nombre de ce fournisseur-là, pas une borne du moteur**, qui n'en impose
+// aucun — un fournisseur volumique en déclare seize, et rien ailleurs ne suppose l'un
+// ou l'autre. Il se lit aussi par [Sheets.Directions], et c'est cette voie qu'emploie
+// du code qui accepte n'importe quel [Provider].
+//
+// Republié parce que c'est le nombre de colonnes qu'une planche doit porter, donc ce
+// qu'il faut connaître avant d'appeler [Sheet.CutGrid]. Le retenir obligeait un jeu à
+// écrire le huit chez lui, c'est-à-dire à créer la seconde occurrence que le contrôle
+// d'unicité ne voit pas — l'inverse de ce qu'on cherchait.
+const Directions = appearance.Directions
 
 // Font décrit une planche de glyphes à cellule fixe, et c'est tout ce qu'il faut au
 // moteur pour afficher du texte — il ne rastérise aucun fichier de police.

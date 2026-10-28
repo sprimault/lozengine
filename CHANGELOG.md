@@ -53,6 +53,9 @@ notes de publication.
   frôlement de pilier.
 - `Scene.SetRevealing` change ces conventions en cours de partie, que les options ne
   posaient qu'à la construction.
+- `Directions` est republié à la racine, comme les six autres bornes : c'est le nombre
+  de colonnes qu'une planche de `Sheets` doit porter, et le retenir obligeait un jeu à
+  l'écrire chez lui.
 
 ### Modifié
 
@@ -65,6 +68,10 @@ notes de publication.
 - La révélation compte tout ce qui passe devant une chose, entités comprises, et sa
   documentation le dit enfin : elle annonçait le décor seul, donc elle décourageait le
   cas qu'elle promettait — être encerclé.
+- Les godoc de synthèse n'annoncent plus quelles plateformes ouvrent une fenêtre, ni
+  que les entrées se limitent au clavier. La première avait survécu à deux
+  publications ; quelles plateformes sont servies se lit désormais ici et dans la
+  feuille de route, en un seul endroit.
 
 ***
 
@@ -76,6 +83,9 @@ notes de publication.
   slightest brush against a pillar.
 - `Scene.SetRevealing` changes those conventions mid-game, which the options only set
   at construction.
+- `Directions` is republished at the root, like the six other bounds: it is the number
+  of columns a `Sheets` sheet must carry, and withholding it forced a game to write it
+  on its own side.
 
 ### Changed
 
@@ -88,6 +98,9 @@ notes de publication.
 - Revealing counts everything drawn in front of a thing, entities included, and its
   documentation finally says so: it announced the decor alone, discouraging the very
   case it promised — being surrounded.
+- The summary godocs no longer state which platforms open a window, nor that input is
+  the keyboard alone. The first had survived two releases; which platforms are served
+  now reads here and in the roadmap, in one place.
 
 ## [0.5.0] — 2026-10-28 — Jalon 4 · Apparence et interaction
 

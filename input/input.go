@@ -6,8 +6,9 @@
 
 package input
 
-// Input est ce que le clavier dit à une image : les touches tenues, et celles qui
-// viennent d'être enfoncées.
+// Input est ce que les entrées disent à une image : les touches et les boutons tenus,
+// ceux qui viennent d'être enfoncés, la position du pointeur et les crans de molette
+// du pas.
 //
 // Un état et non une file d'événements. Une file ferait dépendre le travail d'un pas du
 // nombre d'événements arrivés depuis le précédent, ce qui défait le pas fixe ; et elle
