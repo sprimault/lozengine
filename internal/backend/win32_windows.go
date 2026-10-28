@@ -54,6 +54,9 @@ var (
 	// déjà ainsi.
 	trackMouseEventProc = user32.NewProc("TrackMouseEvent")
 
+	// Poser le curseur, ce qui sert à ne pas en poser du tout.
+	setCursor = user32.NewProc("SetCursor")
+
 	// Les deux que la reprise du focus emploie, pour relire ce que le clavier tient
 	// déjà. La traduction suit la disposition, ce qui est voulu ici.
 	mapVirtualKeyW   = user32.NewProc("MapVirtualKeyW")
@@ -164,6 +167,17 @@ const (
 // redimensionnement reste affichée après qu'on a tiré un bord vers l'intérieur. Le
 // défaut vient du jalon 2, où le champ existait et n'était pas rempli.
 const idcArrow = 32512
+
+// wmSetCursor demande à la fenêtre quel curseur poser, et htClient dit que le pointeur
+// est sur la zone de jeu plutôt que sur une bordure.
+//
+// C'est par là qu'une fenêtre cache le curseur, et non par sa classe : celle-ci est
+// enregistrée une fois pour toutes les fenêtres du processus, donc y poser un curseur
+// vide le retirerait aussi à celles qui le veulent.
+const (
+	wmSetCursor = 0x0020
+	htClient    = 1
+)
 
 // sizeMinimized est le `wParam` de `wmSize` qui annonce la réduction. C'est par lui
 // que la minimisation se lit, et non en interrogeant la fenêtre à chaque image.

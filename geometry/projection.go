@@ -75,6 +75,20 @@ func (m Matrix) Unproject(ex, ey int32) (x, y float64) {
 	return float64(fx) / unit, float64(fy) / unit
 }
 
+// Rise rend de combien de pixels une hauteur monte à l'écran.
+//
+// C'est la part que [Matrix.Project] retranche de l'ordonnée, isolée pour qui doit la
+// défaire : désigner une case à un étage demande de redescendre le pixel visé jusqu'au
+// sol avant d'appliquer l'inverse, celle-ci ne portant que le plan des deux premiers
+// axes.
+//
+// Elle rend la montée et non le facteur, qui reste un détail de la matrice. Un
+// appelant qui l'aurait voudrait le multiplier lui-même, et referait alors la
+// quantification que le déterminisme veut faire à un seul endroit.
+func (m Matrix) Rise(z float64) int32 {
+	return pixel(int64(m.floor) * int64(quantize(z)))
+}
+
 // MaxCells borne le nombre de cellules qu'un rectangle d'écran peut couvrir,
 // quelle que soit la position de la vue.
 //

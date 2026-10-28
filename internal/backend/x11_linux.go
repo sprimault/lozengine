@@ -105,11 +105,15 @@ const eventSentBit = 0x80
 // Les requêtes que le backend envoie, par leur opcode majeur.
 const (
 	opCreateWindow   = 1
+	opChangeWindow   = 2
 	opDestroyWindow  = 4
 	opMapWindow      = 8
 	opInternAtom     = 16
 	opChangeProperty = 18
+	opCreatePixmap   = 53
 	opCreateGC       = 55
+	opFillRectangle  = 70
+	opCreateCursor   = 93
 	opPutImage       = 72
 	opGetImage       = 73
 	opQueryExtension = 98
@@ -143,7 +147,12 @@ const classInputOutput = 1
 const (
 	cwBackPixel = 0x0002
 	cwEventMask = 0x0800
+	cwCursor    = 0x4000
 )
+
+// gcForeground est le bit du masque de valeurs d'un contexte graphique qui porte sa
+// couleur de tracé.
+const gcForeground = 0x0004
 
 // Les événements que la fenêtre demande à recevoir.
 //

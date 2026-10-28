@@ -131,6 +131,20 @@ type Options struct {
 	//
 	// La boucle seule s'en sert : un hôte qui emploie [Engine] possède sa fenêtre.
 	Icons []Sheet
+
+	// HideCursor retire le curseur du système de la zone de jeu.
+	//
+	// C'est ce qu'un jeu demande quand il dessine le sien dans son image, et il n'y a
+	// pas de milieu : laisser les deux fait suivre au joueur deux pointeurs, celui du
+	// jeu agrandi au facteur entier et celui du système net et décalé. Les bordures
+	// et la barre de titre gardent les leurs.
+	//
+	// Le moteur ne dessine aucun curseur à la place : ce qu'on montre sous le
+	// pointeur — une flèche, une case surlignée, rien — est une décision de jeu, et
+	// [Input.Pointer] donne où le poser.
+	//
+	// La boucle seule s'en sert, comme pour les icônes.
+	HideCursor bool
 }
 
 // Les défauts de la résolution interne, choisis au jalon 0 et tenus depuis : une tuile

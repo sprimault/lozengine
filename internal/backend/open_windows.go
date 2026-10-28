@@ -58,12 +58,13 @@ func Open(o Options) (Window, error) {
 	outerW, outerH := outerSize(o.Width, o.Height, wsOverlappedWindow)
 
 	w := &window{
-		lastW: o.Width,
-		lastH: o.Height,
-		minW:  outerW,
-		minH:  outerH,
-		info:  newBitmapInfo(),
-		args:  newPresentArgs(),
+		lastW:      o.Width,
+		lastH:      o.Height,
+		minW:       outerW,
+		minH:       outerH,
+		info:       newBitmapInfo(),
+		args:       newPresentArgs(),
+		hideCursor: o.HideCursor,
 	}
 
 	hwnd, _, err := createWindowExW.Call(

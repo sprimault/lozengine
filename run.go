@@ -62,6 +62,8 @@ func Run(s *Scene, g Game, o Options) error {
 		Width:  uint16(o.Width),
 		Height: uint16(o.Height),
 		Icons:  icons(o.Icons),
+
+		HideCursor: o.HideCursor,
 	})
 	if err != nil {
 		return fmt.Errorf("opening the window: %w", err)
