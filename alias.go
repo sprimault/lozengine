@@ -428,3 +428,24 @@ type Facing = appearance.Facing
 func Turn(f Facing, o Orientation, directions int) Facing {
 	return appearance.Turn(f, o, directions)
 }
+
+// Clip décrit la cadence d'une animation : son nombre d'images et la durée de chacune.
+//
+// Rien n'y est gardé d'une image à la suivante : l'image courante se dérive du numéro
+// de pas, donc deux rendus du même pas donnent la même image. Elle s'emploie par
+// [Clip.Loop], qui tourne sans fin, et [Clip.Once], qui joue une fois.
+type Clip = appearance.Clip
+
+// Entry décrit ce qu'une planche porte pour un couple de chose et d'état : où lire,
+// quelle taille, quelle cadence.
+type Entry = appearance.Entry
+
+// Sheets est le fournisseur de référence, qui résout une apparence depuis des planches
+// dessinées, découpées en colonnes de directions et en lignes d'images.
+//
+// Il ne pose ni couche ni étage : ceux-là disent où une chose se range, ce qui dépend
+// d'où elle se trouve et non de ce qu'elle montre.
+type Sheets = appearance.Sheets
+
+// NewSheets monte un fournisseur de référence sans aucune entrée.
+func NewSheets() *Sheets { return appearance.NewSheets() }
