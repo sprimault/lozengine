@@ -48,6 +48,17 @@ type Aspect struct {
 	// l'étage sépare les niveaux d'un décor. Combien un jeu en emploie ne regarde que
 	// lui — la clé sait en distinguer seize et soixante-quatre.
 	//
+	// **L'étage n'est pas qu'un rang : c'est aussi une hauteur.** Il monte à l'écran
+	// du facteur que porte la projection, réglé par
+	// [geometry.Matrix.WithFloorHeight] et valant par défaut la hauteur d'une
+	// cellule — le cas d'un cube dont la face du dessus couvre exactement le sol de
+	// sa case. Un niveau se décrit donc par ce seul champ, et [Entity.Z] est la
+	// hauteur **au-dessus** de l'étage où l'on se tient : un personnage qui grimpe
+	// change son étage, un personnage qui saute change son z.
+	//
+	// Porter la hauteur dans les deux serait deux valeurs à tenir d'accord, et rien
+	// ne le dirait au jeu. La couche, elle, ne déplace rien ; elle ne fait que ranger.
+	//
 	// Ni l'une ni l'autre n'est la strate de [Scene.PlaceCell], qui dit seulement
 	// ce qui s'empile sur une même cellule. Une couche passe devant toute l'image, une
 	// strate ne passe devant que ce qu'elle recouvre.

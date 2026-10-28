@@ -100,7 +100,16 @@ func (t *Sorter) collectEntities() {
 
 	for i, e := range scene.Entities(t.scene) {
 		rx, ry := t.scene.Remap(e.X, e.Y)
-		ex, ey, depth, height := m.Project(rx, ry, e.Z)
+
+		// L'étage monte à l'écran pour une entité comme il monte pour le décor, et z
+		// est la hauteur au-dessus de cet étage. Un personnage qui change de niveau
+		// change donc son étage et rien d'autre ; porter la hauteur deux fois serait
+		// deux valeurs à tenir d'accord, et rien ne le dirait au jeu.
+		//
+		// La somme se fait ici parce que la projection ne connaît pas l'apparence, et
+		// elle ne traverse qu'une quantification : deux conversions séparées
+		// arrondiraient chacune de son côté.
+		ex, ey, depth, height := m.Project(rx, ry, e.Z+float64(e.Floor))
 
 		// Une entité n'est posée sur aucune strate : elle se tient sur le décor, pas
 		// dedans, et la strate zéro la met donc sous tout ce qui s'y empile.
@@ -156,8 +165,14 @@ func (t *Sorter) collectDecor() {
 				// renversements d'axes, donc l'image d'une cellule reste un carré
 				// unité : son coin le plus lointain est le centre remappé moins un
 				// demi sur chaque axe, quelle que soit l'orientation.
+				//
+				// L'étage est une hauteur et pas seulement un rang dans la clé. Une
+				// cellule de décor n'a aucun autre champ où la porter — PlaceCell ne
+				// prend que deux coordonnées et une strate —, et le facteur qui la
+				// convertit en pixels vit dans la matrice. Sans cela un second niveau
+				// se rangerait devant le premier tout en se dessinant au ras du sol.
 				rx, ry := t.scene.Remap(float64(u)+0.5, float64(v)+0.5)
-				ex, ey, depth, height := m.Project(rx, ry, 0)
+				ex, ey, depth, height := m.Project(rx, ry, float64(a.Floor))
 				depth = max(depth, halfCellQuarters) - halfCellQuarters
 
 				// Le rang de la cellule ne bouge jamais, contrairement à la place

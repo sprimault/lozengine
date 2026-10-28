@@ -137,10 +137,11 @@ func coreScene() *scene.Scene {
 	s.Place(scene.Entity{X: 3.5, Y: 3.5, Aspect: figure})
 
 	// Un étage au-dessus, qui passe devant tout l'étage du sol quelle que soit sa
-	// profondeur, et que sa hauteur monte à l'écran.
+	// profondeur, et que son étage monte à l'écran. Pas de z : il porterait la même
+	// hauteur une seconde fois, et l'entité monterait de deux crans.
 	tall := figure
 	tall.Floor = 1
-	s.Place(scene.Entity{X: 5.5, Y: 5.5, Z: 1, Aspect: tall})
+	s.Place(scene.Entity{X: 5.5, Y: 5.5, Aspect: tall})
 
 	return s
 }
