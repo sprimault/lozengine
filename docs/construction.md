@@ -14,7 +14,7 @@ make entetes      # la mention de licence, sur ce que le dépôt publie
 make frontiere    # le noyau ne touche ni au système ni à un backend
 make journal      # chaque section du CHANGELOG dit la même chose dans ses deux langues
 make cross        # compile pour chacun des couples que les README annoncent
-make cover        # couverture, ouverte dans le navigateur
+make cover        # couverture, écrite dans .tmp/couverture.html
 make bench        # bancs d'essai, un profil par paquet
 make references   # régénère les images de référence
 make notes VERSION=0.1.0   # les notes d'une version, tirées du CHANGELOG

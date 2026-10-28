@@ -56,6 +56,8 @@ notes de publication.
 - La documentation de `RevealOptions.TintByDecor` déclarait impossible une combinaison
   que la teinte neutre écrit — sourd sous les entités, net sous le décor. La seule
   limite réelle est un aspect qui porte déjà sa propre teinte.
+- Les `README` annonçaient cinq paquets publics et omettaient `appearance`, dont un
+  intégrateur pouvait conclure qu'il lui était fermé. Ils en annoncent six.
 
 ***
 
@@ -70,6 +72,8 @@ notes de publication.
 - The documentation of `RevealOptions.TintByDecor` declared impossible a combination the
   neutral tint writes — dimmed under entities, sharp under decor. The only real limit is
   an aspect already carrying a tint of its own.
+- The `README`s announced five public packages and left out `appearance`, from which an
+  integrator could conclude it was closed to them. They now announce six.
 
 ## [0.5.2] — 2026-10-28
 
