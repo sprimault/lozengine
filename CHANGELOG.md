@@ -49,6 +49,10 @@ notes de publication.
 
 - Une chose marquée se révèle aussi quand ce qui la cache se dessine au même rang
   qu'elle. Deux figures sur une même diagonale laissaient la silhouette dessous.
+- Une projection construite par `Raw` aux coefficients minuscules ne relève plus les
+  cellules du côté opposé de l'écran.
+- Une projection dont l'inverse ne tient pas dans les entiers du moteur ramène tout
+  point sur l'origine, au lieu d'un résultat qui dépendait de l'architecture.
 
 ***
 
@@ -56,6 +60,10 @@ notes de publication.
 
 - A marked thing is now revealed when what hides it draws at the same rank. Two figures
   on one diagonal left the silhouette underneath.
+- A projection built with `Raw` from tiny coefficients no longer collects the cells from
+  the opposite side of the screen.
+- A projection whose inverse does not fit the engine's integers now brings every point
+  back to the origin, instead of a result that depended on the architecture.
 
 ## [0.5.2] — 2026-10-28
 
