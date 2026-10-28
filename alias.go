@@ -473,3 +473,11 @@ type Sheets = appearance.Sheets
 
 // NewSheets monte un fournisseur de référence sans aucune entrée.
 func NewSheets() *Sheets { return appearance.NewSheets() }
+
+// Font décrit une planche de glyphes à cellule fixe, et c'est tout ce qu'il faut au
+// moteur pour afficher du texte — il ne rastérise aucun fichier de police.
+//
+// Elle s'emploie par [Font.Measure], qui dit ce qu'une ligne occupera, et par
+// [Font.Place], qui la pose en pixels de l'image. Mesurer d'abord est ce que centrer
+// ou cadrer demande.
+type Font = appearance.Font
