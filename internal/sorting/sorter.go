@@ -219,8 +219,12 @@ func (t *Sorter) window() (u0, v0, u1, v1 int) {
 // commence au plus à sa largeur en arrière. Un aspect plus large que 32 767 fait
 // exception et n'a pas de place où dépasser à gauche.
 //
-// L'ancre est le pied de l'image, centré horizontalement. Elle deviendra surchargeable
-// par le fournisseur d'apparence, jamais par appel.
+// L'ancre est le pied de l'image, centré horizontalement, et l'aspect la décale de ce
+// défaut — jamais l'appelant, pour les raisons que [scene.Aspect] donne.
+//
+// Le décalage entre dans le découpage mais pas dans le départage : celui-ci lit `ex`,
+// l'abscisse du point projeté, de sorte qu'une planche rembourrée pour recaler son
+// ancre ne réordonne pas ce qu'elle côtoie.
 func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32, height uint16, identity uint32, tier uint8) {
 	if a.Width == 0 || a.Height == 0 {
 		return
@@ -228,7 +232,7 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 
 	ex, ey := absoluteX-t.viewX, absoluteY-t.viewY
 	w, h := int32(a.Width), int32(a.Height)
-	x, y := ex-w/2, ey-h
+	x, y := ex-w/2+int32(a.AnchorX), ey-h+int32(a.AnchorY)
 
 	if x+w <= 0 || x >= t.viewWidth || y+h <= 0 || y >= t.viewHeight {
 		return

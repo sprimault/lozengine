@@ -27,8 +27,10 @@ d'écran, parce qu'elle court-circuiterait la seule chose que le moteur apporte.
 
 - **Monde distinct de l'écran.** Cellules flottantes, `x` et `y` dans la grille,
   `z` en hauteur au-dessus du sol, `y` croissant vers le bas-droite de l'écran.
-- **Ancre.** Point de contact au sol, centre de case par défaut. Surchargeable
-  par apparence, jamais par appel.
+- **Ancre.** Le point du monde visé est le contact au sol, centre de case par
+  défaut, et il ne se règle pas. Ce qui se règle est l'endroit où l'image se pose
+  autour du pixel qu'il atteint — le pied de l'image, centré, par défaut —, par
+  l'apparence et jamais par appel.
 - **Hauteur.** `z` reste un champ séparé, jamais fondu dans la matrice de
   projection. L'écran est la projection de `(x, y)` moins `z` fois un facteur ;
   la clé de tri se calcule sur `(x+y)` puis `z`. Fondre les deux perd

@@ -123,6 +123,77 @@ func TestAnchorIsTheFootOfTheImage(t *testing.T) {
 	}
 }
 
+// TestAnchorOffsetMovesTheImage vérifie que la surcharge d'ancre déplace le quad, de
+// la valeur exacte demandée et dans les deux sens.
+func TestAnchorOffsetMovesTheImage(t *testing.T) {
+	const offsetX, offsetY = 40, -12
+
+	corner := func(anchorX, anchorY int16) (int32, int32) {
+		s := testScene(t, 16, 1)
+
+		a := figure()
+		a.AnchorX, a.AnchorY = anchorX, anchorY
+		if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: a}); !ok {
+			t.Fatal("entité refusée")
+		}
+
+		image := New(s).Frame()
+		if len(image) != 1 {
+			t.Fatalf("%d quads, attendu 1", len(image))
+		}
+		return int32(image[0].X), int32(image[0].Y)
+	}
+
+	x0, y0 := corner(0, 0)
+	x1, y1 := corner(offsetX, offsetY)
+
+	if x1-x0 != offsetX || y1-y0 != offsetY {
+		t.Errorf("déplacement de (%d, %d), attendu (%d, %d)",
+			x1-x0, y1-y0, offsetX, offsetY)
+	}
+}
+
+// TestAnchorOffsetDoesNotReorder garde la moitié de la surcharge qui casserait en
+// silence : le départage lit l'abscisse du point projeté, jamais celle de l'image.
+//
+// S'il lisait la seconde, rembourrer une planche pour recaler son ancre réordonnerait
+// ce qu'elle côtoie — et rien ne le signalerait, les deux quads restant présents et
+// seule leur superposition changeant, ce qui se lit à l'image comme un défaut de tri.
+//
+// Les deux entités partagent profondeur, hauteur et planche, donc leurs clés sont
+// égales et c'est le départage seul qui les range. Le décalage emmène celle de gauche
+// à droite de l'autre, ce qui inverserait l'ordre s'il comptait.
+func TestAnchorOffsetDoesNotReorder(t *testing.T) {
+	const shift = 64
+
+	order := func(anchorX int16) [2]render.Color {
+		s := testScene(t, 16, 2)
+
+		left := figure()
+		left.Tint = render.Color{R: 255, A: 255}
+		left.AnchorX = anchorX
+		if _, ok := s.Place(scene.Entity{X: 9.5, Y: 8.5, Aspect: left}); !ok {
+			t.Fatal("entité de gauche refusée")
+		}
+
+		right := figure()
+		right.Tint = render.Color{G: 255, A: 255}
+		if _, ok := s.Place(scene.Entity{X: 8.5, Y: 9.5, Aspect: right}); !ok {
+			t.Fatal("entité de droite refusée")
+		}
+
+		image := New(s).Frame()
+		if len(image) != 2 {
+			t.Fatalf("%d quads, attendu 2", len(image))
+		}
+		return [2]render.Color{image[0].Tint, image[1].Tint}
+	}
+
+	if plain, shifted := order(0), order(shift); plain != shifted {
+		t.Errorf("ordre %v avec le décalage, attendu %v", shifted, plain)
+	}
+}
+
 // TestFrameOrdersByDepth vérifie la propriété que tout le jalon sert : ce qui
 // est plus loin se peint avant ce qui est plus près, quel que soit l'ordre de pose.
 func TestFrameOrdersByDepth(t *testing.T) {

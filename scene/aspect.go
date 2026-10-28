@@ -20,10 +20,13 @@ import "github.com/sprimault/lozengine/render"
 // largeur ou une hauteur nulle ne couvre aucun pixel, donc aucune table de présence
 // n'a à exister à côté.
 //
-// **L'ancre est le pied de l'image, centrée horizontalement** : le pixel où la
-// projection fait tomber le point du monde reçoit le coin haut-gauche à
-// (−Width/2, −Height). Elle deviendra surchargeable par le fournisseur d'apparence,
-// jamais par appel.
+// **L'ancre a deux niveaux, et c'est le second qui se règle.** Le premier est le point
+// du monde visé, celui du contact au sol : le centre de sa case pour une cellule de
+// décor, la position donnée pour une entité. Il ne se surcharge pas — la grille et la
+// projection le décident. Le second est l'endroit où l'image se pose autour du pixel
+// que ce point atteint : par défaut le pied de l'image, centré horizontalement, soit
+// un coin haut-gauche à (−Width/2, −Height). C'est celui-là que [Aspect.AnchorX] et
+// [Aspect.AnchorY] décalent.
 //
 // Deux conséquences pour un jeu qui dérive de là une position d'écran, pour une barre
 // de vie ou une infobulle. Le dernier pixel peint est **une ligne au-dessus** du point
@@ -42,6 +45,20 @@ type Aspect struct {
 	// ne dessine rien — une cellule qu'on veut voir porte une teinte explicite.
 	Tint  render.Color
 	Flags render.Flags
+
+	// AnchorX et AnchorY décalent l'image autour du pixel que le point du monde
+	// atteint, vers la droite et vers le bas. La valeur zéro laisse le pied centré.
+	//
+	// C'est la seule voie, et l'ancre ne se donne jamais par appel : elle est une
+	// propriété de l'image, pas du moment où on la dessine. Deux appels qui la
+	// donneraient différemment pour la même planche feraient sauter une entité d'une
+	// image à la suivante sans que rien ne le signale.
+	//
+	// **Le décalage ne touche pas l'ordre de dessin**, qui se départage sur l'abscisse
+	// du point projeté et non sur celle de l'image. Sans cela, rembourrer une planche
+	// pour recaler son ancre réordonnerait ce qu'elle côtoie, et un détail de
+	// découpage déciderait de ce qui passe devant.
+	AnchorX, AnchorY int16
 
 	// Layer et Floor ouvrent les deux champs les plus forts de la clé de tri. La
 	// couche range ce qui doit passer devant tout le reste, une interface par exemple ;
