@@ -318,10 +318,11 @@ c'est qu'un défaut manque quelque part.
 
 ## Dépendances
 
-**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `sorting`, `render` et
-`raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. C'est
-là que la promesse se joue, et le contrôle la vérifie paquet par paquet plutôt
-que globalement.
+**Le cœur du moteur n'en a aucune.** Bibliothèque standard seule, sans cgo, tests
+compris, pour les paquets que le `Makefile` liste sous `SANS_DEPENDANCE` — c'est
+cette liste que le contrôle applique, donc la seule qui ne puisse pas se périmer.
+C'est là que la promesse se joue, et elle se vérifie paquet par paquet plutôt que
+globalement.
 
 Deux paquets périphériques font exception, sous licence permissive et par
 décision inscrite dans le `Makefile` : le rendu de polices dans `appearance`, la

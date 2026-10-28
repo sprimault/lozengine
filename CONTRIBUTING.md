@@ -17,10 +17,11 @@ bureaucratic.
 
 ## The rule on dependencies
 
-**The core of the engine has none.** `geometry`, `scene`, `sorting`, `render` and
-`raster` use the standard library and nothing else, no cgo, tests included. A
-pull request that adds anything there is refused whatever its quality: "just for
-the tests" is not an exception, and an assertion library even less so.
+**The core of the engine has none.** The standard library and nothing else, no cgo,
+tests included, for the packages the `Makefile` lists under `SANS_DEPENDANCE` —
+that list is the one the check applies, so it is the only one that cannot go
+stale. A pull request that adds anything there is refused whatever its quality:
+"just for the tests" is not an exception, and an assertion library even less so.
 
 Elsewhere, a **closed list** kept in the `Makefile`, which today holds two
 entries — font rasterising and audio output. A candidate joins it through a

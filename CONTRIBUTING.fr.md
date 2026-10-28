@@ -17,9 +17,10 @@ discussion préalable utile plutôt que bureaucratique.
 
 ## La règle sur les dépendances
 
-**Le cœur du moteur n'en a aucune.** `geometry`, `scene`, `sorting`, `render` et
-`raster` n'emploient que la bibliothèque standard, sans cgo, tests compris. Une
-pull request qui y ajoute quoi que ce soit est refusée, quelle que soit sa
+**Le cœur du moteur n'en a aucune.** Bibliothèque standard seule, sans cgo, tests
+compris, pour les paquets que le `Makefile` liste sous `SANS_DEPENDANCE` — c'est
+cette liste que le contrôle applique, donc la seule qui ne puisse pas se périmer.
+Une pull request qui y ajoute quoi que ce soit est refusée, quelle que soit sa
 qualité : « juste pour les tests » n'est pas une exception, et une bibliothèque
 d'assertions encore moins.
 

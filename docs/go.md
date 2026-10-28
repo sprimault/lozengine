@@ -209,9 +209,10 @@ types changeant de direction sur la même image sans pic.
 
 ## Dépendances
 
-**Le cœur du moteur n'a aucune dépendance.** `geometry`, `scene`, `sorting`, `render`
-et `raster` n'emploient que la bibliothèque standard, sans cgo — tests compris.
-C'est là que la promesse se joue, et `make deps` la vérifie paquet par paquet.
+**Le cœur du moteur n'a aucune dépendance.** Bibliothèque standard seule, sans cgo —
+tests compris —, pour les paquets que le `Makefile` liste sous `SANS_DEPENDANCE`, seule
+énumération qui fasse foi puisque c'est celle que `make deps` applique. C'est là que la
+promesse se joue, et elle se vérifie paquet par paquet.
 
 **Le critère porte sur ce que le moteur embarque, pas sur ce qui se charge en
 mémoire** : aucune bibliothèque C tierce, aucun compilateur C exigé, rien à
