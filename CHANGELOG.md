@@ -53,6 +53,9 @@ notes de publication.
   cellules du côté opposé de l'écran.
 - Une projection dont l'inverse ne tient pas dans les entiers du moteur ramène tout
   point sur l'origine, au lieu d'un résultat qui dépendait de l'architecture.
+- La documentation de `RevealOptions.TintByDecor` déclarait impossible une combinaison
+  que la teinte neutre écrit — sourd sous les entités, net sous le décor. La seule
+  limite réelle est un aspect qui porte déjà sa propre teinte.
 
 ***
 
@@ -64,6 +67,9 @@ notes de publication.
   the opposite side of the screen.
 - A projection whose inverse does not fit the engine's integers now brings every point
   back to the origin, instead of a result that depended on the architecture.
+- The documentation of `RevealOptions.TintByDecor` declared impossible a combination the
+  neutral tint writes — dimmed under entities, sharp under decor. The only real limit is
+  an aspect already carrying a tint of its own.
 
 ## [0.5.2] — 2026-10-28
 

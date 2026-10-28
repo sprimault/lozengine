@@ -111,11 +111,13 @@ type RevealOptions struct {
 	// même du seuil : un pixel caché ne porte aucun indice de profondeur, puisqu'on ne
 	// voit pas qu'il y a quelque chose devant.
 	//
-	// **Une limite connue, qui tient à la chaîne des valeurs zéro.** Zéro veut dire
-	// « celle de l'aspect » sur Tint et « comme Tint » ici, donc une teinte sourde
-	// sous les entités avec le sprite net sous le décor ne s'écrit pas. C'est
-	// l'inverse de ce qu'un jeu demande — le décor est l'origine qui porte un indice à
-	// préserver —, et aucun consommateur ne l'a réclamé ; cela se rouvrirait en
+	// **Une limite, et elle ne vise qu'un aspect portant déjà sa propre teinte.** Zéro
+	// veut dire « celle de l'aspect » sur Tint et « comme Tint » ici, donc le sprite
+	// net sous le décor passe par [render.White], la teinte neutre : une Tint sourde
+	// avec TintByDecor neutre redessine telle quelle une chose cachée par un mur et
+	// assourdit celle qu'une créature cache. Ce qui reste hors d'atteinte est le même
+	// effet sur un aspect qui porte déjà une teinte à lui — un personnage empoisonné —,
+	// que la teinte neutre écraserait au lieu de la laisser. Cela se rouvrirait en
 	// distinguant « non renseigné » de « transparent », ce qui coûterait un champ de
 	// présence ou un pointeur.
 	TintByDecor render.Color
