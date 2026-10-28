@@ -36,27 +36,44 @@ import (
 // payé deux défauts pour avoir cru que l'élévation pouvait servir de critère : un sol
 // surélevé reste du sol, et ne cache rien.
 func (t *Sorter) revealHidden() {
-	if t.revealing == 0 {
+	if t.revealing == 0 && len(t.requests) == 0 {
 		return
 	}
 
 	o := scene.Revealing(t.scene)
 
+	// Les demandes sont dans l'ordre de pose, donc par rang croissant : un index qui
+	// avance suffit à savoir si le rang courant est demandé, sans table ni recherche.
+	next := 0
+
 	// La borne est figée : la boucle ajoute à la même tranche qu'elle parcourt, et une
 	// chose révélée n'a pas à l'être une seconde fois.
 	for i, n := 0, len(t.raw); i < n; i++ {
 		layer := t.reveals[i]
-		if layer == 0 {
+		asked := next < len(t.requests) && int(t.requests[next].rank) == i
+		if layer == 0 && !asked {
 			continue
 		}
 
-		hidden, byDecor := t.hiddenEnough(i, n, o.After)
-		if !hidden {
+		// Une seule mesure pour les deux usages : une entité qui demande le relevé et
+		// porte une couche de révélation ne la paie donc qu'une fois.
+		total, decor := t.overlap(i, n)
+
+		if asked {
+			t.overlaps = append(t.overlaps, render.Overlap{
+				Identity: t.requests[next].handle,
+				Hidden:   uint32(total),
+				ByDecor:  uint32(decor),
+			})
+			next++
+		}
+
+		if layer == 0 || total <= o.After {
 			continue
 		}
 
 		tint := o.Tint
-		if byDecor && o.TintByDecor.A != 0 {
+		if decor > o.After && o.TintByDecor.A != 0 {
 			tint = o.TintByDecor
 		}
 
@@ -73,20 +90,18 @@ func (t *Sorter) revealHidden() {
 	}
 }
 
-// hiddenEnough dit si ce qui se peint après le quad de rang i le recouvre de plus de
-// `after` pixels, et si le décor y suffirait à lui seul.
+// overlap rend le nombre de pixels du quad de rang i que recouvre ce qui se peint après
+// lui, et la part de ce total qui vient du décor.
 //
-// **Le second résultat emploie le même seuil que le premier, et c'est ce qui le
-// justifie.** La teinte ne bascule pas parce qu'un pixel de décor s'est glissé dans le
-// recouvrement : un pixel caché ne porte aucun indice de profondeur, puisqu'on ne voit
-// pas qu'il y a quelque chose devant — l'argument même du seuil. Sans cela, un
-// personnage encerclé qui tourne autour d'un pilier verrait sa teinte battre à chaque
-// frôlement alors que l'essentiel du recouvrement vient de la mêlée, et un signal qui
-// clignote sur un écran chargé est pire que pas de signal.
+// **La mesure est exacte et ne sort pas en route.** Une version antérieure s'arrêtait
+// dès que le décor seul dépassait le seuil, ce qui suffisait à décider d'une révélation
+// mais rend un total faux ; le relevé qu'un hôte reçoit demande le compte entier, et
+// une mesure qui dépend de l'usage qu'on en fait serait deux mesures à tenir d'accord.
+// Le gain de cette sortie n'avait pas été mesuré.
 //
-// La boucle ne peut donc plus sortir dès que le total dépasse : il reste à savoir si
-// le décor seul y arrive. Elle sort en revanche dès que **lui** dépasse, puisque plus
-// rien ne peut alors changer la réponse.
+// **Les deux origines ne portent pas la même information**, et c'est pourquoi la part du
+// décor est comptée à part : ce qu'un mur cache, il le cache parce que la chose est
+// derrière lui ; une créature qui s'interpose ne dit rien de tel.
 //
 // Le cumul compte deux fois ce que deux choses se recouvrant entre elles cachent au
 // même endroit, et c'est assumé : corriger demanderait de tenir la surface déjà
@@ -97,8 +112,7 @@ func (t *Sorter) revealHidden() {
 // encore écrit : c'est le départage qui range leur groupe, et il est déjà connu ici
 // puisque [Sorter.before] ne lit que ce que la collecte a posé. Le quad de rang i
 // s'écarte du même geste, le départage d'une chose avec elle-même rendant faux.
-func (t *Sorter) hiddenEnough(i, n, after int) (hidden, byDecor bool) {
-	total, decor := 0, 0
+func (t *Sorter) overlap(i, n int) (total, decor int) {
 	key := t.keys[i]
 
 	for j := range n {
@@ -106,23 +120,21 @@ func (t *Sorter) hiddenEnough(i, n, after int) (hidden, byDecor bool) {
 			continue
 		}
 
-		covered := overlap(t.raw[i], t.raw[j])
+		covered := shared(t.raw[i], t.raw[j])
 		total += covered
 		if t.fromDecor[j] {
-			if decor += covered; decor > after {
-				return true, true
-			}
+			decor += covered
 		}
 	}
-	return total > after, false
+	return total, decor
 }
 
-// overlap rend le nombre de pixels que deux quads se partagent.
+// shared rend le nombre de pixels que deux quads se partagent.
 //
 // En entiers de machine et non en seize bits : deux quads de trente-deux mille pixels
 // de côté donneraient un produit qui déborde, et le seuil se compare à une somme de
 // plusieurs de ces aires.
-func overlap(a, b render.Quad) int {
+func shared(a, b render.Quad) int {
 	left, right := max(int(a.X), int(b.X)), min(int(a.X)+int(a.Width), int(b.X)+int(b.Width))
 	if right <= left {
 		return 0

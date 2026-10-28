@@ -27,6 +27,18 @@ type Quad = render.Quad
 // l'ordre de dessin.
 type DrawList = render.DrawList
 
+// Overlap dit combien de pixels d'une entité suivie se font recouvrir par ce qui se
+// peint après elle, et quelle part vient du décor. Ses trois champs sont `Identity`,
+// `Hidden` et `ByDecor`, et sa disposition est compatible C.
+//
+// C'est la mesure dont le champ `Reveal` d'un [Aspect] se sert pour décider d'une
+// révélation, rendue à qui veut dessiner un rappel d'une autre nature. Le champ
+// `Measure` d'une [Entity] la demande, [Overlapped] et [Engine.Overlaps] la rendent.
+type Overlap = render.Overlap
+
+// OverlapList est le relevé d'une image, dans l'ordre où les entités ont été posées.
+type OverlapList = render.OverlapList
+
 // Buffer est l'image dans laquelle le moteur écrit : des pixels contigus, ligne par
 // ligne, prémultipliés comme ceux d'une planche.
 //

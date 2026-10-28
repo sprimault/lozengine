@@ -45,6 +45,15 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `Entity.Measure` demande le relevé de ce qui recouvre une entité, en pixels et par
+  origine. C'est la mesure dont `Aspect.Reveal` se sert déjà, rendue à qui veut dessiner
+  son propre rappel — un contour, une flèche — au lieu de la chose en plus pâle.
+- `Engine.Overlaps` rend ce relevé à un hôte qui tient sa boucle, et l'interface
+  facultative `Overlapped` le porte au jeu qui passe par `Run`. Il décrit le pas
+  précédent : un recouvrement ne se connaît qu'après l'ordre de dessin.
+
 ### Corrigé
 
 - Une chose marquée se révèle aussi quand ce qui la cache se dessine au même rang
@@ -54,12 +63,21 @@ notes de publication.
 - Une projection dont l'inverse ne tient pas dans les entiers du moteur ramène tout
   point sur l'origine, au lieu d'un résultat qui dépendait de l'architecture.
 - La documentation de `RevealOptions.TintByDecor` déclarait impossible une combinaison
-  que la teinte neutre écrit — sourd sous les entités, net sous le décor. La seule
-  limite réelle est un aspect qui porte déjà sa propre teinte.
+  que la teinte neutre écrit — sourd sous les entités, net sous le décor. Ce qui reste
+  hors d'atteinte est le même effet sur un aspect portant déjà sa propre teinte.
 - Les `README` annonçaient cinq paquets publics et omettaient `appearance`, dont un
   intégrateur pouvait conclure qu'il lui était fermé. Ils en annoncent six.
 
 ***
+
+### Added
+
+- `Entity.Measure` asks for the overlap covering an entity, in pixels and by origin. It
+  is the measurement `Aspect.Reveal` already relies on, handed to whoever wants to draw
+  their own cue — an outline, an arrow — instead of the thing itself, paler.
+- `Engine.Overlaps` hands that report to a host holding its own loop, and the optional
+  `Overlapped` interface carries it to a game going through `Run`. It describes the
+  previous step: an overlap is only known once the draw order is settled.
 
 ### Fixed
 
@@ -70,8 +88,8 @@ notes de publication.
 - A projection whose inverse does not fit the engine's integers now brings every point
   back to the origin, instead of a result that depended on the architecture.
 - The documentation of `RevealOptions.TintByDecor` declared impossible a combination the
-  neutral tint writes — dimmed under entities, sharp under decor. The only real limit is
-  an aspect already carrying a tint of its own.
+  neutral tint writes — dimmed under entities, sharp under decor. What stays out of reach
+  is the same effect on an aspect already carrying a tint of its own.
 - The `README`s announced five public packages and left out `appearance`, from which an
   integrator could conclude it was closed to them. They now announce six.
 

@@ -47,6 +47,16 @@ type Sorter struct {
 	// trieur.
 	fromDecor []bool
 
+	// Ce qu'un jeu demande à faire relever, dans l'ordre de pose donc par rang de quad
+	// croissant. Une liste courte et non une tranche parallèle à raw : un jeu suit une
+	// chose ou deux, et une tranche de la taille de l'image coûterait sa remise à zéro
+	// pour deux entrées utiles.
+	requests []request
+
+	// Le relevé de l'image, réutilisé d'une image à l'autre : l'allouer par image
+	// mettrait le ramasse-miettes dans le chemin de rendu.
+	overlaps render.OverlapList
+
 	// collectingDecor dit à place d'où vient ce qu'elle reçoit. Un état plutôt qu'un
 	// paramètre de plus : place en porte déjà sept, et les trois relevés qui
 	// l'appellent le font chacun dans une boucle serrée.
@@ -57,6 +67,17 @@ type Sorter struct {
 	// La vue de l'image en cours, gardée le temps du relevé pour ne pas la traîner
 	// en paramètre jusqu'au fond.
 	viewX, viewY, viewWidth, viewHeight int32
+}
+
+// request est un relevé de recouvrement demandé : la poignée à nommer, et le rang du
+// quad qui porte la chose.
+//
+// Le rang plutôt qu'un renvoi vers l'entité, parce que la mesure se fait sur des quads
+// et que l'entité peut en produire un ou aucun — hors de la vue, elle n'en produit pas,
+// et il n'y a alors rien à relever.
+type request struct {
+	handle uint32
+	rank   uint32
 }
 
 // tie porte ce qui départage deux choses que la clé laisse à égalité.
@@ -91,6 +112,7 @@ func New(s *scene.Scene) *Sorter {
 func (t *Sorter) Frame() render.DrawList {
 	t.raw, t.keys, t.sources, t.ties = t.raw[:0], t.keys[:0], t.sources[:0], t.ties[:0]
 	t.reveals, t.revealing, t.fromDecor = t.reveals[:0], 0, t.fromDecor[:0]
+	t.requests, t.overlaps = t.requests[:0], t.overlaps[:0]
 
 	t.viewX, t.viewY, t.viewWidth, t.viewHeight = t.scene.View()
 	if t.viewWidth <= 0 || t.viewHeight <= 0 {
@@ -107,6 +129,14 @@ func (t *Sorter) Frame() render.DrawList {
 
 	return t.assemble()
 }
+
+// Overlaps rend le relevé de recouvrement de la dernière image, valable jusqu'à l'appel
+// suivant à [Sorter.Frame].
+//
+// Il ne porte que les entités qu'un jeu a marquées, dans l'ordre de leur pose, et il est
+// vide avant la première image : la mesure est un produit du tri, donc elle n'existe pas
+// avant qu'il ait eu lieu.
+func (t *Sorter) Overlaps() render.OverlapList { return t.overlaps }
 
 // collectEntities parcourt toutes les entités, sans en écarter aucune d'avance.
 //
@@ -133,7 +163,16 @@ func (t *Sorter) collectEntities() {
 
 		// Une entité n'est posée sur aucune strate : elle se tient sur le décor, pas
 		// dedans, et la strate zéro la met donc sous tout ce qui s'y empile.
-		t.place(e.Aspect, ex, ey, depth, height, identities[i], 0)
+		rank := t.place(e.Aspect, ex, ey, depth, height, identities[i], 0)
+
+		// La demande s'enregistre après la pose, et seulement si elle a produit un
+		// quad : une entité hors de la vue n'a rien à faire relever.
+		if rank >= 0 && e.Measure {
+			t.requests = append(t.requests, request{
+				handle: uint32(scene.HandleAt(t.scene, i)),
+				rank:   uint32(rank),
+			})
+		}
 	}
 }
 
@@ -248,9 +287,14 @@ func (t *Sorter) window() (u0, v0, u1, v1 int) {
 // Le décalage entre dans le découpage mais pas dans le départage : celui-ci lit `ex`,
 // l'abscisse du point projeté, de sorte qu'une planche rembourrée pour recaler son
 // ancre ne réordonne pas ce qu'elle côtoie.
-func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32, height uint16, identity uint32, tier uint8) {
+//
+// **Elle rend le rang du quad posé, et -1 quand elle n'en a posé aucun.** Un retour
+// plutôt qu'un huitième paramètre : elle en porte déjà sept, ce qui est la raison pour
+// laquelle collectingDecor est un état, et seul le relevé de recouvrement a besoin de
+// savoir où le quad a atterri.
+func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32, height uint16, identity uint32, tier uint8) int {
 	if a.Width == 0 || a.Height == 0 {
-		return
+		return -1
 	}
 
 	ex, ey := absoluteX-t.viewX, absoluteY-t.viewY
@@ -258,7 +302,7 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 	x, y := ex-w/2+int32(a.AnchorX), ey-h+int32(a.AnchorY)
 
 	if x+w <= 0 || x >= t.viewWidth || y+h <= 0 || y >= t.viewHeight {
-		return
+		return -1
 	}
 
 	if a.Reveal != 0 {
@@ -278,6 +322,7 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 		Tint:  a.Tint,
 		Flags: a.Flags,
 	})
+	return len(t.raw) - 1
 }
 
 // breakTies range ce que la clé laisse à égalité, puis inscrit le résultat dans

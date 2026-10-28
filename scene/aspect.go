@@ -144,4 +144,22 @@ type Entity struct {
 	X, Y, Z float64
 
 	Aspect
+
+	// Measure demande le relevé de ce qui recouvre cette entité, en pixels et par
+	// origine, sans rien redessiner. Le moteur le rend avec l'image, à qui veut
+	// dessiner son propre rappel plutôt que celui d'[Aspect.Reveal].
+	//
+	// **Sur l'entité et non sur son aspect, parce que [Scene.SetAspect] remplace
+	// l'aspect en entier.** Un jeu change l'apparence de son personnage à chaque
+	// changement de direction ; porté par l'aspect, le marqueur disparaîtrait alors
+	// sans que rien ne le dise. Ce qu'on suit est la chose, pas l'image qu'elle montre.
+	//
+	// Le relevé coûte un parcours de l'image par entité marquée, donc n'en marquer que
+	// ce qu'on suit — un personnage, pas une foule. [Aspect.Reveal] fait déjà mesurer
+	// de son côté, et une entité qui porte les deux ne paie qu'une fois.
+	//
+	// Une cellule de décor ne se relève pas : le relevé se désigne par une poignée, et
+	// le décor n'en a pas. C'est pourquoi ce champ est ici plutôt que sur l'aspect, que
+	// les deux partagent.
+	Measure bool
 }

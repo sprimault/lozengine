@@ -79,6 +79,7 @@ func Run(s *Scene, g Game, o Options) error {
 	// implémente ne change pas en cours de route, et le vérifier soixante fois par
 	// seconde serait payer une question dont la réponse est connue.
 	quitting, _ := g.(Quitter)
+	overlapped, _ := g.(Overlapped)
 
 	// L'instant du prochain pas, tenu en absolu. C'est ce qui empêche l'erreur de
 	// s'accumuler : dormir d'une durée fixe à chaque tour ajoute à chaque fois ce
@@ -106,6 +107,12 @@ func Run(s *Scene, g Game, o Options) error {
 			} else {
 				presented = NewBuffer(width, height)
 			}
+		}
+
+		// Le relevé part avant le pas : il porte l'image précédente, et le jeu décide
+		// avec lui. Vide à la première image, où aucun tri n'a encore eu lieu.
+		if overlapped != nil {
+			overlapped.Overlaps(engine.Overlaps())
 		}
 
 		engine.Step(g, aim(in, engine.Frame(), presented))
