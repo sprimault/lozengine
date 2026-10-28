@@ -69,18 +69,18 @@ type Aspect struct {
 	// **Ce qui cache est ce qui se peint après, décor ou entité.** Un mur, un toit,
 	// mais aussi la créature qui vient de s'interposer : être caché est être caché, et
 	// l'encerclement que la phrase ci-dessus nomme est justement un recouvrement par
-	// des entités. Le moteur ne distingue pas l'origine — la porter demanderait un
-	// champ sur chaque quad, pour une distinction qu'aucun jeu n'a demandée.
+	// des entités. Le déclenchement les compte donc ensemble ; ce qu'on fait ensuite
+	// de leur origine se règle ailleurs, et le dernier paragraphe dit où.
 	//
 	// **C'est le suivi qu'on révèle, jamais ce qui le cache qu'on efface.** Rendre un
 	// mur transparent découvre ce qui se tient derrière lui autant que ce qui s'y
 	// trouve, et ce n'est pas ce qu'on demandait. L'étage ne sert pas non plus de
 	// critère : un sol surélevé reste du sol, et ne cache rien.
 	//
-	// À partir de quel recouvrement la chose se redessine, et sous quelle teinte, sont
-	// des conventions de scène et non des propriétés d'une image : [RevealOptions] les
-	// porte, [Options.Revealing] les pose, [Scene.SetRevealing] les change. C'est là
-	// aussi qu'un jeu dit si le décor et les entités se traitent différemment.
+	// À partir de quel recouvrement la chose se redessine, sous quelle teinte, et si le
+	// décor et les entités se traitent différemment, sont des conventions de scène et
+	// non des propriétés d'une image. [RevealOptions] les porte et les documente,
+	// [Options.Revealing] les pose, [Scene.SetRevealing] les change.
 	Reveal uint8
 
 	// Layer et Floor ouvrent les deux champs les plus forts de la clé de tri. La
