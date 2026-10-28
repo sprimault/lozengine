@@ -189,16 +189,17 @@ AUTORISEES = golang\.org/x/image(/.*)?|github\.com/ebitengine/oto/v3(/.*)?
 # Les paquets qui n'ont droit à rien, pas même à ce que la liste autorise. C'est
 # le cœur, et c'est lui qui porte la promesse.
 #
-# `appearance` n'y figure pas alors qu'il appartient au noyau au sens de la
-# frontière système : c'est lui qui rastérise les polices, donc lui qui pourra
-# puiser dans la liste. Deux notions voisines, deux listes — les confondre
-# interdirait à `appearance` ce que la liste existe précisément pour lui permettre.
-# `render`, `geometry`, `scene`, `raster` et `input` vivent hors d'`internal/`, parce
-# qu'un consommateur
-# doit pouvoir lire la documentation de leurs champs et de leurs méthodes — un alias
-# vers un paquet interne n'en montre aucun. Être public ne relâche rien : ils restent
-# le cœur, donc ils n'ont droit à aucune dépendance.
-SANS_DEPENDANCE = render geometry scene raster input internal/sorting
+# `appearance` y est entré au jalon 4 avec lui-même. La liste close l'avait prévu
+# ouvert, au motif qu'il rastériserait les polices ; l'atlas de glyphes étant une
+# donnée produite hors du dépôt, il n'en tire rien et reste sans dépendance comme
+# le reste du cœur. Ce qui lui est réservé dans la liste attend donc un besoin
+# qu'aucun jalon n'a encore.
+#
+# Tous vivent hors d'`internal/`, parce qu'un consommateur doit pouvoir lire la
+# documentation de leurs champs et de leurs méthodes — un alias vers un paquet
+# interne n'en montre aucun. Être public ne relâche rien : ils restent le cœur, donc
+# ils n'ont droit à aucune dépendance.
+SANS_DEPENDANCE = render geometry scene raster input appearance internal/sorting
 
 # La règle du dépôt, rendue exécutable.
 #
@@ -254,8 +255,7 @@ deps:
 
 # Les paquets qui consomment ou produisent une DrawList, et rien d'autre. Le paquet
 # racine en est absent : c'est lui qui assemble, donc il connaît les backends.
-NOYAU = render geometry scene raster input internal/sorting \
-        internal/appearance
+NOYAU = render geometry scene raster input appearance internal/sorting
 
 # Ce qu'aucun d'eux ne doit importer. Les appels directs et les sockets vivent dans
 # un backend, l'audio parle son protocole depuis le sien.

@@ -50,6 +50,9 @@ notes de publication.
 - `Aspect.AnchorX` et `AnchorY` décalent l'image autour du point qu'elle vise, en
   pixels. De quoi recaler une planche dont le pied n'est pas au milieu, sans la
   redécouper.
+- `Provider` résout ce qu'une chose montre, de ce qu'elle est, de son état, de sa
+  direction et du moment de son animation. Le jeu le consulte quand une apparence
+  change ; `Turn` accorde une direction avec l'orientation de la caméra.
 
 ### Modifié
 
@@ -63,6 +66,9 @@ notes de publication.
 
 - `Aspect.AnchorX` and `AnchorY` offset the image around the point it targets, in
   pixels. Enough to realign a sheet whose foot is off-centre, without recutting it.
+- `Provider` resolves what a thing shows, from what it is, its state, its facing and
+  the moment of its animation. The game consults it when an appearance changes; `Turn`
+  matches a facing with the camera orientation.
 
 ### Changed
 
