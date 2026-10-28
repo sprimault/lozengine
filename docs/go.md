@@ -221,10 +221,16 @@ faute de s'atteindre sans cgo ni dépendance de plus.
 
 Ailleurs, une **liste close de deux entrées**, et aucune autre :
 
-| Dépendance | Licence | Pour | À partir du |
+| Dépendance | Licence | Pour | État |
 | --- | --- | --- | --- |
-| `golang.org/x/image` | BSD-3 | rastériser une police dans `appearance` | jalon 4 |
-| `github.com/ebitengine/oto/v3` | Apache-2.0 | sortie audio dans `audio` | jalon 7 |
+| `golang.org/x/image` | BSD-3 | rastériser une police dans `appearance` | admise, **non employée** |
+| `github.com/ebitengine/oto/v3` | Apache-2.0 | sortie audio dans `audio` | admise, attend le jalon 7 |
+
+**La première n'a pas été tirée au jalon 4, et il faut dire pourquoi** : le texte s'y
+affiche depuis une planche de glyphes, qui est une image produite comme les sprites.
+Rastériser une police à l'exécution n'avait alors plus d'objet, et `go.mod` est resté
+vide. La place reste ouverte — une liste close dont une entrée ne sert pas n'est pas
+une violation, l'invariant bornant ce qui peut entrer sans obliger à entrer.
 
 ### Ce qu'une dépendance doit passer pour entrer
 
