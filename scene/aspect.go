@@ -60,6 +60,21 @@ type Aspect struct {
 	// découpage déciderait de ce qui passe devant.
 	AnchorX, AnchorY int16
 
+	// Reveal est la couche où la chose se redessine quand le décor la cache, et zéro
+	// veut dire jamais. C'est à cela que sert la couche la plus haute qu'un jeu
+	// réserve : perdre son personnage sous un empilement est ce qui peut arriver de
+	// pire à la lisibilité, et cela survient précisément quand on est encerclé.
+	//
+	// **C'est le suivi qu'on révèle, jamais le décor qu'on efface.** Rendre un mur
+	// transparent découvre ce qui se tient derrière lui autant que ce qui s'y trouve,
+	// et ce n'est pas ce qu'on demandait. L'étage ne sert pas non plus de critère :
+	// un sol surélevé reste du sol, et ne cache rien.
+	//
+	// À partir de quel recouvrement la chose se redessine, et sous quelle teinte, se
+	// règlent une fois pour la scène par [Options.RevealAfter] et [Options.RevealTint]
+	// — ce sont des conventions de jeu, pas des propriétés d'une image.
+	Reveal uint8
+
 	// Layer et Floor ouvrent les deux champs les plus forts de la clé de tri. La
 	// couche range ce qui doit passer devant tout le reste, une interface par exemple ;
 	// l'étage sépare les niveaux d'un décor. Combien un jeu en emploie ne regarde que

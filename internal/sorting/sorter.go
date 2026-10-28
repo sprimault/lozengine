@@ -35,6 +35,12 @@ type Sorter struct {
 	sources []uint32
 	ties    []tie
 
+	// La couche où chaque quad se redessine s'il se fait cacher, zéro pour aucune, et
+	// le compte de ceux qui en portent une. Le compte évite de parcourir l'image pour
+	// découvrir qu'aucune chose n'est à révéler, ce qui est le cas courant.
+	reveals   []uint8
+	revealing int
+
 	out render.DrawList
 
 	// La vue de l'image en cours, gardée le temps du relevé pour ne pas la traîner
@@ -73,6 +79,7 @@ func New(s *scene.Scene) *Sorter {
 // plaindre. Ce qui peut échouer a échoué au montage de la scène.
 func (t *Sorter) Frame() render.DrawList {
 	t.raw, t.keys, t.sources, t.ties = t.raw[:0], t.keys[:0], t.sources[:0], t.ties[:0]
+	t.reveals, t.revealing = t.reveals[:0], 0
 
 	t.viewX, t.viewY, t.viewWidth, t.viewHeight = t.scene.View()
 	if t.viewWidth <= 0 || t.viewHeight <= 0 {
@@ -81,6 +88,7 @@ func (t *Sorter) Frame() render.DrawList {
 
 	t.collectDecor()
 	t.collectEntities()
+	t.revealHidden()
 
 	t.radix.Sort(t.keys, t.sources)
 	t.breakTies()
@@ -238,9 +246,14 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 		return
 	}
 
+	if a.Reveal != 0 {
+		t.revealing++
+	}
+
 	t.sources = append(t.sources, uint32(len(t.raw)))
 	t.keys = append(t.keys, Compose(a.Layer, a.Floor, depth, height, a.Sheet, 0))
 	t.ties = append(t.ties, tie{x: ex, identity: identity, tier: tier})
+	t.reveals = append(t.reveals, a.Reveal)
 	t.raw = append(t.raw, render.Quad{
 		X: int16(x), Y: int16(y),
 		SourceX: a.SourceX, SourceY: a.SourceY,

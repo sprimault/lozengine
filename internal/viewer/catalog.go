@@ -20,6 +20,7 @@ var catalog = map[string]func() Scenario{
 	"ground":   Ground,
 	"order":    Order,
 	"floors":   Floors,
+	"reveal":   Reveal,
 }
 
 // ByName rend le scénario de ce nom.

@@ -57,6 +57,10 @@ notes de publication.
   directions et en lignes d'images. Huit directions, et c'est lui seul qui le déclare.
 - `Clip` dit la cadence d'une animation et rend son image par `Loop` ou par `Once`.
   Rien n'est gardé d'une image à la suivante : tout se dérive du numéro de pas.
+- `Aspect.Reveal` redessine une chose au-dessus de ce qui la cache, dans la couche
+  qu'elle nomme. `SceneOptions.RevealAfter` dit à partir de combien de pixels cachés,
+  et `RevealTint` sous quelle teinte — c'est la chose qu'on révèle, pas le décor
+  qu'on efface.
 
 ### Modifié
 
@@ -77,6 +81,9 @@ notes de publication.
   as rows. Eight facings, and it alone declares that number.
 - `Clip` states the pace of an animation and yields its frame through `Loop` or
   `Once`. Nothing is kept between frames: everything derives from the step number.
+- `Aspect.Reveal` redraws a thing above whatever hides it, in the layer it names.
+  `SceneOptions.RevealAfter` says from how many hidden pixels, and `RevealTint` under
+  which tint — it is the thing that gets revealed, not the decor that gets erased.
 
 ### Changed
 
