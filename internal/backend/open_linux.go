@@ -46,7 +46,9 @@ func Open(o Options) (Window, error) {
 
 	id := c.id()
 	c.createWindow(id, o.Width, o.Height,
-		maskKeyPress|maskKeyRelease|maskKeymapState|maskStructureNotify|maskFocusChange)
+		maskKeyPress|maskKeyRelease|maskKeymapState|maskStructureNotify|maskFocusChange|
+			maskButtonPress|maskButtonRelease|maskPointerMotion|
+			maskEnterWindow|maskLeaveWindow)
 
 	// Le contexte graphique vient juste après la fenêtre, dont il a besoin comme
 	// modèle, et une seule fois : il ne porte que des défauts, donc un

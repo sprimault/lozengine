@@ -61,6 +61,10 @@ notes de publication.
   qu'elle nomme. `SceneOptions.RevealAfter` dit à partir de combien de pixels cachés,
   et `RevealTint` sous quelle teinte — c'est la chose qu'on révèle, pas le décor
   qu'on efface.
+- La souris est lue sur les deux plateformes : `Input.Pointer` rend sa position **en
+  pixels de l'image**, la boucle défaisant l'agrandissement et les bandes.
+  `ButtonHeld` et `ButtonJustPressed` ont les deux régimes des touches, et `Wheel`
+  compte les crans du pas.
 
 ### Modifié
 
@@ -84,6 +88,10 @@ notes de publication.
 - `Aspect.Reveal` redraws a thing above whatever hides it, in the layer it names.
   `SceneOptions.RevealAfter` says from how many hidden pixels, and `RevealTint` under
   which tint — it is the thing that gets revealed, not the decor that gets erased.
+- The mouse is read on both platforms: `Input.Pointer` gives its position **in image
+  pixels**, the loop undoing the upscale and the bars. `ButtonHeld` and
+  `ButtonJustPressed` have the two regimes of keys, and `Wheel` counts the step's
+  notches.
 
 ### Changed
 

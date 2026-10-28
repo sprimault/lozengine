@@ -102,6 +102,13 @@ func windowProc(hwnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 		return 0
 	}
 
+	// Puis le pointeur, qui se délègue de la même façon. Après les touches parce
+	// qu'un déplacement en produit moins qu'une marche, et que le premier test est
+	// celui qui se paie le plus souvent.
+	if pointerMessage(msg, hwnd, wParam, lParam, &w.state) {
+		return 0
+	}
+
 	switch msg {
 	case wmGetMinMaxInfo:
 		// Le système passe l'adresse de la structure dans le `lParam`, et c'est la

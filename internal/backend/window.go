@@ -31,11 +31,15 @@ import (
 // autrement un aller-retour complet par image pour une valeur que le serveur lui a déjà
 // annoncée par un événement.
 type Window interface {
-	// Input rend l'état du clavier pour le pas qui commence, les touches tenues
-	// comme celles qui viennent d'être enfoncées.
+	// Input rend les entrées du pas qui commence : les touches et les boutons tenus
+	// comme ceux qui viennent d'être enfoncés, la position du pointeur et la molette.
 	//
 	// C'est elle qui vide la file d'événements de la plateforme, donc elle s'appelle
 	// une fois par pas et en premier.
+	//
+	// **La position est en pixels de fenêtre**, celle que le système rapporte. C'est
+	// à la boucle de la ramener en pixels de l'image : elle seule connaît le facteur
+	// d'agrandissement, qu'un backend n'a aucune raison de calculer.
 	Input() input.Input
 
 	// Present pose le tampon à l'écran, tel quel.

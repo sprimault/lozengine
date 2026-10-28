@@ -91,8 +91,10 @@ func Run(s *Scene, g Game, o Options) error {
 			return window.Err()
 		}
 
-		engine.Step(g, in)
-
+		// Le tampon de la fenêtre se monte avant le pas et non après, parce que la
+		// position du pointeur s'y rapporte : le backend la donne en pixels de
+		// fenêtre, et c'est l'agrandissement qui dit à quel pixel de l'image elle
+		// correspond. Size se lit après Input, qui est ce qui l'a apprise.
 		width, height := window.Size()
 		if presented == nil || presented.Width != width || presented.Height != height {
 			if width == 0 || height == 0 {
@@ -103,6 +105,9 @@ func Run(s *Scene, g Game, o Options) error {
 				presented = NewBuffer(width, height)
 			}
 		}
+
+		engine.Step(g, aim(in, engine.Frame(), presented))
+
 		if presented != nil {
 			fit(engine.Frame(), presented, o.Bars)
 			window.Present(presented)
@@ -131,6 +136,54 @@ func Run(s *Scene, g Game, o Options) error {
 // du monde, et rien d'autre ne pourrait le vérifier puisqu'aucun test n'ouvre de fenêtre.
 func fit(inner, out *Buffer, bars Color) {
 	raster.Upscale(inner, out, raster.ScaleFactor(inner, out), bars)
+}
+
+// aim ramène la position du pointeur, que le backend donne en pixels de fenêtre, au
+// pixel de l'image interne qu'elle désigne.
+//
+// C'est l'exacte réciproque de fit, et les deux doivent le rester : même facteur, même
+// centrage, même reste porté à droite et en bas. Les séparer ferait désigner une case
+// voisine de celle qu'on voit sous le curseur, d'un pixel au facteur un et de sept au
+// facteur sept.
+//
+// Le jeu ne voit donc jamais le facteur. Le lui donner reviendrait à lui demander de
+// refaire un calcul que la boucle vient de faire, et à le refaire faux le jour où le
+// centrage change.
+//
+// Une fenêtre réduite n'a pas de tampon, donc aucun pixel ne peut être désigné : le
+// pointeur est alors dehors, quoi qu'en dise le système.
+func aim(in Input, inner, out *Buffer) Input {
+	if out == nil || inner == nil {
+		return in.WithPointer(0, 0, false)
+	}
+
+	x, y, inside := in.Pointer()
+	factor := raster.ScaleFactor(inner, out)
+
+	offsetX := (int(out.Width) - int(inner.Width)*factor) / 2
+	offsetY := (int(out.Height) - int(inner.Height)*factor) / 2
+
+	ix := floorDiv(int(x)-offsetX, factor)
+	iy := floorDiv(int(y)-offsetY, factor)
+
+	// Dans les bandes, le pointeur est dans la fenêtre mais sur aucun pixel de
+	// l'image. Le dire plutôt que de rendre une coordonnée hors bornes, qu'un jeu
+	// prendrait pour une case.
+	inside = inside && ix >= 0 && iy >= 0 && ix < int(inner.Width) && iy < int(inner.Height)
+
+	return in.WithPointer(int16(ix), int16(iy), inside)
+}
+
+// floorDiv divise en arrondissant vers le bas, là où Go arrondit vers zéro.
+//
+// La différence ne se voit qu'à gauche et au-dessus de l'image, où elle compte : sans
+// elle, les premiers pixels de bande rendraient zéro et désigneraient la première
+// colonne au lieu de rester dehors.
+func floorDiv(a, b int) int {
+	if a < 0 {
+		return -((-a + b - 1) / b)
+	}
+	return a / b
 }
 
 // icons reprend les planches d'icône dans la forme que le contrat de fenêtre lit.
