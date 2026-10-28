@@ -45,6 +45,31 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `Aspect.AnchorX` et `AnchorY` décalent l'image autour du point qu'elle vise, en
+  pixels. De quoi recaler une planche dont le pied n'est pas au milieu, sans la
+  redécouper.
+
+### Modifié
+
+- L'étage élève désormais à l'écran en plus de ranger, pour une cellule de décor comme
+  pour une entité : un décor à deux niveaux se décrit. `z` est la hauteur au-dessus de
+  son étage, et porter les deux élève deux fois.
+
+***
+
+### Added
+
+- `Aspect.AnchorX` and `AnchorY` offset the image around the point it targets, in
+  pixels. Enough to realign a sheet whose foot is off-centre, without recutting it.
+
+### Changed
+
+- The floor now raises on screen as well as ranks, for a decor cell as for an entity:
+  a two-level decor can be described. `z` is the height above its own floor, and
+  carrying both raises twice.
+
 ## [0.4.0] — 2026-10-28 — Jalon 3 · Backend Linux par X11
 
 Un jeu s'écrit sous Windows et sous Linux. Le navigateur est le jalon 5 : ailleurs le
