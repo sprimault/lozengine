@@ -71,6 +71,16 @@ func Compose(layer, floor uint8, depth uint32, height uint16, sheet, index uint1
 		Key(min(uint64(index), MaxIndex))
 }
 
+// WithLayer rend la même clé dans une autre couche, les cinq autres champs intacts.
+//
+// C'est ce qui permet à une chose révélée de repartir au-dessus de ce qui la cachait
+// sans être reprojetée : sa profondeur, sa hauteur et sa planche sont celles de la
+// chose elle-même, et seule sa place dans l'empilement change.
+func (c Key) WithLayer(layer uint8) Key {
+	const mask = Key(render.MaxLayer) << layerShift
+	return c&^mask | Key(min(uint64(layer), render.MaxLayer))<<layerShift
+}
+
 // Index rend l'index stable, le seul champ que le départage ajuste.
 func (c Key) Index() uint16 { return uint16(c) & MaxIndex }
 

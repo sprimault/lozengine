@@ -56,6 +56,27 @@ type Options struct {
 	// La capacité est fixe et allouée une fois. Une tranche qui croîtrait au milieu
 	// d'une horde ferait passer le ramassage de mémoire là où il se verrait le plus.
 	Entities int
+
+	// RevealAfter est le nombre de pixels qu'une chose à révéler doit se voir cacher
+	// avant de se redessiner, et zéro la redessine au premier pixel recouvert.
+	//
+	// Un seuil, parce que sans lui un chevauchement d'un pixel suffirait : la chose
+	// serait réémise presque toujours, pour un résultat identique et un quad de plus
+	// à chaque image. Il se compte en pixels de la résolution interne, donc il se
+	// règle avec la taille des sprites — un personnage de vingt-quatre pixels de haut
+	// ne se perd pas pour cinquante pixels recouverts.
+	//
+	// Ici et non dans un aspect : un jeu a une convention de lisibilité, pas une par
+	// entité, et porter le seuil par aspect coûterait la taille de la carte sur
+	// chaque strate.
+	RevealAfter int
+
+	// RevealTint est la teinte sous laquelle une chose révélée se redessine. Sa
+	// valeur zéro reprend celle de l'aspect, ce qui redessine la chose à l'identique.
+	//
+	// Un jeu qui préfère une silhouette sourde à un sprite net la pose ici. Comme
+	// toute couleur du moteur, elle est à alpha prémultiplié.
+	RevealTint render.Color
 }
 
 // Scene porte une grille de décor, des entités, et la vue par laquelle on les regarde.
@@ -87,6 +108,10 @@ type Scene struct {
 	viewX, viewY          int32
 	viewWidth, viewHeight int32
 	orientation           Orientation
+
+	// Les conventions de révélation, posées une fois à la construction.
+	revealAfter int
+	revealTint  render.Color
 }
 
 // New monte une scène sur une grille et une projection.
@@ -121,7 +146,22 @@ func New(width, height int, projection geometry.Matrix, o Options) (*Scene, erro
 		slots:       make([]uint32, 0, capacity),
 		generations: make([]uint32, 0, capacity),
 		free:        make([]uint32, 0, capacity),
+		revealAfter: max(o.RevealAfter, 0),
+		revealTint:  o.RevealTint,
 	}, nil
+}
+
+// Revealing rend les conventions de révélation de la scène : le recouvrement en pixels
+// à partir duquel une chose à révéler se redessine, et la teinte sous laquelle elle le
+// fait.
+//
+// Une teinte à zéro veut dire « celle de l'aspect », et c'est à l'appelant de le lire
+// ainsi : une couleur dont l'alpha est nul ne dessinerait rien.
+//
+// Fonction et non méthode, pour la raison qui vaut pour [Entities] et [Identities] —
+// c'est une porte que le tri emprunte, pas une commodité de jeu.
+func Revealing(s *Scene) (after int, tint render.Color) {
+	return s.revealAfter, s.revealTint
 }
 
 // Dimensions rend les côtés de la grille, en cellules.
