@@ -53,6 +53,10 @@ notes de publication.
 - `Provider` résout ce qu'une chose montre, de ce qu'elle est, de son état, de sa
   direction et du moment de son animation. Le jeu le consulte quand une apparence
   change ; `Turn` accorde une direction avec l'orientation de la caméra.
+- `Sheets` est le fournisseur de référence : des planches dessinées, en colonnes de
+  directions et en lignes d'images. Huit directions, et c'est lui seul qui le déclare.
+- `Clip` dit la cadence d'une animation et rend son image par `Loop` ou par `Once`.
+  Rien n'est gardé d'une image à la suivante : tout se dérive du numéro de pas.
 
 ### Modifié
 
@@ -69,6 +73,10 @@ notes de publication.
 - `Provider` resolves what a thing shows, from what it is, its state, its facing and
   the moment of its animation. The game consults it when an appearance changes; `Turn`
   matches a facing with the camera orientation.
+- `Sheets` is the reference provider: drawn sheets, with facings as columns and frames
+  as rows. Eight facings, and it alone declares that number.
+- `Clip` states the pace of an animation and yields its frame through `Loop` or
+  `Once`. Nothing is kept between frames: everything derives from the step number.
 
 ### Changed
 
