@@ -60,19 +60,27 @@ type Aspect struct {
 	// découpage déciderait de ce qui passe devant.
 	AnchorX, AnchorY int16
 
-	// Reveal est la couche où la chose se redessine quand le décor la cache, et zéro
-	// veut dire jamais. C'est à cela que sert la couche la plus haute qu'un jeu
-	// réserve : perdre son personnage sous un empilement est ce qui peut arriver de
-	// pire à la lisibilité, et cela survient précisément quand on est encerclé.
+	// Reveal est la couche où la chose se redessine quand ce qui passe devant elle la
+	// cache, et zéro veut dire jamais. C'est à cela que sert la couche la plus haute
+	// qu'un jeu réserve : perdre son personnage sous un empilement est ce qui peut
+	// arriver de pire à la lisibilité, et cela survient précisément quand on est
+	// encerclé.
 	//
-	// **C'est le suivi qu'on révèle, jamais le décor qu'on efface.** Rendre un mur
-	// transparent découvre ce qui se tient derrière lui autant que ce qui s'y trouve,
-	// et ce n'est pas ce qu'on demandait. L'étage ne sert pas non plus de critère :
-	// un sol surélevé reste du sol, et ne cache rien.
+	// **Ce qui cache est ce qui se peint après, décor ou entité.** Un mur, un toit,
+	// mais aussi la créature qui vient de s'interposer : être caché est être caché, et
+	// l'encerclement que la phrase ci-dessus nomme est justement un recouvrement par
+	// des entités. Le moteur ne distingue pas l'origine — la porter demanderait un
+	// champ sur chaque quad, pour une distinction qu'aucun jeu n'a demandée.
 	//
-	// À partir de quel recouvrement la chose se redessine, et sous quelle teinte, se
-	// règlent une fois pour la scène par [Options.RevealAfter] et [Options.RevealTint]
-	// — ce sont des conventions de jeu, pas des propriétés d'une image.
+	// **C'est le suivi qu'on révèle, jamais ce qui le cache qu'on efface.** Rendre un
+	// mur transparent découvre ce qui se tient derrière lui autant que ce qui s'y
+	// trouve, et ce n'est pas ce qu'on demandait. L'étage ne sert pas non plus de
+	// critère : un sol surélevé reste du sol, et ne cache rien.
+	//
+	// À partir de quel recouvrement la chose se redessine, et sous quelle teinte, sont
+	// des conventions de scène et non des propriétés d'une image : [RevealOptions] les
+	// porte, [Options.Revealing] les pose, [Scene.SetRevealing] les change. C'est là
+	// aussi qu'un jeu dit si le décor et les entités se traitent différemment.
 	Reveal uint8
 
 	// Layer et Floor ouvrent les deux champs les plus forts de la clé de tri. La

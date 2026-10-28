@@ -57,26 +57,68 @@ type Options struct {
 	// d'une horde ferait passer le ramassage de mémoire là où il se verrait le plus.
 	Entities int
 
-	// RevealAfter est le nombre de pixels qu'une chose à révéler doit se voir cacher
-	// avant de se redessiner, et zéro la redessine au premier pixel recouvert.
+	// Revealing porte les conventions de lisibilité de la révélation. Sa valeur zéro
+	// redessine au premier pixel caché, à l'identique.
+	Revealing RevealOptions
+}
+
+// RevealOptions porte les conventions de lisibilité qu'[Aspect.Reveal] emploie : à
+// partir de quand une chose cachée se redessine, et sous quelle teinte.
+//
+// **Une structure et non trois paramètres**, pour une raison que ses deux couleurs
+// rendent concrète : adjacentes et de même type, elles s'inverseraient sans que rien
+// ne refuse, et l'image qui en sortirait serait plausible — un sprite net sous un mur,
+// une silhouette sourde sous la mêlée. Le diagnostic partirait alors du comptage de
+// recouvrement, qui serait irréprochable. C'est le seul endroit de cette interface où
+// un silence pouvait rester.
+//
+// Ces réglages sont de scène et non d'aspect : un jeu a une convention de lisibilité,
+// pas une par entité, et porter le seuil par aspect coûterait la taille de la carte
+// sur chaque strate. [Scene.SetRevealing] les change en cours de partie.
+type RevealOptions struct {
+	// After est le nombre de pixels qu'une chose à révéler doit se voir cacher avant
+	// de se redessiner, et zéro la redessine au premier pixel recouvert.
 	//
 	// Un seuil, parce que sans lui un chevauchement d'un pixel suffirait : la chose
 	// serait réémise presque toujours, pour un résultat identique et un quad de plus
 	// à chaque image. Il se compte en pixels de la résolution interne, donc il se
 	// règle avec la taille des sprites — un personnage de vingt-quatre pixels de haut
 	// ne se perd pas pour cinquante pixels recouverts.
-	//
-	// Ici et non dans un aspect : un jeu a une convention de lisibilité, pas une par
-	// entité, et porter le seuil par aspect coûterait la taille de la carte sur
-	// chaque strate.
-	RevealAfter int
+	After int
 
-	// RevealTint est la teinte sous laquelle une chose révélée se redessine. Sa
-	// valeur zéro reprend celle de l'aspect, ce qui redessine la chose à l'identique.
+	// Tint est la teinte sous laquelle une chose révélée se redessine. Sa valeur zéro
+	// reprend celle de l'aspect, ce qui la redessine à l'identique.
 	//
-	// Un jeu qui préfère une silhouette sourde à un sprite net la pose ici. Comme
-	// toute couleur du moteur, elle est à alpha prémultiplié.
-	RevealTint render.Color
+	// Comme toute couleur du moteur, elle est à alpha prémultiplié.
+	Tint render.Color
+
+	// TintByDecor remplace [RevealOptions.Tint] quand c'est le décor qui cache, et sa
+	// valeur zéro laisse les deux cas se ressembler.
+	//
+	// **Le discriminant est ce qui cache, jamais où la chose se tient** — un étage ne
+	// décide de rien ici, et un sol surélevé reste du sol. Les deux origines ne
+	// portent pas la même information : ce qu'un mur cache, il le cache parce que la
+	// chose est derrière lui, et un sprite net posé par-dessus retire cet indice ;
+	// une créature qui s'interpose ne dit rien de tel, et la chose doit rester nette
+	// pour qu'on la suive dans la mêlée.
+	//
+	// **La bascule emploie le seuil, et non la seule présence de décor** : cette
+	// teinte s'applique dès que le décor **seul** atteindrait [RevealOptions.After] ;
+	// sinon, si le total l'atteint, c'est [RevealOptions.Tint]. Sans cela, un joueur
+	// encerclé qui tourne autour d'un pilier verrait sa teinte battre à chaque
+	// frôlement alors que l'essentiel du recouvrement vient de la mêlée — et un signal
+	// qui clignote sur un écran chargé est pire que pas de signal. C'est la raison
+	// même du seuil : un pixel caché ne porte aucun indice de profondeur, puisqu'on ne
+	// voit pas qu'il y a quelque chose devant.
+	//
+	// **Une limite connue, qui tient à la chaîne des valeurs zéro.** Zéro veut dire
+	// « celle de l'aspect » sur Tint et « comme Tint » ici, donc une teinte sourde
+	// sous les entités avec le sprite net sous le décor ne s'écrit pas. C'est
+	// l'inverse de ce qu'un jeu demande — le décor est l'origine qui porte un indice à
+	// préserver —, et aucun consommateur ne l'a réclamé ; cela se rouvrirait en
+	// distinguant « non renseigné » de « transparent », ce qui coûterait un champ de
+	// présence ou un pointeur.
+	TintByDecor render.Color
 }
 
 // Scene porte une grille de décor, des entités, et la vue par laquelle on les regarde.
@@ -115,9 +157,8 @@ type Scene struct {
 	viewWidth, viewHeight int32
 	orientation           Orientation
 
-	// Les conventions de révélation, posées une fois à la construction.
-	revealAfter int
-	revealTint  render.Color
+	// Les conventions de révélation, posées à la construction et réglables ensuite.
+	revealing RevealOptions
 }
 
 // New monte une scène sur une grille et une projection.
@@ -152,23 +193,31 @@ func New(width, height int, projection geometry.Matrix, o Options) (*Scene, erro
 		slots:       make([]uint32, 0, capacity),
 		generations: make([]uint32, 0, capacity),
 		free:        make([]uint32, 0, capacity),
-		revealAfter: max(o.RevealAfter, 0),
-		revealTint:  o.RevealTint,
+		revealing:   o.Revealing.sane(),
 	}, nil
 }
 
-// Revealing rend les conventions de révélation de la scène : le recouvrement en pixels
-// à partir duquel une chose à révéler se redessine, et la teinte sous laquelle elle le
-// fait.
+// sane ramène un seuil négatif à zéro, qu'une soustraction de jeu produit sans qu'on
+// l'ait voulu.
+func (o RevealOptions) sane() RevealOptions {
+	o.After = max(o.After, 0)
+	return o
+}
+
+// SetRevealing change les conventions de révélation de la scène, que [Options] a
+// posées à la construction.
 //
-// Une teinte à zéro veut dire « celle de l'aspect », et c'est à l'appelant de le lire
-// ainsi : une couleur dont l'alpha est nul ne dessinerait rien.
+// Elles se règlent en cours de partie parce qu'une convention de lisibilité n'est pas
+// une propriété de la carte : un jeu baisse sa teinte la nuit, relève son seuil quand
+// il agrandit ses sprites, ou l'annule le temps d'une cinématique. Les figer pour la
+// durée d'une partie était une limite sans raison.
+func (s *Scene) SetRevealing(o RevealOptions) { s.revealing = o.sane() }
+
+// Revealing rend les conventions de révélation de la scène.
 //
 // Fonction et non méthode, pour la raison qui vaut pour [Entities] et [Identities] —
 // c'est une porte que le tri emprunte, pas une commodité de jeu.
-func Revealing(s *Scene) (after int, tint render.Color) {
-	return s.revealAfter, s.revealTint
-}
+func Revealing(s *Scene) RevealOptions { return s.revealing }
 
 // Dimensions rend les côtés de la grille, en cellules.
 func (s *Scene) Dimensions() (width, height int) { return s.width, s.height }
