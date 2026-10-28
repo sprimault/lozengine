@@ -71,6 +71,9 @@ notes de publication.
 - `Scene.PlaceScreen` pose un aspect à un pixel de l'image, qui ne bouge pas avec la
   caméra — une barre de vie, un panneau. Ce n'est pas un second chemin de rendu : la
   couche de l'aspect le range comme le reste, et `ClearScreen` vide la liste.
+- `Font` affiche du texte depuis une planche de glyphes, sans rastériser aucun fichier
+  de police : `Measure` dit ce qu'une ligne occupera, `Place` la pose. Mesurer d'abord
+  est ce que centrer ou cadrer demande, et un glyphe absent garde sa place.
 
 ### Modifié
 
@@ -104,6 +107,9 @@ notes de publication.
 - `Scene.PlaceScreen` places an aspect at an image pixel, which does not move with the
   camera — a health bar, a panel. It is no second render path: the aspect's layer ranks
   it like everything else, and `ClearScreen` empties the list.
+- `Font` draws text from a glyph sheet, rasterising no font file: `Measure` says what a
+  line will occupy, `Place` puts it down. Measuring first is what centring or aligning
+  needs, and a missing glyph keeps its place.
 
 ### Changed
 
