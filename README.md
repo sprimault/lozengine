@@ -119,14 +119,18 @@ loop: a host game already has its own and will not give up its main thread.
 
 ## Status
 
-**Milestone 2 reached.** A game can be written. The engine opens a window, reads the
-keyboard, holds a fixed-step loop and expects a single method from the game: describe
-its scene, the engine taking care of draw order and scale. Its regression suite still
-compares every frame against a reference, headless.
+A game can be written. The engine opens a window, reads the keyboard, holds a
+fixed-step loop and expects a single method from the game: describe its scene, the
+engine taking care of draw order and scale. Its regression suite compares every frame
+against a reference, headless.
 
-**On Windows only.** Linux through X11 is milestone 3, the browser milestone 5: on any
-other platform the engine builds and computes its frames, but nothing displays them yet.
-`make example` opens the smaller of the two examples.
+The Linux backend is checked on every batch under two headless servers: the protocol is
+right and the pixels exact, but nobody has yet seen it on a real screen. `make example`
+opens the smaller of the two examples.
+
+**The current milestone and what each release brought** are in the
+[roadmap](ROADMAP.md) (in French) and the [changelog](CHANGELOG.md) — repeating them
+here would make a third text to keep in agreement.
 
 A release marks every milestone reached, but **no signature is frozen**: they may
 change with every minor until milestone 9, where validation by a second game

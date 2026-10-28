@@ -120,14 +120,18 @@ principal.
 
 ## État
 
-**Jalon 2 franchi.** Un jeu s'écrit. Le moteur ouvre une fenêtre, lit le clavier, tient
-une boucle à pas fixe et n'attend du jeu qu'une seule méthode : décrire sa scène, lui se
-chargeant de l'ordre de dessin et de l'échelle. Sa suite de non-régression continue de
-comparer chaque image à une référence, sans écran.
+Un jeu s'écrit. Le moteur ouvre une fenêtre, lit le clavier, tient une boucle à pas
+fixe et n'attend du jeu qu'une seule méthode : décrire sa scène, lui se chargeant de
+l'ordre de dessin et de l'échelle. Sa suite de non-régression compare chaque image à
+une référence, sans écran.
 
-**Sous Windows uniquement.** Linux par X11 est le jalon 3, le navigateur le jalon 5 : sur
-toute autre plateforme le moteur se compile et calcule ses images, mais rien ne les
-affiche encore. `make example` ouvre le plus petit des deux exemples.
+Le backend Linux est éprouvé à chaque lot sous deux serveurs sans écran : le protocole
+est juste et les pixels exacts, mais personne ne l'a encore vu sur un écran réel.
+`make example` ouvre le plus petit des deux exemples.
+
+**Le jalon courant et ce que chaque version a apporté** se lisent dans la
+[feuille de route](ROADMAP.md) et le [journal](CHANGELOG.md) — les répéter ici ferait un
+troisième texte à tenir d'accord.
 
 Une version marque chaque jalon franchi, mais **aucune signature n'est figée** :
 elles peuvent changer à chaque mineure jusqu'au jalon 9, où la validation du

@@ -45,6 +45,11 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.4.0] — 2026-10-28 — Jalon 3 · Backend Linux par X11
+
+Un jeu s'écrit sous Windows et sous Linux. Le navigateur est le jalon 5 : ailleurs le
+moteur se compile et calcule ses images, et rien ne les affiche.
+
 ### Ajouté
 
 - Linux est pris en charge, par le protocole X11 écrit à la main : le moteur y ouvre
@@ -57,6 +62,9 @@ notes de publication.
   découpait : les bords sortaient de la vue sans que rien ne le dise.
 
 ***
+
+A game can be written on Windows and on Linux. The browser is milestone 5: elsewhere
+the engine builds and computes its frames, and nothing displays them.
 
 ### Added
 
