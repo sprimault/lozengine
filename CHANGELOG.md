@@ -45,6 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.3] — 2026-10-28
+
 ### Ajouté
 
 - `Entity.Measure` demande le relevé de ce qui recouvre une entité, en pixels et par
