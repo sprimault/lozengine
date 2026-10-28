@@ -122,13 +122,28 @@ func matrix(a, b, c, d float64) Matrix {
 		return m
 	}
 
-	m.ia, m.ib = inverseCoefficient(m.d, det), -inverseCoefficient(m.b, det)
-	m.ic, m.id = -inverseCoefficient(m.c, det), inverseCoefficient(m.a, det)
+	ia, okA := inverseCoefficient(m.d, det)
+	ib, okB := inverseCoefficient(m.b, det)
+	ic, okC := inverseCoefficient(m.c, det)
+	id, okD := inverseCoefficient(m.a, det)
+
+	// Même repli que le déterminant nul, et pour la même raison : un inverse saturé
+	// serait faux d'un facteur que personne ne peut rattraper, là qu'une inverse nulle
+	// ramène tout point sur l'origine, ce qui se voit.
+	if !okA || !okB || !okC || !okD {
+		return m
+	}
+
+	m.ia, m.ib = ia, -ib
+	m.ic, m.id = -ic, id
 
 	// Trois parts et non deux : l'inverse additionne deux produits et le biais
-	// d'arrondi, et il reste ainsi de quoi les porter tous les trois.
+	// d'arrondi, et il reste ainsi de quoi les porter tous les trois. La division
+	// précède la multiplication, sans quoi le produit déborderait l'int64 qu'il sert à
+	// mesurer et la plage en sortirait négative — donc inversant le signe de chaque
+	// pixel au lieu de le borner.
 	if worst := maxAbs(m.ia, m.ib, m.ic, m.id); worst > 0 {
-		m.span = int32(min(math.MaxInt64/(3*worst), math.MaxInt32))
+		m.span = int32(min(math.MaxInt64/worst/3, math.MaxInt32))
 	}
 	return m
 }
@@ -146,7 +161,7 @@ func maxAbs(values ...int64) int64 {
 }
 
 // inverseCoefficient met un cofacteur à l'échelle de l'inverse et le divise par le
-// déterminant.
+// déterminant, et dit si le résultat tient dans un int64.
 //
 // L'échelle porte trois jeux de bits de fraction, et pas deux : ceux du cofacteur,
 // ceux que le déterminant a reçus en multipliant deux coefficients, et ceux de
@@ -156,8 +171,20 @@ func maxAbs(values ...int64) int64 {
 // Le numérateur reste exact en flottant — un cofacteur ne porte qu'une vingtaine de
 // bits significatifs contre les cinquante-trois d'un float64 — et la division qui
 // suit est à arrondi correct, donc identique sur toutes les architectures.
-func inverseCoefficient(cofactor int32, det int64) int64 {
+//
+// **Le second retour se lit avant la conversion, et c'est lui qui tient le
+// déterminisme** : hors plage, convertir un flottant vers un entier rend un résultat
+// que la spécification du langage laisse à l'implémentation, et amd64 n'y choisit pas
+// la même valeur qu'arm64. Le seuil est un rapport de cent vingt-huit entre le
+// cofacteur et le déterminant, soit une matrice presque singulière à grands
+// coefficients.
+func inverseCoefficient(cofactor int32, det int64) (int64, bool) {
 	const scale = 1 << (2*fractionBits + inverseBits)
 
-	return int64(math.Round(float64(cofactor) * scale / float64(det)))
+	v := math.Round(float64(cofactor) * scale / float64(det))
+
+	if v >= math.MaxInt64 || v <= math.MinInt64 {
+		return 0, false
+	}
+	return int64(v), true
 }
