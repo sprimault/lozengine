@@ -182,11 +182,17 @@ protocoles écrits sur socket sous Linux. Le critère est que le moteur n'embarq
 bibliothèque C tierce, n'exige aucun compilateur C et ne distribue rien à côté de son
 binaire : `go.mod` vide, `CGO_ENABLED=0`.
 
-Deux paquets périphériques font exception, sous licence permissive et par décision
-inscrite : le rendu de polices au jalon 4, la sortie audio au jalon 7. Les réécrire
+Deux paquets périphériques y sont admis d'avance, sous licence permissive et par
+décision inscrite : le rendu de polices et la sortie audio du jalon 7. Les réécrire
 coûterait des semaines pour un résultat qui ne distinguerait en rien le moteur — ce qui
 n'est pas le cas du protocole X11, dont les semaines sont assumées parce qu'il est le
-sujet. La liste et les critères d'entrée sont dans `docs/go.md`.
+sujet.
+
+**Admis ne veut pas dire employé, et le premier ne l'est toujours pas.** Le jalon 4
+affiche du texte depuis une planche de glyphes, qui est une image comme une autre :
+rastériser une police à l'exécution n'avait alors plus d'objet, et `go.mod` est resté
+vide. La place reste ouverte pour le jour où une police se lirait à l'exécution. La
+liste et les critères d'entrée sont dans `docs/go.md`.
 
 Seule la cible d'interopérabilité du jalon 11 demande un compilateur C, sans rien
 ajouter au moteur lui-même.

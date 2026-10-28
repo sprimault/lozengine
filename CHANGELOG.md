@@ -45,12 +45,18 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.1] — 2026-10-28
+
+Ce que le premier usage du moteur par un jeu a renvoyé sur la `0.5.0`, et qu'il valait
+mieux corriger avant que la surface se fige : une documentation plus étroite que son
+mécanisme, deux couleurs qu'on pouvait intervertir en silence, et des résumés qui
+annonçaient un état périmé.
+
 ### Ajouté
 
 - `RevealOptions.TintByDecor` teinte autrement ce qui est caché par le décor : un mur
-  dit « la chose est derrière », une créature non. La bascule emploie le seuil — teinte
-  du décor dès qu'il suffirait seul —, sinon une silhouette battrait au moindre
-  frôlement de pilier.
+  dit « la chose est derrière », une créature non. La bascule emploie le seuil, sinon
+  une silhouette battrait au moindre frôlement de pilier.
 - `Scene.SetRevealing` change ces conventions en cours de partie, que les options ne
   posaient qu'à la construction.
 - `Directions` est republié à la racine, comme les six autres bornes : c'est le nombre
@@ -69,18 +75,20 @@ notes de publication.
   documentation le dit enfin : elle annonçait le décor seul, donc elle décourageait le
   cas qu'elle promettait — être encerclé.
 - Les godoc de synthèse n'annoncent plus quelles plateformes ouvrent une fenêtre, ni
-  que les entrées se limitent au clavier. La première avait survécu à deux
-  publications ; quelles plateformes sont servies se lit désormais ici et dans la
-  feuille de route, en un seul endroit.
+  que les entrées se limitent au clavier : un état énuméré là se périme, et celui-ci
+  l'avait fait deux fois.
 
 ***
+
+What the engine's first use by a game sent back about `0.5.0`, and was better fixed
+before the surface freezes: documentation narrower than its mechanism, two colours that
+could be swapped in silence, and summaries announcing a stale state.
 
 ### Added
 
 - `RevealOptions.TintByDecor` tints differently what the decor hides: a wall says «the
-  thing is behind it», a creature does not. The switch uses the threshold — decor tint
-  as soon as the decor alone would reach it — or a silhouette would flicker at the
-  slightest brush against a pillar.
+  thing is behind it», a creature does not. The switch uses the threshold, or a
+  silhouette would flicker at the slightest brush against a pillar.
 - `Scene.SetRevealing` changes those conventions mid-game, which the options only set
   at construction.
 - `Directions` is republished at the root, like the six other bounds: it is the number
@@ -99,8 +107,7 @@ notes de publication.
   documentation finally says so: it announced the decor alone, discouraging the very
   case it promised — being surrounded.
 - The summary godocs no longer state which platforms open a window, nor that input is
-  the keyboard alone. The first had survived two releases; which platforms are served
-  now reads here and in the roadmap, in one place.
+  the keyboard alone: a state listed there goes stale, and this one had done so twice.
 
 ## [0.5.0] — 2026-10-28 — Jalon 4 · Apparence et interaction
 
