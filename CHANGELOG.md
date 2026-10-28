@@ -74,6 +74,8 @@ notes de publication.
 - `Font` affiche du texte depuis une planche de glyphes, sans rastériser aucun fichier
   de police : `Measure` dit ce qu'une ligne occupera, `Place` la pose. Mesurer d'abord
   est ce que centrer ou cadrer demande, et un glyphe absent garde sa place.
+- L'exemple `pick` montre le tout ensemble : un décor à deux niveaux, la case que le
+  pointeur désigne, et ses coordonnées écrites à l'écran.
 
 ### Modifié
 
@@ -110,6 +112,8 @@ notes de publication.
 - `Font` draws text from a glyph sheet, rasterising no font file: `Measure` says what a
   line will occupy, `Place` puts it down. Measuring first is what centring or aligning
   needs, and a missing glyph keeps its place.
+- The `pick` example shows it all together: a two-level decor, the cell the pointer
+  points at, and its coordinates written on screen.
 
 ### Changed
 
