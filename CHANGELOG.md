@@ -45,6 +45,12 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.0] — 2026-10-28 — Jalon 4 · Apparence et interaction
+
+Une scène se décrit maintenant en entier : ce qu'une chose montre et vers où elle
+regarde, à quel étage elle se tient, ce qu'il faut faire quand le décor la cache, et
+quelle case le pointeur désigne. Le navigateur reste le jalon 5, l'audio le jalon 7.
+
 ### Ajouté
 
 - `Aspect.AnchorX` et `AnchorY` décalent l'image autour du point qu'elle vise, en
@@ -84,6 +90,10 @@ notes de publication.
   son étage, et porter les deux élève deux fois.
 
 ***
+
+A scene can now be described in full: what a thing shows and where it faces, which
+floor it stands on, what to do when the decor hides it, and which cell the pointer
+points at. The browser remains milestone 5, audio milestone 7.
 
 ### Added
 

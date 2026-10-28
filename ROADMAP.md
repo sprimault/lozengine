@@ -3,9 +3,10 @@
 Moteur de rendu isométrique 2D en Go, dont le cœur n'a aucune dépendance. Rendu
 logiciel. Cibles : Windows, Linux et le navigateur en WebAssembly.
 
-État : jalon 3 franchi. Un jeu s'écrit : le moteur ouvre une fenêtre, lit le clavier,
-tient une boucle à pas fixe et n'attend du jeu qu'une seule méthode. Sous Windows et
-sous Linux — le navigateur vient au jalon 5.
+État : jalon 4 franchi. Un jeu se décrit : le moteur ouvre une fenêtre, lit le clavier
+et la souris, tient une boucle à pas fixe et n'attend du jeu qu'une seule méthode. Il
+décide de l'ordre de dessin, y compris entre deux niveaux de décor, et désigne la case
+sous le pointeur. Sous Windows et sous Linux — le navigateur vient au jalon 5.
 
 ## Jalons
 
