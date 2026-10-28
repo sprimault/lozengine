@@ -13,8 +13,8 @@ Un moteur de rendu isométrique ne se distingue pas par sa façon de dessiner un
 sprite, mais par sa façon de décider lequel passe devant. Dans une bibliothèque
 de dessin 2D, cet ordre est le problème de celui qui appelle : il dessine dans
 l'ordre où il veut que ça se superpose, et en isométrique il finit par écrire
-lui-même une clé de tri, des étages, des objets à cheval sur deux cellules et le
-démêlage des chevauchements cycliques.
+lui-même une clé de tri, des couches, des étages, et le départage de ce que la
+profondeur laisse à égalité.
 
 Lozengine prend ce travail à sa charge. On lui décrit ce qui existe et où ; il
 décide de l'ordre. Tout le reste de la conception en découle.
@@ -169,26 +169,26 @@ frontière par handles opaques, jamais par pointeur Go.
   4 bits, étage 6, profondeur `x+y` 18 en quarts de cellule, `z` 16, planche 10,
   index stable 10.
 
-Le tri topologique exprime son ordre partiel en ajustant l'index stable ; la clé
-reste la seule vérité de l'ordre de dessin. Dix-huit bits donnent 262 144 quarts,
+Le tri se fait sur cette clé, et ce qu'elle laisse à égalité se départage à
+l'intérieur d'un groupe de clés identiques. Dix-huit bits donnent 262 144 quarts,
 soit 65 536 cellules de profondeur `x+y`, et une carte carrée de côté N a `x+y`
 au plus égal à 2N : la limite documentée est donc de 32 768 cases de côté, exacte
 et non arrondie.
 
 Les deux bits qui séparent cette répartition d'une profondeur de vingt vont à
-l'index stable, seul champ sans recours. Le tri topologique y exprime tout son
-ordre partiel, et il n'aurait que 256 valeurs pour départager des quads partageant
-déjà couche, étage, profondeur au quart, `z` et planche ; le jour où il sature, la
-clé ne peut plus exprimer l'ordre, et rien ne le rattrape. Cent trente mille cases
-de côté ne servent personne quand la cible de contrôle est 500×500.
+l'index stable, seul champ sans recours : avec 256 valeurs il départagerait mal des
+quads partageant déjà couche, étage, profondeur au quart, `z` et planche. Cent
+trente mille cases de côté ne servent personne quand la cible de contrôle est
+500×500.
 
-**L'axe transverse `x−y` n'est pas un champ de la clé, c'est une entrée du tri
-topologique.** Un moteur qui trie par comparateur le porte naturellement comme
-critère de départage, après la profondeur ; celui-ci trie par paquets et n'a pas de
-comparateur où le mettre. Lui donner des bits les prendrait à l'index stable, et
-rouvrirait l'arbitrage que les deux bits ci-dessus viennent de clore. Le tri
-topologique s'en sert donc pour décider, puis exprime sa décision dans l'index
-stable — ce qui est précisément son rôle.
+**L'axe transverse `x−y` n'est pas un champ de la clé, et il n'a pas besoin de
+l'être.** Un moteur qui trie par comparateur le porte naturellement comme critère de
+départage, après la profondeur ; celui-ci trie par paquets et n'a pas de comparateur
+où le mettre. Lui donner des bits les prendrait à l'index stable, et rouvrirait
+l'arbitrage que les deux bits ci-dessus viennent de clore. Le départage emploie donc
+l'abscisse écran, qui lui est proportionnelle à un facteur près, et qui est déjà
+calculée — la recalculer ferait un second arrondi, qui peut tomber de l'autre côté
+d'un quart et réordonner deux choses sans que rien ne le signale.
 
 ## Frontières de paquets
 
