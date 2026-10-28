@@ -20,6 +20,11 @@ package input
 type Input struct {
 	held  [words]uint64
 	edges [words]uint64
+
+	pointerX, pointerY   int16
+	inside               bool
+	buttons, buttonEdges uint8
+	wheel                int16
 }
 
 // Held dit si la touche est tenue à cette image, qu'elle vienne d'être pressée ou

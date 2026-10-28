@@ -170,6 +170,33 @@ func (w *window) handle(m []byte) {
 			w.state.Release(k)
 		}
 
+	case eventButtonPress:
+		// Les crans de molette arrivent comme des boutons qu'on presse et relâche
+		// aussitôt — c'est ainsi que le protocole les porte, faute d'axe dans le
+		// cœur de X11. Le relâchement qui suit ne compte donc pas une seconde fois.
+		if steps, ok := wheelStep(m[1]); ok {
+			w.state.Wheel(steps)
+		} else if b, ok := buttonOf(m[1]); ok {
+			w.state.PressButton(b)
+		}
+		w.pointerAt(m)
+
+	case eventButtonRelease:
+		if _, ok := wheelStep(m[1]); !ok {
+			if b, ok := buttonOf(m[1]); ok {
+				w.state.ReleaseButton(b)
+			}
+		}
+		w.pointerAt(m)
+
+	case eventMotionNotify, eventEnterNotify:
+		w.pointerAt(m)
+
+	case eventLeaveNotify:
+		// La position reste celle du dernier mouvement : elle dit par où le pointeur
+		// est sorti, ce qu'un jeu qui suit le curseur veut savoir.
+		w.state.Leave()
+
 	case eventKeymapNotify:
 		// **Le seul événement du protocole sans numéro de séquence** : ses deux
 		// octets de séquence portent déjà de l'état de clavier. Tout ce qui lit ce

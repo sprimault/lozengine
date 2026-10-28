@@ -31,6 +31,60 @@ type State struct {
 	// 2026 à la vérification manuelle du backend Windows, où une touche sur deux
 	// paraissait ne pas répondre.
 	seen [words]uint64
+
+	// Le pointeur, dans l'unité où le backend le reçoit — des pixels de fenêtre.
+	// C'est la boucle qui les ramène en pixels de l'image, par [Input.WithPointer] :
+	// elle seule connaît le facteur d'agrandissement et les bandes.
+	pointerX, pointerY int16
+	inside             bool
+
+	// Les boutons, sur le même modèle que les touches : ce qui est tenu, ce qui a été
+	// vu depuis le pas précédent, et ce qui l'était au pas précédent.
+	buttons, buttonsSeen, buttonsPrevious uint8
+
+	// Les crans de molette accumulés depuis le pas précédent, comptés et non tenus :
+	// une molette n'a pas d'état, seulement des mouvements.
+	wheel int16
+}
+
+// Move note où le pointeur se trouve, dans l'unité du backend, et qu'il est dans la
+// fenêtre.
+//
+// Les coordonnées ne sont pas vérifiées : une plateforme qui rapporte un pointeur
+// capturé hors de la fenêtre dit quelque chose de vrai, et c'est au jeu d'en décider.
+func (s *State) Move(x, y int16) {
+	s.pointerX, s.pointerY, s.inside = x, y, true
+}
+
+// Leave note que le pointeur a quitté la fenêtre, sa dernière position restant lisible.
+//
+// La garder plutôt que l'effacer : un jeu qui suit le curseur veut savoir par où il
+// est sorti, et une position remise à zéro désignerait le coin de l'image.
+func (s *State) Leave() { s.inside = false }
+
+// PressButton note qu'un bouton du pointeur est tenu. Le répéter est sans effet, comme
+// pour une touche.
+func (s *State) PressButton(b Button) {
+	if bit, ok := b.bit(); ok {
+		s.buttons |= bit
+		s.buttonsSeen |= bit
+	}
+}
+
+// ReleaseButton note qu'un bouton ne l'est plus, sans effacer la trace de l'appui pour
+// le pas en cours.
+func (s *State) ReleaseButton(b Button) {
+	if bit, ok := b.bit(); ok {
+		s.buttons &^= bit
+	}
+}
+
+// Wheel ajoute des crans de molette au pas qui vient, positifs vers le haut.
+//
+// Ils s'ajoutent plutôt que de se remplacer : plusieurs crans arrivent couramment dans
+// la même poignée d'événements, et n'en garder qu'un perdrait la vitesse du geste.
+func (s *State) Wheel(steps int) {
+	s.wheel += int16(steps)
 }
 
 // Press note qu'une touche est tenue. Le répéter est sans effet, ce qui absorbe la
@@ -63,6 +117,8 @@ func (s *State) Release(k Key) {
 func (s *State) Forget() {
 	s.held = [words]uint64{}
 	s.seen = [words]uint64{}
+	s.buttons, s.buttonsSeen = 0, 0
+	s.inside = false
 }
 
 // Frame rend les entrées du pas qui commence, et arme le front montant pour le suivant.
@@ -94,5 +150,14 @@ func (s *State) Frame() Input {
 	}
 	s.previous = frame.held
 	s.seen = [words]uint64{}
+
+	frame.pointerX, frame.pointerY, frame.inside = s.pointerX, s.pointerY, s.inside
+
+	frame.buttons = s.buttons | s.buttonsSeen
+	frame.buttonEdges = frame.buttons &^ s.buttonsPrevious
+	s.buttonsPrevious, s.buttonsSeen = frame.buttons, 0
+
+	frame.wheel, s.wheel = s.wheel, 0
+
 	return frame
 }

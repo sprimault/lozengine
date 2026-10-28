@@ -49,6 +49,11 @@ var (
 	getDC            = user32.NewProc("GetDC")
 	releaseDC        = user32.NewProc("ReleaseDC")
 
+	// Le suivi du pointeur, sans lequel le système ne dit jamais qu'il est sorti de
+	// la fenêtre. Le nom porte un suffixe parce que le type qu'il prend s'appelle
+	// déjà ainsi.
+	trackMouseEventProc = user32.NewProc("TrackMouseEvent")
+
 	// Les deux que la reprise du focus emploie, pour relire ce que le clavier tient
 	// déjà. La traduction suit la disposition, ce qui est voulu ici.
 	mapVirtualKeyW   = user32.NewProc("MapVirtualKeyW")

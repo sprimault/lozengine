@@ -171,6 +171,22 @@ type Input = input.Input
 // type.
 type Key = input.Key
 
+// Button désigne un bouton du pointeur : [ButtonLeft], [ButtonRight], [ButtonMiddle],
+// [ButtonBack] et [ButtonForward].
+//
+// Les deux derniers sont les boutons latéraux, qu'un pavé tactile n'a pas : un jeu qui
+// s'en sert prévoit de s'en passer.
+type Button = input.Button
+
+// Les boutons du pointeur, republiés pour qu'un jeu n'ait qu'un import à écrire.
+const (
+	ButtonLeft    = input.ButtonLeft
+	ButtonRight   = input.ButtonRight
+	ButtonMiddle  = input.ButtonMiddle
+	ButtonBack    = input.ButtonBack
+	ButtonForward = input.ButtonForward
+)
+
 // State fabrique des entrées sans clavier, et c'est à cela qu'il sert ici : éprouver
 // la méthode d'un jeu sans ouvrir de fenêtre.
 //

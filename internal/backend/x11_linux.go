@@ -78,6 +78,11 @@ const (
 const (
 	eventKeyPress        = 2
 	eventKeyRelease      = 3
+	eventButtonPress     = 4
+	eventButtonRelease   = 5
+	eventMotionNotify    = 6
+	eventEnterNotify     = 7
+	eventLeaveNotify     = 8
 	eventFocusIn         = 9
 	eventFocusOut        = 10
 	eventKeymapNotify    = 11
@@ -160,6 +165,11 @@ const (
 const (
 	maskKeyPress        = 1 << 0
 	maskKeyRelease      = 1 << 1
+	maskButtonPress     = 1 << 2
+	maskButtonRelease   = 1 << 3
+	maskEnterWindow     = 1 << 4
+	maskLeaveWindow     = 1 << 5
+	maskPointerMotion   = 1 << 6
 	maskKeymapState     = 1 << 14
 	maskStructureNotify = 1 << 17
 	maskFocusChange     = 1 << 21
