@@ -221,6 +221,46 @@ func TestFrameOrdersByDepth(t *testing.T) {
 	}
 }
 
+// TestHeightOrdersUpward garde le sens dans lequel la hauteur ordonne : à profondeur
+// égale, la plus grande se peint par-dessus.
+//
+// **C'est le chaînon que [TestFieldOrder] ne garde pas.** Celui-ci éprouve la clé — une
+// hauteur plus grande donne bien une clé plus grande —, mais rien ne relie `Entity.Z` à
+// cette hauteur : la chaîne passe par la projection, qui rend la hauteur quantifiée, et
+// par la collecte, qui y ajoute l'étage. Une inversion dans l'une des deux laisserait
+// toute la suite verte, et un jeu verrait son projectile passer sous la marque qu'il
+// survole.
+//
+// Les deux entités sont au même point du monde, donc elles partagent couche, étage,
+// profondeur et planche : la hauteur est le seul champ qui les sépare, et c'est ce qui
+// rend le cas concluant.
+func TestHeightOrdersUpward(t *testing.T) {
+	s := testScene(t, 16, 4)
+
+	// Posée en premier, la plus haute : l'ordre de pose est donc l'inverse de l'ordre
+	// attendu, et un cas qui rendrait l'ordre de pose passerait à tort.
+	high := figure()
+	high.Sheet = 2
+	if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Z: 1, Aspect: high}); !ok {
+		t.Fatal("entité haute refusée")
+	}
+
+	low := figure()
+	low.Sheet = 1
+	if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: low}); !ok {
+		t.Fatal("entité au sol refusée")
+	}
+
+	image := New(s).Frame()
+	if len(image) != 2 {
+		t.Fatalf("%d quads, attendu 2", len(image))
+	}
+	if image[0].Sheet != 1 || image[1].Sheet != 2 {
+		t.Errorf("ordre des planches %d puis %d, attendu 1 puis 2 : la hauteur n'ordonne "+
+			"pas vers le haut", image[0].Sheet, image[1].Sheet)
+	}
+}
+
 // TestOffScreenIsRemoved vérifie que ce qui ne touche pas la vue n'entre pas
 // dans la liste, et que ce qui dépasse d'un bord y entre encore.
 func TestOffScreenIsRemoved(t *testing.T) {

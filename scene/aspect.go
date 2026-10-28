@@ -140,6 +140,12 @@ func (a Aspect) fitsInKey() bool {
 // z est la hauteur au-dessus du sol et reste un champ à part. L'écran la retranche de
 // l'ordonnée, la clé de tri la range dans son propre champ : les fondre perdrait
 // l'information dès l'entrée et rendrait l'ordre de dessin irréparable.
+//
+// **Et elle ordonne vers le haut : à profondeur égale, la plus grande hauteur se peint
+// par-dessus.** Un projectile en cloche passe donc devant la marque qu'il survole, et
+// une créature volante devant celle qui marche au même point. Le sens paraît évident
+// une fois écrit, et c'est pourquoi il l'est : s'y adosser sans le lire quelque part,
+// c'est en dépendre sans contrat.
 type Entity struct {
 	X, Y, Z float64
 
