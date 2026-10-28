@@ -88,6 +88,7 @@ func (t *Sorter) Frame() render.DrawList {
 
 	t.collectDecor()
 	t.collectEntities()
+	t.collectScreen()
 	t.revealHidden()
 
 	t.radix.Sort(t.keys, t.sources)

@@ -384,6 +384,14 @@ type Aspect = scene.Aspect
 // déplace dans la scène. Sa valeur zéro ne désigne rien.
 type Handle = scene.Handle
 
+// ScreenPiece est un aspect posé à un pixel de l'image plutôt qu'en cellules du monde :
+// une barre de vie, un panneau, une ligne de texte.
+//
+// La position est celle du coin haut-gauche, et elle ne bouge pas avec la caméra.
+// C'est [Scene.PlaceScreen] qui en pose, et [Aspect.Layer] qui décide si cela passe
+// au-dessus du monde — rien n'y échappe à l'ordre commun.
+type ScreenPiece = scene.ScreenPiece
+
 // Orientation est l'un des quatre quarts de tour sous lesquels la vue présente la
 // grille : [NoRotation], [QuarterTurn], [HalfTurn] et [ThreeQuarters].
 //

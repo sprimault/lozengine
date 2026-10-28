@@ -68,6 +68,9 @@ notes de publication.
 - `Scene.At` rend la case qu'un pixel désigne, à l'étage demandé : c'est le pixel que
   `Input.Pointer` donne, sans conversion à faire. `Options.HideCursor` retire le
   curseur du système pour un jeu qui dessine le sien.
+- `Scene.PlaceScreen` pose un aspect à un pixel de l'image, qui ne bouge pas avec la
+  caméra — une barre de vie, un panneau. Ce n'est pas un second chemin de rendu : la
+  couche de l'aspect le range comme le reste, et `ClearScreen` vide la liste.
 
 ### Modifié
 
@@ -98,6 +101,9 @@ notes de publication.
 - `Scene.At` gives the cell a pixel points at, on the requested floor: that pixel is
   what `Input.Pointer` returns, with no conversion to do. `Options.HideCursor` removes
   the system cursor for a game that draws its own.
+- `Scene.PlaceScreen` places an aspect at an image pixel, which does not move with the
+  camera — a health bar, a panel. It is no second render path: the aspect's layer ranks
+  it like everything else, and `ClearScreen` empties the list.
 
 ### Changed
 
