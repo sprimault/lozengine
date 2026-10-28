@@ -1,8 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Package input porte ce qu'un jeu lit du clavier : quelles touches sont enfoncées à
-// l'image courante, et lesquelles viennent de l'être.
+// Package input porte ce qu'un jeu lit de ses entrées à l'image courante : quelles
+// touches et quels boutons sont enfoncés, lesquels viennent de l'être, où se trouve le
+// pointeur et de combien la molette a tourné.
 //
 // Une position, jamais un caractère. Une [Key] désigne l'endroit où la touche se trouve
 // sur le clavier, indépendamment de la disposition active : la touche nommée W est
