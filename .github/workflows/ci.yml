@@ -276,8 +276,18 @@ jobs:
       # `LOZENGINE_DISPLAY` interdit au cas de se sauter. Sans elle, un serveur qui
       # n'aurait pas démarré laisserait ce job vert en sautant le seul cas qu'il
       # existe pour exécuter — et un saut n'est pas un échec.
+      #
+      # **Et le verdict vient de la trace, pas du code de sortie** : `go test` sort avec
+      # zéro quand son motif ne correspond à aucun cas, donc renommer celui-ci
+      # emporterait sans un mot la seule assertion du dépôt qui parle à un vrai serveur
+      # X11. Le garde-fou ci-dessus couvre le saut et laissait ouverte la disparition,
+      # qui est le même dégât en plus grand. Le `grep` est ce qui la refuse, et c'est le
+      # geste que la cible `vet` applique déjà en lisant une sortie plutôt qu'un code.
       - name: Le serveur détient ce qu'on lui a remis
-        run: go test -count=1 -v -run TestTheServerHoldsExactlyWhatWasPresented ./internal/backend/
+        run: |
+          go test -count=1 -v -run TestTheServerHoldsExactlyWhatWasPresented ./internal/backend/ > result.log 2>&1 || true
+          cat result.log
+          grep -q "^--- PASS: TestTheServerHoldsExactlyWhatWasPresented " result.log
         env:
           CGO_ENABLED: 0
           LOZENGINE_DISPLAY: 1

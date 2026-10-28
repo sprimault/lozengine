@@ -149,7 +149,7 @@ func TestPlaceRefusesWhenFull(t *testing.T) {
 // plafond, donc un jeu qui en demande vingt en verrait six se confondre avec la
 // quinzième, sur une image par ailleurs irréprochable.
 //
-// Les trois portes sont éprouvées parce qu'elles ont trois contrôles distincts, et
+// Les quatre portes sont éprouvées parce qu'elles ont quatre contrôles distincts, et
 // qu'un aspect entre par n'importe laquelle. Chacune rend déjà un booléen : refuser ne
 // coûte donc aucune signature.
 func TestPlaceRefusesOutsideKeyBounds(t *testing.T) {
@@ -181,6 +181,12 @@ func TestPlaceRefusesOutsideKeyBounds(t *testing.T) {
 			if s.PlaceCell(1, 1, 0, c.aspect) {
 				t.Error("PlaceCell a accepté")
 			}
+			if s.PlaceScreen(0, 0, c.aspect) {
+				t.Error("PlaceScreen a accepté")
+			}
+			if n := len(ScreenPieces(s)); n != 0 {
+				t.Errorf("%d pièces d'écran posées, attendu aucune", n)
+			}
 		})
 	}
 }
@@ -197,6 +203,9 @@ func TestPlaceAcceptsTheBounds(t *testing.T) {
 	}
 	if !s.PlaceCell(1, 1, 0, extremes) {
 		t.Error("PlaceCell a refusé la borne")
+	}
+	if !s.PlaceScreen(0, 0, extremes) {
+		t.Error("PlaceScreen a refusé la borne")
 	}
 }
 
