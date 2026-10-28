@@ -45,6 +45,18 @@ notes de publication.
 
 ## [Non publié]
 
+### Corrigé
+
+- Une chose marquée se révèle aussi quand ce qui la cache se dessine au même rang
+  qu'elle. Deux figures sur une même diagonale laissaient la silhouette dessous.
+
+***
+
+### Fixed
+
+- A marked thing is now revealed when what hides it draws at the same rank. Two figures
+  on one diagonal left the silhouette underneath.
+
 ## [0.5.2] — 2026-10-28
 
 ### Corrigé
