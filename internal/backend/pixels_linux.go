@@ -7,10 +7,15 @@
 // C'est ici que la frontière du noyau se paie, et c'était prévu : le tampon que le
 // noyau rend est du RVB à alpha prémultiplié et cette disposition ne se négocie pas,
 // donc chaque backend pose ce tampon comme sa plateforme l'exige et la conversion est
-// à lui. Windows n'en a aucune à faire — il décrit ses masques au système, qui lit le
-// tampon là où il est. X11 impose les siens, et la spécification est sans ambiguïté :
-// les images sont transmises dans le format, ordre des octets compris, que le serveur
-// spécifie.
+// à lui. X11 impose les siens, et la spécification est sans ambiguïté : les images sont
+// transmises dans le format, ordre des octets compris, que le serveur spécifie.
+//
+// **Windows fait le même échange, et cette tête annonçait le contraire jusqu'au
+// 29 octobre 2026** : « Windows n'en a aucune à faire — il décrit ses masques au
+// système, qui lit le tampon là où il est. » La description est permise et la copie
+// bien épargnée, mais GDI convertit alors pixel par pixel, pour quarante-sept fois le
+// prix. Les deux backends convertissent donc, et par la même voie — composer le mot
+// depuis les composantes, sans conversion de pointeur.
 
 package backend
 

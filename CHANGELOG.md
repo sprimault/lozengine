@@ -45,6 +45,20 @@ notes de publication.
 
 ## [Non publié]
 
+### Corrigé
+
+- La cadence ne dépend plus de la taille de la fenêtre sous Windows : une scène qui
+  tombait de soixante images par seconde en 960×540 à quatorze en 3840×2160 en tient
+  soixante aux deux tailles.
+
+***
+
+### Fixed
+
+- Frame rate no longer depends on window size under Windows: a scene dropping from
+  sixty frames per second at 960×540 to fourteen at 3840×2160 now holds sixty at both
+  sizes.
+
 ## [0.5.3] — 2026-10-28
 
 ### Ajouté

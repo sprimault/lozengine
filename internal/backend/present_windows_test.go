@@ -29,17 +29,13 @@ var (
 	deleteDC           = gdi32.NewProc("DeleteDC")
 )
 
-// biRGB est la disposition que le système suppose sans masques : du bleu dans l'octet
-// de poids faible. La destination d'essai l'emploie, pour que le test lise ce qu'un
-// écran lirait.
-const biRGB = 0
-
 // destination monte une image en mémoire et rend son contexte avec ses pixels.
 //
-// Elle est volontairement décrite sans masques : c'est l'autre bout de la chaîne, et
-// si la présentation annonçait mal la disposition de sa source, les deux ne
-// s'accorderaient pas.
-func destination(t *testing.T, width, height int32) (uintptr, []uint32) {
+// Elle porte le même en-tête que la présentation, ce qui est devenu le cas en passant
+// à `BI_RGB` : les deux bouts de la chaîne décrivent donc la disposition du système, et
+// ce que le cas éprouve n'est plus l'accord de deux descriptions mais l'exactitude de
+// l'échange que [toBGRA] fait en amont.
+func destination(t testing.TB, width, height int32) (uintptr, []uint32) {
 	t.Helper()
 
 	dc, _, err := createCompatibleDC.Call(0)
@@ -47,14 +43,9 @@ func destination(t *testing.T, width, height int32) (uintptr, []uint32) {
 		t.Fatalf("CreateCompatibleDC : %v", err)
 	}
 
-	header := bitmapInfoHeader{
-		size:        uint32(unsafe.Sizeof(bitmapInfoHeader{})),
-		width:       width,
-		height:      -height,
-		planes:      1,
-		bitCount:    32,
-		compression: biRGB,
-	}
+	header := newBitmapInfo()
+	header.width = width
+	header.height = -height
 
 	// Le système écrit l'adresse des pixels dans un pointeur déjà typé, plutôt que
 	// dans un entier qu'il faudrait reconvertir : `go vet` refuse à bon droit qu'un
@@ -132,50 +123,85 @@ func TestPresentDoesNotFlipTheImage(t *testing.T) {
 	}
 }
 
-// TestBitmapMasksMatchTheColourLayout relie les masques annoncés au système à la
-// disposition réelle de la couleur du moteur.
+// TestToBGRAPlacesEachComponent éprouve l'échange seul, sans passer par le système.
 //
-// C'est le cas qui rougirait si `render.Color` changeait d'ordre : les deux vivent
-// dans des paquets différents, rien ne les relie à la compilation, et la présentation
-// se mettrait à peindre faux sans qu'une seule ligne de ce fichier change.
-func TestBitmapMasksMatchTheColourLayout(t *testing.T) {
-	info := newBitmapInfo()
-
+// Il rougit sur une permutation que [TestPresentKeepsTheComponentsInOrder] verrait
+// aussi, et il n'est pas là pour cela : son objet est de nommer le mot attendu, de
+// sorte qu'un échec dise *quelle* composante s'est déplacée plutôt que de montrer deux
+// nombres hexadécimaux à comparer de tête. L'alpha y est éprouvé, là où le cas par le
+// système ne peut pas le lire — `BI_RGB` sur trente-deux bits laisse son octet
+// indéfini.
+func TestToBGRAPlacesEachComponent(t *testing.T) {
 	cases := []struct {
 		name  string
 		color render.Color
-		mask  uint32
+		word  uint32
 	}{
-		{"rouge", render.Color{R: 0xFF}, info.red},
-		{"vert", render.Color{G: 0xFF}, info.green},
-		{"bleu", render.Color{B: 0xFF}, info.blue},
+		{"rouge en troisième octet", render.Color{R: 0xFF}, 0x00FF0000},
+		{"vert en deuxième", render.Color{G: 0xFF}, 0x0000FF00},
+		{"bleu en premier", render.Color{B: 0xFF}, 0x000000FF},
+		{"alpha en dernier", render.Color{A: 0xFF}, 0xFF000000},
+		{"les quatre distinctes", render.Color{R: 0x11, G: 0x22, B: 0x33, A: 0x44}, 0x44112233},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			word := *(*uint32)(unsafe.Pointer(&c.color))
-			if word != c.mask {
-				t.Errorf("la composante occupe %#08x, le masque annonce %#08x", word, c.mask)
+			got := toBGRA(nil, []render.Color{c.color})
+			if got[0] != c.word {
+				t.Errorf("%#08x, attendu %#08x", got[0], c.word)
 			}
 		})
 	}
 }
 
+// TestToBGRAKeepsItsBuffer vérifie que le tampon se réemploie tant qu'il suffit, et
+// qu'il grandit quand il ne suffit plus.
+//
+// C'est la propriété dont [TestPresentDoesNotAllocate] dépend, éprouvée ici sur la
+// seule fonction plutôt qu'à travers un appel système : une allocation par image dans
+// le chemin de rendu vaut huit mégaoctets à 1920×1080.
+func TestToBGRAKeepsItsBuffer(t *testing.T) {
+	src := make([]render.Color, 64)
+
+	first := toBGRA(nil, src)
+	again := toBGRA(first, src)
+	if &again[0] != &first[0] {
+		t.Error("le tampon a été refait alors que sa capacité suffisait")
+	}
+
+	shorter := toBGRA(first, src[:32])
+	if len(shorter) != 32 {
+		t.Errorf("longueur %d, attendu 32", len(shorter))
+	}
+	if &shorter[0] != &first[0] {
+		t.Error("le tampon a été refait pour une source plus courte")
+	}
+
+	bigger := toBGRA(first, make([]render.Color, 128))
+	if len(bigger) != 128 {
+		t.Errorf("longueur %d, attendu 128", len(bigger))
+	}
+}
+
 // TestBitmapInfoIsConstant vérifie ce que l'en-tête doit porter avant toute
 // présentation, et qu'un appel ne touche que ses dimensions.
+//
+// La compression en fait partie depuis qu'elle décide du coût : `BI_RGB` est le seul
+// en-tête que GDI recopie en bloc, et y revenir par inadvertance ne casserait aucune
+// couleur — seulement la cadence, d'un facteur 47. Rien d'autre ne l'attraperait.
 func TestBitmapInfoIsConstant(t *testing.T) {
 	info := newBitmapInfo()
 
-	if got := uintptr(info.header.size); got != unsafe.Sizeof(info.header) {
-		t.Errorf("taille déclarée %d, taille réelle %d", got, unsafe.Sizeof(info.header))
+	if got := uintptr(info.size); got != unsafe.Sizeof(info) {
+		t.Errorf("taille déclarée %d, taille réelle %d", got, unsafe.Sizeof(info))
 	}
-	if info.header.planes != 1 {
-		t.Errorf("plans : %d, attendu 1", info.header.planes)
+	if info.planes != 1 {
+		t.Errorf("plans : %d, attendu 1", info.planes)
 	}
-	if info.header.bitCount != 32 {
-		t.Errorf("bits par pixel : %d, attendu 32", info.header.bitCount)
+	if info.bitCount != 32 {
+		t.Errorf("bits par pixel : %d, attendu 32", info.bitCount)
 	}
-	if info.header.compression != biBitfields {
-		t.Errorf("compression : %d, attendu BI_BITFIELDS", info.header.compression)
+	if info.compression != biRGB {
+		t.Errorf("compression : %d, attendu BI_RGB", info.compression)
 	}
 }
 
@@ -203,9 +229,11 @@ func TestPresentWithoutAnythingToShow(t *testing.T) {
 // TestPresentDoesNotAllocate vérifie la propriété dont le budget d'une image dépend :
 // la présentation ne touche pas au tas.
 //
-// Les masques y sont pour tout. Décrire la disposition du moteur au système permet de
-// lui passer le tampon où il est ; sans eux, il faudrait un second tampon et un
-// parcours complet de l'image à chaque présentation.
+// Le tampon de sortie y est pour tout. La conversion vers l'ordre du système demande
+// un second tampon ; le garder d'une image à l'autre est ce qui fait que son coût est
+// un parcours et non une allocation de huit mégaoctets par image. Le premier appel
+// l'alloue, et c'est l'appel de chauffe d'`AllocsPerRun` qui l'absorbe — comme la
+// boucle du moteur, qui présente la même taille des milliers de fois de suite.
 func TestPresentDoesNotAllocate(t *testing.T) {
 	dc, _ := destination(t, 64, 64)
 
@@ -214,5 +242,80 @@ func TestPresentDoesNotAllocate(t *testing.T) {
 
 	if n := testing.AllocsPerRun(10, func() { w.Present(buffer) }); n != 0 {
 		t.Errorf("allocations : %v, attendu aucune", n)
+	}
+}
+
+// BenchmarkPresent mesure la remise complète du tampon, échange compris.
+//
+// **Il manquait, et c'est son absence qui a laissé vivre un facteur 47 pendant trois
+// semaines.** Le dépôt n'avait de banc de présentation que pour X11 ; celui-ci dit
+// combien coûte le maillon que tout utilisateur de la plateforme exécute à chaque
+// image. Avec [BenchmarkToBGRA], qui isole l'échange, il dit aussi où va le temps :
+// ce que l'un ne mesure pas, l'appel système le prend.
+//
+// **La destination est une image en mémoire et non une fenêtre**, ce qui le rend
+// exécutable sans session graphique, donc en intégration continue. Mesuré le
+// 29 octobre 2026, l'écart à une vraie fenêtre est de 4 % — 23,3 ms contre 22,4 à
+// 1920×1080 sur l'ancien chemin —, le coût étant dans GDI côté processeur et non dans
+// le pilote. Ce que cela ne mesure donc pas : la composition, le vsync, et tout ce qui
+// dépend d'un écran branché.
+func BenchmarkPresent(b *testing.B) {
+	for _, size := range []struct {
+		name          string
+		width, height uint16
+	}{
+		{"480×270, la résolution interne du moteur", 480, 270},
+		{"1920×1080, un écran entier", 1920, 1080},
+		{"3840×2160", 3840, 2160},
+	} {
+		b.Run(size.name, func(b *testing.B) {
+			dc, _ := destination(b, int32(size.width), int32(size.height))
+
+			w := testWindow(dc)
+			buffer := render.NewBuffer(size.width, size.height)
+			for i := range buffer.Pixels {
+				buffer.Pixels[i] = render.Color{R: uint8(i), G: uint8(i >> 8), B: uint8(i >> 16), A: 255}
+			}
+
+			// Une première présentation hors de la boucle : elle paie l'allocation du
+			// tampon de sortie, que les suivantes réemploient — comme la boucle du
+			// moteur, qui présente la même taille des milliers de fois de suite.
+			w.Present(buffer)
+
+			b.SetBytes(int64(4 * len(buffer.Pixels)))
+			b.ResetTimer()
+			for range b.N {
+				w.Present(buffer)
+			}
+		})
+	}
+}
+
+// BenchmarkToBGRA mesure l'échange seul, aux tailles de fenêtre qui comptent.
+//
+// **Le fait de structure que les cas disent ensemble** : le coût est proportionnel à la
+// surface et non au contenu, parce qu'il n'y a ni branche ni lecture dépendante dans
+// la boucle. C'est ce qui permet de le mettre en regard de la présentation qu'il
+// remplace — elle aussi proportionnelle, mais d'un facteur 47 plus grand sur ce
+// chemin.
+func BenchmarkToBGRA(b *testing.B) {
+	sizes := []struct {
+		name string
+		w, h int
+	}{
+		{"960x540", 960, 540},
+		{"1920x1080", 1920, 1080},
+		{"2560x1440", 2560, 1440},
+		{"3840x2160", 3840, 2160},
+	}
+	for _, s := range sizes {
+		b.Run(s.name, func(b *testing.B) {
+			src := make([]render.Color, s.w*s.h)
+			dst := make([]uint32, len(src))
+			b.ResetTimer()
+			for range b.N {
+				dst = toBGRA(dst, src)
+			}
+		})
 	}
 }
