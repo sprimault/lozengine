@@ -312,8 +312,26 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 		t.revealing++
 	}
 
+	// Le rang d'empilement n'est une strate que pour le décor : une entité, une pièce
+	// d'écran ou un quad révélé porte [entityTier], au-dessus de toutes les strates.
+	//
+	// **Ce rang reproduit l'ordre que l'index de planche donnait par accident**, et
+	// c'est ce qui le rend juste : un jeu charge ses tuiles avant ses personnages, donc
+	// le sol sortait d'abord et l'entité par-dessus. Mesuré en essayant l'inverse —
+	// laisser les entités à zéro —, sept images de référence changent et le sol se
+	// peint sur les pieds du personnage. Le dire ici rend vrai pour tout jeu ce qui
+	// dépendait du nom de ses fichiers.
+	//
+	// [scene.Entity.Tier] n'est pas ce rang et vit dans le départage, où il fonctionne
+	// désormais : la planche ne figurant plus dans la clé, deux entités superposées
+	// tombent dans le même groupe.
+	rank := uint8(entityTier)
+	if t.collectingDecor {
+		rank = tier
+	}
+
 	t.sources = append(t.sources, uint32(len(t.raw)))
-	t.keys = append(t.keys, Compose(a.Layer, a.Floor, depth, height, a.Sheet, 0))
+	t.keys = append(t.keys, Compose(a.Layer, a.Floor, depth, height, rank, 0))
 	t.ties = append(t.ties, tie{x: ex, identity: identity, tier: tier})
 	t.reveals = append(t.reveals, a.Reveal)
 	t.fromDecor = append(t.fromDecor, t.collectingDecor)
@@ -331,12 +349,17 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 // breakTies range ce que la clé laisse à égalité, puis inscrit le résultat dans
 // l'index stable.
 //
-// **Par groupe et jamais sur toute l'image.** L'index ne porte que mille vingt-quatre
-// valeurs là où une image en compte couramment des milliers : numéroter globalement le
-// ferait saturer dès le millier et quelques, et la clé cesserait d'exprimer l'ordre
-// sans que rien ne le signale. Un groupe ne réunit que des choses partageant déjà
-// couche, étage, profondeur, hauteur et planche, donc il reste court — quelques unités
-// sur une scène ordinaire.
+// **Par groupe et jamais sur toute l'image.** L'index ne porte que trente-deux mille
+// sept cent soixante-sept valeurs là où une image en compte couramment des milliers :
+// numéroter globalement le ferait saturer sur une scène dense, et la clé cesserait
+// d'exprimer l'ordre sans que rien ne le signale. Un groupe ne réunit que des choses
+// partageant déjà couche, étage, profondeur, hauteur et rang d'empilement.
+//
+// **Un groupe n'est pas court pour autant, et le croire a coûté une godoc fausse** :
+// mesuré sur le banc du jeu — six strates pleines, qui est son pire cas annoncé —,
+// 3 397 quads sur 3 441 appartiennent à un groupe de deux ou plus, et le plus grand en
+// compte quatre-vingt-dix-neuf. Le coût reste borné parce qu'une insertion ne paie que
+// la taille de son groupe, pas parce que les groupes seraient petits.
 //
 // Les clés d'un groupe étant identiques, seules leurs provenances se déplacent, et une
 // insertion suffit : elle ne coûte que la taille du groupe, pas celle de l'image.

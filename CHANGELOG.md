@@ -62,6 +62,10 @@ notes de publication.
 
 ### Corrigé
 
+- L'ordre de dessin ne dépend plus de l'index de planche. Deux strates d'une même
+  cellule sortaient dans l'ordre où leurs images avaient été chargées, donc un décor
+  posé au-dessus d'un autre pouvait disparaître ; `Entity.Tier` restait sans effet
+  entre entités de planches différentes.
 - La cadence ne dépend plus de la taille de la fenêtre sous Windows : une scène qui
   tombait de soixante images par seconde en 960×540 à quatorze en 3840×2160 en tient
   soixante aux deux tailles.
@@ -87,6 +91,9 @@ notes de publication.
 
 ### Fixed
 
+- Draw order no longer depends on the sheet index. Two strata of one cell came out in
+  the order their images had been loaded, so decor placed above other decor could
+  vanish; `Entity.Tier` had no effect between entities on different sheets.
 - Frame rate no longer depends on window size under Windows: a scene dropping from
   sixty frames per second at 960×540 to fourteen at 3840×2160 now holds sixty at both
   sizes.

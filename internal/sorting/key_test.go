@@ -11,18 +11,24 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/render"
+	"github.com/sprimault/lozengine/scene"
 )
 
-// TestSheetCeilingMatches vérifie que ce que la clé sait distinguer et ce qu'un
-// atlas accepte sont le même nombre.
+// TestEntityTierSitsAboveEveryStrata garde la place de la sentinelle, qui est ce qui
+// rend l'ordre déterministe entre le décor d'une cellule et ce qui s'y tient.
 //
-// Les deux plafonds vivent dans des paquets qui ne peuvent pas s'atteindre — l'un
-// range les planches, l'autre compose l'ordre de dessin —, et ce cas est le seul lien
-// entre eux. Élargir le champ de la clé sans toucher à l'atlas laisserait des planches
-// qu'aucun quad ne désignerait ; le rétrécir ferait ranger deux planches ensemble.
-func TestSheetCeilingMatches(t *testing.T) {
-	if MaxSheet != render.MaxSheets-1 {
-		t.Errorf("la clé distingue %d planches, un atlas en accepte %d", MaxSheet+1, render.MaxSheets)
+// Deux bornes vivent dans des paquets qui ne peuvent pas s'atteindre : le nombre de
+// strates qu'une cellule empile, que `scene` déclare, et la largeur du champ qui les
+// porte, qui est ici. Ce cas est le seul lien entre eux. Une strate au-dessus de la
+// sentinelle passerait après les entités de sa cellule, et un champ trop étroit
+// rabattrait la sentinelle sur la dernière strate, ce qui remettrait le décor et les
+// entités dans le même groupe de départage.
+func TestEntityTierSitsAboveEveryStrata(t *testing.T) {
+	if entityTier != scene.MaxTiers {
+		t.Errorf("sentinelle %d, attendu %d strates", entityTier, scene.MaxTiers)
+	}
+	if entityTier > MaxTier {
+		t.Errorf("la sentinelle vaut %d et le champ en porte %d au plus", entityTier, MaxTier)
 	}
 }
 
@@ -73,18 +79,18 @@ func TestFieldOrder(t *testing.T) {
 		before, after Key
 	}{
 		{"la couche l'emporte sur tout",
-			Compose(0, render.MaxFloor, MaxDepth, MaxHeight, MaxSheet, MaxIndex),
+			Compose(0, render.MaxFloor, MaxDepth, MaxHeight, MaxTier, MaxIndex),
 			Compose(1, 0, 0, 0, 0, 0)},
 		{"l'étage l'emporte sur la profondeur",
-			Compose(0, 0, MaxDepth, MaxHeight, MaxSheet, MaxIndex),
+			Compose(0, 0, MaxDepth, MaxHeight, MaxTier, MaxIndex),
 			Compose(0, 1, 0, 0, 0, 0)},
 		{"la profondeur l'emporte sur la hauteur",
-			Compose(0, 0, 0, MaxHeight, MaxSheet, MaxIndex),
+			Compose(0, 0, 0, MaxHeight, MaxTier, MaxIndex),
 			Compose(0, 0, 1, 0, 0, 0)},
-		{"la hauteur l'emporte sur la planche",
-			Compose(0, 0, 0, 0, MaxSheet, MaxIndex),
+		{"la hauteur l'emporte sur le rang d'empilement",
+			Compose(0, 0, 0, 0, MaxTier, MaxIndex),
 			Compose(0, 0, 0, 1, 0, 0)},
-		{"la planche l'emporte sur l'index",
+		{"le rang d'empilement l'emporte sur l'index",
 			Compose(0, 0, 0, 0, 0, MaxIndex),
 			Compose(0, 0, 0, 0, 1, 0)},
 		{"l'index tranche en dernier",
@@ -113,7 +119,7 @@ func TestComposeClampsToCeiling(t *testing.T) {
 		{"couche", Compose(render.MaxLayer+1, 0, 0, 0, 0, 0), Compose(render.MaxLayer, 0, 0, 0, 0, 0)},
 		{"étage", Compose(0, render.MaxFloor+1, 0, 0, 0, 0), Compose(0, render.MaxFloor, 0, 0, 0, 0)},
 		{"profondeur", Compose(0, 0, MaxDepth+1, 0, 0, 0), Compose(0, 0, MaxDepth, 0, 0, 0)},
-		{"planche", Compose(0, 0, 0, 0, MaxSheet+1, 0), Compose(0, 0, 0, 0, MaxSheet, 0)},
+		{"rang d'empilement", Compose(0, 0, 0, 0, MaxTier+1, 0), Compose(0, 0, 0, 0, MaxTier, 0)},
 		{"index", Compose(0, 0, 0, 0, 0, MaxIndex+1), Compose(0, 0, 0, 0, 0, MaxIndex)},
 	}
 	for _, c := range cases {
@@ -128,7 +134,7 @@ func TestComposeClampsToCeiling(t *testing.T) {
 // TestIndexReadsBackAndChanges vérifie le seul champ que le départage touche :
 // l'ajuster ne doit déranger aucun autre.
 func TestIndexReadsBackAndChanges(t *testing.T) {
-	c := Compose(3, 7, 1234, 567, 89, 12)
+	c := Compose(3, 7, 1234, 567, 9, 12)
 
 	if got := c.Index(); got != 12 {
 		t.Errorf("index %d, attendu 12", got)
@@ -141,7 +147,7 @@ func TestIndexReadsBackAndChanges(t *testing.T) {
 	if got := change.Index(); got != 999 {
 		t.Errorf("index changé %d, attendu 999", got)
 	}
-	if change>>sheetShift != c>>sheetShift {
+	if change>>tierShift != c>>tierShift {
 		t.Error("changer l'index a dérangé un champ plus fort")
 	}
 }

@@ -18,7 +18,7 @@ import "github.com/sprimault/lozengine/scene"
 //
 // **Le rang de pose va dans la profondeur, et c'est ce qui rend le tri rapide ici.**
 // Sans lui, tous les quads d'une ligne de texte partageraient couche, étage, hauteur
-// et planche, donc une seule et même clé : ils tomberaient tous dans le même groupe de
+// et rang, donc une seule et même clé : ils tomberaient tous dans le même groupe de
 // départage, qui est un tri par insertion, et cent glyphes y coûteraient dix mille
 // comparaisons. Avec lui, les clés diffèrent, le tri par paquets les range, et l'ordre
 // obtenu est l'ordre de pose — ce que [scene.Scene.PlaceScreen] promet.

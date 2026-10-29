@@ -111,7 +111,7 @@ func TestSortDoesNotAllocate(t *testing.T) {
 	keys := make([]Key, n)
 	sources := make([]uint32, n)
 	for i := range keys {
-		keys[i] = Compose(uint8(i%4), uint8(i%8), uint32(i*7%4096), uint16(i), uint16(i%64), uint16(i%1024))
+		keys[i] = Compose(uint8(i%4), uint8(i%8), uint32(i*7%4096), uint16(i), uint8(i%32), uint16(i%1024))
 		sources[i] = uint32(i)
 	}
 

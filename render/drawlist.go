@@ -18,7 +18,11 @@ package render
 // premier avec leur nombre, sans rien à convertir ni aucune propriété mémoire à
 // négocier.
 //
-// Les quads d'une même profondeur sortent groupés par planche, la clé de tri lui
-// réservant un champ sous z. Le rastériseur peut n'en changer que par séries ; il
-// ne doit pas en dépendre.
+// **Les quads ne sont pas groupés par planche, et aucun hôte ne doit le supposer.**
+// Ils l'étaient jusqu'à la 0.5.3, la clé de tri réservant un champ à l'index de
+// planche sous la hauteur. Ce champ décidait l'ordre de dessin là où il n'avait rien à
+// décider : à profondeur égale, c'est l'ordre de chargement des images qui tranchait.
+// Il porte depuis le rang d'empilement, et le groupement n'était de toute façon qu'un
+// effet de bord — le rastériseur relit sa planche à chaque quad, sans garder d'état de
+// l'un à l'autre.
 type DrawList []Quad

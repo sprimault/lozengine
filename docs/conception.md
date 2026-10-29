@@ -173,8 +173,10 @@ frontière par handles opaques, jamais par pointeur Go.
   Huit pour l'implémentation de référence en planches PNG, seize pour la
   fabrique volumique. Le littéral n'apparaît que dans le fournisseur.
 - Clé de tri : un entier de 64 bits composé, du bit fort au bit faible — couche
-  4 bits, étage 6, profondeur `x+y` 18 en quarts de cellule, `z` 16, planche 10,
-  index stable 10.
+  4 bits, étage 6, profondeur `x+y` 18 en quarts de cellule, `z` 16, rang
+  d'empilement 5, index stable 15. Le rang d'empilement portait l'index de planche
+  jusqu'à la 0.5.3, ce qui faisait décider l'ordre de dessin par celui dans lequel
+  un jeu avait chargé ses images.
 
 Le tri se fait sur cette clé, et ce qu'elle laisse à égalité se départage à
 l'intérieur d'un groupe de clés identiques. Dix-huit bits donnent 262 144 quarts,
@@ -183,16 +185,22 @@ au plus égal à 2N : la limite documentée est donc de 32 768 cases de côté, 
 et non arrondie.
 
 Les deux bits qui séparent cette répartition d'une profondeur de vingt vont à
-l'index stable, seul champ sans recours : avec 256 valeurs il départagerait mal des
-quads partageant déjà couche, étage, profondeur au quart, `z` et planche. Cent
-trente mille cases de côté ne servent personne quand la cible de contrôle est
-500×500.
+l'index stable : cent trente mille cases de côté ne servent personne quand la cible
+de contrôle est 500×500. L'index en a reçu cinq de plus le 29 octobre 2026, quand
+l'index de planche est sorti de la clé, et il en porte donc 32 768 valeurs.
+
+**L'argument qui a justifié ce transfert est faux, et il faut le savoir avant de s'y
+appuyer** : il disait que l'index stable est « le seul champ sans recours », parce que
+la clé ne pourrait plus exprimer l'ordre le jour où il sature. Mesuré — 1 100 entités
+au même point, 77 clés au plafond, aucune inversion à la sortie : l'ordre d'un groupe
+vit dans la liste des provenances que le départage arrange, et la clé n'en est qu'un
+enregistrement que rien ne relit. La répartition reste la bonne, pour la raison de
+la phrase précédente et non pour celle-là.
 
 **L'axe transverse `x−y` n'est pas un champ de la clé, et il n'a pas besoin de
 l'être.** Un moteur qui trie par comparateur le porte naturellement comme critère de
 départage, après la profondeur ; celui-ci trie par paquets et n'a pas de comparateur
-où le mettre. Lui donner des bits les prendrait à l'index stable, et rouvrirait
-l'arbitrage que les deux bits ci-dessus viennent de clore. Le départage emploie donc
+où le mettre. Le départage emploie donc
 l'abscisse écran, qui lui est proportionnelle — par un facteur négatif, puisqu'elle
 croît avec `y − x` —, et qui est déjà calculée : la recalculer ferait un second
 arrondi, qui peut tomber de l'autre côté d'un quart et réordonner deux choses sans
