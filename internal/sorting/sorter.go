@@ -55,6 +55,17 @@ type Sorter struct {
 	// nommées se lisent mieux qu'un octet qu'il faut masquer.
 	uncounted []bool
 
+	// masks porte la forme de chaque planche de l'atlas, par index, pour la mesure
+	// exacte. Vide tant que personne ne l'a remplie : le trieur se monte sans atlas
+	// dans cinq scénarios de référence, et la mesure approchée reste alors seule.
+	masks []mask
+
+	// candidates porte, le temps d'une mesure exacte, les rangs des quads dont la
+	// boîte recouvre celle de la chose mesurée. Gardée d'une mesure à l'autre pour
+	// n'allouer qu'à la première : une quinzaine d'entrées là où la scène en compte
+	// deux mille.
+	candidates []uint32
+
 	// Ce qu'un jeu demande à faire relever, dans l'ordre de pose donc par rang de quad
 	// croissant. Une liste courte et non une tranche parallèle à raw : un jeu suit une
 	// chose ou deux, et une tranche de la taille de l'image coûterait sa remise à zéro
@@ -112,6 +123,29 @@ type tie struct {
 // New monte un trieur sur une scène.
 func New(s *scene.Scene) *Sorter {
 	return &Sorter{scene: s, radix: NewRadix(0)}
+}
+
+// Sheets rend le nombre de planches dont le trieur connaît la forme, pour que son
+// appelant sache lesquelles lui manquent.
+func (t *Sorter) Sheets() int { return len(t.masks) }
+
+// AddSheet donne au trieur la forme d'une planche, pour la mesure exacte du
+// recouvrement. L'ordre des appels est celui des index que les quads portent.
+//
+// **Les pixels et non une planche d'atlas** : `sorting` ne connaît pas `raster`, et la
+// frontière des paquets est ce qui permet au noyau de n'avoir qu'un sens de dépendance.
+// L'appelant tient l'atlas et passe ce qu'il en lit.
+//
+// **Elle dérive la forme et ne garde pas les pixels** : un parcours par planche, au
+// chargement, jamais à l'image. Dériver les 5,5 millions de pixels du premier jeu coûte
+// 7,5 ms une fois, et les deux plans de bits qui en sortent pèsent 6,4 % de ce que les
+// couleurs occupent.
+//
+// Sans aucune planche donnée, le relevé ne porte que la mesure approchée, celle des
+// rectangles. C'est le régime des scénarios de référence, qui montent le trieur sans
+// atlas, et celui d'un hôte qui n'en veut pas.
+func (t *Sorter) AddSheet(width, height uint16, pixels []render.Color) {
+	t.masks = append(t.masks, newMask(width, height, pixels))
 }
 
 // Frame rend la suite ordonnée des quads, valable jusqu'à l'appel suivant.

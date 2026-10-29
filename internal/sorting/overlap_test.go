@@ -7,7 +7,6 @@
 package sorting
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/sprimault/lozengine/geometry"
@@ -294,8 +293,21 @@ func TestOverlapIgnoresTheEngineOwnReveal(t *testing.T) {
 func BenchmarkOverlap(b *testing.B) {
 	const side = 40
 
-	for _, marked := range []int{0, 1, 20, 65, 300} {
-		b.Run(fmt.Sprintf("%d_marquées", marked), func(b *testing.B) {
+	for _, c := range []struct {
+		name   string
+		marked int
+		exact  bool
+	}{
+		{"0_marquées", 0, false},
+		{"20_marquées", 20, false},
+		{"20_marquées_au_pixel", 20, true},
+		{"65_marquées", 65, false},
+		{"65_marquées_au_pixel", 65, true},
+		{"300_marquées", 300, false},
+		{"300_marquées_au_pixel", 300, true},
+	} {
+		marked := c.marked
+		b.Run(c.name, func(b *testing.B) {
 			s, err := scene.New(side, side, geometry.Dimetric(32, 16), scene.Options{Entities: 300})
 			if err != nil {
 				b.Fatal(err)
@@ -314,6 +326,17 @@ func BenchmarkOverlap(b *testing.B) {
 			}
 
 			sorter := New(s)
+			if c.exact {
+				// Une planche opaque de la taille d'une tuile : c'est le pire cas
+				// pour la passe exacte, qui n'a alors aucun pixel transparent à
+				// écarter et parcourt chaque ligne de chaque couple.
+				pixels := make([]render.Color, 32*16)
+				for i := range pixels {
+					pixels[i] = render.White()
+				}
+				sorter.AddSheet(32, 16, pixels)
+			}
+
 			sorter.Frame()
 			b.ReportMetric(float64(len(sorter.Overlaps())), "relevés")
 			b.ResetTimer()

@@ -47,6 +47,10 @@ notes de publication.
 
 ### Ajouté
 
+- `Overlap.Painted`, `Overlap.Covered` et `Overlap.CoveredByDecor` mesurent le
+  recouvrement au pixel et non par rectangles : chaque pixel compte une fois, les
+  transparents ne comptent pas. `Overlap.Hidden` et `Overlap.ByDecor` ne changent pas,
+  un seuil réglé sur l'un ne valant rien pour l'autre.
 - `Aspect.Uncounted` retire un quad de la mesure de recouvrement — `Overlap.Hidden`,
   `Overlap.ByDecor` et le seuil de `Aspect.Reveal` —, ce qui permet au rappel qu'un jeu
   dessine lui-même de s'éteindre au lieu de se compter.
@@ -83,6 +87,10 @@ notes de publication.
 
 ### Added
 
+- `Overlap.Painted`, `Overlap.Covered` and `Overlap.CoveredByDecor` measure overlap per
+  pixel rather than per rectangle: each pixel counts once, transparent ones not at all.
+  `Overlap.Hidden` and `Overlap.ByDecor` are unchanged, a threshold tuned on one being
+  worthless for the other.
 - `Aspect.Uncounted` takes a quad out of the overlap measure — `Overlap.Hidden`,
   `Overlap.ByDecor` and the `Aspect.Reveal` threshold — so a cue a game draws itself can
   switch off instead of counting itself.

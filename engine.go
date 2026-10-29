@@ -378,6 +378,14 @@ func (e *Engine) Step(g Game, in Input) {
 		g.Step(in)
 	}
 
+	// La forme des planches part au trieur, pour la mesure exacte du recouvrement.
+	// Après le pas du jeu, parce qu'il a pu en ajouter une ; et par comparaison des
+	// comptes, donc sans rien faire dans le cas courant où l'atlas ne bouge plus.
+	for i := e.sorter.Sheets(); i < len(e.atlas.Sheets); i++ {
+		s := &e.atlas.Sheets[i]
+		e.sorter.AddSheet(s.Width, s.Height, s.Pixels)
+	}
+
 	// La taille de la vue se réimpose après le pas du jeu, et c'est le moteur qui la
 	// possède depuis que la vue suit la fenêtre. Un [Scene.Focus] appelé avec une
 	// autre taille — ce que fait tout jeu qui recentre sa caméra — donnerait sinon une

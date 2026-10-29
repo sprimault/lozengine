@@ -8,6 +8,7 @@
 package lozengine
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -390,4 +391,71 @@ func peints(b *render.Buffer, background Color) int {
 		}
 	}
 	return n
+}
+
+// TestPaintedMatchesWhatTheRasteriserDraws confronte la mesure exacte au rastériseur,
+// qui est la seule vérité de ce qu'une image porte.
+//
+// **C'est le cas qui ferme la limite du test croisé de `sorting`** : là-bas, la passe
+// par mots et sa référence pixel par pixel partagent la convention de miroir, donc leur
+// accord ne la valide pas. Ici, le compte vient du tampon peint, et un miroir inversé
+// autour de la planche plutôt qu'autour du rectangle du quad rougirait — c'est le
+// défaut que la première écriture de ce lot portait, et qu'aucun autre cas n'aurait vu
+// sur une planche d'une seule case.
+func TestPaintedMatchesWhatTheRasteriserDraws(t *testing.T) {
+	for _, flags := range []Flags{0, MirrorX, MirrorY, MirrorX | MirrorY} {
+		t.Run(fmt.Sprintf("drapeaux_%d", flags), func(t *testing.T) {
+			s, err := NewScene(8, 8, Grid(16), SceneOptions{Entities: 2})
+			if err != nil {
+				t.Fatalf("montage de la scène : %v", err)
+			}
+
+			// Une planche de deux cases côte à côte, dont une seule est prise : c'est
+			// ce qui distingue un miroir du rectangle d'un miroir de la planche. La
+			// case retenue porte un motif asymétrique.
+			sheet := NewSheet(32, 8)
+			for y := range 8 {
+				for x := range 32 {
+					if x >= 16 && x < 16+4+y%3 {
+						sheet.Pixels[y*32+x] = Color{R: 255, G: 255, B: 255, A: 255}
+					}
+				}
+			}
+			var atlas Atlas
+			if _, err := atlas.Add(sheet); err != nil {
+				t.Fatalf("ajout de la planche : %v", err)
+			}
+
+			if _, ok := s.Place(Entity{X: 4, Y: 4, Measure: true, Aspect: Aspect{
+				SourceX: 16, Width: 16, Height: 8, Tint: White(), Flags: flags,
+			}}); !ok {
+				t.Fatal("entité refusée")
+			}
+
+			e, err := NewEngine(s, Options{Atlas: &atlas, Width: 64, Height: 64,
+				MaxWidth: 64, MaxHeight: 64, Background: Color{A: 255}})
+			if err != nil {
+				t.Fatalf("montage : %v", err)
+			}
+			e.Step(nil, Input{})
+
+			list := e.Overlaps()
+			if len(list) != 1 {
+				t.Fatalf("%d relevés, attendu 1", len(list))
+			}
+
+			// Ce que le rastériseur a réellement posé : tout pixel qui n'est plus le
+			// fond. La planche est opaque, donc le compte est exact.
+			drawn := uint32(0)
+			for _, c := range e.Frame().Pixels {
+				if c != (Color{A: 255}) {
+					drawn++
+				}
+			}
+
+			if list[0].Painted != drawn {
+				t.Errorf("Painted vaut %d, le rastériseur en a posé %d", list[0].Painted, drawn)
+			}
+		})
+	}
 }

@@ -16,7 +16,8 @@ package render
 // la refaire en entier. Il la reçoit maintenant, et choisit son seuil comme la forme de
 // son rappel.
 //
-// Disposition compatible C, comme [Quad] : douze octets, champs de taille fixe, aucun
+// Disposition compatible C, comme [Quad] : vingt-quatre octets, champs de taille fixe,
+// aucun
 // pointeur. C'est ce qui permet à un hôte de lire le tableau sans conversion.
 type Overlap struct {
 	// Identity est la poignée de l'entité relevée, celle que sa pose a rendue.
@@ -51,6 +52,33 @@ type Overlap struct {
 	// créature qui s'interpose ne dit rien de tel. Un hôte qui veut les traiter
 	// différemment a ici de quoi.
 	ByDecor uint32
+
+	// Painted est le nombre de pixels que la chose peint réellement, ceux dont l'alpha
+	// de la planche n'est pas nul. Zéro quand l'hôte n'a pas donné la forme de ses
+	// planches au moteur, ou quand la teinte du quad est transparente.
+	//
+	// **C'est l'échelle des trois champs qui suivent, et elle n'est pas celle de
+	// [Overlap.Hidden]** : une case de personnage de soixante-quatre sur soixante-
+	// quatre en peint quatre cent quarante en moyenne, soit un dixième de sa boîte. Un
+	// seuil réglé sur l'une ne vaut rien pour l'autre, et c'est la raison pour laquelle
+	// ces champs s'ajoutent au lieu de remplacer.
+	Painted uint32
+
+	// Covered est le nombre de ces pixels peints qu'au moins un quad opaque recouvre.
+	//
+	// **Chaque pixel ne compte qu'une fois**, là où [Overlap.Hidden] additionne les
+	// rectangles de chaque couple : c'est une aire, et elle ne dépasse jamais
+	// [Overlap.Painted]. Sur une même scène, la mesure par boîte rend 5 534 là où
+	// celle-ci rend 63.
+	//
+	// Ne cachent que les quads dont la teinte est pleinement opaque et qui ne
+	// s'ajoutent pas à ce qu'ils couvrent : un quad additif éclaircit sans masquer, une
+	// teinte partielle laisse voir au travers. Un quad plat vaut son rectangle.
+	Covered uint32
+
+	// CoveredByDecor est la part de [Overlap.Covered] que le décor seul recouvre, dans
+	// la même unité et avec la même déduplication.
+	CoveredByDecor uint32
 }
 
 // OverlapList est le relevé d'une image, dans l'ordre où les choses ont été posées.
