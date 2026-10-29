@@ -28,8 +28,16 @@ type Quad = render.Quad
 type DrawList = render.DrawList
 
 // Overlap dit combien de pixels d'une entité suivie se font recouvrir par ce qui se
-// peint après elle, et quelle part vient du décor. Ses trois champs sont `Identity`,
-// `Hidden` et `ByDecor`, et sa disposition est compatible C.
+// peint après elle, et quelle part vient du décor. Sa disposition est compatible C.
+//
+// **Il porte deux mesures du même phénomène, et c'est voulu.** `Hidden` et `ByDecor`
+// cumulent les rectangles, donc comptent deux fois ce que deux cachants couvrent au
+// même endroit et comptent les pixels transparents ; `Painted`, `Covered` et
+// `CoveredByDecor` comptent au pixel et chacun une fois. Les secondes n'ont pas
+// remplacé les premières parce qu'un seuil réglé sur l'une ne vaut rien pour l'autre —
+// une case de personnage de soixante-quatre sur soixante-quatre peint quatre cent
+// quarante pixels pour une boîte de quatre mille — et qu'un jeu l'avait réglé.
+// `Identity` nomme l'entité.
 //
 // C'est la mesure dont le champ `Reveal` d'un [Aspect] se sert pour décider d'une
 // révélation, rendue à qui veut dessiner un rappel d'une autre nature. Le champ

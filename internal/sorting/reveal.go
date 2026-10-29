@@ -59,11 +59,24 @@ func (t *Sorter) revealHidden() {
 		// porte une couche de révélation ne la paie donc qu'une fois.
 		total, decor := t.overlap(i, n)
 
+		// La mesure exacte ne se paie que pour ce qu'un hôte a demandé à relever, et
+		// jamais pour une révélation : le seuil d'[scene.Aspect.Reveal] est réglé sur
+		// la mesure par rectangles, et le faire changer d'échelle casserait en silence
+		// tout jeu qui l'a calibré — le peint maximal d'une case du premier jeu est de
+		// 954 là où son seuil vaut 2 048.
+		var painted, covered, coveredByDecor int
+		if asked {
+			painted, covered, coveredByDecor = t.coverage(i, n)
+		}
+
 		if asked {
 			t.overlaps = append(t.overlaps, render.Overlap{
-				Identity: t.requests[next].handle,
-				Hidden:   uint32(total),
-				ByDecor:  uint32(decor),
+				Identity:       t.requests[next].handle,
+				Painted:        uint32(painted),
+				Covered:        uint32(covered),
+				CoveredByDecor: uint32(coveredByDecor),
+				Hidden:         uint32(total),
+				ByDecor:        uint32(decor),
 			})
 			next++
 		}
