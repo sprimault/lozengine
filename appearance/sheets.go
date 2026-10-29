@@ -34,8 +34,9 @@ type Entry struct {
 	Sheet         uint16
 	Width, Height uint16
 
-	// AnchorX et AnchorY décalent l'image autour du point qu'elle vise, pour une
-	// planche dont le pied n'est pas au milieu de sa case.
+	// AnchorX et AnchorY sont ceux de [scene.Aspect] : ils décalent l'image depuis
+	// l'origine que sa voie de pose lui donne, pour une planche dont le pied n'est
+	// pas au milieu de sa case.
 	AnchorX, AnchorY int16
 
 	// Tint multiplie la source. La valeur zéro d'une couleur étant transparente, une

@@ -376,6 +376,9 @@ func HandleAt(s *Scene, place int) Handle {
 // la façon dont un jeu isométrique pose son décor, et un moteur qui ne l'offre pas
 // oblige chacun à la réinventer.
 //
+// L'image s'y pose par son pied, sur le **centre** de la cellule et non sur son
+// sommet ; ce que cela demande à une tuile plate est dit par [Aspect].
+//
 // Elle ne range qu'entre choses d'une même cellule : à l'image, une strate haute ne
 // passe pas devant ce qui est plus proche, elle passe devant ce qu'elle recouvre. Le
 // rang global, celui qu'une interface emploiera, est la couche de l'aspect.

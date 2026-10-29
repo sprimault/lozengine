@@ -123,3 +123,86 @@ func TestScreenPieceRanksByItsLayer(t *testing.T) {
 		}
 	}
 }
+
+// TestScreenPieceAnchorAddsToTheCorner garde l'ancre sur la voie en pixels.
+//
+// **Rien ne la gardait**, et les deux défauts qu'elle laisse passer sont silencieux :
+// mesuré le 29 octobre 2026, faire ignorer l'ancre à cette voie, ou centrer une
+// largeur impaire d'un pixel de l'autre côté, laissait la suite complète verte. Les
+// trois cas qui précèdent posent une figure de largeur paire à ancre nulle, donc ni
+// l'ancre ni la parité n'y changent quoi que ce soit.
+//
+// C'est aussi le cas qui tient le texte de [scene.Scene.PlaceScreen] : il dit que
+// l'ancre s'ajoute au coin d'elle-même, et un jeu qui l'ajoute aussi la compte deux
+// fois.
+func TestScreenPieceAnchorAddsToTheCorner(t *testing.T) {
+	for _, c := range []struct {
+		name             string
+		width            uint16
+		anchorX, anchorY int16
+		wantX, wantY     int16
+	}{
+		{"largeur paire, sans ancre", 10, 0, 0, 37, 11},
+		{"largeur impaire, sans ancre", 11, 0, 0, 37, 11},
+		{"largeur paire, ancre", 10, 3, -2, 40, 9},
+		{"largeur impaire, ancre", 11, -5, 7, 32, 18},
+	} {
+		s := testScene(t, 32, 1)
+
+		a := figure()
+		a.Width, a.Height = c.width, 7
+		a.AnchorX, a.AnchorY = c.anchorX, c.anchorY
+		a.Layer = 1
+		if !s.PlaceScreen(37, 11, a) {
+			t.Fatalf("%s : pièce d'écran refusée", c.name)
+		}
+
+		image := New(s).Frame()
+		if len(image) != 1 {
+			t.Fatalf("%s : %d quads, attendu 1", c.name, len(image))
+		}
+		if image[0].X != c.wantX || image[0].Y != c.wantY {
+			t.Errorf("%s : coin en (%d, %d), attendu (%d, %d)",
+				c.name, image[0].X, image[0].Y, c.wantX, c.wantY)
+		}
+	}
+}
+
+// TestScreenPieceByTheFootMatchesAnEntity garde la recette que [scene.Scene.PlaceScreen]
+// donne pour poser une image par son pied sur un pixel.
+//
+// Elle relie les deux origines du moteur, et c'est ce qui en fait un cas et non une
+// répétition du précédent : il rougit aussi si la compensation interne cesse d'être
+// l'exact inverse de la pose par le pied, ce qu'aucun des deux ne verrait seul. La
+// largeur impaire est là pour la division entière, qui est le seul endroit où les deux
+// voies pourraient diverger d'un pixel.
+func TestScreenPieceByTheFootMatchesAnEntity(t *testing.T) {
+	for _, width := range []uint16{10, 11} {
+		a := figure()
+		a.Width, a.Height = width, 7
+		a.AnchorX, a.AnchorY = 3, -2
+
+		world := testScene(t, 32, 1)
+		if _, ok := world.Place(scene.Entity{X: 16.5, Y: 16.5, Aspect: a}); !ok {
+			t.Fatal("entité refusée")
+		}
+		sorter := New(world)
+		want := sorter.Frame()[0]
+
+		rx, ry := world.Remap(16.5, 16.5)
+		px, py, _, _ := world.Projection().Project(rx, ry, 0)
+		px, py = px-sorter.viewX, py-sorter.viewY
+
+		onScreen := testScene(t, 32, 1)
+		a.Layer = 1
+		if !onScreen.PlaceScreen(px-int32(width)/2, py-int32(a.Height), a) {
+			t.Fatal("pièce d'écran refusée")
+		}
+		got := New(onScreen).Frame()[0]
+
+		if got.X != want.X || got.Y != want.Y {
+			t.Errorf("largeur %d : pièce en (%d, %d), l'entité en (%d, %d)",
+				width, got.X, got.Y, want.X, want.Y)
+		}
+	}
+}
