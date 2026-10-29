@@ -11,7 +11,7 @@ package scene
 //
 // La position est celle du coin haut-gauche, et non le pied centré d'une chose du
 // monde : une interface se place par son coin, qui est ce qu'on sait mesurer. L'ancre
-// de l'aspect s'y ajoute comme ailleurs, pour qui veut décaler.
+// de l'aspect s'ajoute à ce coin, qu'elle laisse en place quand elle est nulle.
 type ScreenPiece struct {
 	X, Y int32
 	Aspect
@@ -25,6 +25,14 @@ type ScreenPiece struct {
 // caméra bouge ; l'exprimer en cellules obligerait le jeu à défaire la projection à
 // chaque image, et l'aller-retour n'étant pas exact au pixel près, le panneau
 // tremblerait pendant la marche du personnage.
+//
+// **Le pixel donné est le coin haut-gauche de l'image**, là où [Scene.Place] et
+// [Scene.PlaceCell] en visent le pied. Pour poser une image par son pied sur un
+// pixel — une barre de vie au-dessus d'une créature, un chiffre de dégâts —,
+// retrancher de ce pixel la moitié de sa largeur, arrondie vers le bas, et toute sa
+// hauteur. [Aspect.AnchorX] et [Aspect.AnchorY] s'ajoutent d'eux-mêmes à ce coin :
+// les ajouter au calcul les compterait deux fois, et l'image partirait du double de
+// l'ancre.
 //
 // Ce n'est pas un second chemin de rendu pour autant : les quads produits sortent dans
 // la même liste, rangés par la même clé, et c'est [Aspect.Layer] qui les met au-dessus

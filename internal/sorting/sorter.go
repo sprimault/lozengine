@@ -83,7 +83,8 @@ type request struct {
 // tie porte ce qui départage deux choses que la clé laisse à égalité.
 //
 // L'abscisse écran d'abord : à profondeur égale, ce qui est à gauche se peint avant.
-// Elle vaut l'axe transverse du monde à un facteur près, et elle est déjà calculée —
+// Elle croît avec `y − x`, l'axe transverse du monde au signe près, et elle est déjà
+// calculée —
 // la recalculer depuis les coordonnées demanderait un second arrondi, qui peut tomber
 // de l'autre côté d'un quart.
 //

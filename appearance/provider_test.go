@@ -111,3 +111,61 @@ func TestTurnRefusesNothingOnAnEmptyProvider(t *testing.T) {
 		t.Errorf("%d, attendu 3", got)
 	}
 }
+
+// TestScreenStepsFollowTheProjection relie la table des huit pas à la projection qui
+// la justifie.
+//
+// **C'est le seul cas qui relie les deux, et c'est ce qui le rend nécessaire** : la
+// table nomme ses pas par une direction d'écran — sud, sud-ouest, et ainsi de suite
+// dans le sens horaire —, mais rien ne vérifiait que la projection les y envoie
+// vraiment. Mesuré le 29 octobre 2026 : en retournant le signe du premier axe de la
+// projection, six des huit pas se retrouvent ailleurs qu'annoncé, les demi-tours
+// exceptés, et pourtant les trois cas de rotation ci-dessus restent verts — ils
+// comparent des rangs entre eux et ne projettent rien.
+//
+// Les signes seuls, et non les pixels : ce qu'on garde est le quadrant, pas le ratio,
+// que le premier cas de geometry éprouve déjà.
+func TestScreenStepsFollowTheProjection(t *testing.T) {
+	// Le quadrant d'écran attendu de chaque pas, dans l'ordre de la table.
+	wanted := [8][2]int32{
+		{0, 1},   // sud : droit vers le bas
+		{-1, 1},  // sud-ouest
+		{-1, 0},  // ouest : droit vers la gauche
+		{-1, -1}, // nord-ouest
+		{0, -1},  // nord : droit vers le haut
+		{1, -1},  // nord-est
+		{1, 0},   // est : droit vers la droite
+		{1, 1},   // sud-est
+	}
+
+	for _, m := range []struct {
+		name string
+		m    geometry.Matrix
+	}{
+		{"dimétrique", geometry.Dimetric(32, 16)},
+		{"isométrie vraie", geometry.Isometric(32)},
+	} {
+		t.Run(m.name, func(t *testing.T) {
+			for i, step := range screenSteps {
+				ex, ey, _, _ := m.m.Project(step[0], step[1], 0)
+
+				got := [2]int32{sign(ex), sign(ey)}
+				if got != wanted[i] {
+					t.Errorf("pas %v : l'écran va en (%d, %d), la table le dit %v",
+						step, got[0], got[1], wanted[i])
+				}
+			}
+		})
+	}
+}
+
+// sign rend le signe d'une coordonnée d'écran, pour comparer des quadrants.
+func sign(v int32) int32 {
+	switch {
+	case v < 0:
+		return -1
+	case v > 0:
+		return 1
+	}
+	return 0
+}

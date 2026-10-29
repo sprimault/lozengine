@@ -26,11 +26,14 @@ d'écran, parce qu'elle court-circuiterait la seule chose que le moteur apporte.
 ## Repère et projection
 
 - **Monde distinct de l'écran.** Cellules flottantes, `x` et `y` dans la grille,
-  `z` en hauteur au-dessus du sol, `y` croissant vers le bas-droite de l'écran.
+  `z` en hauteur au-dessus du sol. Sous les deux projections en losange, `x` croît
+  vers le bas-gauche de l'écran et `y` vers le bas-droite ; sous la vue de dessus,
+  où les axes ne tournent pas, `x` va vers la droite et `y` vers le bas.
 - **Ancre.** Le point du monde visé est le contact au sol, centre de case par
   défaut, et il ne se règle pas. Ce qui se règle est l'endroit où l'image se pose
   autour du pixel qu'il atteint — le pied de l'image, centré, par défaut —, par
-  l'apparence et jamais par appel.
+  l'apparence et jamais par appel. La pose en pixels de l'interface fait exception :
+  son origine est le coin haut-gauche, et l'ancre s'y ajoute de la même façon.
 - **Hauteur.** `z` reste un champ séparé, jamais fondu dans la matrice de
   projection. L'écran est la projection de `(x, y)` moins `z` fois un facteur ;
   la clé de tri se calcule sur `(x+y)` puis `z`. Fondre les deux perd
@@ -188,9 +191,10 @@ l'être.** Un moteur qui trie par comparateur le porte naturellement comme crit�
 départage, après la profondeur ; celui-ci trie par paquets et n'a pas de comparateur
 où le mettre. Lui donner des bits les prendrait à l'index stable, et rouvrirait
 l'arbitrage que les deux bits ci-dessus viennent de clore. Le départage emploie donc
-l'abscisse écran, qui lui est proportionnelle à un facteur près, et qui est déjà
-calculée — la recalculer ferait un second arrondi, qui peut tomber de l'autre côté
-d'un quart et réordonner deux choses sans que rien ne le signale.
+l'abscisse écran, qui lui est proportionnelle — par un facteur négatif, puisqu'elle
+croît avec `y − x` —, et qui est déjà calculée : la recalculer ferait un second
+arrondi, qui peut tomber de l'autre côté d'un quart et réordonner deux choses sans
+que rien ne le signale.
 
 ## Frontières de paquets
 

@@ -146,8 +146,12 @@ func White() Color { return render.White() }
 type Matrix = geometry.Matrix
 
 // Dimetric rend la projection d'une cellule en losange au ratio libre, celle d'un
-// rendu isométrique de jeu : une cellule de 32 sur 16 avance de seize pixels vers le
-// côté et de huit vers le bas.
+// rendu isométrique de jeu : une cellule de 32 sur 16 avance de seize pixels à
+// l'horizontale et de huit vers le bas.
+//
+// **Le sens de ses axes à l'écran : `x` vers le bas-gauche, `y` vers le bas-droite.**
+// Un pas en `x` va donc vers la gauche, et monter demande de reculer sur les deux
+// axes. [geometry.Dimetric] dit ce qu'on peut faire d'autre.
 //
 // C'est le constructeur du cas courant, et le seul qui laisse la hauteur libre.
 func Dimetric(width, height int) Matrix { return geometry.Dimetric(width, height) }
@@ -155,10 +159,16 @@ func Dimetric(width, height int) Matrix { return geometry.Dimetric(width, height
 // Isometric rend la projection de l'isométrie vraie, dont la hauteur ne se choisit
 // pas : elle vaut la largeur divisée par racine de trois, soit dix-huit pixels et
 // demi pour une largeur de trente-deux là où le dimétrique courant en prend seize.
+//
+// Ses axes vont où ceux de [Dimetric] vont : `x` vers le bas-gauche de l'écran, `y`
+// vers le bas-droite.
 func Isometric(width int) Matrix { return geometry.Isometric(width) }
 
 // Grid rend la projection de la vue de dessus, où une cellule est un carré et non
 // un losange. Les axes n'y tournent pas, ce qu'aucun ratio de [Dimetric] ne donne.
+//
+// Et ne tournant pas, ils ne vont pas au même endroit : `x` va vers la droite de
+// l'écran et `y` vers le bas, donc le premier à l'inverse des deux losanges.
 func Grid(side int) Matrix { return geometry.Grid(side) }
 
 // Raw rend la projection de quatre coefficients donnés, pour ce qu'aucun des trois
@@ -388,6 +398,9 @@ type Scene = scene.Scene
 // borne ses déplacements à la grille borne à [0, côté) — borner à côté moins un
 // l'arrêterait une case avant le bord, et seulement d'un côté. [scene.Entity] porte le
 // reste de la convention.
+//
+// L'image s'y pose par son pied, centré sur le pixel que ce point atteint ; [Aspect]
+// dit comment la décaler.
 type Entity = scene.Entity
 
 // Aspect est ce qu'une chose montre : de quoi remplir un quad, sans dire où.
@@ -407,6 +420,10 @@ type Handle = scene.Handle
 // La position est celle du coin haut-gauche, et elle ne bouge pas avec la caméra.
 // C'est [Scene.PlaceScreen] qui en pose, et [Aspect.Layer] qui décide si cela passe
 // au-dessus du monde — rien n'y échappe à l'ordre commun.
+//
+// Le coin, là où une entité vise son pied : c'est la seule voie du moteur où l'origine
+// change, et l'ancre de l'aspect s'ajoute à ce coin. [Scene.PlaceScreen] donne la
+// recette pour poser par le pied malgré tout.
 type ScreenPiece = scene.ScreenPiece
 
 // Orientation est l'un des quatre quarts de tour sous lesquels la vue présente la

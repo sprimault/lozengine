@@ -50,6 +50,9 @@ notes de publication.
 - La cadence ne dépend plus de la taille de la fenêtre sous Windows : une scène qui
   tombait de soixante images par seconde en 960×540 à quatorze en 3840×2160 en tient
   soixante aux deux tailles.
+- La documentation de `Aspect.AnchorX` et `Aspect.AnchorY` annonçait le pied centré
+  pour toute pose. `Scene.PlaceScreen` pose par le coin haut-gauche, et l'ancre s'y
+  ajoute : un jeu qui dérivait le coin lui-même la comptait deux fois.
 
 ***
 
@@ -58,6 +61,9 @@ notes de publication.
 - Frame rate no longer depends on window size under Windows: a scene dropping from
   sixty frames per second at 960×540 to fourteen at 3840×2160 now holds sixty at both
   sizes.
+- The documentation of `Aspect.AnchorX` and `Aspect.AnchorY` announced the centred foot
+  for every placement. `Scene.PlaceScreen` places by the top-left corner, and the
+  anchor adds to it: a game deriving that corner itself counted the anchor twice.
 
 ## [0.5.3] — 2026-10-28
 

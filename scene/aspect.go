@@ -28,12 +28,20 @@ import "github.com/sprimault/lozengine/render"
 // un coin haut-gauche à (−Width/2, −Height). C'est celui-là que [Aspect.AnchorX] et
 // [Aspect.AnchorY] décalent.
 //
+// **La pose en pixels fait exception, et c'est le piège de cette page** :
+// [Scene.PlaceScreen] ne vise aucun point du monde, son premier niveau est le pixel
+// donné, et c'est le **coin haut-gauche** de l'image qui s'y pose, non son pied.
+//
 // Deux conséquences pour un jeu qui dérive de là une position d'écran, pour une barre
 // de vie ou une infobulle. Le dernier pixel peint est **une ligne au-dessus** du point
 // projeté, qui est donc la première ligne sous l'image et n'en fait pas partie. Et le
 // centrage se fait en entiers : une largeur **paire penche d'un pixel vers la gauche**
 // — dix colonnes en donnent cinq à gauche du point projeté et quatre à droite —, là
 // qu'une largeur impaire centre exactement.
+//
+// Et une troisième pour le sol : une tuile plate dont le centre doit tomber sur celui
+// de sa case se pose une demi-hauteur trop haut, puisque c'est son pied qui y tombe.
+// Un [Aspect.AnchorY] égal à la moitié de sa hauteur la recentre.
 type Aspect struct {
 	// La planche où lire, et le rectangle qu'on y prend.
 	Sheet            uint16
@@ -46,8 +54,11 @@ type Aspect struct {
 	Tint  render.Color
 	Flags render.Flags
 
-	// AnchorX et AnchorY décalent l'image autour du pixel que le point du monde
-	// atteint, vers la droite et vers le bas. La valeur zéro laisse le pied centré.
+	// AnchorX et AnchorY décalent l'image, vers la droite et vers le bas, depuis là
+	// où la voie de pose la met sans eux : le pied centré sur le pixel que le point
+	// du monde atteint pour [Scene.Place] et [Scene.PlaceCell], le coin haut-gauche
+	// sur le pixel donné pour [Scene.PlaceScreen]. La valeur zéro laisse l'image à
+	// cette origine, quelle qu'elle soit.
 	//
 	// C'est la seule voie, et l'ancre ne se donne jamais par appel : elle est une
 	// propriété de l'image, pas du moment où on la dessine. Deux appels qui la
@@ -125,6 +136,9 @@ func (a Aspect) fitsInKey() bool {
 // Les coordonnées sont des cellules, et elles sont flottantes : une entité se tient en
 // x = 3,5 sans que rien ne l'arrondisse ici. La conversion vers les entiers du rendu se
 // fait à l'entrée de la projection, une fois.
+//
+// L'image se pose par son **pied** sur le pixel que ce point atteint : [Aspect] dit où
+// il tombe exactement, et comment le déplacer.
 //
 // **La cellule k couvre l'intervalle de k à k+1, et son centre est à k+0,5.** Le décor
 // suit la même convention : une case posée en (3, 4) se dessine comme une entité qui

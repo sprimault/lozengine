@@ -15,6 +15,14 @@ import "testing"
 // C'est le seul cas qui distingue l'isométrie vraie du dimétrique : les deux ont la
 // même forme de matrice, et seule la hauteur les sépare. Si Isometric prenait une
 // hauteur en paramètre, aucun cas de ce tableau ne pourrait plus rougir.
+//
+// **Chaque constructeur y porte un sous-cas par axe, et pas seulement sa diagonale.**
+// L'isométrie vraie n'avait que sa cellule diagonale, dont les deux coordonnées valent
+// un : son abscisse est nulle quel que soit le signe des coefficients. Mesuré le
+// 29 octobre 2026 — en retournant le signe de ses deux premiers coefficients, la suite
+// complète des douze paquets restait verte, là où la même mutation sur le dimétrique
+// faisait rougir geometry, internal/sorting et internal/viewer. Un cas symétrique ne
+// garde pas un sens.
 func TestConstructorsSetTheirRatio(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -26,6 +34,8 @@ func TestConstructorsSetTheirRatio(t *testing.T) {
 		{"dimétrique, l'axe x descend vers la gauche", Dimetric(32, 16), 1, 0, -16, 8},
 		{"dimétrique, la cellule diagonale", Dimetric(32, 16), 1, 1, 0, 16},
 		{"isométrie vraie, hauteur dérivée par racine de trois", Isometric(32), 1, 1, 0, 18},
+		{"isométrie vraie, l'axe y descend vers la droite", Isometric(32), 0, 1, 16, 9},
+		{"isométrie vraie, l'axe x descend vers la gauche", Isometric(32), 1, 0, -16, 9},
 		{"grille, x vers la droite", Grid(32), 1, 0, 32, 0},
 		{"grille, y vers le bas", Grid(32), 0, 1, 0, 32},
 		{"brute, les coefficients donnés", Raw(2, 3, 5, 7), 1, 1, 5, 12},

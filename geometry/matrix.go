@@ -40,8 +40,19 @@ type Matrix struct {
 }
 
 // Dimetric rend la projection d'une cellule losange au ratio libre, celle d'un
-// rendu isométrique de jeu : une tuile de 32 sur 16 avance de seize pixels par
-// cellule en abscisse et de huit en ordonnée.
+// rendu isométrique de jeu : une tuile de 32 sur 16 avance de seize pixels à
+// l'horizontale et de huit vers le bas, par cellule.
+//
+// **Le sens, que l'avance en pixels ne dit pas : `x` s'enfonce vers le bas-gauche de
+// l'écran et `y` vers le bas-droite.** Un pas en `x` retranche donc ses seize pixels
+// à la position horizontale au lieu de les ajouter, et un jeu qui attend son premier
+// axe vers la droite obtient son monde en miroir. Monter à l'écran demande de reculer
+// sur les deux axes à la fois.
+//
+// Deux façons de ne pas en dépendre : [Matrix.Unproject] rend le pas du monde qui
+// répond à un déplacement d'écran, sans qu'on ait à connaître ce sens ; et [Raw]
+// exprime la convention inverse, au prix de la perdre pour tout le reste — le
+// départage de l'ordre de dessin et le relevé de recouvrement supposent celle-ci.
 //
 // C'est le constructeur du cas courant, et le seul qui laisse la hauteur libre.
 func Dimetric(width, height int) Matrix {
@@ -52,6 +63,9 @@ func Dimetric(width, height int) Matrix {
 // Isometric rend la projection de l'isométrie vraie, dont elle dérive la hauteur
 // par largeur sur racine de trois — dix-huit pixels et demi pour une largeur de
 // trente-deux, là où le dimétrique courant en prend seize.
+//
+// **Elle tourne les axes dans le même sens que [Dimetric]** : `x` vers le bas-gauche
+// de l'écran, `y` vers le bas-droite. Seul le ratio les distingue.
 //
 // La hauteur n'est pas un paramètre parce qu'un constructeur qui n'impose rien n'en
 // est pas un : avec elle, celui-ci serait [Dimetric] sous un autre nom, et aucun
@@ -69,6 +83,11 @@ func Isometric(width int) Matrix {
 // Elle existe parce que [Dimetric] ne peut pas l'exprimer, quel que soit son
 // ratio : une vue de dessus ne fait pas tourner les axes. La projection étant une
 // matrice, c'est un constructeur de plus et non un second moteur.
+//
+// **Les axes ne tournant pas, ils ne vont pas où les deux losanges les mettent** :
+// `x` va vers la droite de l'écran et `y` vers le bas, donc le premier à l'inverse
+// de [Dimetric]. Un jeu qui passe d'une projection à l'autre voit son monde se
+// retourner sur ce seul axe.
 func Grid(side int) Matrix {
 	c := float64(side)
 	return matrix(c, 0, 0, c)
