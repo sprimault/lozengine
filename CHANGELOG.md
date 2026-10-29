@@ -72,6 +72,9 @@ notes de publication.
 
 ### Corrigé
 
+- La fenêtre s'ouvre à la taille demandée sur un écran à forte densité sous Windows :
+  elle en faisait la moitié à 200 %, les dimensions étant prises pour des pixels
+  physiques là qu'un jeu les donne en points.
 - L'ordre de dessin ne dépend plus de l'index de planche. Deux strates d'une même
   cellule sortaient dans l'ordre où leurs images avaient été chargées, donc un décor
   posé au-dessus d'un autre pouvait disparaître ; `Entity.Tier` restait sans effet
@@ -111,6 +114,9 @@ notes de publication.
 
 ### Fixed
 
+- The window now opens at the requested size on a high-density screen under Windows: it
+  came out half that at 200 %, the dimensions being taken for physical pixels where a
+  game gives them in points.
 - Draw order no longer depends on the sheet index. Two strata of one cell came out in
   the order their images had been loaded, so decor placed above other decor could
   vanish; `Entity.Tier` had no effect between entities on different sheets.

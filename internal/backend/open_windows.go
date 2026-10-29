@@ -15,6 +15,8 @@ import (
 	"sync"
 	"syscall"
 	"unsafe"
+
+	"github.com/sprimault/lozengine/render"
 )
 
 // windowClassName est le nom sous lequel la classe de fenêtre est enregistrée. Un seul
@@ -53,13 +55,25 @@ func Open(o Options) (Window, error) {
 		return nil, fmt.Errorf("window title %q: %w", o.Title, err)
 	}
 
+	// **La taille demandée est en points et non en pixels physiques**, et c'est la
+	// densité de l'écran qui fait la différence : sur un écran réglé à 200 %, une
+	// fenêtre de 480×270 pixels mesure 240×135 points, donc la moitié de ce qu'un jeu
+	// a demandé. Elle est donc multipliée par un facteur entier avant d'être posée.
+	//
+	// Le reste suit tout seul : la fenêtre rend sa taille physique, et le
+	// dimensionnement de la vue en tire ce même facteur entier, donc la vue retombe
+	// exactement sur la résolution demandée. Rien de fractionnaire nulle part.
+	factor := densityFactor()
+	clientW := uint16(min(int(o.Width)*factor, render.MaxBufferSide))
+	clientH := uint16(min(int(o.Height)*factor, render.MaxBufferSide))
+
 	// La taille demandée est celle de la zone utile ; celle qu'on passe au système
 	// est la fenêtre entière.
-	outerW, outerH := outerSize(o.Width, o.Height, wsOverlappedWindow)
+	outerW, outerH := outerSize(clientW, clientH, wsOverlappedWindow)
 
 	w := &window{
-		lastW:      o.Width,
-		lastH:      o.Height,
+		lastW:      clientW,
+		lastH:      clientH,
 		minW:       outerW,
 		minH:       outerH,
 		info:       newBitmapInfo(),
