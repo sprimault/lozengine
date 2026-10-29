@@ -47,6 +47,9 @@ notes de publication.
 
 ### Ajouté
 
+- `Aspect.Uncounted` retire un quad de la mesure de recouvrement — `Overlap.Hidden`,
+  `Overlap.ByDecor` et le seuil de `Aspect.Reveal` —, ce qui permet au rappel qu'un jeu
+  dessine lui-même de s'éteindre au lieu de se compter.
 - La vue s'élargit avec la fenêtre au lieu de rester figée, donc les bandes
   disparaissent : elles prenaient 19 % de la fenêtre en 1600×900 et 82 % sur un
   téléphone en portrait. `Options.Width` et `Options.Height` deviennent le minimum,
@@ -55,6 +58,9 @@ notes de publication.
 
 ### Modifié
 
+- `Overlap.Hidden` dit ce qu'il mesure et sur quoi ne pas s'appuyer : des rectangles
+  cumulés, transparents compris, non découpés à l'image. Seuls deux faits tiennent
+  d'une version à l'autre, et sa documentation les nomme.
 - Un jeu qui pose une interface lit désormais sa taille par `Scene.View` : une position
   calculée depuis une constante ne tombe plus au bon endroit. Pour garder le
   comportement figé de la 0.5.3, poser `Options.MaxWidth` et `MaxHeight` égaux à
@@ -77,6 +83,9 @@ notes de publication.
 
 ### Added
 
+- `Aspect.Uncounted` takes a quad out of the overlap measure — `Overlap.Hidden`,
+  `Overlap.ByDecor` and the `Aspect.Reveal` threshold — so a cue a game draws itself can
+  switch off instead of counting itself.
 - The view now widens with the window instead of staying fixed, so the bars are gone:
   they took 19 % of the window at 1600×900 and 82 % on a phone held upright.
   `Options.Width` and `Options.Height` become the minimum, `Options.MaxWidth` and
@@ -85,6 +94,9 @@ notes de publication.
 
 ### Changed
 
+- `Overlap.Hidden` now states what it measures and what not to rely on: cumulated
+  rectangles, transparent pixels included, not clipped to the image. Only two facts
+  hold from one version to the next, and its documentation names them.
 - A game placing an interface now reads its size from `Scene.View`: a position computed
   from a constant no longer lands where it should. To keep the fixed behaviour of
   0.5.3, set `Options.MaxWidth` and `MaxHeight` equal to `Width` and `Height`.

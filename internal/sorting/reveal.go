@@ -82,10 +82,21 @@ func (t *Sorter) revealHidden() {
 			q.Tint = tint
 		}
 
+		// **Les sept tranches parallèles se remplissent, pas cinq.** Deux manquaient
+		// ici, et le désalignement ne se voyait pas : la borne n est figée avant cette
+		// boucle, donc aucun quad révélé n'est jamais lu par la mesure. Il suffisait
+		// qu'une lecture passe cette borne pour que le trieur lise le drapeau d'un
+		// autre quad, ou panique.
+		//
+		// Le quad révélé hérite de l'origine de la chose, dont il est une copie, et il
+		// ne compte jamais : c'est un rappel que le moteur dessine, exactement ce que
+		// [scene.Aspect.Uncounted] exprime pour un rappel que l'hôte dessine.
 		t.sources = append(t.sources, uint32(len(t.raw)))
 		t.keys = append(t.keys, t.keys[i].WithLayer(layer))
 		t.ties = append(t.ties, t.ties[i])
 		t.reveals = append(t.reveals, 0)
+		t.fromDecor = append(t.fromDecor, t.fromDecor[i])
+		t.uncounted = append(t.uncounted, true)
 		t.raw = append(t.raw, q)
 	}
 }
@@ -116,6 +127,9 @@ func (t *Sorter) overlap(i, n int) (total, decor int) {
 	key := t.keys[i]
 
 	for j := range n {
+		if t.uncounted[j] {
+			continue
+		}
 		if key > t.keys[j] || (key == t.keys[j] && !t.before(uint32(i), uint32(j))) {
 			continue
 		}

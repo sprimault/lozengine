@@ -25,12 +25,23 @@ type Overlap struct {
 	// connaît pas : la poignée en est un, et la conversion est donc gratuite.
 	Identity uint32
 
-	// Hidden est le nombre de pixels de la chose que recouvre ce qui se peint après
-	// elle, décor et entités confondus.
+	// Hidden est une mesure de recouvrement, pas une aire : un hôte la compare à un
+	// seuil qu'il règle sur son jeu, décor et entités confondus.
 	//
-	// Le cumul compte deux fois ce que deux choses se recouvrant entre elles cachent
-	// au même endroit. C'est la mesure qui sert aussi au seuil de révélation, et la
-	// corriger demanderait de tenir la surface déjà couverte.
+	// Elle additionne, quad après quad, le rectangle que ce qui se peint après la
+	// chose partage avec le sien, transparent compris : deux choses superposées
+	// versent chacune leur part, et un quad à moitié hors de l'image verse tout de
+	// même le rectangle entier qu'il partage. Ce ne sont donc pas des pixels de la
+	// chose, mais des pixels de boîte — une case de personnage de soixante-quatre sur
+	// soixante-quatre n'en peint en moyenne que quatre cent quarante.
+	//
+	// **C'est ce qu'elle fait dans cette version, et il ne faut pas en dépendre.**
+	// Deux choses seulement tiennent d'une version à l'autre : ajouter un cachant ne
+	// la diminue jamais, et elle est nulle quand rien ne se peint après la chose. En
+	// particulier, ne pas retrancher de ce nombre ce qu'un rappel y a versé —
+	// [scene.Aspect.Uncounted] l'exclut à la source, et c'est la voie prévue pour
+	// cela. La soustraction marche aujourd'hui parce que la loi est additive ; une
+	// mesure exacte ne compterait chaque pixel qu'une fois et la rendrait fausse.
 	Hidden uint32
 
 	// ByDecor est la part de [Overlap.Hidden] que le décor seul recouvre.

@@ -47,6 +47,14 @@ type Sorter struct {
 	// trieur.
 	fromDecor []bool
 
+	// uncounted dit, par rang de quad, que ce quad ne compte pas dans la mesure de
+	// recouvrement. Une tranche de plus et non deux bits dans celle ci-dessus : les
+	// deux formes ont été mesurées sur la charge du jeu, de zéro à trois cents entités
+	// marquées, et aucune ne se distingue de l'autre ni de la base — l'écart entre
+	// deux séries de la même forme était du même ordre. À coût égal, deux tranches
+	// nommées se lisent mieux qu'un octet qu'il faut masquer.
+	uncounted []bool
+
 	// Ce qu'un jeu demande à faire relever, dans l'ordre de pose donc par rang de quad
 	// croissant. Une liste courte et non une tranche parallèle à raw : un jeu suit une
 	// chose ou deux, et une tranche de la taille de l'image coûterait sa remise à zéro
@@ -113,6 +121,7 @@ func New(s *scene.Scene) *Sorter {
 func (t *Sorter) Frame() render.DrawList {
 	t.raw, t.keys, t.sources, t.ties = t.raw[:0], t.keys[:0], t.sources[:0], t.ties[:0]
 	t.reveals, t.revealing, t.fromDecor = t.reveals[:0], 0, t.fromDecor[:0]
+	t.uncounted = t.uncounted[:0]
 	t.requests, t.overlaps = t.requests[:0], t.overlaps[:0]
 
 	t.viewX, t.viewY, t.viewWidth, t.viewHeight = t.scene.View()
@@ -335,6 +344,7 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 	t.ties = append(t.ties, tie{x: ex, identity: identity, tier: tier})
 	t.reveals = append(t.reveals, a.Reveal)
 	t.fromDecor = append(t.fromDecor, t.collectingDecor)
+	t.uncounted = append(t.uncounted, a.Uncounted)
 	t.raw = append(t.raw, render.Quad{
 		X: int16(x), Y: int16(y),
 		SourceX: a.SourceX, SourceY: a.SourceY,
