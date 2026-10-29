@@ -45,6 +45,21 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- La vue s'élargit avec la fenêtre au lieu de rester figée, donc les bandes
+  disparaissent : elles prenaient 19 % de la fenêtre en 1600×900 et 82 % sur un
+  téléphone en portrait. `Options.Width` et `Options.Height` deviennent le minimum,
+  `Options.MaxWidth` et `Options.MaxHeight` le bornent, et `Engine.Fit` l'annonce à un
+  hôte qui tient sa boucle.
+
+### Modifié
+
+- Un jeu qui pose une interface lit désormais sa taille par `Scene.View` : une position
+  calculée depuis une constante ne tombe plus au bon endroit. Pour garder le
+  comportement figé de la 0.5.3, poser `Options.MaxWidth` et `MaxHeight` égaux à
+  `Width` et `Height`.
+
 ### Corrigé
 
 - La cadence ne dépend plus de la taille de la fenêtre sous Windows : une scène qui
@@ -55,6 +70,20 @@ notes de publication.
   ajoute : un jeu qui dérivait le coin lui-même la comptait deux fois.
 
 ***
+
+### Added
+
+- The view now widens with the window instead of staying fixed, so the bars are gone:
+  they took 19 % of the window at 1600×900 and 82 % on a phone held upright.
+  `Options.Width` and `Options.Height` become the minimum, `Options.MaxWidth` and
+  `Options.MaxHeight` bound it, and `Engine.Fit` announces it to a host holding its own
+  loop.
+
+### Changed
+
+- A game placing an interface now reads its size from `Scene.View`: a position computed
+  from a constant no longer lands where it should. To keep the fixed behaviour of
+  0.5.3, set `Options.MaxWidth` and `MaxHeight` equal to `Width` and `Height`.
 
 ### Fixed
 

@@ -99,6 +99,14 @@ func Run(s *Scene, g Game, o Options) error {
 		// fenêtre, et c'est l'agrandissement qui dit à quel pixel de l'image elle
 		// correspond. Size se lit après Input, qui est ce qui l'a apprise.
 		width, height := window.Size()
+
+		// La vue se dimensionne sur la fenêtre avant le pas, pour deux raisons qui
+		// vont dans le même sens : le jeu décrit alors la scène à la taille qu'il
+		// verra, et la position du pointeur que `aim` convertit se rapporte au tampon
+		// que `fit` agrandira ensuite. Après le pas, les deux seraient en retard d'une
+		// image sur un redimensionnement.
+		engine.Fit(int(width), int(height))
+
 		if presented == nil || presented.Width != width || presented.Height != height {
 			if width == 0 || height == 0 {
 				// Fenêtre réduite : rien à présenter, et la taille nulle ne

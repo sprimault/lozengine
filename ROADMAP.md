@@ -75,8 +75,13 @@ chaîne Go : un artefact à distribuer avec la page, pas une dépendance du mote
 
 C'est ce jalon qui donne Android et iOS, par le navigateur : un jeu en page plein écran
 ne se distingue pas d'une application pour qui y joue. Il passe donc devant l'audio, dont
-aucun appareil n'attend la sortie. Les entrées tactiles et le dimensionnement de la vue
-en font partie, faute de quoi la cible ne sert que le poste.
+aucun appareil n'attend la sortie. Les entrées tactiles en font partie, faute de quoi la
+cible ne sert que le poste ; la densité de pixels de la page aussi, qu'aucune autre
+plateforme ne pose.
+
+Le dimensionnement de la vue n'attend plus ce jalon et a été livré avant lui : les bandes
+qu'une vue figée laissait étaient un défaut des backends déjà en place, et non une
+capacité que le navigateur apportait.
 
 Go n'émettant pas de SIMD en WebAssembly et n'y ayant pas de vrais threads, c'est la
 cible où une charge élevée saturera en premier. Le budget d'image s'y mesure, il ne s'y

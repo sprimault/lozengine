@@ -44,8 +44,34 @@ func (s *Scene) Orientation() Orientation { return s.orientation }
 //
 // La taille vient de l'appelant et n'est jamais supposée ici : la résolution interne
 // est le choix du jeu, et la mise à l'échelle vers une fenêtre appartient au backend.
+//
+// **Qui passe par la boucle du paquet racine ne la décide pas** : celle-ci la réimpose
+// à chaque pas, d'après la fenêtre et les bornes des options, parce que la vue y suit
+// la fenêtre. La taille donnée ici est alors celle du premier cadrage, et [Scene.View]
+// dit ce qu'elle est devenue. Un hôte qui tient sa propre boucle garde les deux.
 func (s *Scene) Focus(x, y float64, width, height int32) {
 	s.focusX, s.focusY = x, y
+	s.viewWidth, s.viewHeight = width, height
+	s.reframe()
+}
+
+// ResizeView change la taille de la vue en gardant le point visé, et recadre dessus.
+//
+// C'est [Scene.Focus] sans redire où l'on regarde, pour qui redimensionne : le point
+// visé est une donnée du jeu, qu'une fenêtre étirée ne doit pas déplacer. Le passer à
+// nouveau obligerait l'appelant à le garder de son côté, et deux copies d'un même
+// point finissent par diverger.
+//
+// Une taille nulle ou négative ne change rien : c'est ce que rend une fenêtre réduite,
+// et la vue d'alors n'a aucune raison de disparaître.
+func (s *Scene) ResizeView(width, height int32) {
+	if width <= 0 || height <= 0 {
+		return
+	}
+	if width == s.viewWidth && height == s.viewHeight {
+		return
+	}
+
 	s.viewWidth, s.viewHeight = width, height
 	s.reframe()
 }

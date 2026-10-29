@@ -101,16 +101,41 @@ type Options struct {
 	// seule s'en sert.
 	Title string
 
-	// Width et Height sont la résolution interne, celle dans laquelle le moteur
-	// dessine avant l'agrandissement entier vers la fenêtre. Zéro vaut 480×270, et
-	// [MaxBufferSide] est la borne.
+	// Width et Height sont la résolution interne **minimale**, celle dans laquelle le
+	// moteur dessine avant l'agrandissement entier vers la fenêtre. Zéro vaut 480×270,
+	// et [MaxBufferSide] est la borne.
 	//
 	// **La fenêtre s'ouvre à cette taille**, donc l'agrandissement vaut un tant que
 	// le joueur ne l'a pas redimensionnée. Un jeu qui se veut grand à l'ouverture
 	// demande une résolution interne plus grande, et non une fenêtre plus grande : le
 	// facteur est entier, et c'est la résolution interne qui dit ce qu'une tuile
 	// couvre.
+	//
+	// **C'est un plancher et non une taille fixe** : au-delà, la vue s'élargit avec la
+	// fenêtre jusqu'à [Options.MaxWidth] et [Options.MaxHeight], et c'est ce qui évite
+	// les bandes. Ce qui reste garanti est que la vue n'est jamais plus petite, donc
+	// qu'une interface posée dans ce rectangle y tient toujours.
 	Width, Height int
+
+	// MaxWidth et MaxHeight bornent l'élargissement de la vue. Zéro ne borne pas :
+	// la vue remplit la fenêtre, au facteur entier près.
+	//
+	// **Le défaut remplit, et c'est un changement de comportement par rapport à la
+	// 0.5.3**, où la vue restait figée et où le reste de la fenêtre était peint en
+	// bandes — 19 % de la fenêtre en 1600×900, 30 % sur un téléphone en paysage,
+	// 82,5 % en portrait. Un jeu qui veut l'ancien comportement écrit ces deux champs
+	// égaux à [Options.Width] et [Options.Height].
+	//
+	// **Ce que cela demande à un jeu qui pose une interface** : lire la taille par
+	// [Scene.View] au lieu de la supposer. Une position calculée depuis une constante
+	// ne tombe plus au bon endroit dès que la fenêtre change de forme, et rien ne le
+	// signale — c'est l'interface qui se décale, pas le monde.
+	//
+	// **Et ce qu'un plafond achète, qui n'est pas qu'un confort** : l'aire de monde
+	// visible va jusqu'à 5,4 fois le minimum entre une fenêtre 4:3 et une 21:9, et
+	// 17 fois dans un format extrême. Combien le joueur voit est une donnée de jeu,
+	// pas une conséquence de la fenêtre qu'il a étirée.
+	MaxWidth, MaxHeight int
 
 	// Tick est la durée d'un pas. Zéro vaut un soixantième de seconde.
 	//
@@ -188,6 +213,21 @@ func (o Options) withDefaults() Options {
 	if o.Height == 0 {
 		o.Height = defaultHeight
 	}
+
+	// Le plafond est ramené au plancher quand il est dessous : un jeu qui donne un
+	// maximum plus petit que son minimum décrit une vue impossible, et refuser le
+	// montage pour cela coûterait une erreur de plus sur un chemin que personne ne
+	// prend volontairement. Zéro ouvre au plus grand tampon possible, donc à la
+	// fenêtre entière, le facteur entier bornant le reste.
+	if o.MaxWidth <= 0 {
+		o.MaxWidth = MaxBufferSide
+	}
+	if o.MaxHeight <= 0 {
+		o.MaxHeight = MaxBufferSide
+	}
+	o.MaxWidth = max(o.MaxWidth, o.Width)
+	o.MaxHeight = max(o.MaxHeight, o.Height)
+
 	if o.Tick == 0 {
 		o.Tick = defaultTick
 	}
@@ -214,6 +254,12 @@ type Engine struct {
 	sorter *sorting.Sorter
 	frame  *Buffer
 	atlas  *Atlas
+
+	// Les bornes de la vue, en pixels de la résolution interne. Le minimum est aussi
+	// la taille d'ouverture de la fenêtre et le plancher que [Engine.Fit] ne descend
+	// jamais ; le maximum vaut [MaxBufferSide] quand le jeu n'en pose pas.
+	minWidth, minHeight int
+	maxWidth, maxHeight int
 
 	background Color
 	tick       time.Duration
@@ -255,9 +301,58 @@ func NewEngine(s *Scene, o Options) (*Engine, error) {
 		sorter:     sorting.New(s),
 		frame:      NewBuffer(uint16(o.Width), uint16(o.Height)),
 		atlas:      o.Atlas,
+		minWidth:   o.Width,
+		minHeight:  o.Height,
+		maxWidth:   o.MaxWidth,
+		maxHeight:  o.MaxHeight,
 		background: o.Background,
 		tick:       o.Tick,
 	}, nil
+}
+
+// Fit dimensionne la vue pour une sortie de la taille donnée, en pixels de fenêtre.
+//
+// **C'est la voie par laquelle un hôte annonce que sa fenêtre a changé de taille**, et
+// la boucle de [Run] l'appelle pour un jeu qui passe par elle. Le facteur
+// d'agrandissement reste le plus grand entier qui garde le minimum dans la sortie, et
+// la vue devient la sortie divisée par ce facteur, bornée par les options : il reste
+// donc au plus un facteur moins un pixel de bande par axe, là où une vue figée en
+// laissait jusqu'à 82 % de la fenêtre sur un téléphone en portrait.
+//
+// Elle ne touche pas au point visé, qui est une donnée du jeu : seule la taille change,
+// et la scène recadre autour du même point.
+//
+// Rien ne se passe si la vue ne change pas, ce qui est le cas courant — une fenêtre
+// garde sa taille des milliers d'images de suite. Une taille nulle non plus : c'est ce
+// que rend une fenêtre réduite, et la vue d'alors n'a aucune raison de disparaître.
+func (e *Engine) Fit(width, height int) {
+	if width <= 0 || height <= 0 {
+		return
+	}
+
+	w, h := e.viewSize(width, height)
+	if w == int(e.frame.Width) && h == int(e.frame.Height) {
+		return
+	}
+
+	e.frame = NewBuffer(uint16(w), uint16(h))
+	e.scene.ResizeView(int32(w), int32(h))
+}
+
+// viewSize rend la taille de vue qu'une sortie donnée mérite.
+//
+// Le facteur vient de [raster.ScaleFactor] et de nulle part ailleurs : c'est lui que
+// l'agrandissement appliquera ensuite, et deux arithmétiques qui doivent s'accorder
+// finissent par diverger. Les tampons qu'elle lui passe n'ont pas de pixels — la
+// fonction ne lit que leurs côtés —, donc ils ne coûtent rien.
+func (e *Engine) viewSize(outWidth, outHeight int) (width, height int) {
+	minimum := &Buffer{Width: uint16(e.minWidth), Height: uint16(e.minHeight)}
+	out := &Buffer{Width: uint16(min(outWidth, MaxBufferSide)), Height: uint16(min(outHeight, MaxBufferSide))}
+	factor := raster.ScaleFactor(minimum, out)
+
+	width = min(max(int(out.Width)/factor, e.minWidth), e.maxWidth)
+	height = min(max(int(out.Height)/factor, e.minHeight), e.maxHeight)
+	return width, height
 }
 
 // Step avance le jeu d'un pas et rend l'image qui en résulte prête à présenter.
@@ -282,6 +377,14 @@ func (e *Engine) Step(g Game, in Input) {
 	if g != nil {
 		g.Step(in)
 	}
+
+	// La taille de la vue se réimpose après le pas du jeu, et c'est le moteur qui la
+	// possède depuis que la vue suit la fenêtre. Un [Scene.Focus] appelé avec une
+	// autre taille — ce que fait tout jeu qui recentre sa caméra — donnerait sinon une
+	// image coupée ou décentrée, sans erreur ni trace : mesuré, un cadrage à 960×540
+	// sur un tampon de 480×270 ne peint que la moitié de l'entité visée. Le point
+	// visé, lui, reste au jeu, et c'est pourquoi c'est la taille seule qu'on reprend.
+	e.scene.ResizeView(int32(e.frame.Width), int32(e.frame.Height))
 
 	list := e.sorter.Frame()
 	raster.Clear(e.frame, e.background)
