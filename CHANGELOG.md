@@ -45,6 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.4] — 2026-10-30
+
 ### Ajouté
 
 - `Overlap.Painted`, `Overlap.Covered` et `Overlap.CoveredByDecor` mesurent le
