@@ -8,7 +8,10 @@
 
 package sorting
 
-import "github.com/sprimault/lozengine/render"
+import (
+	"github.com/sprimault/lozengine/render"
+	"github.com/sprimault/lozengine/scene"
+)
 
 // La répartition des bits d'une clé, du plus fort au plus faible.
 //
@@ -19,15 +22,15 @@ import "github.com/sprimault/lozengine/render"
 // fixent ce que le moteur annonce savoir distinguer — seize couches, soixante-quatre
 // étages, 32 768 cellules de côté.
 const (
-	indexBits  = 10
-	sheetBits  = 10
+	indexBits  = 15
+	tierBits   = 5
 	heightBits = 16
 	depthBits  = 18
 	floorBits  = 6
 	layerBits  = 4
 
-	sheetShift  = indexBits
-	heightShift = sheetShift + sheetBits
+	tierShift   = indexBits
+	heightShift = tierShift + tierBits
 	depthShift  = heightShift + heightBits
 	floorShift  = depthShift + depthBits
 	layerShift  = floorShift + floorBits
@@ -37,10 +40,24 @@ const (
 // composition masque — mais range la chose ailleurs qu'où elle devrait aller.
 const (
 	MaxIndex  = 1<<indexBits - 1
-	MaxSheet  = 1<<sheetBits - 1
+	MaxTier   = 1<<tierBits - 1
 	MaxHeight = 1<<heightBits - 1
 	MaxDepth  = 1<<depthBits - 1
 )
+
+// entityTier est le rang que porte tout ce qui n'est pas une strate de décor : une
+// entité, une pièce d'écran, un quad révélé.
+//
+// **Au-dessus de toutes les strates, et c'est ce qui rend l'ordre déterministe** : à
+// profondeur et hauteur égales, le décor d'une cellule se peint avant ce qui s'y
+// tient. Cet ordre existait déjà, mais il venait de l'index de planche, donc de
+// l'ordre dans lequel le jeu avait chargé ses images — une entité dont la planche
+// portait un index bas passait sous le sol. Le dire ici le rend vrai pour tout jeu.
+//
+// `scene.MaxTiers` valant seize, les strates occupent zéro à quinze et cette valeur
+// est la première libre ; [MaxTier] en porte trente-et-une, donc le champ ne sature
+// pas.
+const entityTier = scene.MaxTiers
 
 // Les plafonds de la couche et de l'étage ne sont pas déclarés ici : ce sont
 // [render.MaxLayer] et [render.MaxFloor], parce qu'un jeu décide combien de couches il
@@ -48,34 +65,38 @@ const (
 // vérifie que les deux disent le même nombre.
 
 // Key porte l'ordre de dessin d'une chose à peindre, du champ le plus fort au plus
-// faible : couche, étage, profondeur, hauteur, planche, index stable.
+// faible : couche, étage, profondeur, hauteur, rang d'empilement, index stable.
 //
 // La profondeur se compte en quarts de cellule et la hauteur aussi, toutes deux telles
 // que la projection les a rendues — les recalculer ici ferait un second arrondi, qui
 // peut tomber de l'autre côté d'un quart et réordonner deux choses sans que rien ne le
 // signale.
 //
-// La planche est avant-dernière pour que les quads d'une même profondeur sortent
-// groupés par planche. Le rastériseur peut n'en changer que par séries ; il ne doit pas
-// en dépendre.
+// **Le rang d'empilement est la strate d'une cellule de décor, et [entityTier] pour
+// tout le reste.** C'était l'index de planche jusqu'à la 0.5.3, ce qui faisait décider
+// l'ordre par celui dans lequel un jeu avait chargé ses images : relevé sur un niveau
+// réel, un décal de sol posé au-dessus de son comblement disparaissait sur cent
+// quarante-quatre cellules, et renommer le fichier de l'image suffisait à corriger
+// l'affichage. La planche ne décide donc plus rien, et le rastériseur n'en souffre pas
+// — il relit sa planche à chaque quad, sans garder d'état de l'un à l'autre.
 type Key uint64
 
 // Compose assemble une clé. Chaque champ est ramené à ce qu'il porte, donc un
 // dépassement range la chose au bord plutôt que dans le champ voisin.
-func Compose(layer, floor uint8, depth uint32, height uint16, sheet, index uint16) Key {
+func Compose(layer, floor uint8, depth uint32, height uint16, tier uint8, index uint16) Key {
 	return Key(min(uint64(layer), render.MaxLayer))<<layerShift |
 		Key(min(uint64(floor), render.MaxFloor))<<floorShift |
 		Key(min(uint64(depth), MaxDepth))<<depthShift |
 		Key(uint64(height))<<heightShift |
-		Key(min(uint64(sheet), MaxSheet))<<sheetShift |
+		Key(min(uint64(tier), MaxTier))<<tierShift |
 		Key(min(uint64(index), MaxIndex))
 }
 
 // WithLayer rend la même clé dans une autre couche, les cinq autres champs intacts.
 //
 // C'est ce qui permet à une chose révélée de repartir au-dessus de ce qui la cachait
-// sans être reprojetée : sa profondeur, sa hauteur et sa planche sont celles de la
-// chose elle-même, et seule sa place dans l'empilement change.
+// sans être reprojetée : sa profondeur, sa hauteur et son rang d'empilement sont ceux
+// de la chose elle-même, et seule sa place dans l'empilement des couches change.
 func (c Key) WithLayer(layer uint8) Key {
 	const mask = Key(render.MaxLayer) << layerShift
 	return c&^mask | Key(min(uint64(layer), render.MaxLayer))<<layerShift

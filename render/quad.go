@@ -49,10 +49,16 @@ const (
 // MaxSheets est le nombre de planches qu'un atlas peut porter, donc la plus grande
 // valeur que le champ Sheet d'un [Quad] puisse désigner.
 //
-// Elle vit ici parce que deux paquets doivent la respecter sans pouvoir s'atteindre :
-// celui qui range les planches, qui refuse la mille vingt-cinquième au chargement, et
-// celui qui compose l'ordre de dessin, dont un champ ne distingue pas au-delà. Ce
-// dernier est la raison du chiffre, mais c'est à l'un et à l'autre de le tenir.
+// Elle vit ici parce que c'est le seul endroit qu'un hôte puisse lire : celui qui
+// range les planches refuse la mille vingt-cinquième au chargement, et un `Quad` ne
+// porte pas de quoi la dire.
+//
+// **La raison du chiffre a disparu, et il n'a pas encore bougé.** Il venait de la clé
+// de tri, dont un champ de dix bits ne distinguait pas au-delà ; cette clé porte
+// désormais le rang d'empilement à cette place, et l'index de planche n'y figure plus
+// du tout. Rien ne borne donc plus cette valeur que le `uint16` de [Quad.Sheet], soit
+// soixante-cinq mille cinq cent trente-six. La lever est un changement de surface
+// publique, qui se décide seul.
 //
 // **Seule la limite sort, jamais la répartition.** Un quad ne porte pas sa clé de
 // tri, et l'agencement de ses champs n'a pas à devenir irrévocable en traversant la

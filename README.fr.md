@@ -53,8 +53,8 @@ Le détail est dans [`docs/go.md`](docs/go.md).
 ## La frontière qui porte tout
 
 Le noyau produit une `DrawList` : la liste des quads déjà placés, rangés dans l'ordre
-de dessin et groupés par planche, ceux qui sortent de l'écran en ayant été retirés.
-Rien dans cette structure ne connaît Windows, X11 ou un format d'image.
+de dessin, ceux qui sortent de l'écran en ayant été retirés. Rien dans cette structure
+ne connaît Windows, X11 ou un format d'image.
 
 Un backend traduit cette liste et rien d'autre. S'il doit trier, projeter ou
 consulter la scène, la frontière est mal placée, et le correctif est dans le

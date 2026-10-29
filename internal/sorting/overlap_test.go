@@ -86,8 +86,15 @@ func TestOverlapReportsAnExactCount(t *testing.T) {
 // recouvrement du décor seul, et la part de l'entité disparaît.
 func TestOverlapCountsPastTheThreshold(t *testing.T) {
 	s, _ := measuredScene(t, func(s *scene.Scene) {
-		if !s.PlaceCell(8, 9, 0, figure()) {
-			t.Fatal("cellule qui cache refusée")
+		// **Un mur strictement devant, et les deux conditions comptent.** Une cellule
+		// en (8, 9) a la profondeur de son coin, qui est exactement celle de l'entité
+		// suivie : à égalité le décor se peint avant ce qui se tient dessus, donc il
+		// ne le cache pas. Et une cellule plate en (9, 9), qui est bien devant,
+		// tombe entièrement sous l'image de l'entité — mesuré, aucune des huit
+		// voisines ne recouvre une figure plate ancrée par le pied. Il faut donc de la
+		// hauteur, c'est-à-dire un mur, ce qui est aussi le seul cas qu'un jeu voit.
+		if !s.PlaceCell(9, 9, 0, wall()) {
+			t.Fatal("mur qui cache refusé")
 		}
 		if _, ok := s.Place(scene.Entity{X: 8.5, Y: 9.5, Aspect: figure()}); !ok {
 			t.Fatal("entité qui cache refusée")
@@ -112,10 +119,13 @@ func TestOverlapCountsPastTheThreshold(t *testing.T) {
 
 // TestOverlapSeparatesTheDecor garde que la part du décor se compte à part, puisque
 // c'est sur elle qu'un hôte décide de la nature de son rappel.
+//
+// Le cachant est un mur strictement devant l'entité suivie, pour les deux raisons
+// dites dans [TestOverlapCountsPastTheThreshold].
 func TestOverlapSeparatesTheDecor(t *testing.T) {
 	s, _ := measuredScene(t, func(s *scene.Scene) {
-		if !s.PlaceCell(8, 9, 0, figure()) {
-			t.Fatal("cellule qui cache refusée")
+		if !s.PlaceCell(9, 9, 0, wall()) {
+			t.Fatal("mur qui cache refusé")
 		}
 	})
 

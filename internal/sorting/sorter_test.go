@@ -33,6 +33,18 @@ func figure() scene.Aspect {
 	return scene.Aspect{Width: 32, Height: 16, Tint: render.White()}
 }
 
+// wall rend un aspect de la largeur d'une tuile et de trois fois sa hauteur.
+//
+// C'est ce qu'il faut pour qu'un décor recouvre une entité : ancrée par le pied, une
+// figure plate posée sur la cellule de devant tombe entièrement sous l'image de
+// l'entité, et aucune des huit voisines n'en recouvre un pixel. Seule la hauteur
+// recouvre, ce qui est aussi le seul cas qu'un jeu rencontre.
+func wall() scene.Aspect {
+	a := figure()
+	a.Height = 48
+	return a
+}
+
 // TestCornerDepthMatchesProjection garde le raccourci par lequel le décor obtient la
 // profondeur de son coin sans reprojeter.
 //
@@ -336,10 +348,12 @@ func TestOffScreenIsRemoved(t *testing.T) {
 // TestIndexAssignedPerDepth couvre le point que le brief a désigné comme le plus
 // dangereux du jalon.
 //
-// Le champ ne porte que mille vingt-quatre valeurs. Numéroté sur toute l'image, il
-// saturerait dès le millier et quelques, et la clé cesserait d'exprimer l'ordre sans
-// que rien ne le dise. Numéroté par profondeur, deux mille choses réparties sur deux
-// mille profondeurs reçoivent toutes le même index zéro.
+// Le champ ne porte que trente-deux mille sept cent soixante-huit valeurs — il n'en
+// portait que mille vingt-quatre avant que l'index de planche sorte de la clé et lui
+// laisse cinq bits. Numéroté sur toute l'image il saturerait sur une scène dense, et
+// la clé cesserait d'exprimer l'ordre sans que rien ne le dise. Numéroté par
+// profondeur, deux mille choses réparties sur deux mille profondeurs reçoivent toutes
+// le même index zéro, et la largeur du champ n'y est pour rien.
 func TestIndexAssignedPerDepth(t *testing.T) {
 	const n = 2000
 
@@ -498,5 +512,47 @@ func TestFourOrientationsYieldAsManyQuads(t *testing.T) {
 		if n != counts[0] {
 			t.Errorf("quart %d : %d quads, le premier en rend %d", i, n, counts[0])
 		}
+	}
+}
+
+// TestDecorTiersIgnoreTheSheetIndex garde l'ordre des strates d'une même cellule, que
+// [scene.Scene.PlaceCell] promet et que l'index de planche décidait à sa place.
+//
+// **C'est le cas minimal du défaut, et il vient d'un relevé sur un niveau réel** : un
+// décal de sol — une flaque — posé sur la strate au-dessus de son comblement
+// disparaissait entièrement sur 144 cellules, parce que sa planche portait un index
+// plus bas. Ni entité, ni rappel, ni [scene.Entity.Tier] : deux strates d'une cellule
+// suffisent, et c'est ce qui en fait le cas à garder.
+//
+// Les deux sens sont là, et le second est le témoin : avec les index dans l'autre
+// ordre, l'ordre sortait juste, ce qui est précisément ce qui rendait le défaut
+// invisible — il dépendait du nom des fichiers d'images du jeu.
+func TestDecorTiersIgnoreTheSheetIndex(t *testing.T) {
+	for _, c := range []struct {
+		name      string
+		lowSheet  uint16
+		highSheet uint16
+	}{
+		{"strate basse sur la planche haute", 66, 28},
+		{"strate basse sur la planche basse, le témoin", 28, 66},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			s := testScene(t, 16, 0)
+
+			bottom, top := figure(), figure()
+			bottom.Sheet, top.Sheet = c.lowSheet, c.highSheet
+			if !s.PlaceCell(8, 8, 0, bottom) || !s.PlaceCell(8, 8, 1, top) {
+				t.Fatal("strate refusée")
+			}
+
+			list := New(s).Frame()
+			if len(list) != 2 {
+				t.Fatalf("%d quads, attendu 2", len(list))
+			}
+			if list[0].Sheet != c.lowSheet || list[1].Sheet != c.highSheet {
+				t.Errorf("ordre des planches %d puis %d, attendu %d puis %d — la strate haute doit se peindre après",
+					list[0].Sheet, list[1].Sheet, c.lowSheet, c.highSheet)
+			}
+		})
 	}
 }

@@ -54,9 +54,9 @@ is in [`docs/go.md`](docs/go.md) (French).
 
 ## The boundary that carries everything
 
-The core produces a `DrawList`: the list of quads already placed, in drawing order
-and grouped by sheet, with those falling outside the screen already removed.
-Nothing in that structure knows about Windows, X11 or an image format.
+The core produces a `DrawList`: the list of quads already placed, in drawing order,
+with those falling outside the screen already removed. Nothing in that structure knows
+about Windows, X11 or an image format.
 
 A backend translates that list and nothing else. If it has to sort, project or
 consult the scene, the boundary is in the wrong place, and the fix belongs in

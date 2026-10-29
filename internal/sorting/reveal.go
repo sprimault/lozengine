@@ -108,7 +108,7 @@ func (t *Sorter) revealHidden() {
 // couverte, pour un seuil que le jeu règle de toute façon à l'œil.
 //
 // **L'ordre de dessin ne se lit pas sur la clé seule.** Deux choses de même couche,
-// étage, profondeur, hauteur et planche ont des clés égales, l'index stable n'étant pas
+// étage, profondeur, hauteur et rang ont des clés égales, l'index stable n'étant pas
 // encore écrit : c'est le départage qui range leur groupe, et il est déjà connu ici
 // puisque [Sorter.before] ne lit que ce que la collecte a posé. Le quad de rang i
 // s'écarte du même geste, le départage d'une chose avec elle-même rendant faux.

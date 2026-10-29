@@ -105,7 +105,7 @@ quatre à la fois :
 // Key est l'ordre de dessin d'un quad, réduit à un entier comparable.
 //
 // Composée du bit fort au bit faible : couche 4 bits, étage 6, profondeur en
-// quarts de cellule 18, hauteur 16, planche 10, index stable 10. L'ordre des
+// quarts de cellule 18, hauteur 16, rang d'empilement 5, index stable 15. L'ordre des
 // champs est l'ordre de priorité, et c'est tout le procédé — comparer deux
 // clés revient à comparer les couches, puis les étages à couche égale, et
 // ainsi de suite, sans une seule branche.

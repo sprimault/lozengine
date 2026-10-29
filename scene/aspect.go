@@ -197,19 +197,27 @@ type Entity struct {
 	//
 	// Le besoin est ordinaire : une teinte additive par-dessus un sprite, qu'une teinte
 	// multiplicative ne peut pas éclaircir ; un liseré par-dessous pour détacher une
-	// chose d'un fond de même gamme. Les voies de contournement sont fermées ailleurs —
-	// composer dans la planche bute sur [render.MaxSheets], décaler la hauteur déplace
-	// l'image, monter d'une couche passe devant le décor aussi.
+	// chose d'un fond de même gamme. Ranger les deux images dans une même planche
+	// marche aussi et n'en ajoute aucune ; les deux autres voies restent fermées —
+	// décaler la hauteur déplace l'image, monter d'une couche passe devant le décor.
+	//
+	// **Il départage désormais deux entités de planches différentes**, ce qui n'était
+	// pas le cas jusqu'à la 0.5.3 : l'index de planche figurait dans la clé de tri au-
+	// dessus de ce champ, donc deux images chargées dans des planches distinctes
+	// n'arrivaient jamais à égalité et ce champ restait sans effet. Un liseré dérivé
+	// dans sa propre planche passait alors par-dessus le sprite au lieu de dessous,
+	// selon l'ordre de chargement des images.
 	//
 	// **Les deux cent cinquante-six valeurs sont libres**, là que la strate du décor
 	// s'arrête à [MaxTiers] : cette borne vient de ce qu'une strate pleine ajoute un
 	// quad par cellule visible, donc de la grille. Une entité n'alloue rien, et rien ne
 	// lui impose la borne d'autre chose.
 	//
-	// **Une conséquence à connaître, parce que le départage est partagé avec le
-	// décor** : une entité posée exactement sur le coin d'une cellule — en (3, 4) et non
-	// en (3,5 ; 4,5) — porte la profondeur de cette cellule, donc à hauteur et planche
-	// égales leurs clés le sont aussi, et ce champ les départage l'une contre l'autre.
-	// Un Tier élevé range alors l'entité après la cellule.
+	// **Il ne départage jamais contre une cellule de décor**, et c'est voulu : le rang
+	// d'empilement de la clé met tout le décor d'une cellule avant ce qui s'y tient, à
+	// profondeur et hauteur égales. Un sol passe donc toujours sous une entité posée
+	// dessus, quelle que soit la valeur de ce champ et quel que soit le côté où
+	// l'entité se trouve — cet ordre dépendait auparavant de l'index de planche, puis
+	// de l'abscisse, donc il était asymétrique.
 	Tier uint8
 }
