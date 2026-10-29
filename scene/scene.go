@@ -122,9 +122,10 @@ type RevealOptions struct {
 	// « non renseigné » de « transparent », ce qui coûterait un champ de présence ou un
 	// pointeur.
 	//
-	// **Et la teinte n'est pas la seule forme de rappel.** Celui-ci redessine la chose,
-	// et rien d'autre ; un rappel d'une autre nature se dessine par le jeu, à qui
-	// [Entity.Measure] rend la mesure de recouvrement qui décide ici.
+	// **Et la teinte n'est pas la seule forme de rappel.** Celui-ci redessine la chose ;
+	// un rappel d'une autre nature se dessine par le jeu, à qui [Entity.Measure] rend
+	// la mesure de recouvrement qui décide ici, et [Aspect.Uncounted] évite qu'il se
+	// compte lui-même.
 	TintByDecor render.Color
 }
 

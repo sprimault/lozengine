@@ -116,6 +116,32 @@ type Aspect struct {
 	// devant que ce qu'elle recouvre.
 	Layer uint8
 	Floor uint8
+
+	// Uncounted retire ce quad de la mesure de recouvrement : ce qu'il recouvre ne
+	// compte ni dans [render.Overlap.Hidden] et [render.Overlap.ByDecor], ni dans le
+	// seuil de [Aspect.Reveal]. Il se dessine et cache à l'œil comme tout autre ; c'est
+	// la mesure qu'il quitte, pas l'image.
+	//
+	// **C'est pour ce qu'un jeu pose afin de rappeler une chose cachée** — un contour,
+	// une flèche, une silhouette — et pour ce qui ne cache jamais rien à ses yeux : une
+	// ombre au sol, un cadre. Un rappel posé plus haut que ce qui cache la chose
+	// recouvre la chose elle-même ; sans ce champ, le relevé suivant le compte,
+	// dépasse le seuil qui l'a déclenché, et le rappel ne s'éteint plus.
+	//
+	// **Une propriété de la chose posée, jamais d'un couple.** Elle vaut pour tous les
+	// relevés : marquer une créature que d'autres doivent continuer à compter la retire
+	// de tous. Ce que le décor cache et ce que les entités cachent se lit à part, dans
+	// [render.Overlap.ByDecor].
+	//
+	// **À remettre dans chaque aspect passé à [Scene.SetAspect]**, qui remplace
+	// l'aspect en entier : un jeu qui change l'apparence de son rappel à chaque image
+	// perdrait la marque sans que rien ne le dise. C'est le même piège que la godoc
+	// d'[Entity.Measure] nomme pour justifier sa place sur l'entité ; il est accepté
+	// ici parce que ne pas compter est une propriété de l'**image** posée — comme
+	// [Aspect.Reveal], qui vit déjà sur l'aspect pour cette raison — et parce que
+	// c'est le seul champ que les trois voies de pose traversent, y compris
+	// [Scene.PlaceScreen], par laquelle un rappel d'interface se pose.
+	Uncounted bool
 }
 
 // fitsInKey dit si la couche et l'étage sont dans ce que l'ordre de dessin sait
@@ -175,9 +201,22 @@ type Entity struct {
 	// changement de direction ; porté par l'aspect, le marqueur disparaîtrait alors
 	// sans que rien ne le dise. Ce qu'on suit est la chose, pas l'image qu'elle montre.
 	//
-	// Le relevé coûte un parcours de l'image par entité marquée, donc n'en marquer que
-	// ce qu'on suit — un personnage, pas une foule. [Aspect.Reveal] fait déjà mesurer
-	// de son côté, et une entité qui porte les deux ne paie qu'une fois.
+	// **Le relevé coûte environ six microsecondes par entité marquée visible** sur une
+	// scène de trois mille quads, et le coût croît avec le nombre de quads de l'image,
+	// jamais avec sa surface : la mesure compare des rectangles et ne lit aucun pixel.
+	// Trois cents entités marquées coûtent donc moins de deux millisecondes. Cette
+	// godoc annonçait « un parcours de l'image par entité marquée », ce qui était faux
+	// de deux ordres de grandeur et n'avait jamais été mesuré. [Aspect.Reveal] fait
+	// déjà mesurer de son côté, et une entité qui porte les deux ne paie qu'une fois.
+	//
+	// **Une entité marquée hors de l'image ne produit aucune entrée**, et le relevé est
+	// donc plus court que le nombre de marques : un hôte le parcourt et lit
+	// [render.Overlap.Identity], il ne l'indexe pas par l'ordre de ses poses. Rien à
+	// relever n'est pas une erreur — ce qui ne se voit pas ne se fait pas recouvrir.
+	//
+	// **Le rappel qu'un jeu pose pour cette entité porte [Aspect.Uncounted]** : posé
+	// plus haut que ce qui la cache, il la recouvre lui-même, et le relevé ne
+	// retomberait plus sous le seuil qui l'a déclenché.
 	//
 	// Une cellule de décor ne se relève pas : le relevé se désigne par une poignée, et
 	// le décor n'en a pas. C'est pourquoi ce champ est ici plutôt que sur l'aspect, que

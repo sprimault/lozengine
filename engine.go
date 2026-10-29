@@ -76,9 +76,9 @@ type Quitter interface {
 // recevoir, comme l'invariant des deux portes l'exige.
 //
 // Ce qu'un jeu en fait est à lui : un contour, une flèche, une silhouette tirée d'un
-// autre dessin, ou rien du tout si le seuil qu'il se donne n'est pas atteint. Pour le
-// seul rappel que le moteur sait dessiner — la chose elle-même sous une teinte —,
-// [Aspect.Reveal] suffit et ne demande pas cette interface.
+// autre dessin, ou rien du tout si le seuil qu'il se donne n'est pas atteint.
+// [Aspect.Reveal] redessine la chose elle-même et ne demande pas cette interface ; tout
+// autre rappel passe par ici, et [Aspect.Uncounted] évite qu'il se mesure lui-même.
 type Overlapped interface {
 	// Overlaps reçoit le relevé du pas précédent, et la tranche n'est valable que
 	// pendant l'appel : un jeu qui veut la garder en fait une copie.
@@ -413,10 +413,13 @@ func (e *Engine) Tick() time.Duration {
 // décor.
 //
 // **C'est la mesure que le tri fait de toute façon pour décider d'une révélation.** Le
-// champ `Reveal` d'un [Aspect] n'en connaît qu'un usage — redessiner la chose —, et un
-// rappel d'une autre nature, un contour, une flèche, une silhouette tirée d'un autre
-// dessin, demandait de refaire ce calcul en entier. Le relevé le rend : l'hôte y prend son
-// propre seuil et dessine ce qu'il veut.
+// champ `Reveal` d'un [Aspect] redessine la chose, et un rappel d'une autre nature — un
+// contour, une flèche, une silhouette tirée d'un autre dessin — demandait de refaire ce
+// calcul en entier. Le relevé le rend : l'hôte y prend son propre seuil et dessine ce
+// qu'il veut, en marquant son dessin d'[Aspect.Uncounted] pour qu'il ne se compte pas.
+//
+// Ce que ce nombre mesure exactement, et ce sur quoi on ne doit pas s'appuyer, est dit
+// par [render.Overlap.Hidden].
 //
 // **Il porte le pas précédent**, et c'est inhérent : le recouvrement ne se connaît
 // qu'après le tri, donc après le pas. Sans conséquence pour un rappel de lisibilité à
