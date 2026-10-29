@@ -13,11 +13,9 @@ package backend
 
 import (
 	"sync"
-	"syscall"
 	"unsafe"
 
 	"github.com/sprimault/lozengine/input"
-	"github.com/sprimault/lozengine/render"
 )
 
 // windows relie une poignée de fenêtre à son état, pour que la procédure de fenêtre
@@ -57,7 +55,12 @@ type window struct {
 	// info décrit au système la disposition des pixels. Elle est montée une fois :
 	// seules ses dimensions changent d'une présentation à l'autre, et la construire
 	// par image allouerait dans le chemin de rendu.
-	info bitmapInfoFields
+	info bitmapInfoHeader
+
+	// bgra porte le tampon dans l'ordre que GDI recopie en bloc, gardé d'une image à
+	// l'autre. Il ne grandit que lorsque la fenêtre grandit, donc jamais dans le
+	// régime courant. Voir [window.Present] pour ce qu'il épargne.
+	bgra []uint32
 
 	// args porte les douze arguments de la présentation, pour la même raison : une
 	// liste variadique en alloue une par appel. Les cases constantes sont posées au
@@ -204,40 +207,6 @@ func (w *window) Input() input.Input {
 		dispatchMessageW.Call(uintptr(unsafe.Pointer(&m)))
 	}
 	return w.state.Frame()
-}
-
-// Present pose le tampon à l'écran, tel quel.
-//
-// Les pixels partent sans être recopiés ni convertis : les masques annoncés au système
-// décrivent la disposition du moteur, donc il lit le tampon où il est. C'est ce qui
-// épargne un parcours complet de l'image à chaque présentation, et c'est propre à
-// cette plateforme — X11 impose l'ordre de son visuel, et le navigateur veut du non
-// prémultiplié. La conversion, là où il en faudra une, appartiendra à ces backends.
-//
-// Sans erreur, et le contrat le veut ainsi pour une raison mesurée : sur une fenêtre
-// réduite, l'appel rend le nombre de lignes demandé alors que rien n'est peint. Il n'y
-// a donc pas d'échec à rapporter, seulement une présentation qui n'a pas eu lieu — et
-// personne à qui s'en plaindre soixante fois par seconde.
-func (w *window) Present(t *render.Buffer) {
-	if w.dc == 0 || t == nil || len(t.Pixels) == 0 {
-		return
-	}
-
-	w.info.header.width = int32(t.Width)
-	w.info.header.height = -int32(t.Height)
-
-	// Les arguments passent par une tranche gardée, et c'est le seul appel du backend
-	// à le faire : douze arguments variadiques en allouent une à chaque présentation,
-	// donc soixante fois par seconde. Ailleurs, `LazyProc.Call` reste préférable —
-	// six nanosecondes de plus et rien sur le tas.
-	w.args[0] = w.dc
-	w.args[3] = uintptr(t.Width)
-	w.args[4] = uintptr(t.Height)
-	w.args[8] = uintptr(t.Height)
-	w.args[9] = uintptr(unsafe.Pointer(&t.Pixels[0]))
-	w.args[10] = uintptr(unsafe.Pointer(&w.info))
-
-	syscall.SyscallN(setDIBitsToDevice.Addr(), w.args...)
 }
 
 // Size rend les dimensions de la zone utile, en pixels.
