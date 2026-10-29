@@ -76,6 +76,11 @@ var (
 
 	setProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 
+	// La densité de l'écran, pour ouvrir la fenêtre à la taille que le jeu demande en
+	// points et non en pixels physiques. Elle se cherche avant de s'appeler : voir
+	// [densityFactor].
+	getDpiForSystem = user32.NewProc("GetDpiForSystem")
+
 	setDIBitsToDevice = gdi32.NewProc("SetDIBitsToDevice")
 	createDIBSection  = gdi32.NewProc("CreateDIBSection")
 	createBitmap      = gdi32.NewProc("CreateBitmap")
@@ -228,6 +233,44 @@ func newBitmapInfo() bitmapInfoHeader {
 // fausse puis multiplié par une fraction, ce que l'échelle entière obligatoire existe
 // pour interdire — et rien, dans les nombres que le moteur lit, ne le trahirait.
 const perMonitorAwareV2 = ^uintptr(3)
+
+// baseDPI est la densité que le système appelle cent pour cent : quatre-vingt-seize
+// points par pouce, et c'est une convention de Windows et non une mesure.
+const baseDPI = 96
+
+// densityFactor rend par combien multiplier une taille de fenêtre pour qu'elle paraisse
+// à la taille demandée sur l'écran courant.
+//
+// **Un facteur entier, comme tout le reste du moteur**, et l'arrondi va au plus proche
+// avec les demis vers le haut : à 150 % une fenêtre reste donc à sa taille demandée en
+// points plutôt que d'en faire les deux tiers. Trop petit est pire que trop grand à
+// cette résolution — un jeu en 480×270 descendrait à 320×180 points, où l'on ne
+// distingue plus un personnage de vingt-quatre pixels.
+//
+// **La densité se lit après avoir déclaré la conscience, jamais avant.** Mesuré le
+// 29 octobre 2026 : le même appel rend 96 avant [perMonitorAwareV2] et 120 après, sur
+// un écran réglé à 125 %. Lu trop tôt, il rendrait toujours cent pour cent et ce lot
+// n'aurait aucun effet.
+//
+// Un échec rend un, donc la taille demandée telle quelle : `GetDpiForSystem` n'existe
+// pas avant Windows 10 1607, et un moteur qui plante pour une question de confort
+// d'affichage serait pire que le confort qu'il cherche. C'est aussi pourquoi la
+// procédure se cherche au lieu de s'appeler — `LazyProc.Call` panique sur une
+// procédure absente, ce que la godoc d'`Open` ne dit pas de son propre appel.
+func densityFactor() int {
+	if err := getDpiForSystem.Find(); err != nil {
+		return 1
+	}
+	dpi, _, _ := getDpiForSystem.Call()
+	return factorForDPI(int(dpi))
+}
+
+// factorForDPI rend le facteur qu'une densité mérite, séparée de l'appel système pour
+// qu'un cas de test puisse l'éprouver sur les échelles que Windows propose — aucune
+// machine du parc n'étant réglée au-delà de 125 %.
+func factorForDPI(dpi int) int {
+	return max((dpi+baseDPI/2)/baseDPI, 1)
+}
 
 // rect est le rectangle que rendent `GetClientRect` et qu'attend `AdjustWindowRect`.
 type rect struct {
