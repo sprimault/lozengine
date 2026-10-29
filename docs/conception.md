@@ -165,8 +165,10 @@ frontière par handles opaques, jamais par pointeur Go.
 
 ## Paramètres retenus
 
-- Résolution interne : 480×270. Tuile de sol 32×16, personnage debout autour de
-  24 pixels.
+- Résolution interne : 480×270 **au minimum**. Tuile de sol 32×16, personnage debout
+  autour de 24 pixels. C'est un plancher et la taille d'ouverture de la fenêtre, pas
+  une taille fixe : au-delà, la vue s'élargit avec la fenêtre jusqu'au plafond que le
+  jeu pose, ce qui évite les bandes sans toucher au facteur entier.
 - Directions d'apparence : déclarées par le fournisseur, jamais codées en dur.
   Huit pour l'implémentation de référence en planches PNG, seize pour la
   fabrique volumique. Le littéral n'apparaît que dans le fournisseur.

@@ -92,7 +92,12 @@ func (g *game) writeOverlay() {
 	// **Mesurer avant de poser**, parce que la largeur rendue par la pose arrive trop
 	// tard pour centrer quoi que ce soit. C'est tout l'intérêt d'avoir les deux.
 	width, height := g.font.Measure(line)
-	g.font.Place(g.scene, (480-int32(width))/2, int32(270-height-4), line)
+
+	// **La taille de la vue se lit, elle ne se suppose pas** : elle suit la fenêtre, et
+	// une constante écrite ici mettrait la ligne hors de l'image dès le premier
+	// agrandissement — sans erreur, puisque ce qui sort du cadre est simplement écarté.
+	_, _, view, tall := g.scene.View()
+	g.font.Place(g.scene, (view-int32(width))/2, tall-int32(height)-4, line)
 }
 
 // Quitting dit à la boucle qu'on a demandé à partir.
@@ -106,7 +111,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	s.Focus(side/2, side/2, 480, 270)
+	// Pas de cadrage ici : le moteur centre la vue sur la grille quand le jeu ne l'a
+	// pas fait, et à la taille qu'il décide. Le dire deux fois ferait dépendre
+	// l'exemple du défaut de la résolution interne sans que rien ne les relie.
 
 	ground := lozengine.Aspect{
 		Sheet: groundSheet, Width: 32, Height: 16, Tint: lozengine.White(),
