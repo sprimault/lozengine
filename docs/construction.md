@@ -20,6 +20,7 @@ make container    # le même, dans un conteneur, au plus près du runner
 make container-clean   # vide le cache de compilation du conteneur
 make cover        # couverture, écrite dans .tmp/couverture.html
 make bench        # bancs d'essai, un profil par paquet
+make bancs        # ce qu'aucun banc ne traverse, sur le chemin par image
 make references   # régénère les images de référence
 make notes VERSION=0.1.0   # les notes d'une version, tirées du CHANGELOG
 make titre VERSION=0.1.0   # le titre d'une version, que la publication réclame
