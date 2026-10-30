@@ -363,7 +363,63 @@ entetes: depot
 	  exit 1; \
 	fi
 
-check: fmt vet deps entetes frontiere journal cross test
+# Un ajout à la surface publique sans entrée de journal ne se rattrape plus après le
+# tag : une section publiée ne se retouche pas, donc le trou est définitif. C'est
+# arrivé deux fois dans la même série, et seule la chance l'a rendu réparable — la
+# section n'était pas encore taguée.
+#
+# Ce qu'elle compare : les identifiants exportés des paquets publics, entre la base et
+# l'arbre courant, par `go doc -all`. C'est la surface telle qu'un consommateur la lit,
+# méthodes et champs compris : sans `-all`, `go doc` ne montre aucune méthode, mesuré.
+# Les lignes d'une déclaration se reconnaissent à leur indentation — colonne zéro pour
+# `func`, `type`, `const` et `var`, une tabulation pour un champ ou une constante de
+# bloc, la godoc étant indentée de quatre espaces.
+#
+# La liste des paquets se dérive de `go list`, elle ne se tient pas : ce dépôt a déjà
+# vu huit listes recopiées diverger toutes les huit.
+#
+# **Ce qu'elle ne voit pas, et il faut le dire** : sans base de comparaison, elle
+# passe. Le contrôle distant reconstitue un index sans historique, et l'intégration
+# continue ne récupère que la branche de la pull request — il y faudrait un
+# `fetch-depth: 0`, qui touche le workflow et non cette cible. Elle ne protège donc que
+# le poste, c'est-à-dire l'endroit où `/verif` tourne avant chaque poussée, qui est le
+# moment où elle sert.
+#
+# SANS_JOURNAL=1 la contourne, pour un alias mécanique qui n'a rien à dire. Le
+# contournement s'écrit, il ne se devine pas.
+surface:
+	@if [ -n "$(SANS_JOURNAL)" ]; then exit 0; fi; \
+	base=$$(git rev-parse --verify --quiet origin/master \
+	  || git rev-parse --verify --quiet master || true); \
+	if [ -z "$$base" ]; then \
+	  echo "surface : pas de base de comparaison, rien à vérifier"; \
+	  exit 0; \
+	fi; \
+	if ! git diff --quiet "$$base" -- $(JOURNAL); then exit 0; fi; \
+	paquets=$$(go list ./... | grep -vE '/(internal|examples|cmd)(/|$$)' \
+	  | sed "s|^$$(go list -m)|.|"); \
+	arbre=$(CURDIR)/.tmp/surface-base; \
+	rm -rf "$$arbre"; \
+	git worktree add --detach --quiet "$$arbre" "$$base" \
+	  || { echo "surface : l'arbre de comparaison n'a pas pu être monté"; exit 1; }; \
+	releve() { \
+	  for p in $$paquets; do \
+	    go doc -all "$$p" 2>/dev/null \
+	      | awk -v p="$$p" '/^(func|type|const|var) / || /^\t[A-Z]/ { print p ": " $$0 }'; \
+	  done; \
+	}; \
+	( cd "$$arbre" && releve ) | sort > $(CURDIR)/.tmp/surface-base.txt; \
+	releve | sort > $(CURDIR)/.tmp/surface-tete.txt; \
+	git worktree remove --force "$$arbre" >/dev/null 2>&1; \
+	ajouts=$$(comm -13 $(CURDIR)/.tmp/surface-base.txt $(CURDIR)/.tmp/surface-tete.txt); \
+	if [ -n "$$ajouts" ]; then \
+	  echo "surface publique élargie sans entrée dans $(JOURNAL) :"; \
+	  printf '%s\n' "$$ajouts" | sed 's/^/  /'; \
+	  echo "écrire l'entrée, ou contourner par SANS_JOURNAL=1 en disant pourquoi"; \
+	  exit 1; \
+	fi
+
+check: fmt vet deps entetes frontiere journal surface cross test
 
 # Le plancher du module, lu dans `go.mod` et nulle part ailleurs.
 #
