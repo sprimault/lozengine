@@ -156,20 +156,32 @@ pipeline GPU.
 Cette cible est la seule à demander `CGO_ENABLED=1` et un compilateur C sur la machine de
 compilation. Elle n'ajoute aucune dépendance au moteur, dont le `go.mod` reste vide.
 
+**Android natif passe par ici, et n'est pas hors périmètre.** Le moteur n'y ouvre pas de
+fenêtre lui-même : l'application fournit la sienne et consomme le moteur par cette même
+convention d'appel, en le laissant rastériser dans le tampon qu'elle alloue. C'est mot
+pour mot l'un des deux contrats ci-dessus, donc rien de particulier à écrire pour ce
+système.
+
+La licence du kit de développement natif d'Android n'y fait pas obstacle : elle ne pose
+aucune condition sur ce qu'on produit avec lui, et c'est un compilateur, pas une
+dépendance du moteur — `go.mod` reste vide, et la chaîne d'outils vit sur la machine de
+compilation. Quelle voie retenir exactement s'instruit au moment d'écrire ce jalon.
+
 Fin : un exemple Rust et un exemple C++ affichent une scène rendue par le moteur.
 
 ## Hors périmètre
 
-- **macOS, iOS et Android natifs.** Fermés par l'ABI, et non par arbitrage de coût :
-  c'est ce qui les distingue du protocole X11, dont les semaines sont assumées parce
-  qu'il est le sujet. Cocoa ne s'atteint que par l'ABI Objective-C, dont le point
-  d'entrée s'obtient par `dlsym`, et Apple n'expose aucune ABI d'appel système stable ;
-  Go lui-même refuse de lier pour iOS sans cgo ; Android n'a pas de X11, SurfaceFlinger
-  parle un protocole non documenté, et l'`ANativeWindow` du NDK comme JNI sont des
-  bibliothèques C. Tout chemin y demande donc cgo, et avec lui un compilateur C, ou
-  bien une dépendance de plus pour s'en passer — et la règle de dépendance refuse les
-  deux, `purego` aussi bien que cgo. Le jalon 5 couvre ces trois systèmes par le
-  navigateur, et la frontière backend les garde atteignables si la contrainte change.
+- **Une fenêtre native sur macOS ou sur iOS.** Pas servie, et pas pour la même raison.
+  Pour iOS, Go refuse de lier `ios/arm64` sans cgo, et la compilation exige de toute
+  façon un Mac avec Xcode : aucune ligne de ce dépôt ne lèverait ce refus. Pour macOS,
+  Cocoa ne s'atteint que par la convention d'appel d'Objective-C, dont le point d'entrée
+  s'obtient par `dlsym` — donc par cgo et un compilateur C, ou par un paquet de plus
+  hors de la liste close —, et l'éprouver demande une machine qui n'est pas au parc. Le
+  jalon 5 couvre les deux systèmes par le navigateur.
+
+  **Ce qui n'est pas hors périmètre, et qu'il ne faut pas confondre** : qu'un jeu tourne
+  sur ces systèmes. La bibliothèque native du jalon 11 le permet dans l'autre sens, en
+  laissant l'application fournir sa fenêtre.
 - **Accélération GPU.** Exclue par la règle de dépendance. Le rendu est logiciel, en
   résolution interne basse mise à l'échelle par un facteur entier.
 - **Moteur de jeu généraliste.** Le moteur rend une scène et lit des entrées. Ni

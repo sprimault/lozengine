@@ -1,8 +1,5 @@
 # Conception
 
-Ce document fait foi. Un désaccord entre le code et ce qui est écrit ici est un
-défaut du code, jamais l'inverse.
-
 Les décisions ci-dessous sont tranchées. Elles vivent dans les signatures
 publiques ou dans les structures que tout le reste consomme, donc elles ne se
 corrigent pas après coup : les rouvrir est une discussion, pas un correctif.
@@ -140,8 +137,10 @@ racine carrée d'IEEE-754 sont à arrondi correct.
 - **Primitive unique.** Tout converge vers le quad trié. Les fonctions de
   confort sont du sucre au-dessus, jamais un second chemin de rendu. Une couche
   d'interface est une couche haute de la clé de tri, pas une exception.
-- **Options en structure.** Valeur zéro utilisable. Tout ce qui n'est pas
-  renseigné a un défaut raisonnable.
+- **Options en structure.** Valeur zéro utilisable, et tout ce qui n'est pas
+  renseigné a un défaut raisonnable. Une exception, et une seule : l'atlas des
+  options de la boucle, qui n'a pas de défaut possible, donc une valeur zéro y est
+  refusée au montage.
 - **Disposition compatible C.** `Quad` et `DrawList` n'emploient que des champs de
   taille fixe, dans un tableau contigu. Pas de chaîne, pas d'interface, pas de
   slice imbriquée, pas de pointeur vers de la mémoire gérée.
@@ -247,7 +246,7 @@ scene                 grille, entités, couches, caméra          geometry, rend
 internal/sorting      retrait hors image, clé, départage        geometry, scene, render
 render                structures Quad et DrawList, publiques    aucune
 raster                planches, atlas, rastériseur, PNG         render
-appearance            interface fournisseur, animation          geometry, render, raster, scene
+appearance            interface fournisseur, animation          render, scene
 input                 touches, état du clavier                  aucune
 internal/backend/…    contrat de fenêtre, familles, présentation  input, render
 internal/audio        mixeur et sorties système                 aucune
@@ -388,14 +387,18 @@ Conséquences assumées, qui ne se rediscutent pas :
   distribue rien à côté de son binaire**. `go.mod` vide, `CGO_ENABLED=0` : appeler
   `user32` est du même ordre qu'ouvrir un fichier.
 - Pas de carte graphique, donc rendu logiciel en résolution interne basse.
-- macOS, iOS et Android natifs fermés par l'ABI, et non par arbitrage de coût :
-  Cocoa ne s'atteint que par l'ABI Objective-C, dont le point d'entrée s'obtient
-  par `dlsym` ; Go refuse de lier pour iOS sans cgo ; le NDK et JNI sont des
-  bibliothèques C. Tout chemin y demande donc cgo, et avec lui un compilateur C,
-  ou bien une dépendance de plus pour s'en passer — et le critère ci-dessus refuse
-  les deux. C'est là qu'il mord, là où une interdiction de charger quoi que ce soit
-  aurait fermé Windows avec eux. Le backend web y donne accès dans un navigateur,
-  et la frontière backend les garde atteignables si la contrainte change.
+- Pas de fenêtre **native** sur macOS ni sur iOS. Pour iOS, Go refuse de lier sans
+  cgo. Pour macOS, Cocoa ne s'atteint que par la convention d'appel d'Objective-C,
+  dont le point d'entrée s'obtient par `dlsym` : donc par cgo et un compilateur C,
+  ou par un paquet de plus hors de la liste close. C'est là que le critère
+  ci-dessus mord, là où une interdiction de charger quoi que ce soit aurait fermé
+  Windows avec eux.
+
+  **Ce qui n'en découle pas** : qu'un jeu ne tourne pas sur ces systèmes. Le
+  backend web y donne accès dans un navigateur, la bibliothèque native les laisse
+  consommer par une application qui fournit sa propre fenêtre — c'est la voie
+  d'Android —, et la frontière backend les garde atteignables si la contrainte
+  change.
 
 Si une fonctionnalité du moteur paraît exiger cgo ou un paquet hors de la liste
 close, c'est la fonctionnalité qui est hors périmètre.
