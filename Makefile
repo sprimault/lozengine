@@ -37,6 +37,11 @@ example:
 # tapée directement perd les réglages du poste, et l'oubli ne se voit pas dans
 # la sortie.
 PKG ?= ./...
+
+# Les paquets que chaque image traverse, et eux seuls : c'est le périmètre de `bancs`.
+# `geometry` n'y est pas — il tourne une fois par entité et non par pixel —, ni aucun
+# chemin de chargement, que `go.md` interdit d'optimiser.
+CHEMIN_CHAUD ?= . ./internal/sorting ./raster ./internal/backend
 RUN ?=
 
 # Aucun test n'ouvre de fenêtre. La suite de non-régression est visuelle mais
@@ -70,6 +75,39 @@ bench: | $(SORTIE)
 	    -memprofile $(SORTIE)/$$nom-mem.prof \
 	    -o $(SORTIE)/$$nom.test $$p || exit 1; \
 	done
+
+# Ce qu'aucun banc ne traverse, sur les paquets du chemin de rendu.
+#
+# **Deux chiffres faux ont vécu longtemps faute de ce relevé, et ce n'était pas un défaut
+# de relecture** : la présentation Windows a porté un facteur 47 pendant trois semaines, et
+# la godoc d'`Entity.Measure` a annoncé un coût faux de deux ordres de grandeur pendant
+# toute sa vie publique. Les deux maillons n'étaient mesurés par aucun banc, donc rien ne
+# pouvait démentir le chiffre écrit à la main.
+#
+# **Par la couverture des bancs plutôt que par une liste de noms**, et c'est ce qui la rend
+# lisible : comparer les fonctions déclarées aux `Benchmark` qui les citent rendrait quatre
+# cents noms, dont les tests et leurs auxiliaires, et une cible qui crie autant se contourne
+# par réflexe. Lancée sous `-run '^$$'`, la suite n'exécute que les bancs : ce que le profil
+# montre à zéro pour cent est exactement ce qu'aucun banc n'atteint, et les fichiers de test
+# n'y figurent pas.
+#
+# **Elle rapporte et n'échoue jamais.** Toutes ces fonctions n'ont pas à être mesurées — un
+# chargement de planche ou une écriture PNG n'est pas un chemin par image, et `go.md`
+# interdit même de l'optimiser. Ce qu'on cherche dans cette liste est l'intrus : un chemin
+# que chaque image traverse et que personne ne chiffre.
+bancs: | $(SORTIE)
+	@go test $(CHEMIN_CHAUD) -run '^$$' -bench . -benchtime 1x \
+	  -coverprofile $(SORTIE)/bancs.cover -o $(SORTIE) >/dev/null \
+	  || { echo "les bancs n'ont pas tourné"; exit 1; }
+	@muets=$$(go tool cover -func=$(SORTIE)/bancs.cover | awk '$$3 == "0.0%" { print "  " $$1 " " $$2 }'); \
+	total=$$(go tool cover -func=$(SORTIE)/bancs.cover | grep -c ':'); \
+	if [ -z "$$muets" ]; then \
+	  echo "les $$total fonctions du chemin de rendu sont toutes traversées par un banc"; \
+	else \
+	  echo "ce qu'aucun banc ne traverse, sur $$total fonctions :"; \
+	  printf '%s\n' "$$muets"; \
+	  echo "chercher l'intrus : un chemin par image que personne ne chiffre"; \
+	fi
 
 # `-o` n'est pas cosmétique : sans lui, `go tool cover` écrit son rapport dans le
 # temporaire du système — que `GOTMPDIR` ne couvre pas, celui-ci suivant `TMP` — et
