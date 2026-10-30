@@ -50,6 +50,9 @@ notes de publication.
 - Une teinte translucide voile ce qu'elle module au lieu de l'assombrir, sur un quad qui
   lit une planche comme sur un aplat. Un jeu qui compensait en posant une couleur non
   prémultipliée revient à `Premultiply` ou à `Color.Scale`.
+- La documentation du paquet racine nomme les deux voies de pose en pixels et le
+  rectangle que chacune vise, ainsi que `Entity.Tier` : un jeu qui lisait `go doc .`
+  pouvait croire `Scene.PlaceArea` et ce champ absents du moteur.
 
 ***
 
@@ -58,6 +61,9 @@ notes de publication.
 - A translucent tint now veils what it modulates instead of darkening it, on a quad
   reading a sheet as on a flat fill. A game compensating with a non-premultiplied colour
   goes back to `Premultiply` or `Color.Scale`.
+- The root package documentation now names both pixel placement paths and the rectangle
+  each targets, as well as `Entity.Tier`: a game reading `go doc .` could believe
+  `Scene.PlaceArea` and that field were missing from the engine.
 
 ## [0.5.6] — 2026-10-30
 

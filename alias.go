@@ -414,6 +414,13 @@ type Scene = scene.Scene
 //
 // L'image s'y pose par son pied, centré sur le pixel que ce point atteint ; [Aspect]
 // dit comment la décaler.
+//
+// **Son champ Tier départage deux entités que l'ordre de dessin laisse à égalité** —
+// même point, même hauteur, même couche —, le plus grand par-dessus. C'est ce qui rend
+// une superposition exprimable : une teinte additive sur un sprite, un liseré dessous.
+// Ses deux cent cinquante-six valeurs sont libres, et [MaxTiers] ne le borne pas — cette
+// borne est celle de la strate d'une cellule de décor, qui est autre chose. Il ne
+// départage jamais contre le décor : un sol passe toujours sous ce qui s'y tient.
 type Entity = scene.Entity
 
 // Aspect est ce qu'une chose montre : de quoi remplir un quad, sans dire où.
@@ -421,6 +428,11 @@ type Entity = scene.Entity
 // Sa valeur zéro ne montre rien, et c'est ainsi qu'une cellule vide se reconnaît. Sa
 // teinte, en revanche, se renseigne : la valeur zéro d'une couleur est transparente,
 // donc une chose qu'on veut voir porte [White] ou une teinte explicite.
+//
+// **Et cette teinte est prémultipliée comme toute [Color]** : un voile translucide
+// s'écrit par [Premultiply] ou s'atténue par [Color.Scale], jamais en baissant le seul
+// alpha d'une teinte opaque — ce qui ne décrit aucune couleur et rend un aplat plus
+// dense que l'opacité annoncée.
 type Aspect = scene.Aspect
 
 // Handle désigne une entité posée, et lui reste fidèle quand le retrait d'une autre la
@@ -431,12 +443,27 @@ type Handle = scene.Handle
 // une barre de vie, un panneau, une ligne de texte.
 //
 // La position est celle du coin haut-gauche, et elle ne bouge pas avec la caméra.
-// C'est [Scene.PlaceScreen] qui en pose, et [Aspect.Layer] qui décide si cela passe
-// au-dessus du monde — rien n'y échappe à l'ordre commun.
+// [Aspect.Layer] décide si cela passe au-dessus du monde — rien n'y échappe à l'ordre
+// commun.
 //
 // Le coin, là où une entité vise son pied : c'est la seule voie du moteur où l'origine
 // change, et l'ancre de l'aspect s'ajoute à ce coin. [Scene.PlaceScreen] donne la
 // recette pour poser par le pied malgré tout.
+//
+// **Deux voies la posent, et le rectangle visé n'est pas le même.**
+// [Scene.PlaceScreen] vise la surface de dessin, marge comprise : c'est la voie de ce
+// qui n'appartient pas au monde, un bandeau ou un score. [Scene.PlaceArea] vise l'aire
+// de monde et découpe la pièce dessus : c'est la voie de ce qui accompagne le monde sans
+// en être, un chiffre de dégâts ou une annonce. Le champ InArea dit laquelle a posé.
+//
+// **Le découpage est ce qui les sépare vraiment.** Dès qu'une marge existe, une chose
+// située juste hors de l'aire s'afficherait dans la marge si elle passait par la
+// surface, et un jeu ne peut pas la découper lui-même sans refaire le calcul du moteur,
+// miroirs compris. Choisir la mauvaise voie ne se voit donc qu'au bord de l'aire.
+//
+// **L'ordre de pose est l'ordre de dessin, et il est commun aux deux** : une seule liste
+// les porte, donc à couche égale ce qui est posé après recouvre ce qui précède, quel que
+// soit le repère de chacune. [scene.ScreenPiece] porte le reste du contrat.
 type ScreenPiece = scene.ScreenPiece
 
 // Orientation est l'un des quatre quarts de tour sous lesquels la vue présente la
@@ -582,7 +609,14 @@ const Directions = appearance.Directions
 // Font décrit une planche de glyphes à cellule fixe, et c'est tout ce qu'il faut au
 // moteur pour afficher du texte — il ne rastérise aucun fichier de police.
 //
-// Elle s'emploie par [Font.Measure], qui dit ce qu'une ligne occupera, et par
-// [Font.Place], qui la pose en pixels de l'image. Mesurer d'abord est ce que centrer
-// ou cadrer demande.
+// Elle s'emploie par [Font.Measure], qui dit ce qu'une ligne occupera, et par deux
+// voies de pose qui visent des rectangles différents : [Font.Place] vise la surface de
+// dessin, marge comprise, et [Font.PlaceArea] l'aire de monde, où la ligne se découpe.
+// La seconde est celle d'un texte accroché à une chose du monde — un chiffre de dégâts,
+// un nom au-dessus d'une créature —, qui écrirait sinon dans la marge quand la chose
+// sort de l'aire. [ScreenPiece] porte ce que les deux repères ont de commun.
+//
+// Mesurer d'abord est ce que centrer ou cadrer demande : la largeur que la pose rend
+// arrive trop tard pour cela. Un caractère absent avance sans rien poser, donc la suite
+// de la ligne reste à sa place.
 type Font = appearance.Font
