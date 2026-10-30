@@ -16,6 +16,13 @@ import "github.com/sprimault/lozengine/scene"
 // chemin plutôt que d'en écrire un second garde le découpage, le remplissage du quad
 // et l'ancre en un seul endroit.
 //
+// **Le repère se choisit pièce par pièce, et c'est ce que la bascule dans la boucle
+// coûte** : quatre affectations par pièce, sur une liste qui en compte des dizaines là
+// que l'image en compte des milliers. Les trier d'abord par repère reviendrait moins
+// cher et ferait repartir le rang de pose à zéro pour le second groupe, donc l'ordre de
+// dessin viendrait du repère à couche égale — ce que [scene.Scene.PlaceArea] promet
+// l'inverse. Le rang est l'indice dans la liste unique, donc l'ordre reste global.
+//
 // **Le rang de pose va dans la profondeur, et c'est ce qui rend le tri rapide ici.**
 // Sans lui, tous les quads d'une ligne de texte partageraient couche, étage, hauteur
 // et rang, donc une seule et même clé : ils tomberaient tous dans le même groupe de
@@ -32,6 +39,12 @@ func (t *Sorter) collectScreen() {
 	}
 
 	for i, p := range pieces {
+		if p.InArea {
+			t.frameWorld()
+		} else {
+			t.frameSurface()
+		}
+
 		depth := uint32(min(i, MaxDepth))
 
 		// L'ancre du chemin commun est le pied de l'image, centré ; une pièce d'écran

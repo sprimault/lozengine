@@ -107,18 +107,51 @@ func (f Font) Glyph(r rune) (scene.Aspect, bool) {
 // police comme tout le reste. Un jeu qui veut autre chose — une courbe, un espacement
 // variable, une ombre portée — pose ses glyphes lui-même.
 //
+// Le pixel est celui de la surface, marge comprise. [Font.PlaceArea] vise l'aire de
+// monde, pour un texte accroché à une chose du monde.
+//
 // Le point donné est le coin haut-gauche de la ligne. Pour centrer, mesurer d'abord :
 // la largeur rendue ici arrive trop tard pour cela, et c'est à quoi sert [Font.Measure].
 //
 // Un caractère absent avance sans rien poser, pour que la suite de la ligne reste à sa
 // place.
 func (f Font) Place(s *scene.Scene, ex, ey int32, text string) int {
+	return f.place(s, ex, ey, text, false)
+}
+
+// PlaceArea pose une ligne dans l'aire de monde plutôt que sur la surface, et rend sa
+// largeur.
+//
+// **C'est ce qu'il faut pour un texte accroché à une chose du monde** — un chiffre de
+// dégâts, un nom au-dessus d'une créature : le pixel donné est relatif à l'aire, la
+// ligne s'y découpe, et un objet situé juste hors de l'aire ne vient donc pas écrire son
+// chiffre dans la marge, à côté du jeu. [scene.Scene.PlaceArea] porte le repère et la
+// raison.
+//
+// Tout le reste est celui de [Font.Place] : le point donné est le coin haut-gauche de la
+// ligne, [Font.Measure] sert à centrer, et un caractère absent avance sans rien poser.
+func (f Font) PlaceArea(s *scene.Scene, ex, ey int32, text string) int {
+	return f.place(s, ex, ey, text, true)
+}
+
+// place avance la ligne glyphe par glyphe, dans l'un ou l'autre repère.
+//
+// Un drapeau et non la voie de pose en paramètre : passer `s.PlaceScreen` serait une
+// valeur de méthode liée, donc une fermeture, et une ligne se pose à chaque image.
+// Qu'elle tienne sur la pile dépend de l'analyse d'échappement, ce qui est exactement le
+// genre d'hypothèse qu'on ne veut pas dans une fonction appelée par image sans banc qui
+// la garde.
+func (f Font) place(s *scene.Scene, ex, ey int32, text string, inArea bool) int {
 	advance := int32(f.advance())
 
 	at := ex
 	for _, r := range text {
 		if a, ok := f.Glyph(r); ok {
-			s.PlaceScreen(at, ey, a)
+			if inArea {
+				s.PlaceArea(at, ey, a)
+			} else {
+				s.PlaceScreen(at, ey, a)
+			}
 		}
 		at += advance
 	}
