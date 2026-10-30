@@ -556,3 +556,84 @@ func TestDecorTiersIgnoreTheSheetIndex(t *testing.T) {
 		})
 	}
 }
+
+// TestCullingIsExactToThePixel éprouve les quatre comparaisons qui écartent ce qui ne
+// touche pas l'aire, chacune à un pixel près et dans les deux sens.
+//
+// Aucun cas ne les visitait de près : le plus proche posait son entité à vingt cellules
+// du bord, donc décaler une comparaison d'un pixel dans un sens comme dans l'autre
+// survivait à toute la suite. Les quatre sont des bornes différentes — `x+w <= 0`,
+// `x >= largeur`, `y+h <= 0`, `y >= hauteur` —, donc une erreur ne touche qu'un bord et
+// un seul.
+//
+// **Le décalage passe par l'ancre, et la position de base se mesure** : viser un pixel
+// en posant des cellules flottantes demanderait de refaire la projection ici, ce qui
+// ferait du cas la copie du code qu'il éprouve. L'ancre s'ajoute en pixels au quad déjà
+// placé, donc elle amène le bord exactement où on veut sans rien supposer.
+func TestCullingIsExactToThePixel(t *testing.T) {
+	const viewWidth, viewHeight = 480, 270
+
+	base := func(t *testing.T) render.Quad {
+		t.Helper()
+
+		s := testScene(t, 400, 8)
+		s.Place(scene.Entity{X: 200, Y: 200, Aspect: figure()})
+
+		image := New(s).Frame()
+		if len(image) != 1 {
+			t.Fatalf("%d quads au centre, attendu 1", len(image))
+		}
+		return image[0]
+	}(t)
+
+	w, h := int16(base.Width), int16(base.Height)
+
+	for _, c := range []struct {
+		name  string
+		x, y  int16 // le décalage qui amène le quad juste hors de l'aire
+		axisX bool
+	}{
+		{"bord gauche", -(base.X + w), 0, true},
+		{"bord droit", viewWidth - base.X, 0, true},
+		{"bord haut", 0, -(base.Y + h), false},
+		{"bord bas", 0, viewHeight - base.Y, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			// Juste dehors : la comparaison doit écarter.
+			if got := quadsWithAnchor(t, c.x, c.y); got != 0 {
+				t.Errorf("%d quads au bord exact, attendu aucun", got)
+			}
+
+			// Un pixel vers l'intérieur : elle doit garder.
+			dx, dy := c.x, c.y
+			if c.axisX {
+				if c.x < 0 {
+					dx++
+				} else {
+					dx--
+				}
+			} else {
+				if c.y < 0 {
+					dy++
+				} else {
+					dy--
+				}
+			}
+			if got := quadsWithAnchor(t, dx, dy); got != 1 {
+				t.Errorf("%d quads à un pixel dedans, attendu 1", got)
+			}
+		})
+	}
+}
+
+// quadsWithAnchor rend le nombre de quads qu'une figure décalée de cette ancre produit.
+func quadsWithAnchor(t *testing.T, ax, ay int16) int {
+	t.Helper()
+
+	s := testScene(t, 400, 8)
+	a := figure()
+	a.AnchorX, a.AnchorY = ax, ay
+	s.Place(scene.Entity{X: 200, Y: 200, Aspect: a})
+
+	return len(New(s).Frame())
+}
