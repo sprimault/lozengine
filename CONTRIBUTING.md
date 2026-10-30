@@ -5,9 +5,8 @@ Français : [CONTRIBUTING.fr.md](CONTRIBUTING.fr.md)
 ## Before writing code
 
 Open an issue first, for anything beyond a fix. The design is written down in
-[`docs/conception.md`](docs/conception.md) (French) and it is authoritative: a
-disagreement between the document and the code is a defect in the code. Changing
-one of its lines is a discussion, not a patch.
+[`docs/conception.md`](docs/conception.md) (French): its decisions are settled, and
+changing one of its lines is a discussion, not a patch.
 
 The engine is meant for projects other than the one it was born from. An
 internal decision costs a rewrite to change; an API decision costs the trust of
@@ -60,8 +59,8 @@ places where one change tips over others.
 - **The layout of `Quad` and `DrawList`.** Fixed-size fields, contiguous array, no
   string, no interface, no nested slice. A single field added to the wrong type
   makes the engine unusable from another language.
-- **How the sort key is composed.** It is the only truth about draw order, and
-  its bit budget sets the engine's documented limits.
+- **How the sort key is composed.** It orders drawing everywhere it does not leave
+  two things tied, and its bit budget sets the engine's documented limits.
 - **`testdata/references/`.** The images are authoritative for rendering;
   regenerating one without a stated reason lets a defect in on a green run.
 

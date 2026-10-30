@@ -1,10 +1,10 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// La clé de tri et la répartition de ses soixante-quatre bits, qui est la seule
-// vérité de l'ordre de dessin. Les largeurs qu'on lit ici fixent ce que le moteur
-// annonce savoir distinguer, et un champ dépassé sature au lieu de déborder sur son
-// voisin.
+// La clé de tri et la répartition de ses soixante-quatre bits, qui ordonne le dessin
+// partout où elle ne laisse pas deux choses à égalité. Les largeurs qu'on lit ici fixent
+// ce que le moteur annonce savoir distinguer, et un champ dépassé sature au lieu de
+// déborder sur son voisin.
 
 package sorting
 
@@ -107,17 +107,20 @@ func (c Key) Index() uint16 { return uint16(c) & MaxIndex }
 
 // WithIndex rend la même clé portant un autre index stable.
 //
-// C'est par là que passe tout ce que le départage a décidé : la clé reste la seule
-// vérité de l'ordre de dessin, et un rang qui vivrait ailleurs se perdrait au moment
-// du rangement.
+// **Ce que le départage décide vit dans la liste des provenances qu'il arrange, et cette
+// écriture n'en est qu'un enregistrement.** Rien ne la relit : le rangement suit cette
+// liste, et [Key.Index] n'a aucun appelant de production. Une clé lue après coup dit donc
+// le rang qu'elle a reçu, elle ne le porte pas.
 func (c Key) WithIndex(index uint16) Key {
 	return c&^MaxIndex | Key(min(uint64(index), MaxIndex))
 }
 
 // Depth rend la somme des deux axes du monde, en quarts de cellule.
 //
-// Elle sert au départage, qui n'ordonne que des choses d'une même profondeur :
-// au-delà, la clé a déjà tranché et il n'a rien à dire.
+// C'est le champ par lequel la clé ordonne la profondeur, et il se relit pour
+// comprendre une clé plutôt que pour trier : le départage n'en a pas besoin, n'ordonnant
+// que des choses d'une même profondeur, et il se décide sur l'abscisse, le rang
+// d'empilement puis l'identité.
 func (c Key) Depth() uint32 {
 	return uint32(c>>depthShift) & MaxDepth
 }

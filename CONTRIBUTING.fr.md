@@ -5,9 +5,8 @@ English: [CONTRIBUTING.md](CONTRIBUTING.md)
 ## Avant d'écrire du code
 
 Ouvrir une issue d'abord, pour tout ce qui dépasse une correction. La conception
-est écrite dans [`docs/conception.md`](docs/conception.md) et elle fait foi : un
-désaccord entre le document et le code est un défaut du code. En changer une
-ligne est une discussion, pas un correctif.
+est écrite dans [`docs/conception.md`](docs/conception.md) : ses décisions sont
+tranchées, et en changer une ligne est une discussion, pas un correctif.
 
 Le moteur est destiné à d'autres projets que celui qui l'a fait naître. Une
 décision interne se change au prix d'une refonte ; une décision d'API se change
@@ -62,8 +61,9 @@ que ce sont les endroits où une modification en fait basculer d'autres.
 - **La disposition de `Quad` et `DrawList`.** Champs de taille fixe, tableau
   contigu, ni chaîne ni interface ni slice imbriquée. Un seul champ ajouté au
   mauvais type rend le moteur inexploitable depuis un autre langage.
-- **La composition de la clé de tri.** Elle est la seule vérité de l'ordre de
-  dessin, et sa répartition de bits fixe les limites annoncées du moteur.
+- **La composition de la clé de tri.** Elle ordonne le dessin partout où elle ne
+  laisse pas deux choses à égalité, et sa répartition de bits fixe les limites
+  annoncées du moteur.
 - **`testdata/references/`.** Les images font foi sur le rendu ; en régénérer
   une sans raison énoncée fait entrer un défaut au vert.
 

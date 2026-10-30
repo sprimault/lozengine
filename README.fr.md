@@ -41,9 +41,10 @@ téléphone. C'est le zéro-dépendance qui ouvre cette liste, et une dépendanc
 la refermerait au lieu de l'élargir : `go build` ne suffirait plus.
 
 Le navigateur est la troisième cible, par WebAssembly, et c'est lui qui donnera
-Android et iOS. macOS, iOS et Android **natifs** restent fermés par la façon dont on
-y appelle le système — la convention d'appel, qu'on nomme ABI — et non par arbitrage
-de coût : le hors-périmètre de [`ROADMAP.md`](ROADMAP.md) en donne le motif.
+Android et iOS. Le moteur n'ouvre pas de fenêtre **native** sur macOS ni sur iOS, et
+ce n'est pas la même chose qu'y être inaccessible : la bibliothèque native prévue par
+la feuille de route le laisse consommer par une application qui fournit la sienne.
+[`ROADMAP.md`](ROADMAP.md) en donne le détail, jalon par jalon.
 
 Deux paquets périphériques font exception, sous licence permissive et par
 décision inscrite : le rendu de polices et la sortie audio. Les réécrire

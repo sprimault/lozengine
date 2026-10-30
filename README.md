@@ -42,10 +42,10 @@ this list, and a cgo dependency would close it rather than widen it: `go build`
 would no longer be enough.
 
 The browser is the third target, through WebAssembly, and it is what will bring
-Android and iOS. Native macOS, iOS and Android stay closed by the way one calls the
-system there — the calling convention, known as an ABI — rather than by cost: the
-out-of-scope section of [`ROADMAP.md`](ROADMAP.md) (French) gives the
-reason.
+Android and iOS. The engine opens no **native** window on macOS or iOS, which is not
+the same as being out of reach there: the native library the roadmap plans for lets an
+application that provides its own window consume the engine.
+[`ROADMAP.md`](ROADMAP.md) (French) gives the detail, milestone by milestone.
 
 Two peripheral packages are the exception, permissively licensed and admitted by
 a recorded decision: font rasterising and audio output. Rewriting them would
