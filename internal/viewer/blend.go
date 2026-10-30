@@ -46,6 +46,9 @@ func Blend() Scenario {
 				Tint: render.Color{R: 30, G: 30, B: 40, A: 255}, Flags: render.Flat,
 			})
 
+			// Les quatre composantes égales font un blanc prémultiplié à cette
+			// opacité, et c'est ce que l'échelle garde : l'alpha de la teinte n'agit
+			// qu'une fois, donc une marche vaut l'opacité qu'elle porte.
 			for i, alpha := range []uint8{255, 192, 128, 64, 16} {
 				x := int16(2 + i*9)
 				for _, y := range []int16{2, 12} {

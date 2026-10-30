@@ -51,6 +51,10 @@ type Aspect struct {
 	// Tint multiplie la source, et [render.White] est la valeur qui la laisse
 	// intacte. Attention : la valeur zéro d'une couleur est transparente, donc elle
 	// ne dessine rien — une cellule qu'on veut voir porte une teinte explicite.
+	//
+	// Elle est prémultipliée, comme toute couleur du moteur : un voile translucide
+	// s'écrit par [render.Premultiply] ou s'atténue par [render.Color.Scale], et
+	// baisser son seul alpha ne décrit aucune couleur.
 	Tint  render.Color
 	Flags render.Flags
 

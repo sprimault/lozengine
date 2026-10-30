@@ -103,9 +103,12 @@ const MaxSide = 32768
 // une DrawList est ordonnée par construction, et la répartition des bits de la clé n'a
 // pas à traverser la frontière C, où elle deviendrait irrévocable.
 //
-// Tint multiplie la source composante par composante, 255 étant neutre, et son
-// alpha multiplie en plus l'opacité. À blanc opaque, le rastériseur retombe sur
-// la copie directe : la modulation se décide une fois par quad et non par pixel.
+// Tint multiplie la source composante par composante, [White] étant neutre. Elle est
+// prémultipliée comme toute [Color], donc son alpha est déjà dans ses composantes et
+// une teinte translucide s'écrit par [Premultiply] ou s'atténue par [Color.Scale] —
+// baisser le seul alpha ne décrit aucune couleur. À blanc opaque, le rastériseur
+// retombe sur la copie directe : la modulation se décide une fois par quad et non
+// par pixel.
 //
 // La disposition est celle qu'un hôte écrirait en C — champs de taille fixe,
 // vingt octets, alignement de deux, dont un octet de remplissage final que la
