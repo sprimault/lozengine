@@ -45,6 +45,13 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.7] — 2026-10-30
+
+### Ajouté
+
+- `linux/riscv64` entre dans les cibles vérifiées à la compilation, que la doctrine du
+  moteur annonçait déjà sans qu'aucun contrôle la garde. Elle compile, rien de plus.
+
 ### Corrigé
 
 - Une teinte translucide voile ce qu'elle module au lieu de l'assombrir, sur un quad qui
@@ -58,6 +65,11 @@ notes de publication.
   ou un compte à rebours traverse ce régime.
 
 ***
+
+### Added
+
+- `linux/riscv64` joins the targets verified at build time, which the engine's doctrine
+  already announced without any check guarding it. It compiles, nothing more.
 
 ### Fixed
 
