@@ -102,7 +102,7 @@ et ne code en dur rien qui en relève : le nombre de directions d'une apparence,
 la taille d'une tuile et le ratio de la projection viennent du paramétrage ou du
 fournisseur d'apparence.
 
-Trois exclusions suivent de la règle de dépendance, et elles sont assumées :
+Deux exclusions suivent de la règle de dépendance, et elles sont assumées :
 
 - **Pas d'accélération GPU.** Le rendu est logiciel, et la résolution interne
   basse est ce qui le rend tenable.
@@ -112,7 +112,9 @@ Trois exclusions suivent de la règle de dépendance, et elles sont assumées :
   demande un compilateur C ou une dépendance de plus. iOS va plus loin : Go
   lui-même refuse de lier sans cgo. Le jalon 5 couvre les deux par le navigateur,
   et la frontière backend les garde atteignables si la contrainte change.
-- **Pas de Wayland natif** pour l'instant. XWayland couvre le besoin.
+Wayland natif n'en est pas une, et c'était une erreur de le ranger là : c'est un
+protocole qu'on écrit sur une socket comme X11, donc il vient à son jalon et non
+jamais. XWayland couvre le besoin jusque-là.
 
 Ce qui sera exposé aux autres langages est le noyau, jamais la fenêtre ni la
 boucle : un jeu hôte possède déjà les siennes et ne cédera pas son thread
@@ -120,14 +122,15 @@ principal.
 
 ## État
 
-Un jeu s'écrit. Le moteur ouvre une fenêtre, lit le clavier, tient une boucle à pas
-fixe et n'attend du jeu qu'une seule méthode : décrire sa scène, lui se chargeant de
-l'ordre de dessin et de l'échelle. Sa suite de non-régression compare chaque image à
-une référence, sans écran.
+Un jeu s'écrit. Le moteur ouvre une fenêtre, lit le clavier et la souris — boutons,
+molette, et la case que le pointeur désigne —, tient une boucle à pas fixe et n'attend
+du jeu qu'une seule méthode : décrire sa scène, lui se chargeant de l'ordre de dessin
+et de l'échelle. Sa suite de non-régression compare chaque image à une référence, sans
+écran.
 
 Le backend Linux est éprouvé à chaque lot sous deux serveurs sans écran : le protocole
 est juste et les pixels exacts, mais personne ne l'a encore vu sur un écran réel.
-`make example` ouvre le plus petit des deux exemples.
+`make example` ouvre le plus petit des trois exemples.
 
 **Le jalon courant et ce que chaque version a apporté** se lisent dans la
 [feuille de route](ROADMAP.md) et le [journal](CHANGELOG.md) — les répéter ici ferait un
@@ -164,11 +167,12 @@ make clean
 ```
 
 `make check` enchaîne le formatage, `go vet`, le contrôle d'absence de
-dépendance externe, la mention de licence, l'étanchéité de la frontière, la
+dépendance externe, la mention de licence, l'étanchéité de la frontière,
+l'équilibre des deux langues du journal, la surface publique face au journal, la
 compilation croisée vers les huit couples annoncés, puis les tests.
 
 Le contrôle d'étanchéité est celui qui garde l'architecture : aucun paquet du
-noyau ne doit importer `syscall`, `net` ou un backend, ni directement ni à
+noyau ne doit importer `syscall`, `net`, `os/exec` ou un backend, ni directement ni à
 travers un autre paquet du moteur. La compilation croisée ne le remplace pas —
 le backend Linux n'emploie que des paquets qui existent aussi sous Windows, si
 bien qu'une fuite compilerait des deux côtés sans un mot.

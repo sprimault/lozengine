@@ -13,7 +13,11 @@ make deps         # échoue si une dépendance externe est entrée
 make entetes      # la mention de licence, sur ce que le dépôt publie
 make frontiere    # le noyau ne touche ni au système ni à un backend
 make journal      # chaque section du CHANGELOG dit la même chose dans ses deux langues
+make surface      # refuse un ajout à la surface publique sans entrée de journal
 make cross        # compile pour chacun des couples que les README annoncent
+make floor        # le contrôle complet sous le plancher du module
+make container    # le même, dans un conteneur, au plus près du runner
+make container-clean   # vide le cache de compilation du conteneur
 make cover        # couverture, écrite dans .tmp/couverture.html
 make bench        # bancs d'essai, un profil par paquet
 make references   # régénère les images de référence
@@ -59,13 +63,14 @@ make check
 ```
 
 Formatage, `go vet`, absence de dépendance externe, mention de licence,
-étanchéité de la frontière, compilation croisée vers tous les couples annoncés,
+étanchéité de la frontière, équilibre des deux langues du journal, surface
+publique face au journal, compilation croisée vers tous les couples annoncés,
 puis la suite de tests. **La liste se passe entière**, jamais
 réduite à ce qui touche au changement qu'on vient d'écrire : composer sa liste
 revient à ne vérifier que ce qu'on a déjà en tête, et le défaut est ailleurs par
 construction.
 
-Deux de ces étapes méritent un mot, parce qu'elles vérifient autre chose que ce
+Quatre de ces étapes méritent un mot, parce qu'elles vérifient autre chose que ce
 que leur nom laisse croire.
 
 **`make deps`** est la règle du dépôt rendue exécutable. Elle liste les
@@ -85,9 +90,9 @@ tentante, et elle interroge les deux plateformes, parce qu'un import placé sous
 contrainte de construction ne se voit pas depuis l'autre.
 
 **`make frontiere`** vérifie que le noyau ne touche ni au système ni à un
-backend. Aucun paquet parmi `geometry`, `scene`, `sorting`, `render`, `raster` et
-`appearance` ne doit importer `syscall`, `net`, `os/exec` ou un backend — ni
-directement, ni à travers un autre paquet du moteur.
+backend. Aucun paquet parmi `geometry`, `scene`, `sorting`, `render`, `raster`,
+`input` et `appearance` ne doit importer `syscall`, `net`, `os/exec` ou un
+backend — ni directement, ni à travers un autre paquet du moteur.
 
 C'est le contrôle que `make cross` ne fait pas, contrairement à ce qu'on croit
 spontanément. Compiler pour une plateforme ne dit rien de l'étanchéité :

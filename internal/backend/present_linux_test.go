@@ -1,5 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// Ce qui arrive au serveur quand on présente une image : il doit tenir exactement les
+// pixels qu'on lui a donnés, sans quoi la comparaison au pixel ne vaudrait rien.
 
 package backend
 

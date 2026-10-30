@@ -1,5 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// Ce que la variable d'affichage désigne : les formes usuelles, les deux chemins de
+// socket qu'un serveur peut écouter, et le refus de ce qu'on ne saurait pas servir.
 
 package backend
 

@@ -1,5 +1,8 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// Ce qui ferme une fenêtre et ce qui ne la ferme pas : la demande du gestionnaire avec
+// son bit d'envoi, la destruction, une erreur de protocole qui emporte sa cause — et le
+// retrait de l'affichage, qui n'est pas une fermeture.
 
 package backend
 

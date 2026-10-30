@@ -102,6 +102,8 @@ func inside(v float64) bool {
 	return v >= 0 && v < side
 }
 
+// main monte la scène et son personnage déplaçable, puis laisse la boucle au moteur.
+// C'est l'exemple du critère de fin du jalon 2.
 func main() {
 	scene, err := lozengine.NewScene(side, side, lozengine.Isometric(32), lozengine.SceneOptions{})
 	if err != nil {

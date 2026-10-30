@@ -20,6 +20,8 @@ type game struct{}
 // fois pour toutes, le moteur décidant ensuite de l'ordre de dessin et de l'échelle.
 func (game) Step(in lozengine.Input) {}
 
+// main monte la scène, la peuple une fois, et laisse la boucle au moteur. C'est le
+// hello world du dépôt, et sa longueur est un critère permanent de la feuille de route.
 func main() {
 	scene, err := lozengine.NewScene(8, 8, lozengine.Isometric(32), lozengine.SceneOptions{})
 	if err != nil {

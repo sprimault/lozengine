@@ -1,5 +1,8 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// Le choix de l'entrée d'autorisation dans `.Xauthority` : celle de cette machine
+// d'abord, le repli quand elle a été renommée, et la lecture gros-boutien des longueurs
+// que le format impose.
 
 package backend
 

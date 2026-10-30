@@ -153,12 +153,16 @@ func TestPaceWaitsWhenAhead(t *testing.T) {
 // leaving est un jeu qui demande à partir dès son premier pas.
 type leaving struct{ steps int }
 
-func (g *leaving) Step(Input)     { g.steps++ }
+// Step compte le pas.
+func (g *leaving) Step(Input) { g.steps++ }
+
+// Quitting demande à partir dès que le premier pas est joué.
 func (g *leaving) Quitting() bool { return g.steps > 0 }
 
 // staying est un jeu qui n'écrit que la méthode unique, donc sans [Quitter].
 type staying struct{ steps int }
 
+// Step compte le pas, et c'est tout ce que ce jeu écrit.
 func (g *staying) Step(Input) { g.steps++ }
 
 // watching est un jeu qui reçoit le relevé de recouvrement, donc avec [Overlapped].
@@ -167,15 +171,19 @@ type watching struct {
 	served int
 }
 
-func (g *watching) Step(Input)                { g.steps++ }
+// Step compte le pas.
+func (g *watching) Step(Input) { g.steps++ }
+
+// Overlaps compte les relevés reçus, sans rien faire de la tranche : ce qui est éprouvé
+// est que la boucle la livre, pas ce qu'un jeu en tirerait.
 func (g *watching) Overlaps(list OverlapList) { g.served++; _ = list }
 
 // TestQuitterIsOptional vérifie que l'assertion de la boucle ne réclame rien : un jeu
 // qui n'écrit que sa méthode unique reste un jeu valide.
 //
 // C'est la propriété qui rend l'ajout purement additif. Si l'assertion devenait une
-// exigence, tous les jeux écrits jusqu'ici cesseraient de compiler — et les deux
-// exemples du dépôt sont dans ce cas pour l'un d'eux.
+// exigence, tous les jeux écrits jusqu'ici cesseraient de compiler — et sur les trois
+// exemples du dépôt, un seul s'en passe.
 func TestQuitterIsOptional(t *testing.T) {
 	var plain Game = &staying{}
 	if _, ok := plain.(Quitter); ok {

@@ -38,16 +38,17 @@ func scenario(t *testing.T) (*Scene, *Atlas) {
 	return s, &atlas
 }
 
-// compteur est un jeu qui ne fait que compter ses pas, pour vérifier que l'étape
+// counter est un jeu qui ne fait que compter ses pas, pour vérifier que l'étape
 // l'appelle une fois et une seule.
-type compteur struct {
-	pas int
-	vu  Input
+type counter struct {
+	steps int
+	seen  Input
 }
 
-func (c *compteur) Step(in Input) {
-	c.pas++
-	c.vu = in
+// Step compte le pas et retient les entrées qu'il a reçues.
+func (c *counter) Step(in Input) {
+	c.steps++
+	c.seen = in
 }
 
 // TestNewEngineRefuses vérifie que tout ce qui peut échouer échoue au montage, parce
@@ -426,13 +427,13 @@ func TestStepCallsTheGameOnce(t *testing.T) {
 	state.Press(KeyW)
 	in := state.Frame()
 
-	g := &compteur{}
+	g := &counter{}
 	e.Step(g, in)
 
-	if g.pas != 1 {
-		t.Errorf("pas joués : %d, attendu 1", g.pas)
+	if g.steps != 1 {
+		t.Errorf("pas joués : %d, attendu 1", g.steps)
 	}
-	if !g.vu.Held(KeyW) {
+	if !g.seen.Held(KeyW) {
 		t.Error("les entrées ne sont pas arrivées au jeu")
 	}
 }

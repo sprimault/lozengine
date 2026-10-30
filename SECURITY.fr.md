@@ -23,7 +23,7 @@ dans le sien.
   indéfiniment, ou épuiser la mémoire au décodage.
 - Une écriture hors bornes, une lecture hors bornes ou un débordement d'entier
   atteignable depuis une ressource malformée, ou depuis une scène dont les
-  coordonnées dépassent la limite documentée de la clé de tri, 32 000 cases de
+  coordonnées dépassent la limite documentée de la clé de tri, 32 768 cases de
   côté.
 - Le rastériseur qui écrit en dehors du tampon qu'on lui a donné, malgré le
   découpage qu'il fait sur les bords.
