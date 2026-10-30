@@ -86,6 +86,17 @@ type Sorter struct {
 	// La vue de l'image en cours, gardée le temps du relevé pour ne pas la traîner
 	// en paramètre jusqu'au fond.
 	viewX, viewY, viewWidth, viewHeight int32
+
+	// Le rectangle contre lequel [Sorter.place] écarte et découpe, et ce qu'il ajoute
+	// ensuite pour passer dans la surface. Les deux changent selon ce qu'on collecte :
+	// le monde se découpe sur l'aire et se décale de sa place dans la surface, une
+	// pièce d'écran se découpe sur la surface entière et ne se décale pas.
+	//
+	// Des champs plutôt que des paramètres, pour la raison que collectingDecor donne
+	// déjà : place en porte sept, et quatre de plus la rendraient illisible.
+	offsetX, offsetY            int32
+	boundsWidth, boundsHeight   int32
+	surfaceWidth, surfaceHeight int32
 }
 
 // request est un relevé de recouvrement demandé : la poignée à nommer, et le rang du
@@ -162,10 +173,24 @@ func (t *Sorter) Frame() render.DrawList {
 	if t.viewWidth <= 0 || t.viewHeight <= 0 {
 		return t.out[:0]
 	}
+	t.surfaceWidth, t.surfaceHeight = t.scene.Surface()
+	t.offsetX, t.offsetY = t.scene.WorldOrigin()
+	t.boundsWidth, t.boundsHeight = t.viewWidth, t.viewHeight
 
 	t.collectDecor()
 	t.collectEntities()
+
+	// Une interface n'est pas du monde : elle se pose sur toute la surface, marge
+	// comprise, et c'est ce que la marge sert à porter. Le monde, lui, s'est arrêté à
+	// l'aire.
+	t.offsetX, t.offsetY = 0, 0
+	t.boundsWidth, t.boundsHeight = t.surfaceWidth, t.surfaceHeight
+
 	t.collectScreen()
+
+	t.offsetX, t.offsetY = t.scene.WorldOrigin()
+	t.boundsWidth, t.boundsHeight = t.viewWidth, t.viewHeight
+
 	t.revealHidden()
 
 	t.radix.Sort(t.keys, t.sources)
@@ -347,9 +372,38 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 	w, h := int32(a.Width), int32(a.Height)
 	x, y := ex-w/2+int32(a.AnchorX), ey-h+int32(a.AnchorY)
 
-	if x+w <= 0 || x >= t.viewWidth || y+h <= 0 || y >= t.viewHeight {
+	if x+w <= 0 || x >= t.boundsWidth || y+h <= 0 || y >= t.boundsHeight {
 		return -1
 	}
+
+	// **Découper ici, avant que le quad existe, est un invariant et pas un détail de
+	// place.** Les masques de recouvrement se bâtissent sur `t.raw`, donc découper en
+	// amont est ce qui fait que la mesure ne voit jamais de pixels qui ne seront pas
+	// peints. Dans l'autre ordre, une entité au bord de l'aire se lirait cachée en
+	// permanence : son peint resterait entier là que son recouvert aurait déjà compté
+	// la coupe, et son rappel s'allumerait sans que rien ne cloche à l'écran.
+	//
+	// Le miroir se réfléchit autour du rectangle du quad et non de la planche : une
+	// colonne retirée à gauche de ce qui se peint vient donc de la **droite** de la
+	// source. Confondre les deux est invisible sur une planche d'une seule case, et ça
+	// l'a été une fois.
+	left, top := max(0, -x), max(0, -y)
+	right, bottom := max(0, x+w-t.boundsWidth), max(0, y+h-t.boundsHeight)
+
+	sourceX, sourceY := a.SourceX, a.SourceY
+	if a.Flags&render.MirrorX != 0 {
+		sourceX += uint16(right)
+	} else {
+		sourceX += uint16(left)
+	}
+	if a.Flags&render.MirrorY != 0 {
+		sourceY += uint16(bottom)
+	} else {
+		sourceY += uint16(top)
+	}
+
+	x, y = x+left, y+top
+	w, h = w-left-right, h-top-bottom
 
 	if a.Reveal != 0 {
 		t.revealing++
@@ -380,9 +434,9 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 	t.fromDecor = append(t.fromDecor, t.collectingDecor)
 	t.uncounted = append(t.uncounted, a.Uncounted)
 	t.raw = append(t.raw, render.Quad{
-		X: int16(x), Y: int16(y),
-		SourceX: a.SourceX, SourceY: a.SourceY,
-		Width: a.Width, Height: a.Height,
+		X: int16(x + t.offsetX), Y: int16(y + t.offsetY),
+		SourceX: sourceX, SourceY: sourceY,
+		Width: uint16(w), Height: uint16(h),
 		Sheet: a.Sheet,
 		Tint:  a.Tint,
 		Flags: a.Flags,

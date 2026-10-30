@@ -117,25 +117,42 @@ type Options struct {
 	// qu'une interface posée dans ce rectangle y tient toujours.
 	Width, Height int
 
-	// MaxWidth et MaxHeight bornent l'élargissement de la vue. Zéro ne borne pas :
-	// la vue remplit la fenêtre, au facteur entier près.
+	// MaxWidth et MaxHeight bornent l'**aire de monde** : la part de la surface dans
+	// laquelle le monde se dessine. Zéro ne borne pas, et l'aire vaut alors la surface
+	// entière.
 	//
-	// **Le défaut remplit, et c'est un changement de comportement par rapport à la
-	// 0.5.3**, où la vue restait figée et où le reste de la fenêtre était peint en
-	// bandes — 19 % de la fenêtre en 1600×900, 30 % sur un téléphone en paysage,
-	// 82,5 % en portrait. Un jeu qui veut l'ancien comportement écrit ces deux champs
-	// égaux à [Options.Width] et [Options.Height].
+	// **La surface, elle, remplit toujours la fenêtre**, au facteur entier près — il
+	// reste donc au plus facteur − 1 pixel de bande par axe, quoi qu'on borne. Borner
+	// ne ramène pas de bandes : ce que la surface a de plus que l'aire est une marge,
+	// elle appartient au jeu, et [Scene.Surface] avec [Scene.WorldOrigin] disent où
+	// elle se trouve. [Options.WorldAlignX] et [Options.WorldAlignY] disent de quel
+	// côté.
 	//
-	// **Ce que cela demande à un jeu qui pose une interface** : lire la taille par
-	// [Scene.View] au lieu de la supposer. Une position calculée depuis une constante
-	// ne tombe plus au bon endroit dès que la fenêtre change de forme, et rien ne le
-	// signale — c'est l'interface qui se décale, pas le monde.
+	// **C'est ce qui rend l'aire de jeu constante, et c'est leur raison d'être** :
+	// combien le joueur voit est une donnée de jeu, pas une conséquence de la fenêtre
+	// qu'il a étirée. Sans eux, l'aire visible va jusqu'à 5,4 fois le minimum entre une
+	// fenêtre 4:3 et une 21:9, et 17 fois dans un format extrême.
 	//
-	// **Et ce qu'un plafond achète, qui n'est pas qu'un confort** : l'aire de monde
-	// visible va jusqu'à 5,4 fois le minimum entre une fenêtre 4:3 et une 21:9, et
-	// 17 fois dans un format extrême. Combien le joueur voit est une donnée de jeu,
-	// pas une conséquence de la fenêtre qu'il a étirée.
+	// **Ils peuvent descendre sous [Options.Width] et [Options.Height]**, qui sont le
+	// plancher de la surface et non celui de l'aire. C'est ce qui donne une marge non
+	// nulle dès l'ouverture : sans cela, un jeu qui loge son interface dans la marge
+	// n'en aurait aucune au premier affichage, et devrait porter malgré tout la mise en
+	// page conditionnelle que ces champs existent pour lui éviter — au pire endroit,
+	// celui où l'on voit le jeu pour la première fois.
+	//
+	// **Ce que cela demande à un jeu qui pose une interface** : lire ses bornes par
+	// [Scene.Surface], et l'aire par [Scene.View]. Une position calculée depuis une
+	// constante ne tombe plus au bon endroit dès que la fenêtre change de forme, et
+	// rien ne le signale — c'est l'interface qui se décale, pas le monde.
 	MaxWidth, MaxHeight int
+
+	// WorldAlignX et WorldAlignY disent de quel côté la marge se place quand
+	// [Options.MaxWidth] ou [Options.MaxHeight] rend l'aire de monde plus petite que la
+	// surface. Leur valeur zéro centre l'aire.
+	//
+	// Ce sont les axes de la **surface** et une rotation de la scène ne les fait pas
+	// tourner : la godoc d'[Alignment] porte ce piège et les trois valeurs.
+	WorldAlignX, WorldAlignY Alignment
 
 	// Tick est la durée d'un pas. Zéro vaut un soixantième de seconde.
 	//
@@ -225,8 +242,11 @@ func (o Options) withDefaults() Options {
 	if o.MaxHeight <= 0 {
 		o.MaxHeight = MaxBufferSide
 	}
-	o.MaxWidth = max(o.MaxWidth, o.Width)
-	o.MaxHeight = max(o.MaxHeight, o.Height)
+	// Rien ne remonte le plafond au plancher, et c'est voulu : celui-ci borne la
+	// surface, celui-là l'aire de monde, et les deux n'ont plus de raison de se
+	// comparer depuis qu'ils ne désignent plus le même rectangle. La contrainte a
+	// existé tant que la vue était le tampon, où une vue sous le minimum n'avait pas
+	// de sens ; la garder interdirait toute marge à l'ouverture de la fenêtre.
 
 	if o.Tick == 0 {
 		o.Tick = defaultTick
@@ -293,8 +313,16 @@ func NewEngine(s *Scene, o Options) (*Engine, error) {
 
 	if _, _, width, _ := s.View(); width == 0 {
 		cells, rows := s.Dimensions()
-		s.Focus(float64(cells)/2, float64(rows)/2, int32(o.Width), int32(o.Height))
+		s.Focus(float64(cells)/2, float64(rows)/2,
+			int32(min(o.Width, o.MaxWidth)), int32(min(o.Height, o.MaxHeight)))
 	}
+
+	// La surface et l'alignement viennent des options dans tous les cas, là que le
+	// cadrage ci-dessus respecte celui que le jeu a pu poser : une scène ne devine ni
+	// la taille d'ouverture de la fenêtre ni la mise en page, et les deux sont
+	// déclarées ici.
+	s.ResizeSurface(int32(o.Width), int32(o.Height))
+	s.SetAlignment(o.WorldAlignX, o.WorldAlignY)
 
 	return &Engine{
 		scene:      s,
@@ -330,29 +358,40 @@ func (e *Engine) Fit(width, height int) {
 		return
 	}
 
-	w, h := e.viewSize(width, height)
-	if w == int(e.frame.Width) && h == int(e.frame.Height) {
+	surfaceWidth, surfaceHeight, worldWidth, worldHeight := e.layout(width, height)
+	if surfaceWidth == int(e.frame.Width) && surfaceHeight == int(e.frame.Height) {
 		return
 	}
 
-	e.frame = NewBuffer(uint16(w), uint16(h))
-	e.scene.ResizeView(int32(w), int32(h))
+	e.frame = NewBuffer(uint16(surfaceWidth), uint16(surfaceHeight))
+	e.scene.ResizeSurface(int32(surfaceWidth), int32(surfaceHeight))
+	e.scene.ResizeView(int32(worldWidth), int32(worldHeight))
 }
 
-// viewSize rend la taille de vue qu'une sortie donnée mérite.
+// layout rend les deux rectangles qu'une sortie donnée mérite : la surface de dessin,
+// puis l'aire de monde à l'intérieur.
+//
+// **La surface remplit, et l'aire se borne ensuite.** C'est l'ordre qui tient
+// l'invariant d'échelle et la promesse d'absence de bandes en même temps : le facteur
+// est maximisé sur le minimum, la surface prend tout ce que la sortie laisse, et le
+// plafond du jeu ne mord que sur ce que le monde en occupe.
 //
 // Le facteur vient de [raster.ScaleFactor] et de nulle part ailleurs : c'est lui que
 // l'agrandissement appliquera ensuite, et deux arithmétiques qui doivent s'accorder
 // finissent par diverger. Les tampons qu'elle lui passe n'ont pas de pixels — la
 // fonction ne lit que leurs côtés —, donc ils ne coûtent rien.
-func (e *Engine) viewSize(outWidth, outHeight int) (width, height int) {
+//
+// Un plafond sous le plancher est licite et n'est pas remonté : il rend une marge dès
+// la taille d'ouverture, ce que [Options.MaxWidth] explique.
+func (e *Engine) layout(outWidth, outHeight int) (surfaceWidth, surfaceHeight, worldWidth, worldHeight int) {
 	minimum := &Buffer{Width: uint16(e.minWidth), Height: uint16(e.minHeight)}
 	out := &Buffer{Width: uint16(min(outWidth, MaxBufferSide)), Height: uint16(min(outHeight, MaxBufferSide))}
 	factor := raster.ScaleFactor(minimum, out)
 
-	width = min(max(int(out.Width)/factor, e.minWidth), e.maxWidth)
-	height = min(max(int(out.Height)/factor, e.minHeight), e.maxHeight)
-	return width, height
+	surfaceWidth = max(int(out.Width)/factor, e.minWidth)
+	surfaceHeight = max(int(out.Height)/factor, e.minHeight)
+	return surfaceWidth, surfaceHeight,
+		min(surfaceWidth, e.maxWidth), min(surfaceHeight, e.maxHeight)
 }
 
 // Step avance le jeu d'un pas et rend l'image qui en résulte prête à présenter.
@@ -392,7 +431,13 @@ func (e *Engine) Step(g Game, in Input) {
 	// image coupée ou décentrée, sans erreur ni trace : mesuré, un cadrage à 960×540
 	// sur un tampon de 480×270 ne peint que la moitié de l'entité visée. Le point
 	// visé, lui, reste au jeu, et c'est pourquoi c'est la taille seule qu'on reprend.
-	e.scene.ResizeView(int32(e.frame.Width), int32(e.frame.Height))
+	// Les deux rectangles se reprennent, pas un : la surface est le tampon, et l'aire
+	// de monde est ce que le plafond du jeu en laisse au monde.
+	e.scene.ResizeSurface(int32(e.frame.Width), int32(e.frame.Height))
+	e.scene.ResizeView(
+		int32(min(int(e.frame.Width), e.maxWidth)),
+		int32(min(int(e.frame.Height), e.maxHeight)),
+	)
 
 	list := e.sorter.Frame()
 	raster.Clear(e.frame, e.background)

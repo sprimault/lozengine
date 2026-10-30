@@ -84,6 +84,53 @@ func (s *Scene) View() (x, y, width, height int32) {
 	return s.viewX, s.viewY, s.viewWidth, s.viewHeight
 }
 
+// Surface rend la taille de la surface de dessin : le tampon que le moteur remplit, et
+// le repère dans lequel [Scene.PlaceScreen] pose.
+//
+// Elle vaut la vue tant que rien ne l'élargit, donc les deux coïncident pour un jeu qui
+// ne borne pas son aire de monde. Quand un plafond mord, la surface continue de remplir
+// la fenêtre et c'est la vue qui rétrécit : ce que la surface a de plus est la marge, et
+// elle appartient au jeu — c'est là que vont un bandeau, un score, une minicarte.
+func (s *Scene) Surface() (width, height int32) {
+	return max(s.surfaceWidth, s.viewWidth), max(s.surfaceHeight, s.viewHeight)
+}
+
+// WorldOrigin rend la place de l'aire de monde dans la surface, en pixels de celle-ci.
+//
+// C'est ce qui permet d'accrocher une interface au bord de l'**aire** plutôt qu'au bord
+// du tampon, les deux références étant alors disponibles. Elle vaut (0, 0) quand la vue
+// remplit la surface, donc un jeu sans marge n'a pas à la consulter.
+//
+// Où la marge se répartit vient de [Scene.SetAlignment], jamais du moteur : la place de
+// l'aire est une propriété de la mise en page.
+func (s *Scene) WorldOrigin() (x, y int32) {
+	width, height := s.Surface()
+	return s.alignX.offset(width - s.viewWidth), s.alignY.offset(height - s.viewHeight)
+}
+
+// ResizeSurface change la taille de la surface de dessin, sans toucher à la vue.
+//
+// La boucle du paquet racine l'appelle d'après la fenêtre ; un hôte qui tient la sienne
+// la pose lui-même, et peut ne jamais l'appeler — la surface vaut alors la vue.
+//
+// Une taille nulle ou négative ne change rien, pour la raison que [Scene.ResizeView]
+// donne : c'est ce que rend une fenêtre réduite.
+func (s *Scene) ResizeSurface(width, height int32) {
+	if width <= 0 || height <= 0 {
+		return
+	}
+
+	s.surfaceWidth, s.surfaceHeight = width, height
+}
+
+// SetAlignment pose où l'aire de monde se place dans la surface, un axe après l'autre.
+//
+// Les valeurs et le piège des axes sont dans la godoc d'[Alignment] : ce sont les axes
+// de la surface, et une rotation de la scène ne les fait pas tourner.
+func (s *Scene) SetAlignment(x, y Alignment) {
+	s.alignX, s.alignY = x, y
+}
+
 // Remap rend les coordonnées sous lesquelles l'orientation courante présente un
 // point du monde.
 //
@@ -124,15 +171,18 @@ func (s *Scene) Unremap(x, y float64) (float64, float64) {
 
 // At rend le point du monde qu'un pixel de l'image désigne, à l'étage donné.
 //
-// C'est le chemin complet de la désignation au pointeur, et il a quatre étages qu'un
-// jeu n'a pas à connaître : le pixel reçu est relatif à la vue, donc l'origine de
-// celle-ci s'y ajoute ; un étage se dessine plus haut que le sol, donc le pixel
-// redescend d'autant avant qu'on inverse ; l'inverse rend des coordonnées remappées ;
-// et le remappage se défait pour revenir au repère où le jeu a posé sa grille.
+// C'est le chemin complet de la désignation au pointeur, et il a cinq étages qu'un
+// jeu n'a pas à connaître : le pixel reçu est relatif à la surface, donc la place de
+// l'aire de monde dans celle-ci s'en retranche ; l'origine de la vue s'y ajoute ; un
+// étage se dessine plus haut que le sol, donc le pixel redescend d'autant avant qu'on
+// inverse ; l'inverse rend des coordonnées remappées ; et le remappage se défait pour
+// revenir au repère où le jeu a posé sa grille.
 //
-// **Le pixel est celui de l'image, pas celui de la fenêtre.** C'est exactement ce que
-// [input.Input.Pointer] rend, la boucle ayant déjà défait l'agrandissement et les
-// bandes.
+// **Le pixel est celui de la surface, pas celui de la fenêtre ni celui de l'aire de
+// monde.** C'est exactement ce que [input.Input.Pointer] rend, la boucle ayant déjà
+// défait l'agrandissement et les bandes. Un pixel pris dans la marge rend donc un point
+// hors de l'aire, et c'est au jeu de le refuser s'il y a posé son interface — ce que
+// [Scene.Surface] et [Scene.WorldOrigin] lui permettent de décider.
 //
 // Le résultat est en cellules flottantes, dont la partie entière est la case : un
 // point rendu à (3,7 ; 2,2) désigne la case (3, 2). L'aller-retour n'est pas exact —
@@ -144,7 +194,11 @@ func (s *Scene) Unremap(x, y float64) (float64, float64) {
 // carte, négatif au besoin. C'est au jeu de décider si cela désigne quelque chose,
 // puisque lui seul sait ce qu'il y a au-delà.
 func (s *Scene) At(ex, ey int32, floor uint8) (x, y float64) {
-	rx, ry := s.projection.Unproject(s.viewX+ex, s.viewY+ey+s.projection.Rise(float64(floor)))
+	ox, oy := s.WorldOrigin()
+	rx, ry := s.projection.Unproject(
+		s.viewX+ex-ox,
+		s.viewY+ey-oy+s.projection.Rise(float64(floor)),
+	)
 	return s.Unremap(rx, ry)
 }
 
