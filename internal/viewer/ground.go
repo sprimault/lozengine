@@ -7,7 +7,6 @@
 package viewer
 
 import (
-	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/internal/sorting"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
@@ -59,16 +58,10 @@ func Ground() Scenario {
 		Background: render.Color{R: 24, G: 24, B: 32, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			var atlas raster.Atlas
-			for _, p := range []raster.Sheet{
+			return atlasOf(
 				borderedSheet(tileW, tileH, render.Color{R: 190, G: 185, B: 170, A: 255}),
 				borderedSheet(tileW/3, tileH*3/2, render.Color{R: 60, G: 80, B: 150, A: 255}),
-			} {
-				if _, err := atlas.Add(p); err != nil {
-					return nil, err
-				}
-			}
-			return &atlas, nil
+			)
 		},
 
 		Quads: func(_ int, _ InputLine, reserve render.DrawList) render.DrawList {
@@ -83,23 +76,13 @@ func Ground() Scenario {
 // Montée à neuf à chaque image, comme celle de [Core] : une image doit pouvoir se
 // rendre seule, deux fois, et donner les mêmes pixels.
 func groundScene() *scene.Scene {
-	s, err := scene.New(groundSide, groundSide, geometry.Dimetric(tileW, tileH),
-		scene.Options{Entities: 8})
-	if err != nil {
-		panic(err)
-	}
-	s.Focus(groundSide/2, groundSide/2, groundWidth, groundHeight)
+	s := sceneOf(groundSide, groundWidth, groundHeight, scene.Options{Entities: 8})
 
 	// Le sol entier, sur la strate 0 : c'est la configuration qu'un jeu obtient sans
 	// rien régler, et donc celle où le défaut se produisait.
-	tile := scene.Aspect{
+	fillGround(s, groundSide, scene.Aspect{
 		Sheet: groundTileSheet, Width: tileW, Height: tileH, Tint: render.White(),
-	}
-	for v := range groundSide {
-		for u := range groundSide {
-			s.PlaceCell(u, v, 0, tile)
-		}
-	}
+	})
 
 	// Cinq figures sur la même rangée, de la plus au nord à la plus au sud de leur
 	// cellule. La couche et la strate sont celles du sol — rien ne les sépare, et c'est

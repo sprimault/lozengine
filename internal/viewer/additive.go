@@ -48,16 +48,10 @@ func Additive() Scenario {
 		// translucide, et une grise opaque, qui est la seule à distinguer une
 		// séquence ajoutée d'une séquence recopiée.
 		Atlas: func() (*raster.Atlas, error) {
-			var atlas raster.Atlas
-			for _, p := range []raster.Sheet{
+			return atlasOf(
 				markedSheet(side),
 				borderedSheet(side, side, render.Color{R: 90, G: 90, B: 110, A: 255}),
-			} {
-				if _, err := atlas.Add(p); err != nil {
-					return nil, err
-				}
-			}
-			return &atlas, nil
+			)
 		},
 
 		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {

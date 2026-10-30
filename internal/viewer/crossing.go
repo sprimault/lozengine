@@ -7,7 +7,6 @@
 package viewer
 
 import (
-	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/internal/sorting"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
@@ -74,17 +73,11 @@ func Crossing() Scenario {
 		Background: render.Color{R: 18, G: 20, B: 28, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			var atlas raster.Atlas
-			for _, p := range []raster.Sheet{
+			return atlasOf(
 				borderedSheet(tileW, tileH, render.Color{R: 76, G: 92, B: 76, A: 255}),
 				borderedSheet(tileW, tileH*2, render.Color{R: 164, G: 150, B: 120, A: 255}),
 				borderedSheet(tileW/3, tileH*3/2, crossingFigureTint),
-			} {
-				if _, err := atlas.Add(p); err != nil {
-					return nil, err
-				}
-			}
-			return &atlas, nil
+			)
 		},
 
 		Quads: func(frame int, _ InputLine, reserve render.DrawList) render.DrawList {
@@ -98,24 +91,14 @@ func Crossing() Scenario {
 // La position se calcule depuis le numéro d'image et non d'un pas accumulé : une image
 // doit pouvoir se rendre seule, deux fois, et donner les mêmes pixels.
 func crossingScene(frame int) *scene.Scene {
-	s, err := scene.New(crossingSide, crossingSide, geometry.Dimetric(tileW, tileH),
-		scene.Options{
-			Entities:  4,
-			Revealing: scene.RevealOptions{After: crossingRevealAfter},
-		})
-	if err != nil {
-		panic(err)
-	}
-	s.Focus(crossingSide/2, crossingSide/2, crossingWidth, crossingHeight)
+	s := sceneOf(crossingSide, crossingWidth, crossingHeight, scene.Options{
+		Entities:  4,
+		Revealing: scene.RevealOptions{After: crossingRevealAfter},
+	})
 
-	ground := scene.Aspect{
+	fillGround(s, crossingSide, scene.Aspect{
 		Sheet: crossingGroundSheet, Width: tileW, Height: tileH, Tint: render.White(),
-	}
-	for v := range crossingSide {
-		for u := range crossingSide {
-			s.PlaceCell(u, v, 0, ground)
-		}
-	}
+	})
 
 	// La plateforme, à l'étage un : elle monte à l'écran et passe devant tout l'étage
 	// du sol, ce qui est l'ordre juste et ce qui cacherait le personnage.
