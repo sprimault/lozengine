@@ -37,9 +37,13 @@ func ScaleFactor(t, out *render.Buffer) int {
 // une image de référence doit être reproductible au pixel, donc l'arbitraire se
 // documente au lieu de se découvrir.
 //
-// Une sortie plus petite que le tampon ne fait pas échouer l'appel : le facteur
-// tombe à 1 et l'image se découpe, toujours centrée. Un redimensionnement de fenêtre
+// Une sortie plus petite que le tampon ne fait pas échouer l'appel : **c'est le
+// découpage qui opère, pas le facteur**, qui reste celui qu'on a donné. L'image est
+// rognée par les bords de la sortie, toujours centrée. Un redimensionnement de fenêtre
 // n'a pas à être un cas d'erreur.
+//
+// Seul un facteur inférieur à 1 est remonté à 1 : il n'y a pas de réduction ici, la
+// mise à l'échelle entière ne sachant qu'agrandir.
 func Upscale(t, out *render.Buffer, factor int, background render.Color) {
 	if factor < 1 {
 		factor = 1

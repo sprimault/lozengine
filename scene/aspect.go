@@ -14,7 +14,7 @@ import "github.com/sprimault/lozengine/render"
 // Séparé de la position parce que le décor n'en a pas besoin — une cellule de grille
 // est située par son rang, et lui recopier des coordonnées doublerait ce que la grille
 // sait déjà. Sur une carte de cinq cents cellules de côté, le doublon pèserait six
-// mégaoctets par couche.
+// mégaoctets par strate.
 //
 // Sa valeur zéro ne montre rien, et c'est ainsi qu'une cellule vide se reconnaît : une
 // largeur ou une hauteur nulle ne couvre aucun pixel, donc aucune table de présence
@@ -182,8 +182,16 @@ func (a Aspect) fitsInKey() bool {
 // l'arrêterait une case avant le bord, et seulement d'un côté.
 //
 // Les coordonnées ne sont pas vérifiées : une entité hors de la grille est posée sans
-// refus, et simplement retirée de l'image si elle n'y tombe pas. C'est au jeu de
-// borner, parce que lui seul sait si son personnage a le droit de sortir.
+// refus, et retirée de l'image si elle n'y tombe pas. C'est au jeu de borner, parce que
+// lui seul sait si son personnage a le droit de sortir.
+//
+// **Une coordonnée négative fait exception, et ce n'est pas un retrait** : la projection
+// sature au lieu de déborder, donc une profondeur négative et un `z` négatif sont
+// ramenés à zéro. La chose est alors peinte au pixel du sol et triée comme si elle y
+// était — elle se voit à l'image au lieu d'en disparaître, ce qui est le symptôme à
+// reconnaître quand un jeu croit avoir perdu une entité qu'il a posée en négatif. La
+// hauteur que [geometry.Matrix.Project] rend en quatrième est un `uint16`, qui ne sait
+// pas porter un `z` négatif.
 //
 // z est la hauteur au-dessus du sol et reste un champ à part. L'écran la retranche de
 // l'ordonnée, la clé de tri la range dans son propre champ : les fondre perdrait

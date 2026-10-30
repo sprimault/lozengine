@@ -16,8 +16,11 @@
 // paquets aurait obligé à publier ce détail d'optimisation dans [Sheet], que l'ABI
 // exposera un jour.
 //
-// Pour écrire un jeu en Go, le paquet racine republie [Sheet], [Atlas], [Rectangle]
-// et les deux chargeurs — pas les fonctions de dessin, dont la boucle se charge.
+// Pour écrire un jeu en Go, le paquet racine republie [Sheet], [Atlas], [Rectangle] et
+// trois façons d'obtenir une planche — `NewSheet`, `LoadSheet` et
+// `NewSheetFromStraight` —, auxquelles elle ajoute `OpenSheet`, qui lit un fichier et
+// n'a pas d'équivalent ici. Elle ne republie pas les fonctions de dessin, dont la
+// boucle se charge ; un hôte qui garde la sienne les appelle depuis ce paquet.
 //
 // Le tampon lui-même vit dans [github.com/sprimault/lozengine/render], parce qu'un
 // hôte en remplit les champs. Les opérations de ce paquet le prennent donc en premier

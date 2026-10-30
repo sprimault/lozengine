@@ -51,10 +51,16 @@ const defaultEntities = 4096
 // reviendrait à choisir une taille de tuile à la place du jeu.
 type Options struct {
 	// Entities est le nombre d'entités vivantes que la scène porte à la fois. Zéro
-	// prend le défaut du moteur.
+	// prend le défaut du moteur, qui vaut 4 096.
 	//
 	// La capacité est fixe et allouée une fois. Une tranche qui croîtrait au milieu
 	// d'une horde ferait passer le ramassage de mémoire là où il se verrait le plus.
+	//
+	// **La cible de contrôle du dépôt dépasse ce défaut** : elle est de 5 000 entités,
+	// donc un jeu qui la vise sans renseigner ce champ reçoit un `false` de
+	// [Scene.Place] à la 4 097ᵉ, sans autre signal. Le défaut n'est pas remonté pour
+	// autant : il dimensionne toute scène montée à valeur zéro, et le relever ferait
+	// payer une horde que la plupart des jeux ne portent pas.
 	Entities int
 
 	// Revealing porte les conventions de lisibilité de la révélation. Sa valeur zéro
@@ -131,9 +137,14 @@ type RevealOptions struct {
 
 // Scene porte une grille de décor, des entités, et la vue par laquelle on les regarde.
 //
-// Elle s'obtient de [New] et s'emploie par ses méthodes. Rien n'y est alloué après
-// la construction, hors la pose d'une couche de décor, et c'est la condition pour que
-// le tri n'alloue pas davantage.
+// Elle s'obtient de [New] et s'emploie par ses méthodes ; **sa valeur zéro ne convient
+// pas** — elle n'a ni grille ni projection, et la première pose la refuserait.
+//
+// Rien n'y est alloué après la construction, à deux exceptions près et il faut les deux
+// pour que la phrase soit vraie : la pose d'une **strate** de décor, qui alloue la
+// tranche de cette strate, et les pièces posées en pixels, dont la tranche croît
+// jusqu'à sa plus forte occupation. [Scene.ClearScreen] gardant la capacité, un jeu
+// n'alloue donc là que l'image où il pose plus de pièces qu'à aucune précédente.
 type Scene struct {
 	width, height int
 	projection    geometry.Matrix

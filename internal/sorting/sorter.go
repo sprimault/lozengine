@@ -271,7 +271,7 @@ func (t *Sorter) collectEntities() {
 // [TestCornerDepthMatchesProjection] garde l'égalité, et rougirait si elle changeait.
 const halfCellQuarters = 4
 
-// collectDecor parcourt les cellules que la vue peut montrer, couche par couche.
+// collectDecor parcourt les cellules que la vue peut montrer, strate par strate.
 func (t *Sorter) collectDecor() {
 	tiers := t.scene.Tiers()
 	if tiers == 0 {

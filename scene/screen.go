@@ -53,6 +53,12 @@ type ScreenPiece struct {
 // **L'ordre de pose est l'ordre de dessin** entre pièces d'écran de même couche : ce
 // qui est posé après recouvre ce qui précède. C'est ce qu'une ligne de texte demande,
 // ses glyphes partageant couche, planche et position d'écran voisine.
+//
+// **Le magasin n'a pas de plafond et ne se règle pas** : il croît par ajout jusqu'à sa
+// plus forte occupation, puis n'alloue plus, [Scene.ClearScreen] gardant cette
+// capacité. Un jeu n'alloue donc ici qu'à l'image où il pose plus de pièces qu'à aucune
+// précédente — ce qui est la seule réserve à la promesse d'absence d'allocation que
+// [Scene] et la boucle annoncent.
 func (s *Scene) PlaceScreen(ex, ey int32, a Aspect) bool {
 	return s.placePiece(ex, ey, a, false)
 }
