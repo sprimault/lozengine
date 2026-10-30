@@ -45,6 +45,20 @@ notes de publication.
 
 ## [Non publié]
 
+### Corrigé
+
+- Une teinte translucide voile ce qu'elle module au lieu de l'assombrir, sur un quad qui
+  lit une planche comme sur un aplat. Un jeu qui compensait en posant une couleur non
+  prémultipliée revient à `Premultiply` ou à `Color.Scale`.
+
+***
+
+### Fixed
+
+- A translucent tint now veils what it modulates instead of darkening it, on a quad
+  reading a sheet as on a flat fill. A game compensating with a non-premultiplied colour
+  goes back to `Premultiply` or `Color.Scale`.
+
 ## [0.5.6] — 2026-10-30
 
 ### Ajouté

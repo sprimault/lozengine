@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 // Les trois arrondis dont tout le rastériseur dépend : un blanc modulé par un blanc
-// doit rendre 255 et non 254, et l'alpha d'une teinte doit agir aussi sur ses
-// composantes, prémultipliées.
+// doit rendre 255 et non 254, et une teinte prémultipliée doit moduler un blanc opaque
+// en elle-même.
 
 package raster
 
@@ -59,10 +59,18 @@ func TestProductMatchesThePublishedPremultiplication(t *testing.T) {
 	}
 }
 
-// TestModulate vérifie que l'alpha de la teinte agit aussi sur les composantes de
-// couleur : prémultipliées, les laisser en place rendrait un pixel plus sombre au
-// lieu d'un pixel translucide.
+// TestModulate vérifie qu'une teinte prémultipliée module un blanc opaque en
+// elle-même, ce qui est la propriété qui caractérise la convention : son alpha est
+// déjà dans ses composantes, donc le réappliquer les atténuerait deux fois.
+//
+// Le cas translucide est celui qui rougit sous l'ancien calcul, et le cas gris est
+// celui qui refuse d'oublier le filtre : avec une source blanche seule, multiplier
+// par la composante de la teinte ne se distingue pas de la recopier.
 func TestModulate(t *testing.T) {
+	grey := render.Color{R: 128, G: 128, B: 128, A: 255}
+	half := render.Color{R: 128, G: 128, B: 128, A: 128}
+	cream := render.Premultiply(252, 246, 226, 110)
+
 	cases := []struct {
 		name      string
 		src, tint render.Color
@@ -70,7 +78,9 @@ func TestModulate(t *testing.T) {
 	}{
 		{"teinte neutre", white, white, white},
 		{"teinte rouge", white, render.Color{R: 255, A: 255}, render.Color{R: 255, A: 255}},
-		{"demi-opacité", white, render.Color{R: 255, G: 255, B: 255, A: 128}, render.Color{R: 128, G: 128, B: 128, A: 128}},
+		{"demi-opacité", white, half, half},
+		{"teinte translucide rendue telle quelle", white, cream, cream},
+		{"la teinte filtre aussi la source", grey, half, render.Color{R: 64, G: 64, B: 64, A: 128}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

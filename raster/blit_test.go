@@ -209,7 +209,7 @@ func TestDrawTint(t *testing.T) {
 	}{
 		{"neutre", white, white},
 		{"couleur, opaque", red, red},
-		{"demi-opacité", render.Color{R: 255, G: 255, B: 255, A: 128}, render.Color{R: 128, G: 128, B: 128, A: 128}},
+		{"demi-opacité", render.Color{R: 128, G: 128, B: 128, A: 128}, render.Color{R: 128, G: 128, B: 128, A: 128}},
 		{"teinte nulle", none, none},
 	}
 	for _, c := range cases {

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 // L'arithmétique d'un pixel : la multiplication arrondie, la modulation par une teinte
-// et la composition sur le fond. Quatre fonctions courtes appelées des millions de fois
-// par image, d'où l'absence de toute vérification ici.
+// prémultipliée et la composition sur le fond. Quatre fonctions courtes appelées des
+// millions de fois par image, d'où l'absence de toute vérification ici.
 
 package raster
 
@@ -20,16 +20,22 @@ func product(a, b uint8) uint8 {
 	return uint8((t + t>>8) >> 8)
 }
 
-// modulate applique une teinte à un pixel source.
+// modulate applique une teinte à un pixel source, composante par composante.
 //
-// L'alpha de la teinte agit sur les quatre composantes, celles de couleur étant
-// prémultipliées : les amputer sans toucher l'alpha assombrirait le pixel au lieu
-// de le rendre translucide.
+// **Les deux couleurs sont prémultipliées, donc l'alpha de la teinte est déjà dans
+// ses composantes** : le réappliquer les atténuerait deux fois, et une teinte
+// translucide assombrirait le fond au lieu de le voiler. Une teinte qui module un
+// blanc opaque rend donc exactement la teinte.
+//
+// Cette ligne a réappliqué `tint.A` jusqu'au 30 octobre 2026, ce qui traitait la
+// teinte comme une couleur droite — composantes en filtre, alpha en opacité — là que
+// [render.Color] promet le prémultiplié sur les deux chemins. L'écart était invisible
+// à alpha plein, où le second produit est l'identité.
 func modulate(src, tint render.Color) render.Color {
 	return render.Color{
-		R: product(product(src.R, tint.R), tint.A),
-		G: product(product(src.G, tint.G), tint.A),
-		B: product(product(src.B, tint.B), tint.A),
+		R: product(src.R, tint.R),
+		G: product(src.G, tint.G),
+		B: product(src.B, tint.B),
 		A: product(src.A, tint.A),
 	}
 }
