@@ -170,12 +170,26 @@ frontière par handles opaques, jamais par pointeur Go.
   une taille fixe : au-delà, la **surface de dessin** s'élargit avec la fenêtre, ce qui
   évite les bandes sans toucher au facteur entier.
 - **La surface de dessin et l'aire de monde sont deux rectangles.** La surface remplit
-  la fenêtre ; le plafond que le jeu pose borne la part où le monde se dessine, et ce
+  la fenêtre ; ce que le jeu en réserve borne la part où le monde se dessine, et ce
   que la surface a de plus est une marge que le jeu dessine — un bandeau, un score, une
   minicarte. C'est ce qui rend l'aire de jeu constante **sans** payer de bandes, là où
   un plafond sur la vue entière faisait l'un contre l'autre. Le monde est découpé sur
   l'aire avant d'être mesuré, sans quoi une chose au bord s'y lirait cachée en
   permanence.
+- **Deux façons de la réserver, parce qu'elles répondent à deux besoins opposés.** Un
+  **plafond** fixe l'aire et laisse la marge varier avec la fenêtre : c'est ce que veut
+  un jeu pour qui « combien le joueur voit » est une donnée de jeu. Un **retrait** par
+  côté fixe la marge et laisse l'aire prendre le reste : c'est ce que veut un jeu qui
+  loge son interface autour du monde, un bandeau devant rester à la même distance du
+  jeu quelle que soit la fenêtre. Mesuré sur le premier jeu, un plafond seul faisait
+  passer la marge de 77 à 221 pixels entre l'ouverture et une fenêtre maximisée, ce qui
+  oblige l'interface à flotter ou à changer de place — la mise en page conditionnelle
+  que le plafond existait pour retirer. Les deux se composent dans un ordre fixe : le
+  retrait sort le chrome, le plafond borne le monde dans ce qui reste, l'alignement
+  place l'aire dans ce que le plafond a laissé en trop. Et ils ne se remplacent pas :
+  avec des retraits seuls, l'aire est définie par eux et n'a plus de place à choisir ;
+  centrer une aire de taille fixe dans une surface qui grandit demanderait des retraits
+  qui changent à chaque image.
 - Directions d'apparence : déclarées par le fournisseur, jamais codées en dur.
   Huit pour l'implémentation de référence en planches PNG, seize pour la
   fabrique volumique. Le littéral n'apparaît que dans le fournisseur.
