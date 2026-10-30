@@ -189,3 +189,54 @@ func dump(t *testing.T, name string, buffer *render.Buffer, reference raster.She
 	}
 	return " ; rendu et écart déposés dans " + failuresDir
 }
+
+// TestReferencesMatchTheCatalog compare les fichiers présents à ce que le catalogue
+// déclare, dans les deux sens.
+//
+// **Ce qu'il est seul à pouvoir faire échouer est l'orphelin** : une image qu'aucun
+// scénario ne réclame plus, laissée par un scénario retiré ou renommé.
+// [TestReferences] n'ouvre que les fichiers qu'il attend, donc il ne la voit jamais, et
+// `make references` ne la réécrit pas davantage — elle resterait au dépôt en donnant à
+// croire qu'elle garde quelque chose.
+//
+// Le manquant est gardé des deux côtés, ici et par l'échec de lecture de
+// [TestReferences]. Le redire coûte trois lignes et dit la bonne cause : un fichier
+// absent est une régénération oubliée, pas un rendu qui a changé.
+func TestReferencesMatchTheCatalog(t *testing.T) {
+	var declared []string
+	expected := map[string]bool{}
+
+	for _, name := range Names() {
+		scenario, ok := ByName(name)
+		if !ok {
+			t.Fatalf("scénario %q absent du catalogue", name)
+		}
+		for _, frame := range scenario.ReferenceFrames() {
+			file := fmt.Sprintf("%s-%04d.png", name, frame)
+			declared = append(declared, file)
+			expected[file] = true
+		}
+	}
+
+	entries, err := os.ReadDir(referencesDir)
+	if err != nil {
+		t.Fatalf("lecture de %s : %v", referencesDir, err)
+	}
+
+	present := map[string]bool{}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		present[entry.Name()] = true
+		if !expected[entry.Name()] {
+			t.Errorf("%s : aucun scénario du catalogue ne la déclare", entry.Name())
+		}
+	}
+
+	for _, file := range declared {
+		if !present[file] {
+			t.Errorf("%s : déclarée par le catalogue et absente du dépôt", file)
+		}
+	}
+}

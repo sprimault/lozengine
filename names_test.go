@@ -11,6 +11,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -72,6 +73,12 @@ func isFrench(word string) bool {
 // Ce qu'il n'attrape pas : un mot français inédit. Fermer cela demanderait un
 // dictionnaire, que personne ne tiendrait à jour ; la liste s'allonge d'un mot le jour
 // où on en retire un du code.
+//
+// **Son périmètre est le module et non le disque** : un répertoire qui porte son propre
+// `go.mod` est un autre module, donc du code que ce dépôt ne gouverne pas, et le juger
+// ici ferait rougir la suite sur des fichiers qu'aucune de ses règles n'atteint. Le
+// dépôt n'était vert que par hasard avant cela — le seul module imbriqué commence aussi
+// par un point, ce qui le faisait sauter pour une autre raison.
 func TestIdentifiersAreNotFrench(t *testing.T) {
 	fset := token.NewFileSet()
 
@@ -82,6 +89,11 @@ func TestIdentifiersAreNotFrench(t *testing.T) {
 		if d.IsDir() {
 			if name := d.Name(); name != "." && (strings.HasPrefix(name, ".") || name == "testdata") {
 				return fs.SkipDir
+			}
+			if path != "." {
+				if _, err := os.Stat(filepath.Join(path, "go.mod")); err == nil {
+					return fs.SkipDir
+				}
 			}
 			return nil
 		}
