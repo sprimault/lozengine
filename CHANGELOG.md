@@ -45,6 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.5] — 2026-10-30
+
 ### Ajouté
 
 - `Scene.Surface` rend la surface de dessin, et `Scene.WorldOrigin` la place de l'aire
