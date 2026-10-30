@@ -165,16 +165,29 @@ jobs:
     # C'est la même leçon que le harnais de test a apprise le même jour, sur un cas qui
     # a figé un paquet dix minutes : ce qui peut attendre sans fin se borne.
     #
-    # **Quatre minutes, et le chiffre vient d'une mesure** : les quatre passages
-    # réussis tiennent entre 47 et 66 secondes. Près de quatre fois la durée observée
-    # absorbe un runner chargé ; un plafond plus large ne protégerait pas mieux et
-    # ferait seulement attendre plus longtemps avant de dire qu'il y a un problème —
-    # le premier était à douze minutes, posé avant d'avoir mesuré quoi que ce soit.
+    # **Huit minutes, et la borne se prend entre deux mesures et non sur un multiple de
+    # la durée normale.** Les passages réussis tiennent entre 47 et 66 secondes, et
+    # quatre minutes paraissaient donc larges — c'était la valeur, justifiée ainsi.
+    # Le 30 octobre 2026 elles ont coupé les deux variantes du job sur une pull request
+    # dont le run avait déjà attendu dix minutes en file : l'installation des paquets a
+    # franchi quatre minutes sans avoir rien terminé, et la relance est passée sans rien
+    # changer au dépôt. Une infrastructure chargée ralentit donc cette étape d'un facteur
+    # que la durée nominale ne prédit pas.
+    #
+    # Ce qui fixe le chiffre est l'écart entre les deux faits observés : la lenteur
+    # légitime a dépassé quatre minutes, et le blocage réel du 27 octobre a tenu
+    # dix-huit. La borne doit être au-dessus de la première et bien en dessous du second.
+    # Huit minutes laissent huit fois la durée nominale et coupent toujours un blocage
+    # deux fois plus tôt qu'il ne s'est manifesté.
+    #
+    # **Quinze minutes, comme les autres jobs, serait le mauvais réflexe** : trop proche
+    # des dix-huit du blocage, elle laisserait passer presque tout ce que ce plafond
+    # existe pour attraper. Les autres jobs n'installent rien et n'ont pas ce cas.
     #
     # Il tient compte du délai sur le verrou de l'étape suivante, qui doit rester bien
     # dedans : les deux bornes se marcheraient dessus si l'attente permise à l'une
     # consommait le budget de l'autre.
-    timeout-minutes: 4
+    timeout-minutes: 8
 
     strategy:
       fail-fast: false
