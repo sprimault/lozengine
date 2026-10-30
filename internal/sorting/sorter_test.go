@@ -9,6 +9,7 @@
 package sorting
 
 import (
+	"math"
 	"testing"
 
 	"github.com/sprimault/lozengine/geometry"
@@ -636,4 +637,61 @@ func quadsWithAnchor(t *testing.T, ax, ay int16) int {
 	s.Place(scene.Entity{X: 200, Y: 200, Aspect: a})
 
 	return len(New(s).Frame())
+}
+
+// TestWindowKeepsOneCellOfMargin garde la marge d'une cellule que la godoc de [window]
+// promet, et qu'aucun cas n'éprouvait.
+//
+// La raison de cette marge est qu'une image est posée par son pied et s'étend vers le
+// haut : la cellule dont le pied vient de sortir par le bas a encore son corps dans la
+// vue. Sans la marge, un mur disparaîtrait d'un coup au bord au lieu de glisser dehors.
+// `TestDecorCollectedByWindow` ne vérifie qu'un plafond de deux mille quads, donc
+// retirer le `-1` et le `+1` lui laissait toute latitude.
+//
+// **L'englobant se mesure par [scene.Scene.At] et non en refaisant la déprojection** :
+// c'est la même conversion, prise par la porte publique, donc le cas ne peut pas être
+// juste pour la raison qui rendrait le code faux. La fenêtre doit contenir cet englobant
+// **et au moins une cellule de plus de chaque côté**.
+func TestWindowKeepsOneCellOfMargin(t *testing.T) {
+	// Une grille large, et la vue en son centre : les bornes de la grille ne doivent
+	// pas raboter la marge, sans quoi le cas ne mesurerait que le `max(0, …)`.
+	s := testScene(t, 400, 8)
+	const viewWidth, viewHeight = 480, 270
+
+	minU, minV := math.MaxFloat64, math.MaxFloat64
+	maxU, maxV := -math.MaxFloat64, -math.MaxFloat64
+
+	for _, corner := range [4][2]int32{{0, 0}, {viewWidth, 0}, {0, viewHeight}, {viewWidth, viewHeight}} {
+		x, y := s.At(corner[0], corner[1], 0)
+		minU, maxU = math.Min(minU, x), math.Max(maxU, x)
+		minV, maxV = math.Min(minV, y), math.Max(maxV, y)
+	}
+
+	// **La vue du trieur est posée par [Sorter.Frame] et non par [New]** : appeler
+	// `window()` sur un trieur neuf la mesure sur une vue de zéro par zéro, ce qui rend
+	// un intervalle d'une cellule et n'éprouve rien. Une image est donc rendue d'abord.
+	sorter := New(s)
+	sorter.Frame()
+
+	u0, v0, u1, v1 := sorter.window()
+
+	for _, c := range []struct {
+		name       string
+		got, limit int
+		outside    bool // la borne doit être au-delà de la limite
+	}{
+		{"bord gauche", u0, int(minU) - 1, false},
+		{"bord haut", v0, int(minV) - 1, false},
+		{"bord droit", u1, int(maxU) + 1, true},
+		{"bord bas", v1, int(maxV) + 1, true},
+	} {
+		if c.outside && c.got < c.limit {
+			t.Errorf("%s : la fenêtre s'arrête à %d, la marge d'une cellule demande %d",
+				c.name, c.got, c.limit)
+		}
+		if !c.outside && c.got > c.limit {
+			t.Errorf("%s : la fenêtre commence à %d, la marge d'une cellule demande %d",
+				c.name, c.got, c.limit)
+		}
+	}
 }
