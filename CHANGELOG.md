@@ -45,6 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.6] — 2026-10-30
+
 ### Ajouté
 
 - `Options.WorldInset` garde au jeu une marge de taille constante autour de l'aire de
