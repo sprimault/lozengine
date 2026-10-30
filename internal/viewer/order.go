@@ -34,7 +34,7 @@ func Order() Scenario {
 		Background: render.Color{R: 24, G: 20, B: 20, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			return atlasOfOneSheet(markedSheet(side))
+			return atlasOf(markedSheet(side))
 		},
 
 		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {

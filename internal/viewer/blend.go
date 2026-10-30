@@ -33,7 +33,7 @@ func Blend() Scenario {
 		Background: render.Color{R: 200, G: 200, B: 200, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			return atlasOfOneSheet(markedSheet(side))
+			return atlasOf(markedSheet(side))
 		},
 
 		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {

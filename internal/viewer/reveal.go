@@ -7,7 +7,6 @@
 package viewer
 
 import (
-	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/internal/sorting"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
@@ -61,17 +60,11 @@ func Reveal() Scenario {
 		Background: render.Color{R: 16, G: 18, B: 26, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			var atlas raster.Atlas
-			for _, p := range []raster.Sheet{
+			return atlasOf(
 				borderedSheet(tileW, tileH, render.Color{R: 72, G: 88, B: 72, A: 255}),
 				borderedSheet(tileW, tileH*3, render.Color{R: 150, G: 140, B: 128, A: 255}),
 				borderedSheet(tileW/3, tileH*3/2, render.Color{R: 224, G: 96, B: 96, A: 255}),
-			} {
-				if _, err := atlas.Add(p); err != nil {
-					return nil, err
-				}
-			}
-			return &atlas, nil
+			)
 		},
 
 		Quads: func(_ int, _ InputLine, reserve render.DrawList) render.DrawList {
@@ -82,24 +75,14 @@ func Reveal() Scenario {
 
 // revealScene monte le sol, le mur et le personnage qu'il cache.
 func revealScene() *scene.Scene {
-	s, err := scene.New(revealSide, revealSide, geometry.Dimetric(tileW, tileH),
-		scene.Options{
-			Entities:  4,
-			Revealing: scene.RevealOptions{After: revealAfter},
-		})
-	if err != nil {
-		panic(err)
-	}
-	s.Focus(revealSide/2, revealSide/2, revealWidth, revealHeight)
+	s := sceneOf(revealSide, revealWidth, revealHeight, scene.Options{
+		Entities:  4,
+		Revealing: scene.RevealOptions{After: revealAfter},
+	})
 
-	ground := scene.Aspect{
+	fillGround(s, revealSide, scene.Aspect{
 		Sheet: revealGroundSheet, Width: tileW, Height: tileH, Tint: render.White(),
-	}
-	for v := range revealSide {
-		for u := range revealSide {
-			s.PlaceCell(u, v, 0, ground)
-		}
-	}
+	})
 
 	// Le mur, sur la rangée qui précède le personnage du point de vue de celui qui
 	// regarde : plus proche, donc peint après, donc devant lui.

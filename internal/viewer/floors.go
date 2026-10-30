@@ -8,7 +8,6 @@
 package viewer
 
 import (
-	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/internal/sorting"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
@@ -68,17 +67,11 @@ func Floors() Scenario {
 		Background: render.Color{R: 20, G: 22, B: 28, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			var atlas raster.Atlas
-			for _, p := range []raster.Sheet{
+			return atlasOf(
 				borderedSheet(tileW, tileH, render.Color{R: 72, G: 96, B: 72, A: 255}),
 				borderedSheet(tileW, tileH, render.Color{R: 168, G: 152, B: 112, A: 255}),
 				borderedSheet(tileW/3, tileH*3/2, render.Color{R: 208, G: 96, B: 96, A: 255}),
-			} {
-				if _, err := atlas.Add(p); err != nil {
-					return nil, err
-				}
-			}
-			return &atlas, nil
+			)
 		},
 
 		Quads: func(_ int, _ InputLine, reserve render.DrawList) render.DrawList {
@@ -92,22 +85,12 @@ func Floors() Scenario {
 // Montée à neuf à chaque image, comme celles de [Core] et [Ground] : une image doit
 // pouvoir se rendre seule, deux fois, et donner les mêmes pixels.
 func floorsScene() *scene.Scene {
-	s, err := scene.New(floorsSide, floorsSide, geometry.Dimetric(tileW, tileH),
-		scene.Options{Entities: 8})
-	if err != nil {
-		panic(err)
-	}
-	s.Focus(floorsSide/2, floorsSide/2, floorsWidth, floorsHeight)
+	s := sceneOf(floorsSide, floorsWidth, floorsHeight, scene.Options{Entities: 8})
 
 	// Le sol entier, à l'étage zéro, sur la strate zéro.
-	ground := scene.Aspect{
+	fillGround(s, floorsSide, scene.Aspect{
 		Sheet: floorsGroundSheet, Width: tileW, Height: tileH, Tint: render.White(),
-	}
-	for v := range floorsSide {
-		for u := range floorsSide {
-			s.PlaceCell(u, v, 0, ground)
-		}
-	}
+	})
 
 	// La plateforme, à l'étage un et sur la strate un. La strate la met au-dessus du
 	// sol de sa propre cellule ; l'étage la met au-dessus du niveau entier, et c'est

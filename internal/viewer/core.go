@@ -8,7 +8,6 @@
 package viewer
 
 import (
-	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/internal/sorting"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
@@ -67,19 +66,12 @@ func Core() Scenario {
 		Background: render.Color{R: 18, G: 18, B: 24, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			var atlas raster.Atlas
-			sheets := []raster.Sheet{
+			return atlasOf(
 				borderedSheet(tileW, tileH, render.Color{R: 96, G: 112, B: 88, A: 255}),
 				borderedSheet(tileW, tileH, render.Color{R: 64, G: 80, B: 64, A: 255}),
 				borderedSheet(tileW/2, tileH*2, render.Color{R: 176, G: 144, B: 96, A: 255}),
 				borderedSheet(tileW/3, tileH*3/2, render.Color{R: 208, G: 96, B: 96, A: 255}),
-			}
-			for _, p := range sheets {
-				if _, err := atlas.Add(p); err != nil {
-					return nil, err
-				}
-			}
-			return &atlas, nil
+			)
 		},
 
 		Quads: func(frame int, _ InputLine, reserve render.DrawList) render.DrawList {
@@ -94,11 +86,7 @@ func Core() Scenario {
 // coreScene monte la scène à neuf, ce que la pureté exigée d'un scénario demande :
 // une image doit pouvoir se rendre seule, deux fois, et donner les mêmes pixels.
 func coreScene() *scene.Scene {
-	s, err := scene.New(gridSide, gridSide, geometry.Dimetric(tileW, tileH), scene.Options{Entities: 8})
-	if err != nil {
-		panic(err)
-	}
-	s.Focus(gridSide/2, gridSide/2, coreWidth, coreHeight)
+	s := sceneOf(gridSide, coreWidth, coreHeight, scene.Options{Entities: 8})
 
 	// Le sol, en damier pour que chaque cellule se distingue de ses voisines : un
 	// décalage d'une cellule à la projection se verrait, là où un sol uni le cacherait.

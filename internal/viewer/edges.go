@@ -34,7 +34,7 @@ func Edges() Scenario {
 		Background: render.Color{R: 20, G: 24, B: 32, A: 255},
 
 		Atlas: func() (*raster.Atlas, error) {
-			return atlasOfOneSheet(markedSheet(side))
+			return atlasOf(markedSheet(side))
 		},
 
 		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {

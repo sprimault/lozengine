@@ -49,13 +49,7 @@ func Target() Scenario {
 		References: []int{0, 8, 16, 23},
 
 		Atlas: func() (*raster.Atlas, error) {
-			var atlas raster.Atlas
-			for _, p := range []raster.Sheet{tileSheet(), pawnSheet()} {
-				if _, err := atlas.Add(p); err != nil {
-					return nil, err
-				}
-			}
-			return &atlas, nil
+			return atlasOf(tileSheet(), pawnSheet())
 		},
 
 		Quads: func(frame int, e InputLine, reserve render.DrawList) render.DrawList {
