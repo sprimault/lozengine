@@ -31,9 +31,33 @@ func TestLoopRepeatsAndHolds(t *testing.T) {
 		{"le décalage boucle aussi", Clip{Frames: 4}, 0, 5, 1},
 		{"une seule image ne bouge pas", Clip{Frames: 1}, 7, 3, 0},
 		{"la valeur zéro ne bouge pas", Clip{}, 7, 3, 0},
+		{"un pas négatif recule d'une image", Clip{Frames: 4, Hold: 4}, -1, 0, 3},
+		{"un décalage négatif recule aussi", Clip{Frames: 4, Hold: 4}, 0, -5, 2},
 	} {
 		if got := c.clip.Loop(c.step, c.offset); got != c.want {
 			t.Errorf("%s : %d, attendu %d", c.name, got, c.want)
+		}
+	}
+}
+
+// TestLoopHoldsEachFrameEvenBackwards garde que chaque image dure exactement [Clip.Hold]
+// pas, y compris avant le pas zéro.
+//
+// C'est la classe que les sous-cas ci-dessus n'attrapent qu'en deux points, et elle a été
+// fausse : une division qui tronque vers zéro fait durer l'image du pas zéro deux fois
+// autant que les autres, moins un pas, et c'est la seule qui s'allonge. Un jeu dont le pas
+// compte une distance signée ou un compte à rebours la traverse.
+//
+// Le cas s'écrit sans refaire le calcul : l'image change d'un pas au suivant si et
+// seulement si ce pas est un multiple de la durée.
+func TestLoopHoldsEachFrameEvenBackwards(t *testing.T) {
+	c := Clip{Frames: 4, Hold: 4}
+	span := 2 * c.Frames * c.Hold
+
+	for step := -span; step < span; step++ {
+		changes := c.Loop(step, 0) != c.Loop(step-1, 0)
+		if boundary := step%c.Hold == 0; changes != boundary {
+			t.Errorf("pas %d : l'image change = %v, attendu %v", step, changes, boundary)
 		}
 	}
 }

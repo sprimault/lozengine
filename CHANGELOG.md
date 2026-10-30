@@ -53,6 +53,9 @@ notes de publication.
 - La documentation du paquet racine nomme les deux voies de pose en pixels et le
   rectangle que chacune vise, ainsi que `Entity.Tier` : un jeu qui lisait `go doc .`
   pouvait croire `Scene.PlaceArea` et ce champ absents du moteur.
+- `Clip.Loop` tient chaque image le même nombre de pas avant le pas zéro, là que les
+  frontières y étaient décalées d'un pas. Un jeu dont le pas compte une distance signée
+  ou un compte à rebours traverse ce régime.
 
 ***
 
@@ -64,6 +67,9 @@ notes de publication.
 - The root package documentation now names both pixel placement paths and the rectangle
   each targets, as well as `Entity.Tier`: a game reading `go doc .` could believe
   `Scene.PlaceArea` and that field were missing from the engine.
+- `Clip.Loop` holds every frame for the same number of steps before step zero, where the
+  boundaries there were off by one. A game whose step counts a signed distance or a
+  countdown goes through that range.
 
 ## [0.5.6] — 2026-10-30
 

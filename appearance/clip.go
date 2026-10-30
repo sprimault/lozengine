@@ -46,7 +46,24 @@ func (c Clip) Loop(step, offset int) int {
 		return 0
 	}
 
-	return ((step+offset)/c.hold()%n + n) % n
+	return (floorDiv(step+offset, c.hold())%n + n) % n
+}
+
+// floorDiv divise en arrondissant vers le bas, là où Go arrondit vers zéro.
+//
+// La différence ne se voit qu'avant le pas zéro, et elle y décale chaque frontière
+// d'image d'un pas : une troncature rapproche de zéro, donc l'image qui enjambe le pas
+// zéro dure deux fois autant que les autres, moins un pas. Un jeu dont le pas compte une
+// distance signée ou un compte à rebours traverse ce régime.
+//
+// Le paquet racine en a un semblable, pour une autre raison — les pixels de bande à
+// gauche de l'image. Les deux ne se partagent pas : la racine importe celui-ci, donc
+// l'inverse fermerait le sens des dépendances.
+func floorDiv(a, b int) int {
+	if a < 0 {
+		return -((-a + b - 1) / b)
+	}
+	return a / b
 }
 
 // Once rend l'image d'une animation jouée une fois, et dit si elle est finie.
