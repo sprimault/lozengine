@@ -122,14 +122,14 @@ la variable `CIBLES`, ce qui attrape l'usage d'une API absente d'un système ou
 d'une architecture.
 
 **`CIBLES` est la liste des promesses tenues, pas celle du possible.** Elle porte
-les huit couples que les `README` annoncent — `windows/amd64`, `windows/arm64`,
-`windows/386`, `linux/amd64`, `linux/arm64`, `linux/arm`, `linux/386` et
-`js/wasm` —, et « compile » est tout ce qu'elle prouve : « tourne » et « reste vert
-en intégration continue » sont deux autres promesses, et elles ne valent que pour
-`amd64`. D'autres couples
-compilent aussi — `linux/riscv64`, `darwin/amd64` et `darwin/arm64` ; ils n'entrent ici
-que si un `README` les annonce, faute de quoi la cible vérifierait plus que ce que le
-dépôt promet et personne ne saurait lequel des deux croire.
+les neuf couples que le dépôt annonce — `windows/amd64`, `windows/arm64`,
+`windows/386`, `linux/amd64`, `linux/arm64`, `linux/arm`, `linux/386`,
+`linux/riscv64` et `js/wasm` —, et « compile » est tout ce qu'elle prouve :
+« tourne » et « reste vert en intégration continue » sont deux autres promesses, et
+elles ne valent que pour `amd64`. D'autres couples compilent aussi —
+`darwin/amd64` et `darwin/arm64` ; ils n'entrent ici que si un texte du dépôt les
+annonce, faute de quoi la cible vérifierait plus que ce que le dépôt promet et
+personne ne saurait lequel des deux croire.
 
 **Une seule cible échoue, et le motif est à connaître avant de publier** : `ios/arm64`
 rend « requires external (cgo) linking, but cgo is not enabled ». Ce n'est pas une

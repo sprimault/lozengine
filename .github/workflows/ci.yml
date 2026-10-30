@@ -18,6 +18,10 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
+  # Appelable par la publication, qui rejoue les quatre jobs au lieu du seul
+  # `make check` : un tag se pose sur un commit, et ce qui l'a vérifié doit être
+  # ce qui vérifie une pull request, sans second texte à tenir d'accord.
+  workflow_call:
 
 permissions:
   contents: read
@@ -30,9 +34,17 @@ permissions:
 # Relevé le 23 octobre 2026, et le défaut était latent : les huit fusions du jour
 # étaient assez espacées pour qu'aucun passage ne soit annulé. La parade ne coûte rien,
 # et le jour où deux lots se suivent de près, elle aura déjà servi.
+# **Le groupe est une constante et non `github.workflow`**, parce que ce workflow est
+# appelable : la variable y vaudrait le nom de l'appelant, donc « Publication », à un
+# caractère de casse du groupe que la publication se donne. Deux groupes qui se
+# confondraient feraient attendre l'appelé derrière l'appelant, c'est-à-dire un
+# interblocage qu'on ne verrait qu'au tag.
+#
+# Et jamais d'annulation sur un tag : une publication interrompue laisse un tag sans
+# notes, ce que la publication refuse déjà pour elle-même.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+  group: verification-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' && github.ref != 'refs/heads/master' }}
 
 jobs:
   # Un seul job pour les sept étapes : elles sont rapides, sans dépendance à
@@ -41,6 +53,11 @@ jobs:
   controles:
     name: Contrôles
     runs-on: ubuntu-latest
+    # Sans borne, un job hérite des six heures de la plateforme : une étape qui
+    # pend immobilise un runner et laisse la pull request attendre sans rien dire.
+    # Les bornes sont larges au regard de ce que la chaîne prend — quelques
+    # minutes —, assez pour qu'un runner lent ne rougisse pas pour autant.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -50,6 +67,12 @@ jobs:
           # endroit à mettre à jour, et personne ne penserait aux deux.
           go-version-file: go.mod
           check-latest: true
+          # Ce module n'a pas de `go.sum` — son `go.mod` est vide et le reste.
+          # Sans cette ligne, le cache de `setup-go` dérive sa clé d'un fichier
+          # de dépendances absent : il s'écrit une fois et ne se rafraîchit
+          # jamais, donc il sert le cache de compilation d'un autre état du
+          # dépôt. La clé suit `go.mod`, qui est ce que ce module a.
+          cache-dependency-path: go.mod
 
       # Formatage, vet, absence de dépendance externe, mentions de licence,
       # étanchéité de la frontière, compilation croisée, tests. La liste se passe
@@ -73,6 +96,7 @@ jobs:
   tests:
     name: Tests — ${{ matrix.os }}, Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -96,6 +120,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ steps.go.outputs.version }}
+          cache-dependency-path: go.mod
 
       # La suite de non-régression est visuelle mais passe par le rastériseur
       # logiciel : elle n'ouvre aucune fenêtre, et les runners n'ont pas d'écran.
@@ -174,6 +199,7 @@ jobs:
         with:
           go-version-file: go.mod
           check-latest: true
+          cache-dependency-path: go.mod
 
       # **`DEBIAN_FRONTEND` n'est pas une politesse, c'est ce qui empêche l'attente.**
       # Une dépendance de weston pose une question de configuration, et sans cette
@@ -397,6 +423,7 @@ jobs:
   plancher:
     name: Plancher
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -417,6 +444,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ steps.sous.outputs.version }}
+          cache-dependency-path: go.mod
 
       - name: La version inférieure doit échouer
         env:
@@ -432,22 +460,37 @@ jobs:
           sous="${{ steps.sous.outputs.version }}"
           sed -i "s/^go .*/go $sous/" go.mod
 
-          echo "::group::Ce que Go $sous refuse de construire"
-          vet=0
-          go vet ./... || vet=$?
-          echo "::endgroup::"
+          # Les deux plateformes, parce qu'un `go vet ./...` sous Linux ne compile
+          # aucun fichier `_windows.go`. Si le plancher n'était exigé que par du code
+          # Windows, cette passe réussirait et le job conclurait que le plancher est
+          # trop haut — un faux positif qui enverrait l'abaisser à tort.
+          #
+          # Le plancher est juste dès qu'**une** des deux refuse : ce qu'on démontre
+          # est qu'aucune version inférieure ne construit le dépôt entier.
+          refus=0
+          for os in linux windows; do
+            echo "::group::Ce que Go $sous refuse de construire pour $os"
+            if GOOS=$os go vet ./...; then
+              echo "$os : construit."
+            else
+              echo "$os : refuse."
+              refus=$((refus + 1))
+            fi
+            echo "::endgroup::"
+          done
 
-          if [ "$vet" -eq 0 ]; then
-            echo "::error::Go $sous construit le dépôt : le plancher ${{ steps.sous.outputs.plancher }} de go.mod est trop haut."
+          if [ "$refus" -eq 0 ]; then
+            echo "::error::Go $sous construit le dépôt sur les deux plateformes : le plancher ${{ steps.sous.outputs.plancher }} de go.mod est trop haut."
             exit 1
           fi
-          echo "Go $sous échoue, comme attendu : le plancher déclaré est bien le minimum."
+          echo "Go $sous échoue sur $refus plateforme(s), comme attendu : le plancher déclaré est bien le minimum."
 
   bilan:
     name: Bilan
     if: always()
     needs: [controles, tests, affichage, plancher]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       # Un job ajouté à la liste des dépendances sans l'être à celle des tests
       # serait attendu sans être lu : le bilan passerait au vert sur son échec, et

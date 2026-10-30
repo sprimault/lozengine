@@ -135,9 +135,19 @@ fmt: depot
 # première édition au-dessus du site, et le contrôle rougirait sans défaut.
 UNSAFEPTR = internal/backend/window_windows.go=1
 
-# Les deux plateformes, pour la raison de `deps` : un fichier sous contrainte de
-# construction ne se voit pas depuis l'autre. Les comptes portent donc sur l'union des
-# deux passes, les fichiers étant disjoints par leur suffixe.
+# Trois cibles, pour la raison de `deps` : un fichier sous contrainte de construction ne
+# se voit pas depuis une autre. Les comptes portent donc sur l'union des passes, les
+# fichiers étant disjoints par leur suffixe.
+#
+# **`js/wasm` est la troisième parce qu'elle est la seule à compiler ce qui n'est ni
+# Windows ni Linux.** Le cas de repli du contrat de fenêtre porte la contrainte
+# `!windows && !linux` : les deux premières passes ne le voient pas, et `cross` le manque
+# aussi puisque `go build` ignore les fichiers de test. Il ne pouvait donc pas rougir, ce
+# que sa propre godoc démentait. Vérifié le 30 octobre 2026 en y introduisant une
+# variable inutilisée : seule la passe `js/wasm` l'a refusée.
+#
+# Une architecture est nommée pour chaque cible, `js` n'en acceptant qu'une et le défaut
+# de l'hôte n'ayant aucune raison de valoir pour les autres.
 #
 # Les séparateurs sont normalisés avant comparaison, la sortie portant des antislashs
 # sous Windows. L'antislash se donne à `tr` en octal : écrit tel quel, il traverse la
@@ -157,7 +167,8 @@ UNSAFEPTR = internal/backend/window_windows.go=1
 # dans la liste reste affiché et fait échouer la cible, y compris une erreur de
 # compilation.
 vet:
-	@sortie=$$(for os in windows linux; do GOOS=$$os go vet ./... 2>&1; done \
+	@sortie=$$(for cible in windows/amd64 linux/amd64 js/wasm; do \
+	    GOOS=$${cible%/*} GOARCH=$${cible#*/} go vet ./... 2>&1; done \
 	  | tr '\134' '/' | grep -v '^#' || true); \
 	reste="$$sortie"; \
 	for site in $(UNSAFEPTR); do \
@@ -314,11 +325,16 @@ frontiere:
 # pas la liste close. `windows/386` parce que la famille Windows est annoncée sur les
 # trois architectures, et qu'une annonce sans cible compilée n'est gardée par rien.
 #
-# `linux/riscv64`, `freebsd/amd64` et les cibles Apple compilent aussi, mesuré le
-# 5 octobre 2026. Elles ne sont pas ici parce qu'aucun README ne les annonce : cette
-# liste est celle des promesses tenues, pas celle du possible.
+# **`linux/riscv64` y est entré le 30 octobre 2026**, et il aurait dû y être depuis le
+# début : deux textes de doctrine annoncent RISC-V parmi les architectures du moteur, et
+# une annonce sans cible compilée n'est gardée par rien — c'est le même argument que
+# `windows/386`. Il compile sans rien changer au code, mesuré le jour même.
+#
+# `freebsd/amd64` et les cibles Apple compilent aussi, mesuré le 5 octobre 2026. Elles ne
+# sont pas ici parce qu'aucun texte ne les annonce : cette liste est celle des promesses
+# tenues, pas celle du possible.
 CIBLES = windows/amd64 windows/arm64 windows/386 linux/amd64 linux/arm64 \
-         linux/arm linux/386 js/wasm
+         linux/arm linux/386 linux/riscv64 js/wasm
 
 cross:
 	@for cible in $(CIBLES); do \

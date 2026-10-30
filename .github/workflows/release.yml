@@ -33,9 +33,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Les contrôles sont rejoués plutôt que supposés passés : un tag se pose sur un
+  # commit, pas sur une exécution, et rien ne garantit que celui-ci soit celui que la
+  # vérification a vu.
+  #
+  # **Les quatre jobs et non le seul `make check`.** La publication n'en rejouait qu'un,
+  # sur un seul système : ni la matrice Windows, ni les deux serveurs sans écran, ni le
+  # refus de la version sous le plancher — c'est-à-dire trois des quatre contrôles que
+  # la protection de branche exige d'une pull request. Un tag pouvait donc publier ce
+  # qu'une pull request aurait refusé.
+  #
+  # Par un appel du workflow de vérification, jamais par une copie de ses étapes : deux
+  # textes à tenir d'accord divergent, et celui-ci ne s'exécute qu'au tag, donc sa
+  # dérive ne se verrait qu'au moment où elle coûte le plus cher.
+  verification:
+    name: Vérification
+    uses: ./.github/workflows/ci.yml
+
   publication:
     name: Publication
+    needs: verification
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -43,12 +62,7 @@ jobs:
         with:
           go-version-file: go.mod
           check-latest: true
-
-      # Les contrôles sont rejoués plutôt que supposés passés : un tag se pose sur
-      # un commit, pas sur une exécution, et rien ne garantit que celui-ci soit
-      # celui que la CI a vu.
-      - name: Contrôle complet
-        run: make check
+          cache-dependency-path: go.mod
 
       - name: Version
         id: version

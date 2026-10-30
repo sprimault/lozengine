@@ -167,7 +167,7 @@ make clean
 `make check` chains formatting, `go vet`, the check for external dependencies,
 the licence header, the boundary check, the balance of the changelog's two
 languages, the public surface against the changelog, cross-compilation to the
-eight announced pairs, then the tests.
+nine announced pairs, then the tests.
 
 The boundary check is the one that guards the architecture: no core package may
 import `syscall`, `net`, `os/exec` or a backend, neither directly nor through another
