@@ -10,6 +10,7 @@ package sorting
 import (
 	"testing"
 
+	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
@@ -149,5 +150,61 @@ func TestIndexReadsBackAndChanges(t *testing.T) {
 	}
 	if change>>tierShift != c>>tierShift {
 		t.Error("changer l'index a dérangé un champ plus fort")
+	}
+}
+
+// TestSaturatedWorldFitsInDepth part de la saturation de la virgule fixe et non des
+// index de cellule entiers, ce qui est la propriété que la limite de côté repose
+// vraiment sur.
+//
+// [TestSideCeilingFitsInDepth] ne couvre que le cas des coordonnées entières, et laisse
+// sept quarts de marge qu'il n'exerce jamais : une entité en 32 767,75 sur les deux axes
+// produit une profondeur que ce calcul ne visite pas. Ce qui borne réellement le champ
+// est que la conversion vers le fixe sature, donc aucune coordonnée — même absurde — ne
+// peut pousser la profondeur au-delà.
+func TestSaturatedWorldFitsInDepth(t *testing.T) {
+	m := geometry.Isometric(32)
+
+	for _, c := range []struct {
+		name string
+		x, y float64
+	}{
+		{"le coin le plus lointain de la plus grande grille", render.MaxSide - 0.25, render.MaxSide - 0.25},
+		{"au-delà de ce qu'une grille accepte", 1e9, 1e9},
+		{"au-delà de ce que le fixe exprime", 1e30, 1e30},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if _, _, depth, _ := m.Project(c.x, c.y, 0); depth > MaxDepth {
+				t.Errorf("profondeur %d, le champ en porte %d", depth, MaxDepth)
+			}
+		})
+	}
+}
+
+// TestWithLayerKeepsEverythingElse garde que seule la couche change, ce qu'aucun cas
+// n'éprouvait : remplacer le corps de [Key.WithLayer] par une clé ne portant que la
+// couche laissait toute la suite verte.
+//
+// C'est la propriété dont la révélation dépend. Une chose révélée repart dans une couche
+// haute sans être reprojetée, donc sa profondeur, sa hauteur, son rang d'empilement et
+// son index doivent traverser l'opération intacts — sans quoi elle se rangerait au bon
+// étage et au mauvais endroit.
+func TestWithLayerKeepsEverythingElse(t *testing.T) {
+	const mask = Key(render.MaxLayer) << layerShift
+
+	c := Compose(2, 5, 1234, 77, 3, 12)
+	moved := c.WithLayer(9)
+
+	if got := Compose(9, 5, 1234, 77, 3, 12); moved != got {
+		t.Errorf("clé %#x, attendue %#x", uint64(moved), uint64(got))
+	}
+	if got := moved.Depth(); got != c.Depth() {
+		t.Errorf("profondeur %d, attendue %d", got, c.Depth())
+	}
+	if got := moved.Index(); got != c.Index() {
+		t.Errorf("index %d, attendu %d", got, c.Index())
+	}
+	if moved&^mask != c&^mask {
+		t.Errorf("hors de la couche : %#x, attendu %#x", uint64(moved&^mask), uint64(c&^mask))
 	}
 }

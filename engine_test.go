@@ -490,12 +490,22 @@ func TestStepDoesNotAllocateAfterTheFirst(t *testing.T) {
 	if err != nil {
 		t.Fatalf("montage : %v", err)
 	}
-	s.Place(Entity{X: 4, Y: 4, Aspect: Aspect{Width: 16, Height: 16, Tint: White()}})
+	// Les chemins ajoutés depuis le jalon 4 doivent être exercés, sans quoi la garde
+	// ne couvre que le monde : sans pièce d'écran, la collecte sort à son test de liste
+	// vide et la bascule entre les deux repères ne tourne jamais ; sans entité marquée,
+	// le relevé de recouvrement non plus.
+	s.Place(Entity{X: 4, Y: 4, Aspect: Aspect{Width: 16, Height: 16, Tint: White()},
+		Measure: true, Tier: 2})
+	s.PlaceScreen(2, 2, Aspect{Width: 8, Height: 8, Tint: White(), Layer: 3})
+	s.PlaceArea(4, 4, Aspect{Width: 8, Height: 8, Tint: White(), Layer: 3})
 
 	e.Step(nil, Input{})
 
 	if n := testing.AllocsPerRun(10, func() { e.Step(nil, Input{}) }); n != 0 {
 		t.Errorf("allocations : %v, attendu aucune", n)
+	}
+	if len(e.Overlaps()) == 0 {
+		t.Error("aucun relevé de recouvrement : le chemin marqué n'a pas été exercé")
 	}
 }
 

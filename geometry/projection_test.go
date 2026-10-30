@@ -226,3 +226,86 @@ func TestUnprojectGivesAScreenDirection(t *testing.T) {
 		}
 	}
 }
+
+// TestPixelCannotSaturate démontre que les deux bornes de [pixel] ne peuvent pas être
+// atteintes, et c'est une propriété du décalage et non de ce que la projection produit.
+//
+// `2*fractionBits` vaut exactement la largeur d'un `int32` : le plus grand `int64`
+// décalé de trente-deux bits rend donc `MaxInt32` tout juste, jamais au-delà, et le plus
+// petit rend `MinInt32`. Les deux comparaisons de saturation sont par conséquent du code
+// que rien n'exécute.
+//
+// **Le cas garde la coïncidence, pas la saturation.** Il rougit le jour où
+// `fractionBits` change, et c'est alors qu'il faudra reprendre la godoc de [pixel] et se
+// demander si les bornes redeviennent utiles. Le laisser croire qu'il éprouve une
+// saturation serait pire que de ne rien écrire.
+func TestPixelCannotSaturate(t *testing.T) {
+	if 2*fractionBits != 32 {
+		t.Fatalf("le décalage vaut %d bits : la propriété ci-dessous est à reprendre", 2*fractionBits)
+	}
+
+	// Le biais s'ajoute avant le décalage, donc l'entrée la plus grande qui ne déborde
+	// pas est celle qui laisse place à ce biais.
+	const bias = int64(1) << (2*fractionBits - 1)
+
+	for _, c := range []struct {
+		name  string
+		fixed int64
+		want  int32
+	}{
+		{"le plus grand entier que le biais laisse passer", math.MaxInt64 - bias, math.MaxInt32},
+		{"le plus petit entier représentable", math.MinInt64, math.MinInt32},
+		{"un pixel ordinaire", 3 << (2 * fractionBits), 3},
+	} {
+		if got := pixel(c.fixed); got != c.want {
+			t.Errorf("%s : %d, attendu %d", c.name, got, c.want)
+		}
+	}
+}
+
+// TestDepthStaysFarBelowItsCeiling démontre que le rabattement de [depthOf] à
+// `MaxUint32` ne peut pas être atteint, et garde la borne négative, qui l'est.
+//
+// Les deux axes sont des `int32`, donc leur somme tient sur trente-trois bits ; le
+// décalage de `quartBits` ramène le quotient sous dix-neuf bits, soit quatre ordres de
+// grandeur sous le plafond. La borne basse, elle, s'atteint depuis la surface publique :
+// une coordonnée négative range la chose devant tout le reste, ce qui est la façon
+// visible de se tromper que la godoc annonce.
+func TestDepthStaysFarBelowItsCeiling(t *testing.T) {
+	if got := depthOf(math.MaxInt32, math.MaxInt32); got >= math.MaxUint32>>8 {
+		t.Errorf("profondeur maximale %d : le plafond n'est plus hors de portée", got)
+	}
+
+	if got := depthOf(-1<<20, -1<<20); got != 0 {
+		t.Errorf("profondeur négative : %d, attendu 0", got)
+	}
+}
+
+// TestUnprojectClampsBothSigns garde les deux bornes de [Matrix.clamp], là qu'un seul
+// signe était éprouvé.
+//
+// Retirer la branche négative laissait toute la suite verte : les autres cas donnent des
+// pixels qui restent dans la plage, et le seul cas de saturation partait du positif. Un
+// pixel très négatif doit rendre le point le plus lointain que la matrice sache exprimer,
+// et le symétrique de ce que le positif rend.
+//
+// **Les signes attendus viennent du repère et non de l'intuition** : `x` croît vers le
+// bas-gauche de l'écran et `y` vers le bas-droite, donc un pixel loin à droite décroît en
+// `x` et croît en `y`. L'écrire à l'envers est l'erreur que ce cas a d'abord faite.
+func TestUnprojectClampsBothSigns(t *testing.T) {
+	m := Isometric(32)
+
+	xHigh, yHigh := m.Unproject(math.MaxInt32, 0)
+	xLow, yLow := m.Unproject(math.MinInt32, 0)
+
+	if xHigh >= 0 || yHigh <= 0 {
+		t.Errorf("pixel très positif : (%g, %g), attendu x négatif et y positif", xHigh, yHigh)
+	}
+	if xLow <= 0 || yLow >= 0 {
+		t.Errorf("pixel très négatif : (%g, %g), attendu x positif et y négatif", xLow, yLow)
+	}
+	if xHigh != -xLow || yHigh != -yLow {
+		t.Errorf("les deux bornes ne sont pas symétriques : (%g, %g) contre (%g, %g)",
+			xHigh, yHigh, xLow, yLow)
+	}
+}

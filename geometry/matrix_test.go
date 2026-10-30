@@ -158,3 +158,33 @@ func TestUnrepresentableInverseDegenerates(t *testing.T) {
 		t.Errorf("inversé (%g, %g), attendu l'origine", x, y)
 	}
 }
+
+// TestSingularMatrixDegenerates garde le repli d'une matrice dont le déterminant est
+// nul, et il s'atteint depuis la surface publique par deux portes.
+//
+// Deux coefficients égaux sur les deux lignes décrivent une projection qui écrase le
+// monde sur une droite : aucune inverse n'existe, et le moteur rend alors une matrice
+// qui ramène tout point sur l'origine plutôt qu'un résultat tiré d'une division par
+// zéro. `Grid(0)` y arrive aussi, un côté nul annulant les quatre coefficients.
+//
+// Aucun cas ne l'exerçait : les deux `Raw` de ce fichier rendent un déterminant de 1 ou
+// de −1, et retirer la branche laissait la suite verte.
+func TestSingularMatrixDegenerates(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		m    Matrix
+	}{
+		{"lignes proportionnelles", Raw(1, 1, 1, 1)},
+		{"côté nul", Grid(0)},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if c.m.ia != 0 || c.m.ib != 0 || c.m.ic != 0 || c.m.id != 0 {
+				t.Errorf("inverse (%d, %d, %d, %d), attendue nulle",
+					c.m.ia, c.m.ib, c.m.ic, c.m.id)
+			}
+			if x, y := c.m.Unproject(100, 100); x != 0 || y != 0 {
+				t.Errorf("inversé (%g, %g), attendu l'origine", x, y)
+			}
+		})
+	}
+}
