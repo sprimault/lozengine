@@ -135,8 +135,20 @@ func BenchmarkStep(b *testing.B) {
 //
 // Ce qui en découle, et c'est une surprise : à cette charge, **le chemin le plus chaud du
 // moteur n'est pas le tri mais la recopie de pixels**. Le rapport se lit dans une seule
-// série, donc la dérive thermique du poste ne le touche pas ; les valeurs absolues, elles,
-// n'appartiennent qu'à cette machine.
+// série, donc la dérive thermique ne le touche pas ; les valeurs absolues, elles,
+// n'appartiennent qu'à la machine qui mesure.
+//
+// **Et ce rapport dépend de la machine, ce qui dit comment le pondérer.** Mesuré sur deux
+// processeurs de même génération dont la bande passante mémoire diffère d'un facteur deux
+// et demi : le tri et le dessin se tiennent à 10 % près — la machine la plus large est même
+// légèrement plus lente, le calcul la limitant —, là que l'effacement y va deux fois plus
+// vite et l'agrandissement d'un cinquième. Ces deux-là sont donc limités par la mémoire, et
+// **la part de l'agrandissement croît quand la bande passante baisse** : deux tiers de
+// l'image sur la machine la plus étroite, trois cinquièmes sur l'autre.
+//
+// Conséquence pour qui dimensionne une scène : une machine modeste est plus défavorable à
+// ce maillon, jamais moins. C'est l'inverse de ce qu'on suppose en lisant un budget mesuré
+// sur du matériel récent.
 func BenchmarkStepStages(b *testing.B) {
 	const width, height = 480, 270
 
