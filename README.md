@@ -101,7 +101,7 @@ hardcodes nothing that belongs to one: the number of directions an appearance
 has, the tile size and the projection ratio come from configuration or from the
 appearance provider.
 
-Three exclusions follow from the dependency rule, and they are deliberate:
+Two exclusions follow from the dependency rule, and they are deliberate:
 
 - **No GPU acceleration.** Rendering is software, and the low internal
   resolution is what keeps it affordable.
@@ -111,21 +111,24 @@ Three exclusions follow from the dependency rule, and they are deliberate:
   compiler or one more dependency. iOS goes further: Go itself refuses to link
   without cgo. Milestone 5 covers both through the browser, and the backend
   boundary keeps them reachable should that constraint change.
-- **No native Wayland** for now. XWayland covers the need.
+Native Wayland is not one of them, and listing it there was a mistake: it is a
+protocol one writes on a socket just like X11, so it comes at its milestone rather
+than never. XWayland covers the need until then.
 
 What will be exposed to other languages is the core, never the window or the
 loop: a host game already has its own and will not give up its main thread.
 
 ## Status
 
-A game can be written. The engine opens a window, reads the keyboard, holds a
-fixed-step loop and expects a single method from the game: describe its scene, the
-engine taking care of draw order and scale. Its regression suite compares every frame
-against a reference, headless.
+A game can be written. The engine opens a window, reads the keyboard and the mouse —
+buttons, wheel, and the cell the pointer points at —, holds a fixed-step loop and
+expects a single method from the game: describe its scene, the engine taking care of
+draw order and scale. Its regression suite compares every frame against a reference,
+headless.
 
 The Linux backend is checked on every batch under two headless servers: the protocol is
 right and the pixels exact, but nobody has yet seen it on a real screen. `make example`
-opens the smaller of the two examples.
+opens the smallest of the three examples.
 
 **The current milestone and what each release brought** are in the
 [roadmap](ROADMAP.md) (in French) and the [changelog](CHANGELOG.md) — repeating them
@@ -162,11 +165,12 @@ make clean
 ```
 
 `make check` chains formatting, `go vet`, the check for external dependencies,
-the licence header, the boundary check, cross-compilation to the eight announced
-pairs, then the tests.
+the licence header, the boundary check, the balance of the changelog's two
+languages, the public surface against the changelog, cross-compilation to the
+eight announced pairs, then the tests.
 
 The boundary check is the one that guards the architecture: no core package may
-import `syscall`, `net` or a backend, neither directly nor through another
+import `syscall`, `net`, `os/exec` or a backend, neither directly nor through another
 package of the engine. Cross-compilation does not replace it — the Linux backend
 uses only packages that exist on Windows too, so a leak would compile on both
 sides without a word.

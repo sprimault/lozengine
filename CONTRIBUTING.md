@@ -217,9 +217,10 @@ The repository follows SemVer with the zero clause, defined in
 signatures may change with every minor release.
 
 **The changelog follows the roadmap.** The minor marks a milestone reached, not
-an API break; everything else accumulates as a patch. A version section is
-therefore written when a milestone ends, and the tag that publishes it carries
-the same number.
+an API break; everything else accumulates as a patch. Every milestone therefore
+yields a minor, and a patch is published when it changes what a consumer can do —
+an import path, a toolchain floor, an announced platform, the rendering of an
+unchanged scene. The repository holds more of those than of minors.
 
 The API freeze and the move to `1.0.0` happen once the engine has been validated
 by a second game, at milestone 9 of [`ROADMAP.md`](ROADMAP.md) (French). An API

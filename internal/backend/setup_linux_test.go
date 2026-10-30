@@ -1,5 +1,8 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// La lecture de ce que le serveur annonce à la poignée de main : la profondeur tirée
+// des bits par pixel, les masques du visuel racine, l'écran demandé et la plage
+// d'identifiants qu'on a le droit d'attribuer.
 
 package backend
 

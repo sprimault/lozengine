@@ -103,6 +103,8 @@ func (g *game) writeOverlay() {
 // Quitting dit à la boucle qu'on a demandé à partir.
 func (g *game) Quitting() bool { return g.done }
 
+// main monte l'atlas et la police, décrit un décor à deux niveaux, puis laisse la
+// boucle au moteur. C'est l'exemple qui montre la désignation à la souris.
 func main() {
 	atlas, font := build()
 

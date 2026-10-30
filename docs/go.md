@@ -170,9 +170,11 @@ de référence versionnée.
 - **Toute régénération est justifiée dans le message de commit.** Une image de
   référence qui change sans raison énoncée est un défaut accepté par erreur.
 
-Les scénarios couvrent en priorité ce qui casse en silence : objets
-multi-cellules, étages, occlusion, entités à cheval sur deux cellules, caméra dans
-les quatre orientations.
+Les scénarios couvrent en priorité ce qui casse en silence : un grand sprite posé
+cellule par cellule, étages, occlusion, entités à cheval sur deux cellules, caméra
+dans les quatre orientations. Un aspect qui déborde de sa propre cellule n'en fait
+pas partie : un aspect rend un quad et un seul, donc c'est la pose qui couvre
+plusieurs cellules, jamais l'image.
 
 ### Quand ajouter un scénario
 
@@ -261,9 +263,11 @@ l'importe.
 
 ### Ce qui reste écarté, et pourquoi
 
-- **`x/sys`, `x/sync`, `x/text`** — chacun a son équivalent standard dans la table
-  ci-dessous, et l'écart se comble en quelques heures. L'arbitrage du coût tombe
-  du mauvais côté.
+- **`x/sys`, `x/sync`, `x/text`** — ce que le moteur leur demanderait, la
+  bibliothèque standard le fait : `syscall` pour les appels système, que la table
+  ci-dessous détaille, `sync` et `sync/atomic` pour la coordination, `unicode/utf8`
+  et `strings` pour le texte. L'écart se comble en quelques heures, donc
+  l'arbitrage du coût tombe du mauvais côté.
 - **`purego`** — une ligne de `require` dans un `go.mod` qu'on tient vide, pour ce
   que `syscall` fait déjà partout où le moteur va. Là où il servirait vraiment,
   c'est-à-dire Cocoa, c'est la plateforme qui est hors périmètre.

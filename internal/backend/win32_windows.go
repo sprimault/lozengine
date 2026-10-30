@@ -311,7 +311,8 @@ type message struct {
 	pt      point
 }
 
-// windowClass est l'enregistrement d'une windowClass de fenêtre.
+// windowClass est l'enregistrement par lequel le système connaît une classe de
+// fenêtre : son style, sa procédure de messages et ses icônes.
 type windowClass struct {
 	size       uint32
 	style      uint32

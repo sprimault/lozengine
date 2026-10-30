@@ -1,5 +1,8 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// La conversion vers la disposition que le serveur annonce, et non celle de la machine :
+// les masques décident, l'octet de remplissage reste intact, et le tampon chaud
+// n'alloue plus.
 
 package backend
 

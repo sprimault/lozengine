@@ -1,5 +1,8 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// L'écriture des requêtes sur le fil : les valeurs dans l'ordre de leurs bits, la
+// longueur que chacune déclare, le compte en éléments et non en octets, et le plancher
+// de fenêtre posé là où les indications l'attendent.
 
 package backend
 

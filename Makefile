@@ -301,8 +301,8 @@ frontiere:
 	  exit 1; \
 	fi
 
-# Produit deux binaires qu'on jette : ce qui compte est que le code compile pour les
-# deux cibles sans compilateur C.
+# Produit un binaire par couple, qu'on jette : ce qui compte est que le code compile
+# pour chacun sans compilateur C.
 # Les couples que les README annoncent, et rien de plus. « Compile » est tout ce que
 # cette cible prouve : ni « tourne », ni « reste vert en intégration continue », qui
 # sont deux autres promesses et ne valent que pour `amd64`.

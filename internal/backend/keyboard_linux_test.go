@@ -1,5 +1,8 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// La traduction des codes du serveur en places du clavier : le décalage des codes
+// partagés, le pavé numérique séparé du bloc de navigation, et le relevé de l'état
+// entier au moment où la fenêtre prend le focus.
 
 package backend
 

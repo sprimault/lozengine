@@ -23,7 +23,7 @@ inside the host's process, not its own.
   exhausts memory while decoding.
 - An out-of-bounds write, an out-of-bounds read or an integer overflow
   reachable from a malformed resource, or from a scene whose coordinates
-  exceed the documented sort-key limit of 32,000 cells per side.
+  exceed the documented sort-key limit of 32,768 cells per side.
 - The rasteriser writing outside the buffer it was given, despite the clipping
   it performs on the buffer edges.
 - Anything that leaks the `MIT-MAGIC-COOKIE-1` cookie read from `.Xauthority`

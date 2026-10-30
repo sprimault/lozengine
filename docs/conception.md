@@ -99,7 +99,7 @@ contournement par `float64(x*y) + z` existe, mais il demande d'y penser à chaqu
 expression, pour toujours, sans que rien ne le vérifie : la virgule fixe, elle,
 tient par construction.
 
-Trois conséquences, à ne pas redécouvrir :
+Quatre conséquences, à ne pas redécouvrir :
 
 - **Seize bits de fraction sur un `int32`** laissent ±32 768 à la partie entière,
   ce qui tombe exactement sur la limite de cases de côté que la clé de tri
@@ -284,7 +284,7 @@ cette optimisation dans un type que l'ABI exposera. Les cinq fonctions de dessin
 donc publiques ; ce sont celles que le jalon 11 exposera de toute façon, et le paquet
 racine ne les republie pas, un jeu n'ayant pas à les appeler.
 
-**Le critère est mécanique, et il s'est vérifié deux fois.** Un type publié par alias
+**Le critère est mécanique, et il s'est vérifié quatre fois.** Un type publié par alias
 ne montre rien quand il désigne un paquet `internal` : un consommateur lisait
 `type Quad = rendu.Quad` et la godoc de l'alias, sans un seul champ — ni coordonnées,
 ni teinte, ni planche —, ce qui a sorti `render` au jalon 0. La même chose vaut pour les
@@ -292,6 +292,15 @@ méthodes, et personne ne l'avait vu : le 25 octobre 2026, `go doc -all` ne mont
 aucune des quatre méthodes de `Matrix`, alors que la `0.2.0` l'annonçait comme la
 surface du jalon 1 et que sa propre godoc disait « s'emploie par ses méthodes ».
 `geometry` et `scene` sont sortis de là.
+
+**Les deux autres fois portent sur les valeurs d'un type énuméré, et elles imposent un
+geste d'écriture.** Mesuré le 26 octobre 2026 : `go doc render Flags` rend
+`const MirrorX Flags = 1 << iota ...`, les points de suspension avalant `MirrorY` et
+`Flat` — c'est ce qui a fait conclure, dans un relevé d'intégration, que l'aplat
+n'existait pas, alors qu'il est là depuis le jalon 0. Et à la racine, où le type est un
+alias, `go doc . Flags` n'en montre **aucune**, pas même la ligne abrégée, une constante
+n'étant associée qu'au type qu'elle déclare. D'où la règle : **la godoc d'un type énuméré
+nomme ses valeurs**, des deux côtés, parce que l'outil ne le fera jamais.
 
 **Ce que cela retire, et qu'il faut savoir.** La règle précédente voulait que la
 surface publique se réduise à ce que le paquet racine republie, publier demandant de

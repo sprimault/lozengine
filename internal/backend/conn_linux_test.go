@@ -1,5 +1,8 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// La lecture de la socket : un événement qui arrive en morceaux, une réponse qui ne
+// doit pas perdre les événements qui la précèdent, et les deux formes d'erreur que le
+// serveur renvoie.
 
 package backend
 
