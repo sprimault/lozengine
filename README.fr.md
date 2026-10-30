@@ -169,7 +169,7 @@ make clean
 `make check` enchaîne le formatage, `go vet`, le contrôle d'absence de
 dépendance externe, la mention de licence, l'étanchéité de la frontière,
 l'équilibre des deux langues du journal, la surface publique face au journal, la
-compilation croisée vers les huit couples annoncés, puis les tests.
+compilation croisée vers les neuf couples annoncés, puis les tests.
 
 Le contrôle d'étanchéité est celui qui garde l'architecture : aucun paquet du
 noyau ne doit importer `syscall`, `net`, `os/exec` ou un backend, ni directement ni à
