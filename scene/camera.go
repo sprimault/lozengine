@@ -101,11 +101,22 @@ func (s *Scene) Surface() (width, height int32) {
 // du tampon, les deux références étant alors disponibles. Elle vaut (0, 0) quand la vue
 // remplit la surface, donc un jeu sans marge n'a pas à la consulter.
 //
-// Où la marge se répartit vient de [Scene.SetAlignment], jamais du moteur : la place de
-// l'aire est une propriété de la mise en page.
+// **Les deux marges s'y composent, dans cet ordre** : le retrait de
+// [Scene.SetWorldInset] est acquis à l'interface, et l'alignement de
+// [Scene.SetAlignment] ne répartit que ce qu'un plafond a retiré **en plus** de lui.
+// Une aire qui prend tout ce que les retraits laissent part donc exactement du retrait
+// de gauche et du retrait du haut, quel que soit l'alignement — c'est ce qui tient la
+// marge fixe pendant que la fenêtre change.
+//
+// Où la marge se répartit vient du jeu, jamais du moteur : la place de l'aire est une
+// propriété de la mise en page.
 func (s *Scene) WorldOrigin() (x, y int32) {
 	width, height := s.Surface()
-	return s.alignX.offset(width - s.viewWidth), s.alignY.offset(height - s.viewHeight)
+	availableWidth, availableHeight := s.inset.Available(width, height)
+	insetX, insetY := s.inset.before(width, height)
+
+	return insetX + s.alignX.offset(availableWidth-s.viewWidth),
+		insetY + s.alignY.offset(availableHeight-s.viewHeight)
 }
 
 // ResizeSurface change la taille de la surface de dessin, sans toucher à la vue.
@@ -129,6 +140,25 @@ func (s *Scene) ResizeSurface(width, height int32) {
 // de la surface, et une rotation de la scène ne les fait pas tourner.
 func (s *Scene) SetAlignment(x, y Alignment) {
 	s.alignX, s.alignY = x, y
+}
+
+// SetWorldInset pose la marge que le monde ne traverse pas, côté par côté.
+//
+// **Elle se change en cours de partie**, et c'est pourquoi c'est un réglage de scène
+// plutôt qu'une option figée au montage : une interface qui se replie ou un panneau
+// qu'on ouvre rend au monde ce qu'il occupait. La boucle du paquet racine relit le
+// retrait à chaque pas, donc l'aire suit sans qu'on ait à redimensionner quoi que ce
+// soit.
+//
+// Ce que le retrait signifie et comment il se compose avec un plafond sont dans la
+// godoc d'[Inset].
+func (s *Scene) SetWorldInset(i Inset) {
+	s.inset = i
+}
+
+// WorldInset rend la marge que le monde ne traverse pas, telle qu'elle a été posée.
+func (s *Scene) WorldInset() Inset {
+	return s.inset
 }
 
 // Remap rend les coordonnées sous lesquelles l'orientation courante présente un

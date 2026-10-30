@@ -21,10 +21,13 @@ package scene
 // panneau latéral la veut d'un côté, un encadrement décoratif la veut centrée. Aucune
 // de ces places n'en sert plus d'une, donc aucune n'est celle du moteur.
 //
-// Ce qu'il n'exprime pas, et c'est assumé : deux marges **inégales** sur le même axe,
-// comme les deux barres d'un jeu de rôle classique. Une fraction les exprimerait, mais
-// son zéro vaudrait l'un des bords là qu'une aire plafonnée est centrée aujourd'hui,
-// et deux façons de dire la même quantité coûtent plus qu'un manque énoncé.
+// **Il ne place que ce qu'un plafond retire**, et c'est [Inset] qui exprime une marge
+// qu'on veut constante, deux marges inégales sur le même axe comprises. Les deux ne se
+// remplacent pas : un retrait retire du chrome et laisse l'aire prendre le reste, un
+// alignement place une aire dont la taille est déjà décidée. Avec des retraits seuls,
+// l'aire est définie par eux et n'a plus de place à choisir ; centrer une aire de taille
+// fixe dans une surface qui grandit demanderait au contraire des retraits qui changent à
+// chaque image.
 type Alignment uint8
 
 // Les trois places qu'une aire de monde peut prendre dans la surface, sur un axe.

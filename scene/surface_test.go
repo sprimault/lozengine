@@ -74,6 +74,78 @@ func TestWorldOriginFollowsTheAlignment(t *testing.T) {
 	}
 }
 
+// TestWorldInsetKeepsTheMarginFixed garde la promesse entière du retrait : une aire qui
+// prend tout ce que les retraits laissent part exactement du retrait, **quel que soit
+// l'alignement**.
+//
+// C'est le cas que l'alignement seul ne sait pas tenir, et c'est pourquoi il est le
+// premier : avec un plafond, la marge varie avec la fenêtre, donc un bandeau de 77
+// pixels se retrouve à 221 du jeu une fois la fenêtre agrandie. Si l'alignement mordait
+// ici, la marge redeviendrait variable sans que rien ne le dise — l'interface se
+// décalerait pendant qu'on étire, et on chercherait l'écart dans la mise en page du jeu.
+func TestWorldInsetKeepsTheMarginFixed(t *testing.T) {
+	inset := Inset{Left: 10, Right: 20, Top: 5, Bottom: 15}
+
+	for _, c := range []struct {
+		name           string
+		alignX, alignY Alignment
+	}{
+		{"centrée", AlignCenter, AlignCenter},
+		{"au début", AlignStart, AlignStart},
+		{"à la fin", AlignEnd, AlignEnd},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			s := layoutScene(t, 70, 80)
+			s.ResizeSurface(100, 100)
+			s.SetWorldInset(inset)
+			s.SetAlignment(c.alignX, c.alignY)
+
+			if x, y := s.WorldOrigin(); x != 10 || y != 5 {
+				t.Errorf("origine de l'aire (%d, %d), attendue (10, 5) — "+
+					"l'aire remplit ce que les retraits laissent, donc l'alignement "+
+					"n'a rien à répartir", x, y)
+			}
+		})
+	}
+}
+
+// TestWorldInsetComposesWithTheCeiling garde l'ordre des deux primitifs : le retrait est
+// acquis à l'interface, et l'alignement ne répartit que ce qu'un plafond retire **en
+// plus** de lui.
+//
+// Les deux dernières lignes sont les bornes, et aucune autre que ce cas ne les tient.
+// Un côté négatif décrirait une aire plus grande que la surface : les quads sortiraient
+// du tampon par un chemin qui ne rend aucune erreur. Un retrait plus large que la
+// surface poserait l'aire au-delà du bord opposé, et le monde disparaîtrait au lieu de
+// se serrer.
+func TestWorldInsetComposesWithTheCeiling(t *testing.T) {
+	for _, c := range []struct {
+		name           string
+		inset          Inset
+		area           int32
+		alignX, alignY Alignment
+		wantX, wantY   int32
+	}{
+		{"le plafond mord, le reste est centré", Inset{Left: 10, Right: 20, Top: 5, Bottom: 15}, 50, AlignCenter, AlignCenter, 20, 20},
+		{"le plafond mord, le reste va après", Inset{Left: 10, Right: 20, Top: 5, Bottom: 15}, 50, AlignStart, AlignStart, 10, 5},
+		{"le plafond mord, le reste vient avant", Inset{Left: 10, Right: 20, Top: 5, Bottom: 15}, 50, AlignEnd, AlignEnd, 30, 35},
+		{"un seul côté retiré", Inset{Bottom: 40}, 50, AlignStart, AlignStart, 0, 0},
+		{"un côté négatif compte pour zéro", Inset{Left: -30, Right: 20}, 50, AlignStart, AlignStart, 0, 0},
+		{"des retraits plus larges que la surface gardent l'aire dedans", Inset{Left: 200, Right: 200}, 50, AlignStart, AlignStart, 99, 0},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			s := layoutScene(t, c.area, c.area)
+			s.ResizeSurface(100, 100)
+			s.SetWorldInset(c.inset)
+			s.SetAlignment(c.alignX, c.alignY)
+
+			if x, y := s.WorldOrigin(); x != c.wantX || y != c.wantY {
+				t.Errorf("origine de l'aire (%d, %d), attendue (%d, %d)", x, y, c.wantX, c.wantY)
+			}
+		})
+	}
+}
+
 // TestAtReadsASurfacePixel garde le repère de la désignation au pointeur, et c'est le
 // point le plus exposé de la séparation.
 //

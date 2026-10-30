@@ -172,6 +172,10 @@ type Scene struct {
 	surfaceWidth, surfaceHeight int32
 	alignX, alignY              Alignment
 
+	// Ce que le jeu garde de la surface pour son interface, et que le monde ne
+	// traverse pas. Sa valeur zéro laisse toute la surface au monde.
+	inset Inset
+
 	// Les conventions de révélation, posées à la construction et réglables ensuite.
 	revealing RevealOptions
 }

@@ -45,6 +45,24 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `Options.WorldInset` garde au jeu une marge de taille constante autour de l'aire de
+  monde, côté par côté, l'aire prenant tout ce que la surface laisse. Un plafond fixe
+  l'aire et laisse la marge varier ; un retrait fait l'inverse.
+- `Scene.SetWorldInset` change ce retrait en cours de partie, et `Inset` l'exprime —
+  deux marges inégales sur un même axe s'y disent, ce que `Alignment` n'exprimait pas.
+
+***
+
+### Added
+
+- `Options.WorldInset` reserves a constant-size margin around the world area for the
+  game, side by side, the area taking everything the surface leaves. A ceiling fixes the
+  area and lets the margin vary; an inset does the opposite.
+- `Scene.SetWorldInset` changes that inset during play, and `Inset` expresses it —
+  including two unequal margins on one axis, which `Alignment` could not.
+
 ## [0.5.5] — 2026-10-30
 
 ### Ajouté

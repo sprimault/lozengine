@@ -111,10 +111,16 @@ type Options struct {
 	// facteur est entier, et c'est la résolution interne qui dit ce qu'une tuile
 	// couvre.
 	//
-	// **C'est un plancher et non une taille fixe** : au-delà, la vue s'élargit avec la
-	// fenêtre jusqu'à [Options.MaxWidth] et [Options.MaxHeight], et c'est ce qui évite
-	// les bandes. Ce qui reste garanti est que la vue n'est jamais plus petite, donc
-	// qu'une interface posée dans ce rectangle y tient toujours.
+	// **C'est un plancher et non une taille fixe, et c'est celui de la surface de
+	// dessin** : au-delà, la surface s'élargit avec la fenêtre, le facteur restant
+	// entier, et c'est ce qui évite les bandes. Ce qui reste garanti est donc que la
+	// **surface** n'est jamais plus petite qu'elle, donc qu'une interface posée dans ce
+	// rectangle y tient toujours.
+	//
+	// **L'aire de monde, elle, peut être plus petite que ce plancher**, et c'est voulu :
+	// [Options.MaxWidth] et [Options.WorldInset] la bornent à l'intérieur de la surface.
+	// Une interface se dimensionne contre [Scene.Surface], le monde contre [Scene.View],
+	// et les confondre décale l'interface sans qu'aucune erreur ne le dise.
 	Width, Height int
 
 	// MaxWidth et MaxHeight bornent l'**aire de monde** : la part de la surface dans
@@ -132,6 +138,12 @@ type Options struct {
 	// combien le joueur voit est une donnée de jeu, pas une conséquence de la fenêtre
 	// qu'il a étirée. Sans eux, l'aire visible va jusqu'à 5,4 fois le minimum entre une
 	// fenêtre 4:3 et une 21:9, et 17 fois dans un format extrême.
+	//
+	// **Ce qu'ils ne donnent pas, et [Options.WorldInset] le donne** : une marge dont la
+	// taille ne change pas. Un plafond fixe l'aire, donc la marge varie avec la fenêtre —
+	// mesuré sur le jeu, de 77 à 221 pixels entre l'ouverture et une fenêtre maximisée,
+	// ce qui oblige une interface à flotter loin du monde ou à changer de place selon la
+	// taille. Les deux se composent : le retrait d'abord, le plafond dans ce qui reste.
 	//
 	// **Ils peuvent descendre sous [Options.Width] et [Options.Height]**, qui sont le
 	// plancher de la surface et non celui de l'aire. C'est ce qui donne une marge non
@@ -153,6 +165,20 @@ type Options struct {
 	// Ce sont les axes de la **surface** et une rotation de la scène ne les fait pas
 	// tourner : la godoc d'[Alignment] porte ce piège et les trois valeurs.
 	WorldAlignX, WorldAlignY Alignment
+
+	// WorldInset garde pour le jeu une marge de taille constante, côté par côté, et
+	// laisse l'aire de monde prendre tout ce qui reste de la surface.
+	//
+	// **C'est ce qu'un jeu veut quand il loge son interface autour du monde** : un
+	// bandeau reste à la même distance du jeu quelle que soit la fenêtre, et le joueur
+	// voit un peu plus de monde sur un grand écran. Un plafond répond à l'autre besoin,
+	// celui d'une aire constante ; la godoc d'[Inset] dit comment les deux se composent
+	// et ce que chacun décide.
+	//
+	// **Il se change aussi en cours de partie**, par [Scene.SetWorldInset] : la boucle
+	// le relit à chaque pas, donc une interface qui se replie rend au monde ce qu'elle
+	// occupait, sans redimensionner quoi que ce soit.
+	WorldInset Inset
 
 	// Tick est la durée d'un pas. Zéro vaut un soixantième de seconde.
 	//
@@ -311,18 +337,20 @@ func NewEngine(s *Scene, o Options) (*Engine, error) {
 		return nil, fmt.Errorf("step of %v: must be positive", o.Tick)
 	}
 
-	if _, _, width, _ := s.View(); width == 0 {
-		cells, rows := s.Dimensions()
-		s.Focus(float64(cells)/2, float64(rows)/2,
-			int32(min(o.Width, o.MaxWidth)), int32(min(o.Height, o.MaxHeight)))
-	}
-
-	// La surface et l'alignement viennent des options dans tous les cas, là que le
-	// cadrage ci-dessus respecte celui que le jeu a pu poser : une scène ne devine ni
-	// la taille d'ouverture de la fenêtre ni la mise en page, et les deux sont
-	// déclarées ici.
+	// La surface, l'alignement et le retrait viennent des options dans tous les cas, là
+	// que le cadrage ci-dessous respecte celui que le jeu a pu poser : une scène ne
+	// devine ni la taille d'ouverture de la fenêtre ni la mise en page, et les trois
+	// sont déclarées ici. Avant le cadrage, parce que l'aire d'ouverture se calcule
+	// depuis le retrait.
 	s.ResizeSurface(int32(o.Width), int32(o.Height))
 	s.SetAlignment(o.WorldAlignX, o.WorldAlignY)
+	s.SetWorldInset(o.WorldInset)
+
+	if _, _, width, _ := s.View(); width == 0 {
+		cells, rows := s.Dimensions()
+		worldWidth, worldHeight := worldSize(o.Width, o.Height, o.WorldInset, o.MaxWidth, o.MaxHeight)
+		s.Focus(float64(cells)/2, float64(rows)/2, int32(worldWidth), int32(worldHeight))
+	}
 
 	return &Engine{
 		scene:      s,
@@ -390,8 +418,22 @@ func (e *Engine) layout(outWidth, outHeight int) (surfaceWidth, surfaceHeight, w
 
 	surfaceWidth = max(int(out.Width)/factor, e.minWidth)
 	surfaceHeight = max(int(out.Height)/factor, e.minHeight)
-	return surfaceWidth, surfaceHeight,
-		min(surfaceWidth, e.maxWidth), min(surfaceHeight, e.maxHeight)
+
+	worldWidth, worldHeight = worldSize(surfaceWidth, surfaceHeight,
+		e.scene.WorldInset(), e.maxWidth, e.maxHeight)
+	return surfaceWidth, surfaceHeight, worldWidth, worldHeight
+}
+
+// worldSize rend l'aire de monde qu'une surface donnée mérite : le retrait en sort la
+// marge du jeu, le plafond borne le monde dans ce qui reste.
+//
+// **Une fonction et non trois calculs** : le montage, le redimensionnement et le pas
+// posent tous les trois cette taille, et c'est le genre d'arithmétique qui diverge en
+// silence quand elle est recopiée — un pas qui bornerait sans retrancher ramènerait le
+// monde par-dessus l'interface, une image sur deux et sans erreur.
+func worldSize(surfaceWidth, surfaceHeight int, i Inset, maxWidth, maxHeight int) (width, height int) {
+	availableWidth, availableHeight := i.Available(int32(surfaceWidth), int32(surfaceHeight))
+	return min(int(availableWidth), maxWidth), min(int(availableHeight), maxHeight)
 }
 
 // Step avance le jeu d'un pas et rend l'image qui en résulte prête à présenter.
@@ -432,12 +474,16 @@ func (e *Engine) Step(g Game, in Input) {
 	// sur un tampon de 480×270 ne peint que la moitié de l'entité visée. Le point
 	// visé, lui, reste au jeu, et c'est pourquoi c'est la taille seule qu'on reprend.
 	// Les deux rectangles se reprennent, pas un : la surface est le tampon, et l'aire
-	// de monde est ce que le plafond du jeu en laisse au monde.
+	// de monde est ce que le retrait et le plafond du jeu en laissent au monde.
+	//
+	// Le retrait se relit ici et non au montage, parce qu'un jeu le change en cours de
+	// partie quand son interface se replie ; c'est aussi ce qui fait que ce réglage-là
+	// ne se perd pas dans la réimposition, là que la taille de la vue s'y perd.
 	e.scene.ResizeSurface(int32(e.frame.Width), int32(e.frame.Height))
-	e.scene.ResizeView(
-		int32(min(int(e.frame.Width), e.maxWidth)),
-		int32(min(int(e.frame.Height), e.maxHeight)),
-	)
+
+	worldWidth, worldHeight := worldSize(int(e.frame.Width), int(e.frame.Height),
+		e.scene.WorldInset(), e.maxWidth, e.maxHeight)
+	e.scene.ResizeView(int32(worldWidth), int32(worldHeight))
 
 	list := e.sorter.Frame()
 	raster.Clear(e.frame, e.background)

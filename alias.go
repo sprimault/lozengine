@@ -465,8 +465,9 @@ const (
 //
 // **Les axes sont ceux de la surface, pas ceux du monde** : [AlignStart] sur l'axe
 // vertical désigne le haut de l'image, et une rotation de la scène ne le fait pas
-// tourner. Ce que l'énuméré n'exprime pas — deux marges inégales sur le même axe — est
-// dit dans la godoc de [scene.Alignment].
+// tourner. Il ne place que ce qu'un plafond retire, et [Inset] est ce qui exprime une
+// marge de taille constante : la godoc de [scene.Alignment] dit pourquoi les deux ne se
+// remplacent pas.
 type Alignment = scene.Alignment
 
 const (
@@ -479,6 +480,18 @@ const (
 	AlignStart = scene.AlignStart
 	AlignEnd   = scene.AlignEnd
 )
+
+// Inset est la marge que le monde ne traverse pas, côté par côté et en pixels de la
+// surface de dessin.
+//
+// Il sert [Options.WorldInset], et [Scene.SetWorldInset] le change en cours de partie.
+// Sa valeur zéro laisse toute la surface au monde.
+//
+// **C'est le complément du plafond** : un retrait fixe la marge et laisse l'aire prendre
+// le reste, un plafond fixe l'aire et laisse la marge varier avec la fenêtre. Ce que
+// chacun décide, l'ordre dans lequel ils se composent et les axes qu'ils emploient sont
+// dans la godoc de [scene.Inset].
+type Inset = scene.Inset
 
 // RevealOptions porte les conventions de lisibilité de la révélation : à partir de
 // quel recouvrement une chose cachée se redessine, et sous quelle teinte.

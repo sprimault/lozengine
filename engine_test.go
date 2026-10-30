@@ -162,31 +162,46 @@ func TestNewEngineFramesTheViewOnce(t *testing.T) {
 // que sur ce reste ; un plafond égal au minimum, qui rend le figé de la 0.5.3 ; et une
 // sortie sous le minimum, qui ne descend pas, parce qu'une interface posée dans ce
 // rectangle doit y tenir.
+//
+// Les trois derniers cas tiennent l'ordre des deux primitifs : le retrait sort de la
+// surface avant que le plafond ne borne, et il mord dès la taille d'ouverture, là qu'un
+// plafond seul n'a rien à retirer tant que la fenêtre ne s'est pas étirée.
+//
+// **Le cas qui les porte tous les deux distingue trois résultats, et c'est ce qui le rend
+// mordant** : 65 pour l'ordre retenu, 60 si le plafond bornait d'abord — il mangerait
+// alors la marge que le retrait garantit —, 70 si le retrait était ignoré. Les deux
+// défauts se lisent donc l'un de l'autre, là qu'une seule valeur attendue les
+// confondrait.
 func TestFitSizesTheViewOnTheOutput(t *testing.T) {
 	for _, c := range []struct {
 		name                       string
 		minW, minH                 int
 		maxW, maxH                 int
+		inset                      Inset
 		outW, outH                 int
 		wantSurfaceW, wantSurfaceH int
 		wantWorldW, wantWorldH     int
 		wantFactor                 int
 	}{
-		{"sortie au minimum", 64, 32, 0, 0, 64, 32, 64, 32, 64, 32, 1},
-		{"multiple exact, le pixel grossit et la surface tient", 64, 32, 0, 0, 128, 64, 64, 32, 64, 32, 2},
-		{"reste au facteur un, la surface l'absorbe", 64, 32, 0, 0, 100, 50, 100, 50, 100, 50, 1},
-		{"reste au facteur deux", 64, 32, 0, 0, 150, 70, 75, 35, 75, 35, 2},
-		{"axe non limitant, la surface s'étire seule", 64, 32, 0, 0, 192, 32, 192, 32, 192, 32, 1},
-		{"plafond, la surface remplit et l'aire seule est bornée", 64, 32, 70, 40, 150, 70, 75, 35, 70, 35, 2},
-		{"plafond égal au minimum, l'aire est figée et la marge prend le reste", 64, 32, 64, 32, 150, 70, 75, 35, 64, 32, 2},
-		{"plafond sous le plancher, une marge dès la taille d'ouverture", 64, 32, 64, 24, 64, 32, 64, 32, 64, 24, 1},
-		{"sortie sous le minimum, la surface ne descend pas", 64, 32, 0, 0, 32, 16, 64, 32, 64, 32, 1},
+		{"sortie au minimum", 64, 32, 0, 0, Inset{}, 64, 32, 64, 32, 64, 32, 1},
+		{"multiple exact, le pixel grossit et la surface tient", 64, 32, 0, 0, Inset{}, 128, 64, 64, 32, 64, 32, 2},
+		{"reste au facteur un, la surface l'absorbe", 64, 32, 0, 0, Inset{}, 100, 50, 100, 50, 100, 50, 1},
+		{"reste au facteur deux", 64, 32, 0, 0, Inset{}, 150, 70, 75, 35, 75, 35, 2},
+		{"axe non limitant, la surface s'étire seule", 64, 32, 0, 0, Inset{}, 192, 32, 192, 32, 192, 32, 1},
+		{"plafond, la surface remplit et l'aire seule est bornée", 64, 32, 70, 40, Inset{}, 150, 70, 75, 35, 70, 35, 2},
+		{"plafond égal au minimum, l'aire est figée et la marge prend le reste", 64, 32, 64, 32, Inset{}, 150, 70, 75, 35, 64, 32, 2},
+		{"plafond sous le plancher, une marge dès la taille d'ouverture", 64, 32, 64, 24, Inset{}, 64, 32, 64, 32, 64, 24, 1},
+		{"sortie sous le minimum, la surface ne descend pas", 64, 32, 0, 0, Inset{}, 32, 16, 64, 32, 64, 32, 1},
+		{"retrait, l'aire prend tout ce qui reste", 64, 32, 0, 0, Inset{Bottom: 8}, 150, 70, 75, 35, 75, 27, 2},
+		{"retrait et plafond, le retrait sort d'abord", 64, 32, 70, 40, Inset{Left: 5, Right: 5}, 150, 70, 75, 35, 65, 35, 2},
+		{"retrait dès l'ouverture, sans plafond ni fenêtre étirée", 64, 32, 0, 0, Inset{Top: 10}, 64, 32, 64, 32, 64, 22, 1},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			s, atlas := scenario(t)
 			e, err := NewEngine(s, Options{
 				Atlas: atlas, Width: c.minW, Height: c.minH,
 				MaxWidth: c.maxW, MaxHeight: c.maxH,
+				WorldInset: c.inset,
 			})
 			if err != nil {
 				t.Fatalf("montage : %v", err)
@@ -213,6 +228,101 @@ func TestFitSizesTheViewOnTheOutput(t *testing.T) {
 				t.Errorf("facteur %d, attendu %d", got, c.wantFactor)
 			}
 		})
+	}
+}
+
+// TestWorldInsetHoldsAcrossWindowSizes garde la raison d'être du retrait, et c'est la
+// seule chose qu'un plafond ne sait pas faire.
+//
+// **Le défaut n'était pas la taille de la marge, c'était qu'elle varie.** Mesuré sur le
+// jeu avec un plafond : 77 pixels de marge à l'ouverture, 221 une fois la fenêtre
+// maximisée. Un bandeau dimensionné pour l'un flotte dans l'autre, donc le jeu doit
+// porter une mise en page conditionnelle — avec un saut pendant qu'on étire — qui est
+// exactement ce que le plafond existait pour lui retirer.
+//
+// Le cas éprouve les deux régimes côte à côte sur les mêmes deux fenêtres, parce que
+// c'est le **contraste** qui est la propriété : la marge du retrait est la même aux deux
+// tailles, celle du plafond non. Un test qui ne tiendrait que le retrait passerait encore
+// si le retrait s'était mis à se comporter comme un plafond sur une seule fenêtre.
+func TestWorldInsetHoldsAcrossWindowSizes(t *testing.T) {
+	const (
+		small, large = 128, 300
+		margin       = 8
+	)
+
+	s, atlas := scenario(t)
+	inset, err := NewEngine(s, Options{
+		Atlas: atlas, Width: 64, Height: 32, WorldInset: Inset{Bottom: margin},
+	})
+	if err != nil {
+		t.Fatalf("montage du retrait : %v", err)
+	}
+
+	ceiled, atlas := scenario(t)
+	ceiling, err := NewEngine(ceiled, Options{
+		Atlas: atlas, Width: 64, Height: 32, MaxHeight: 32 - margin,
+	})
+	if err != nil {
+		t.Fatalf("montage du plafond : %v", err)
+	}
+
+	// La marge que chaque régime laisse, aux deux tailles de fenêtre : ce que la surface
+	// a de plus que l'aire sur l'axe vertical.
+	marginOf := func(e *Engine, sc *Scene, out int) int32 {
+		e.Fit(out, out)
+		_, surface := sc.Surface()
+		_, _, _, area := sc.View()
+		return surface - area
+	}
+
+	insetSmall, insetLarge := marginOf(inset, s, small), marginOf(inset, s, large)
+	if insetSmall != margin || insetLarge != margin {
+		t.Errorf("marge du retrait de %d puis %d pixels, attendue %d aux deux tailles — "+
+			"une marge qui varie oblige le jeu à la mise en page conditionnelle",
+			insetSmall, insetLarge, margin)
+	}
+
+	ceilingSmall, ceilingLarge := marginOf(ceiling, ceiled, small), marginOf(ceiling, ceiled, large)
+	if ceilingSmall == ceilingLarge {
+		t.Errorf("marge du plafond de %d pixels aux deux tailles — le cas ne conclut pas, "+
+			"les deux régimes devant se distinguer pour que le contraste soit mesuré",
+			ceilingSmall)
+	}
+}
+
+// TestStepKeepsTheWorldInset garde le retrait contre la réimposition du pas, qui est
+// l'endroit exact où il se perdrait.
+//
+// **[Engine.Step] réimpose les deux rectangles après le pas du jeu**, et c'est pour cela
+// qu'un jeu ne peut pas obtenir un retrait en appelant [Scene.ResizeView] lui-même : ce
+// qu'il pose est écrasé avant que l'image soit assemblée. Le retrait doit donc se relire
+// à chaque pas plutôt que se figer au montage — sans quoi une interface qui se replie en
+// cours de partie ne rendrait jamais au monde ce qu'elle occupait, et rien ne le dirait.
+//
+// Le cas l'éprouve dans l'ordre où le défaut se produit : un pas d'abord, pour que la
+// réimposition ait lieu une fois ; le retrait ensuite ; puis un second pas, qui est celui
+// qui doit en tenir compte.
+func TestStepKeepsTheWorldInset(t *testing.T) {
+	s, atlas := scenario(t)
+	e, err := NewEngine(s, Options{Atlas: atlas, Width: 64, Height: 32})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+
+	e.Step(nil, Input{})
+	if _, _, _, height := s.View(); height != 32 {
+		t.Fatalf("aire de monde haute de %d avant tout retrait, attendue 32", height)
+	}
+
+	s.SetWorldInset(Inset{Top: 10})
+	e.Step(nil, Input{})
+
+	if _, _, _, height := s.View(); height != 22 {
+		t.Errorf("aire de monde haute de %d après un retrait de 10, attendue 22 — "+
+			"le pas a réimposé la vue sans relire le retrait", height)
+	}
+	if _, y := s.WorldOrigin(); y != 10 {
+		t.Errorf("origine de l'aire en y à %d, attendue 10", y)
 	}
 }
 
