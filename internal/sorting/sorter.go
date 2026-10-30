@@ -174,22 +174,15 @@ func (t *Sorter) Frame() render.DrawList {
 		return t.out[:0]
 	}
 	t.surfaceWidth, t.surfaceHeight = t.scene.Surface()
-	t.offsetX, t.offsetY = t.scene.WorldOrigin()
-	t.boundsWidth, t.boundsHeight = t.viewWidth, t.viewHeight
+	t.frameWorld()
 
 	t.collectDecor()
 	t.collectEntities()
 
-	// Une interface n'est pas du monde : elle se pose sur toute la surface, marge
-	// comprise, et c'est ce que la marge sert à porter. Le monde, lui, s'est arrêté à
-	// l'aire.
-	t.offsetX, t.offsetY = 0, 0
-	t.boundsWidth, t.boundsHeight = t.surfaceWidth, t.surfaceHeight
-
+	// Les pièces posées en pixels choisissent leur repère une par une, donc la bascule
+	// vit chez elles. Le relevé la laisse sur le monde en sortant, pour la révélation.
 	t.collectScreen()
-
-	t.offsetX, t.offsetY = t.scene.WorldOrigin()
-	t.boundsWidth, t.boundsHeight = t.viewWidth, t.viewHeight
+	t.frameWorld()
 
 	t.revealHidden()
 
@@ -197,6 +190,23 @@ func (t *Sorter) Frame() render.DrawList {
 	t.breakTies()
 
 	return t.assemble()
+}
+
+// frameWorld fait découper et décaler sur l'aire de monde, qui est le repère de tout ce
+// qui vient de la grille ou d'une entité.
+func (t *Sorter) frameWorld() {
+	t.offsetX, t.offsetY = t.scene.WorldOrigin()
+	t.boundsWidth, t.boundsHeight = t.viewWidth, t.viewHeight
+}
+
+// frameSurface fait découper sur la surface entière, sans décalage.
+//
+// C'est le repère de ce qui n'appartient pas au monde : une interface se pose sur toute
+// la surface, marge comprise, et c'est ce que la marge sert à porter. Le monde, lui,
+// s'est arrêté à l'aire.
+func (t *Sorter) frameSurface() {
+	t.offsetX, t.offsetY = 0, 0
+	t.boundsWidth, t.boundsHeight = t.surfaceWidth, t.surfaceHeight
 }
 
 // Overlaps rend le relevé de recouvrement de la dernière image, valable jusqu'à l'appel

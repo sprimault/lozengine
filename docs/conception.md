@@ -190,6 +190,15 @@ frontière par handles opaques, jamais par pointeur Go.
   avec des retraits seuls, l'aire est définie par eux et n'a plus de place à choisir ;
   centrer une aire de taille fixe dans une surface qui grandit demanderait des retraits
   qui changent à chaque image.
+- **La pose en pixels choisit son rectangle, et c'est le jeu qui le dit.** Une interface
+  se pose sur la surface, marge comprise, et c'est ce que la marge sert à porter ; ce qui
+  accompagne le monde sans en être — un chiffre de dégâts, une annonce au-dessus d'un
+  objet — se pose dans l'aire et s'y découpe. Sans ce choix, une chose située juste hors
+  de l'aire s'affiche dans la marge, à côté du jeu : un hôte peut refuser ce qui ne
+  touche pas l'aire, mais pas découper ce qui est à cheval sur son bord, parce qu'il lui
+  faudrait refaire le calcul du moteur, miroirs compris. Les deux voies partagent une
+  seule liste, pour que l'ordre de dessin reste l'ordre de pose et ne vienne pas du
+  rectangle choisi.
 - Directions d'apparence : déclarées par le fournisseur, jamais codées en dur.
   Huit pour l'implémentation de référence en planches PNG, seize pour la
   fabrique volumique. Le littéral n'apparaît que dans le fournisseur.

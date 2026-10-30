@@ -52,6 +52,9 @@ notes de publication.
   l'aire et laisse la marge varier ; un retrait fait l'inverse.
 - `Scene.SetWorldInset` change ce retrait en cours de partie, et `Inset` l'exprime —
   deux marges inégales sur un même axe s'y disent, ce que `Alignment` n'exprimait pas.
+- `Scene.PlaceArea` et `Font.PlaceArea` posent une image à un pixel de l'aire de monde
+  et l'y découpent, là que `PlaceScreen` vise la surface entière. C'est la voie d'un
+  chiffre de dégâts ou d'une annonce, qui s'affichaient sinon dans la marge.
 
 ***
 
@@ -62,6 +65,9 @@ notes de publication.
   area and lets the margin vary; an inset does the opposite.
 - `Scene.SetWorldInset` changes that inset during play, and `Inset` expresses it —
   including two unequal margins on one axis, which `Alignment` could not.
+- `Scene.PlaceArea` and `Font.PlaceArea` place an image at a pixel of the world area and
+  clip it there, where `PlaceScreen` targets the whole surface. This is the path for a
+  damage number or an announcement, which otherwise showed up in the margin.
 
 ## [0.5.5] — 2026-10-30
 

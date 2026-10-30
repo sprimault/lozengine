@@ -156,6 +156,41 @@ func TestAdvanceTightensTheLine(t *testing.T) {
 	}
 }
 
+// TestPlaceAreaMarksEveryGlyph garde que le repère choisi atteint bien **chaque** glyphe,
+// et pas seulement le premier.
+//
+// C'est le défaut qu'une boucle écrite deux fois laisserait passer : un glyphe oublié ne
+// se verrait qu'avec une marge, sur le seul caractère qui déborde de l'aire, et le mot
+// paraîtrait simplement rogné d'une lettre. Les deux voies sont éprouvées ensemble, la
+// valeur par défaut devant rester la surface.
+func TestPlaceAreaMarksEveryGlyph(t *testing.T) {
+	for _, c := range []struct {
+		name   string
+		place  func(Font, *scene.Scene)
+		inArea bool
+	}{
+		{"Place vise la surface", func(f Font, s *scene.Scene) { f.Place(s, 10, 20, "ABC") }, false},
+		{"PlaceArea vise l'aire", func(f Font, s *scene.Scene) { f.PlaceArea(s, 10, 20, "ABC") }, true},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f := ascii()
+			s := textScene(t)
+			c.place(f, s)
+
+			pieces := scene.ScreenPieces(s)
+			if len(pieces) != 3 {
+				t.Fatalf("%d glyphes posés, attendu 3", len(pieces))
+			}
+			for i, p := range pieces {
+				if p.InArea != c.inArea {
+					t.Errorf("glyphe %d posé dans l'aire = %v, attendu %v",
+						i, p.InArea, c.inArea)
+				}
+			}
+		})
+	}
+}
+
 // TestPlacedTextCarriesTheFontLayer garde ce qui met le texte au-dessus du monde : sa
 // couche vient de la police, et c'est le seul moyen d'y échapper au décor.
 func TestPlacedTextCarriesTheFontLayer(t *testing.T) {
