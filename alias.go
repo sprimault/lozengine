@@ -457,6 +457,29 @@ const (
 	ThreeQuarters = scene.ThreeQuarters
 )
 
+// Alignment dit où l'aire de monde se pose dans la surface de dessin, sur un axe :
+// [AlignCenter], [AlignStart] et [AlignEnd].
+//
+// Il sert [Options.WorldAlignX] et [Options.WorldAlignY], et n'a d'effet que si
+// [Options.MaxWidth] ou [Options.MaxHeight] rend l'aire plus petite que la surface.
+//
+// **Les axes sont ceux de la surface, pas ceux du monde** : [AlignStart] sur l'axe
+// vertical désigne le haut de l'image, et une rotation de la scène ne le fait pas
+// tourner. Ce que l'énuméré n'exprime pas — deux marges inégales sur le même axe — est
+// dit dans la godoc de [scene.Alignment].
+type Alignment = scene.Alignment
+
+const (
+	// AlignCenter partage la marge également de part et d'autre, le reste d'une marge
+	// impaire allant à droite ou en bas comme pour les bandes de l'agrandissement.
+	AlignCenter = scene.AlignCenter
+
+	// AlignStart pose l'aire au bord haut ou gauche, et AlignEnd au bord bas ou
+	// droit ; toute la marge vient alors de l'autre côté.
+	AlignStart = scene.AlignStart
+	AlignEnd   = scene.AlignEnd
+)
+
 // RevealOptions porte les conventions de lisibilité de la révélation : à partir de
 // quel recouvrement une chose cachée se redessine, et sous quelle teinte.
 //

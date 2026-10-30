@@ -45,6 +45,46 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `Scene.Surface` rend la surface de dessin, et `Scene.WorldOrigin` la place de l'aire
+  de monde dedans : une interface s'accroche ainsi au bord de l'une ou de l'autre.
+- `Options.WorldAlignX` et `Options.WorldAlignY` disent de quel côté la marge se place
+  quand l'aire est plus petite que la surface. `Alignment` porte `AlignCenter`,
+  `AlignStart` et `AlignEnd` ; deux marges inégales sur un axe ne s'expriment pas.
+
+### Modifié
+
+- `Options.MaxWidth` et `Options.MaxHeight` bornent l'aire de monde et non la vue
+  entière : la surface remplit toujours la fenêtre, donc borner ne ramène plus de
+  bandes, et ce qu'elle a de plus est une marge que le jeu dessine.
+- Ils peuvent descendre sous `Options.Width` et `Options.Height`, qui sont le plancher
+  de la surface seule. C'est ce qui donne une marge dès l'ouverture de la fenêtre, là
+  où les deux couples égaux n'en laissaient aucune.
+- `Scene.At` lit un pixel de la surface : la place de l'aire s'en retranche, sans quoi
+  un clic tomberait décalé de la marge.
+
+***
+
+### Added
+
+- `Scene.Surface` returns the drawing surface, and `Scene.WorldOrigin` where the world
+  area sits inside it: an interface can thus anchor to either edge.
+- `Options.WorldAlignX` and `Options.WorldAlignY` say which side the margin goes when
+  the area is smaller than the surface. `Alignment` carries `AlignCenter`, `AlignStart`
+  and `AlignEnd`; two unequal margins on one axis cannot be expressed.
+
+### Changed
+
+- `Options.MaxWidth` and `Options.MaxHeight` bound the world area rather than the whole
+  view: the surface always fills the window, so bounding no longer brings bars back, and
+  what the surface has beyond the area is a margin the game draws.
+- They may go below `Options.Width` and `Options.Height`, which floor the surface alone.
+  That is what gives a margin from the moment the window opens, where both pairs set
+  equal left none.
+- `Scene.At` reads a surface pixel: where the area sits is subtracted from it, without
+  which a click would land off by the margin.
+
 ## [0.5.4] — 2026-10-30
 
 ### Ajouté

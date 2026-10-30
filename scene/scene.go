@@ -165,6 +165,13 @@ type Scene struct {
 	viewWidth, viewHeight int32
 	orientation           Orientation
 
+	// La surface de dessin, distincte de la vue depuis qu'un plafond borne l'aire de
+	// monde sans rétrécir le tampon. Zéro vaut la vue elle-même : un hôte qui ne pose
+	// aucune marge ne connaît qu'un rectangle, et son code d'avant la séparation reste
+	// juste sans qu'il touche à rien.
+	surfaceWidth, surfaceHeight int32
+	alignX, alignY              Alignment
+
 	// Les conventions de révélation, posées à la construction et réglables ensuite.
 	revealing RevealOptions
 }

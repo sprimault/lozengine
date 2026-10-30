@@ -164,21 +164,23 @@ func TestNewEngineFramesTheViewOnce(t *testing.T) {
 // rectangle doit y tenir.
 func TestFitSizesTheViewOnTheOutput(t *testing.T) {
 	for _, c := range []struct {
-		name         string
-		minW, minH   int
-		maxW, maxH   int
-		outW, outH   int
-		wantW, wantH int
-		wantFactor   int
+		name                       string
+		minW, minH                 int
+		maxW, maxH                 int
+		outW, outH                 int
+		wantSurfaceW, wantSurfaceH int
+		wantWorldW, wantWorldH     int
+		wantFactor                 int
 	}{
-		{"sortie au minimum", 64, 32, 0, 0, 64, 32, 64, 32, 1},
-		{"multiple exact, le pixel grossit et la vue tient", 64, 32, 0, 0, 128, 64, 64, 32, 2},
-		{"reste au facteur un, la vue l'absorbe", 64, 32, 0, 0, 100, 50, 100, 50, 1},
-		{"reste au facteur deux", 64, 32, 0, 0, 150, 70, 75, 35, 2},
-		{"axe non limitant, la vue s'étire seule", 64, 32, 0, 0, 192, 32, 192, 32, 1},
-		{"plafond, qui ne mord que sur le reste", 64, 32, 70, 40, 150, 70, 70, 35, 2},
-		{"plafond égal au minimum, le figé de la 0.5.3", 64, 32, 64, 32, 150, 70, 64, 32, 2},
-		{"sortie sous le minimum, la vue ne descend pas", 64, 32, 0, 0, 32, 16, 64, 32, 1},
+		{"sortie au minimum", 64, 32, 0, 0, 64, 32, 64, 32, 64, 32, 1},
+		{"multiple exact, le pixel grossit et la surface tient", 64, 32, 0, 0, 128, 64, 64, 32, 64, 32, 2},
+		{"reste au facteur un, la surface l'absorbe", 64, 32, 0, 0, 100, 50, 100, 50, 100, 50, 1},
+		{"reste au facteur deux", 64, 32, 0, 0, 150, 70, 75, 35, 75, 35, 2},
+		{"axe non limitant, la surface s'étire seule", 64, 32, 0, 0, 192, 32, 192, 32, 192, 32, 1},
+		{"plafond, la surface remplit et l'aire seule est bornée", 64, 32, 70, 40, 150, 70, 75, 35, 70, 35, 2},
+		{"plafond égal au minimum, l'aire est figée et la marge prend le reste", 64, 32, 64, 32, 150, 70, 75, 35, 64, 32, 2},
+		{"plafond sous le plancher, une marge dès la taille d'ouverture", 64, 32, 64, 24, 64, 32, 64, 32, 64, 24, 1},
+		{"sortie sous le minimum, la surface ne descend pas", 64, 32, 0, 0, 32, 16, 64, 32, 64, 32, 1},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			s, atlas := scenario(t)
@@ -192,16 +194,20 @@ func TestFitSizesTheViewOnTheOutput(t *testing.T) {
 
 			e.Fit(c.outW, c.outH)
 
-			if got := e.Frame(); int(got.Width) != c.wantW || int(got.Height) != c.wantH {
-				t.Errorf("tampon %d×%d, attendu %d×%d", got.Width, got.Height, c.wantW, c.wantH)
+			if got := e.Frame(); int(got.Width) != c.wantSurfaceW || int(got.Height) != c.wantSurfaceH {
+				t.Errorf("tampon %d×%d, attendu %d×%d",
+					got.Width, got.Height, c.wantSurfaceW, c.wantSurfaceH)
 			}
-			if _, _, w, h := s.View(); int(w) != c.wantW || int(h) != c.wantH {
-				t.Errorf("vue %d×%d, attendu %d×%d", w, h, c.wantW, c.wantH)
+			if w, h := s.Surface(); int(w) != c.wantSurfaceW || int(h) != c.wantSurfaceH {
+				t.Errorf("surface %d×%d, attendu %d×%d", w, h, c.wantSurfaceW, c.wantSurfaceH)
+			}
+			if _, _, w, h := s.View(); int(w) != c.wantWorldW || int(h) != c.wantWorldH {
+				t.Errorf("aire de monde %d×%d, attendu %d×%d", w, h, c.wantWorldW, c.wantWorldH)
 			}
 
 			// Le facteur que l'agrandissement appliquera : c'est lui qui dit que
 			// l'invariant tient, et qu'il ne reste au plus qu'un pixel de bande par
-			// axe quand aucun plafond ne mord.
+			// axe — ce qui ne dépend plus d'un plafond depuis que la surface remplit.
 			out := &Buffer{Width: uint16(c.outW), Height: uint16(c.outH)}
 			if got := raster.ScaleFactor(e.Frame(), out); got != c.wantFactor {
 				t.Errorf("facteur %d, attendu %d", got, c.wantFactor)
@@ -455,6 +461,139 @@ func TestPaintedMatchesWhatTheRasteriserDraws(t *testing.T) {
 
 			if list[0].Painted != drawn {
 				t.Errorf("Painted vaut %d, le rastériseur en a posé %d", list[0].Painted, drawn)
+			}
+		})
+	}
+}
+
+// TestClippingMatchesAnUnclippedRender garde le découpage du monde sur le bord de son
+// aire, contre une référence que ce découpage ne traverse pas.
+//
+// **Recouper le relevé contre le rastériseur ne vaut rien ici, et c'est mesuré** : le
+// peint et les pixels viennent du même quad déjà découpé, donc ils s'accordent même
+// quand le découpage est faux — une mutation du sens du miroir laisse le dépôt vert.
+// Le recoupement de [Overlap.Painted] marche parce que le défaut qu'il vise est une
+// divergence entre deux implémentations du miroir ; le découpage, lui, est en un seul
+// endroit qui alimente les deux.
+//
+// La référence est donc le **même quad rendu sans plafond**, où rien ne le découpe : les
+// pixels de l'aire doivent y être identiques, et la marge rester vide. Les deux rendus
+// partagent leur origine de vue parce qu'une cellule de [Grid] vaut seize pixels et que
+// l'aire double : décaler le point visé d'une cellule par axe compense exactement, donc
+// l'entité tombe au même pixel de la surface des deux côtés.
+//
+// Trois défauts tombent avec ce cas, et aucun n'est vu ailleurs : le sens du miroir —
+// une colonne retirée à gauche de ce qui se peint vient de la **droite** de la source,
+// ce qui est invisible sur une planche d'une seule case —, un débordement dans la marge,
+// et l'ordre du découpage et de la mesure, puisque [Overlap.Painted] est comparé à ce
+// qui est réellement posé dans l'aire.
+func TestClippingMatchesAnUnclippedRender(t *testing.T) {
+	const side, bounded = 64, 32
+
+	frame := func(t *testing.T, flags Flags, focus float64, maxSide int) ([]Color, uint32) {
+		t.Helper()
+
+		s, err := NewScene(16, 16, Grid(16), SceneOptions{Entities: 2})
+		if err != nil {
+			t.Fatalf("montage de la scène : %v", err)
+		}
+
+		// Une planche de deux cases côte à côte, dont une seule est prise : c'est ce
+		// qui distingue un miroir du rectangle d'un miroir de la planche.
+		//
+		// Le motif est une diagonale et non une bande, parce qu'une bande d'un bord
+		// tombe entièrement dans ce qu'un miroir fait retirer — mesuré, le témoin du
+		// cas a refusé de conclure. Dense et penché, il laisse des pixels peints dans
+		// n'importe quelle fenêtre de découpage, et il reste asymétrique sur les deux
+		// axes, donc une réflexion prise à l'envers se voit.
+		sheet := NewSheet(32, 8)
+		for row := range 8 {
+			for col := 16; col < 32; col++ {
+				if (col-16+row)%4 != 0 {
+					sheet.Pixels[row*32+col] = Color{R: 255, G: 255, B: 255, A: 255}
+				}
+			}
+		}
+		var atlas Atlas
+		if _, err := atlas.Add(sheet); err != nil {
+			t.Fatalf("ajout de la planche : %v", err)
+		}
+
+		// L'entité est au même endroit du monde des deux côtés, et à cheval sur les
+		// deux bords de l'aire bornée : c'est le point visé qui bouge, pour que
+		// l'origine de la vue ne bouge pas.
+		if _, ok := s.Place(Entity{X: 8.9, Y: 9.2, Measure: true, Aspect: Aspect{
+			SourceX: 16, Width: 16, Height: 8, Tint: White(), Flags: flags,
+		}}); !ok {
+			t.Fatal("entité refusée")
+		}
+		s.Focus(focus, focus, side, side)
+
+		e, err := NewEngine(s, Options{Atlas: &atlas, Width: side, Height: side,
+			MaxWidth: maxSide, MaxHeight: maxSide, Background: Color{A: 255},
+			WorldAlignX: AlignStart, WorldAlignY: AlignStart})
+		if err != nil {
+			t.Fatalf("montage : %v", err)
+		}
+		e.Step(nil, Input{})
+
+		list := e.Overlaps()
+		if len(list) != 1 {
+			t.Fatalf("%d relevés, attendu 1", len(list))
+		}
+		return e.Frame().Pixels, list[0].Painted
+	}
+
+	for _, flags := range []Flags{0, MirrorX, MirrorY, MirrorX | MirrorY} {
+		t.Run(fmt.Sprintf("drapeaux_%d", flags), func(t *testing.T) {
+			whole, _ := frame(t, flags, 9, side)
+			cut, painted := frame(t, flags, 8, bounded)
+
+			var differing, spilled, inside uint32
+			for y := range side {
+				for x := range side {
+					i := y*side + x
+
+					if x >= bounded || y >= bounded {
+						if cut[i] != (Color{A: 255}) {
+							spilled++
+						}
+						continue
+					}
+					if cut[i] != whole[i] {
+						differing++
+					}
+					if cut[i] != (Color{A: 255}) {
+						inside++
+					}
+				}
+			}
+
+			if differing != 0 {
+				t.Errorf("%d pixels de l'aire diffèrent du rendu sans plafond", differing)
+			}
+			if spilled != 0 {
+				t.Errorf("%d pixels ont débordé dans la marge", spilled)
+			}
+			if painted != inside {
+				t.Errorf("Painted vaut %d, l'aire en porte %d — la mesure n'a pas suivi "+
+					"le découpage", painted, inside)
+			}
+
+			// Deux témoins, sans quoi un rendu vide passerait au vert : il faut des
+			// pixels dans l'aire, et il faut que le plafond en ait réellement coupé.
+			if inside == 0 {
+				t.Fatal("rien n'est peint dans l'aire : le cas n'éprouve rien")
+			}
+			var full uint32
+			for _, c := range whole {
+				if c != (Color{A: 255}) {
+					full++
+				}
+			}
+			if full <= inside {
+				t.Fatalf("le rendu sans plafond peint %d pixels et l'aire %d : "+
+					"rien n'a été découpé, le cas n'éprouve rien", full, inside)
 			}
 		})
 	}

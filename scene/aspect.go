@@ -128,6 +128,13 @@ type Aspect struct {
 	// recouvre la chose elle-même ; sans ce champ, le relevé suivant le compte,
 	// dépasse le seuil qui l'a déclenché, et le rappel ne s'éteint plus.
 	//
+	// **Et plus généralement, pour un quad qui cache à l'œil sans que ce masquage soit
+	// une information de jeu.** Un panneau d'interface posé par-dessus le monde est
+	// dans ce cas : il cache réellement ce qui passe dessous, mais le compter
+	// allumerait le rappel de chaque chose qui s'en approche. Ce second usage est resté
+	// hors de cette godoc à la livraison du champ, et c'est le relevé d'un intégrateur
+	// qui l'a nommé.
+	//
 	// **Une propriété de la chose posée, jamais d'un couple.** Elle vaut pour tous les
 	// relevés : marquer une créature que d'autres doivent continuer à compter la retire
 	// de tous. Ce que le décor cache et ce que les entités cachent se lit à part, dans
