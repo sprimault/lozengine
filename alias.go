@@ -99,31 +99,36 @@ const (
 	Additive = render.Additive
 )
 
-// MaxLayer et MaxFloor sont les plus grandes valeurs qu'une couche et un étage
-// puissent porter : seize couches et soixante-quatre étages.
+// MaxLayer est la plus grande valeur qu'une couche puisse porter : seize couches.
 //
-// Combien un jeu en emploie ne regarde que lui ; ce sont les bornes au-delà desquelles
-// l'ordre de dessin ne distinguerait plus deux choses, et une pose qui les dépasse est
+// Combien un jeu en emploie ne regarde que lui ; c'est la borne au-delà de laquelle
+// l'ordre de dessin ne distinguerait plus deux choses, et une pose qui la dépasse est
 // refusée au lieu d'être ramenée au plafond en silence.
-const (
-	MaxLayer = render.MaxLayer
-	MaxFloor = render.MaxFloor
-)
+const MaxLayer = render.MaxLayer
 
-// MaxSide est le plus grand côté qu'une grille de scène puisse avoir, en cellules, et
-// MaxTiers le nombre de choses qu'une cellule peut empiler.
+// MaxFloor est la plus grande valeur qu'un étage puisse porter : soixante-quatre
+// étages, et la même règle que [MaxLayer] — une pose au-delà est refusée.
 //
-// [NewScene] et [Scene.PlaceCell] refusent au-delà. Les lire évite d'avoir à essayer
-// pour le savoir.
+// Dans son propre bloc et non avec [MaxLayer], pour la raison que [MaxSheets] donne :
+// `go doc` abrège un bloc de constantes après la première, donc groupée, cette borne
+// n'apparaissait pas du tout dans la liste du paquet.
+const MaxFloor = render.MaxFloor
+
+// MaxSide est le plus grand côté qu'une grille de scène puisse avoir, en cellules.
+//
+// [NewScene] refuse au-delà. Le lire évite d'avoir à essayer pour le savoir.
+const MaxSide = render.MaxSide
+
+// MaxTiers est le nombre de choses qu'une cellule peut empiler, et
+// [Scene.PlaceCell] refuse au-delà.
 //
 // Un plafond dit jusqu'où aller, jamais ce qu'un cran coûte : une strate pleine ajoute
 // un quad par cellule visible à chaque image, soit environ dix fois ce que coûtent
 // trois cents entités, et [scene.MaxTiers] porte la mesure. C'est le décor qui domine
 // une image, pas les entités.
-const (
-	MaxSide  = render.MaxSide
-	MaxTiers = scene.MaxTiers
-)
+//
+// Dans son propre bloc et non avec [MaxSide], pour la raison que [MaxSheets] donne.
+const MaxTiers = scene.MaxTiers
 
 // MaxSheets est le nombre de planches qu'un atlas peut porter : mille vingt-quatre,
 // soit ce qu'un [Quad] sait désigner.

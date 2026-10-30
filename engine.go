@@ -292,6 +292,11 @@ func (o Options) withDefaults() Options {
 // Engine tient ce qu'une image réutilise de la précédente, et avance d'un pas à la
 // demande.
 //
+// **Il s'obtient de [NewEngine], et sa valeur zéro ne convient pas** : elle n'a ni
+// scène, ni atlas, ni tampon, et le premier [Engine.Step] s'arrête sur un pointeur nul.
+// C'est la seule structure de cette surface dont la valeur zéro panique plutôt que de
+// ne rien faire, et [Options] est la seule dont la valeur zéro est refusée au montage.
+//
 // Il n'a ni fenêtre ni horloge : c'est l'appelant qui lui donne les entrées et qui
 // décide quand appeler. [Run] le fait pour qui écrit un jeu en Go ; un hôte dans un
 // autre langage le fera depuis sa propre boucle.
@@ -441,6 +446,13 @@ func worldSize(surfaceWidth, surfaceHeight int, i Inset, maxWidth, maxHeight int
 // L'ordre compte et il est le même partout : le jeu décrit, le tri ordonne, le
 // rastériseur peint. Rien n'alloue après la première image, et c'est ce qui permet au
 // pas de tenir son budget.
+//
+// **Deux choses échappent à cette phrase, et elles sont au jeu** : poser une strate de
+// décor qu'il n'avait pas encore employée alloue sa tranche, et poser plus de pièces en
+// pixels qu'à aucune image précédente allonge la leur. Les deux sont des plus hautes
+// occupations, donc elles cessent d'allouer une fois atteintes — un jeu dont l'interface
+// ne grandit plus n'alloue plus, et [Scene.ClearScreen] garde la capacité d'une image à
+// l'autre.
 //
 // Trois choses qu'elle ne fait pas, et qu'un hôte fait donc lui-même. Elle **n'a pas
 // d'horloge** : un appel vaut un pas, quel qu'ait été le temps réellement écoulé, et

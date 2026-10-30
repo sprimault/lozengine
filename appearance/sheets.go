@@ -79,7 +79,12 @@ func (s *Sheets) Set(kind, cycle uint16, e Entry) {
 	s.entries[entryKey(kind, cycle)] = e
 }
 
-// Directions rend [Directions].
+// Directions rend le nombre de directions que cette implémentation porte, et il est
+// fixe : huit, la valeur de [Directions].
+//
+// La méthode existe parce que [Provider] prend ce nombre par l'interface et non par une
+// constante : un fournisseur qui en porte seize déclare le sien, et rien hors de ce
+// paquet ne suppose l'un ou l'autre.
 func (s *Sheets) Directions() int { return Directions }
 
 // Aspect rend de quoi remplir un quad.
