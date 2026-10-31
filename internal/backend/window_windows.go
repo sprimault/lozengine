@@ -204,6 +204,15 @@ func byHandle(hwnd uintptr) *window {
 // C'est ici que la pompe tourne, parce que c'est le premier appel d'un pas : la boucle
 // lit les entrées, met à jour, puis présente. Pomper ailleurs ferait répondre la
 // fenêtre en retard d'une image.
+//
+// **Ce chemin alloue par image, et c'est une exception nommée à la règle du dépôt.**
+// `LazyProc.Call` porte `//go:uintptrescapes`, donc il alloue quelle que soit son arité
+// — ce n'est pas le nombre d'arguments, contrairement à ce que la présentation a
+// longtemps laissé croire. Mesuré : deux allocations et 115 ns ici sur une file vide,
+// trois et 48 ns pour [window.Size], soit un millième de pour cent du budget d'une
+// image. Passer ces appels à `SyscallN` sur tranches gardées coûterait plus que ce
+// millième ne vaut ; l'arbitrage est écrit, et un cas fige les deux comptes pour qu'un
+// appel ajouté se voie.
 func (w *window) Input() input.Input {
 	var m message
 	for {

@@ -76,9 +76,20 @@ func (w *window) Present(t *render.Buffer) {
 	w.info.height = -int32(t.Height)
 
 	// Les arguments passent par une tranche gardée, et c'est le seul appel du backend
-	// à le faire : douze arguments variadiques en allouent une à chaque présentation,
-	// donc soixante fois par seconde. Ailleurs, `LazyProc.Call` reste préférable —
-	// six nanosecondes de plus et rien sur le tas.
+	// à le faire.
+	//
+	// **Le motif n'est pas le nombre d'arguments, c'est un pragma**, et le commentaire
+	// qui vivait ici disait le contraire : « douze arguments variadiques en allouent une
+	// à chaque présentation […] ailleurs, `LazyProc.Call` reste préférable — six
+	// nanosecondes de plus et rien sur le tas ». `LazyProc.Call` porte
+	// `//go:uintptrescapes`, donc il alloue **quelle que soit son arité** et force en
+	// plus le pointé sur le tas. Il n'y a donc pas d'« ailleurs » où il ne coûterait
+	// rien : ce que cette tranche achète est une allocation de moins par image, et non
+	// un appel plus court.
+	//
+	// Ce que `TestPresentDoesNotAllocate` garde est exactement cela. Le chemin d'entrée,
+	// lui, alloue encore à chaque image — la file de messages et la taille client
+	// passent par `Call` —, et la godoc de `window.Input` dit ce qui a été tranché.
 	w.args[0] = w.dc
 	w.args[3] = uintptr(t.Width)
 	w.args[4] = uintptr(t.Height)

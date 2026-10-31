@@ -34,6 +34,23 @@ type conn struct {
 	// pour l'instant » — en un appel système et sans attente.
 	raw syscall.RawConn
 
+	// read est la valeur de fonction que `raw.Read` reçoit, montée une fois à la
+	// connexion, et `readN`/`readErrno` portent ce qu'elle rapporte.
+	//
+	// **Construite ici parce qu'une fermeture passée à une méthode d'interface
+	// s'échappe** : `syscall.RawConn.Read` en est une, donc la valeur de fonction et les
+	// variables qu'elle capture partaient sur le tas à **chaque image** — `window.Input`
+	// appelle `poll` puis `receive` au moins une fois par pas. Les deux autres chemins
+	// par image du backend avaient leur garde ; l'entrée n'en avait aucune.
+	//
+	// **Une valeur de fonction préconstruite, jamais une valeur de méthode.** Écrire
+	// `c.raw.Read(c.readOnce)` sur une méthode rendrait une valeur de méthode, qui est
+	// elle-même une fermeture allouée à chaque prise : le correctif serait annulé sans
+	// qu'un test le dise, et c'est le piège à ne pas retrouver.
+	read      func(uintptr) bool
+	readN     int
+	readErrno error
+
 	setup setup
 
 	// pixels dit où les octets d'un pixel du moteur vont dans un pixel du serveur.
@@ -279,20 +296,22 @@ func (c *conn) message() []byte {
 func (c *conn) receive() (bool, error) {
 	c.room(eventSize)
 
-	var n int
-	var errno error
-	if err := c.raw.Read(func(fd uintptr) bool {
-		for {
-			n, errno = syscall.Read(int(fd), c.in[c.have:])
-			// Un signal interrompt la lecture sans que rien n'ait été lu ni
-			// perdu. Elle se reprend, ce que la couche réseau ferait aussi.
-			if errno != syscall.EINTR {
-				return true
+	if c.read == nil {
+		c.read = func(fd uintptr) bool {
+			for {
+				c.readN, c.readErrno = syscall.Read(int(fd), c.in[c.have:])
+				// Un signal interrompt la lecture sans que rien n'ait été lu ni
+				// perdu. Elle se reprend, ce que la couche réseau ferait aussi.
+				if c.readErrno != syscall.EINTR {
+					return true
+				}
 			}
 		}
-	}); err != nil {
+	}
+	if err := c.raw.Read(c.read); err != nil {
 		return false, fmt.Errorf("reading from the display server: %w", err)
 	}
+	n, errno := c.readN, c.readErrno
 
 	switch {
 	case errno == syscall.EAGAIN:
