@@ -71,6 +71,9 @@ notes de publication.
 
 ### Corrigé
 
+- Un quad qui ne peint rien ne compte plus dans la mesure de recouvrement : une teinte
+  d'alpha nul y versait sa boîte entière, donc un rappel qu'un jeu éteint franchissait le
+  seuil de révélation à sa place.
 - La fenêtre s'ouvre sur les Windows antérieurs à la mise à jour d'avril 2017 de
   Windows 10, Windows 7, 8 et 8.1 compris, où le moteur plantait au démarrage.
 
@@ -101,6 +104,9 @@ notes de publication.
 
 ### Fixed
 
+- A quad that paints nothing no longer counts in the overlap measure: a zero-alpha tint
+  poured its whole box in, so a cue a game had switched off crossed the reveal threshold
+  on its behalf.
 - The window opens on Windows versions older than the April 2017 update to Windows 10,
   including Windows 7, 8 and 8.1, where the engine crashed at startup.
 

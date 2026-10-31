@@ -143,6 +143,25 @@ func (t *Sorter) overlap(i, n int) (total, decor int) {
 		if t.uncounted[j] {
 			continue
 		}
+
+		// **Un quad qui ne peint rien ne cache rien.** Une teinte d'alpha nul fait sortir
+		// `put` comme `fillRect` d'emblée, donc le quad n'écrit pas un pixel ; verser sa
+		// boîte entière faisait franchir le seuil de révélation à un rappel éteint.
+		//
+		// **C'est un changement de la loi et non une mise en conformité**, et il faut le
+		// dire ainsi : la godoc de [render.Overlap.Hidden] portait les deux lectures —
+		// « ce qui **se peint** après la chose » d'un côté, « transparent compris » de
+		// l'autre —, et c'est la seconde que le dépôt avait gardée, témoin compris. Le
+		// statut *décrit* de ce nombre est ce qui autorise le changement, et le témoin
+		// a rougi comme il devait.
+		//
+		// `paints` et non `hides` : ce dernier exige aussi un alpha plein, donc il
+		// retirerait du compte tout le décor translucide et poserait une falaise à
+		// l'alpha 254. Et un quad additif reste compté — il peut parfaitement cacher,
+		// en saturant au blanc —, [scene.Aspect.Uncounted] étant la voie pour l'exclure.
+		if !paints(t.raw[j]) {
+			continue
+		}
 		if key > t.keys[j] || (key == t.keys[j] && !t.before(uint32(i), uint32(j))) {
 			continue
 		}
