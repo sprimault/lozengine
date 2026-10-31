@@ -50,6 +50,9 @@ notes de publication.
 - Une pose dont la couche de révélation dépasse `MaxLayer` est refusée au lieu d'être
   ramenée au plafond, ce que la documentation de `MaxLayer` annonçait déjà. Un rappel
   saturé se mêlait à la couche d'interface du jeu au lieu de passer devant elle.
+- Une projection dont l'ordonnée ne tiendrait pas dans les entiers du moteur ramène tout
+  point sur l'origine au lieu de replier le signe du pixel. Il y faut une tuile de plus
+  de 32 767 pixels de haut, ou des coefficients bruts du même ordre.
 
 ***
 
@@ -58,6 +61,9 @@ notes de publication.
 - A placement whose reveal layer goes beyond `MaxLayer` is refused instead of being
   clamped to the ceiling, which `MaxLayer`'s documentation already announced. A clamped
   cue blended into the game's interface layer instead of drawing in front of it.
+- A projection whose ordinate would not fit the engine's integers now brings every point
+  back to the origin instead of wrapping the pixel's sign. It takes a tile more than
+  32,767 pixels tall, or raw coefficients of that order.
 
 ## [0.5.8] — 2026-10-31
 

@@ -3,11 +3,14 @@
 
 // Ce que chaque constructeur promet sur son ratio, ce que la matrice nulle fait plutôt
 // que de paniquer, et ce que devient une matrice presque singulière dont l'inverse ne
-// tient plus dans les entiers du moteur.
+// tient plus dans les entiers du moteur ou dont l'ordonnée quitterait son int64.
 
 package geometry
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 // TestConstructorsSetTheirRatio vérifie que chacun place une cellule là où son
 // ratio l'exige.
@@ -183,5 +186,76 @@ func TestSingularMatrixDegenerates(t *testing.T) {
 				t.Errorf("inversé (%g, %g), attendu l'origine", x, y)
 			}
 		})
+	}
+}
+
+// TestOverflowingOrdinateDegenerates garde le refus d'une matrice dont la somme des
+// coefficients d'ordonnée quitterait l'`int64` où [Matrix.Project] la calcule.
+//
+// **Ce que le refus achète n'est pas un pixel juste, et il faut le dire** : passé le
+// seuil, la vraie ordonnée dépasse de plus d'un milliard de pixels tout tampon
+// possible, donc le quad est écarté que la somme se replie ou qu'elle sature, et
+// l'image est identique. Ce qui se corrige est qu'une somme repliée est du **signe
+// opposé** — la doctrine du paquet est de borner ou de refuser, jamais de replier, et
+// elle la pratiquait déjà deux fois en laissant ce chemin dehors.
+//
+// Le seuil se franchit par le haut du tableau : `Dimetric(32, 32767)` est la dernière
+// hauteur acceptée et 32 768 la première refusée, parce que `floor` y sature. La borne
+// est éprouvée des deux côtés, sans quoi un hors-par-un retirerait une matrice que le
+// moteur accepte et aucun autre cas ne le verrait.
+func TestOverflowingOrdinateDegenerates(t *testing.T) {
+	for _, c := range []struct {
+		name     string
+		m        Matrix
+		wantZero bool
+	}{
+		{"la dernière hauteur représentable", Dimetric(32, 32767), false},
+		{"la première qui déborde", Dimetric(32, 32768), true},
+		{"largement au-delà", Dimetric(40000, 40000), true},
+		{"par des coefficients bruts", Raw(1, 0, 32768, 32768), true},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if zero := c.m == (Matrix{}); zero != c.wantZero {
+				t.Fatalf("matrice nulle = %v, attendu %v", zero, c.wantZero)
+			}
+			if !c.wantZero {
+				return
+			}
+			if ex, ey, _, _ := c.m.Project(1, 1, 1); ex != 0 || ey != 0 {
+				t.Errorf("projeté (%d, %d), attendue l'origine", ex, ey)
+			}
+		})
+	}
+}
+
+// TestFloorHeightCannotOverflow démontre que la garde de [Matrix.WithFloorHeight] ne
+// peut pas se déclencher, et **c'est tout ce qu'il garde** : aucune hauteur d'étage ne
+// fait déborder une matrice que son constructeur a acceptée.
+//
+// Il est donc un témoin et non une protection, sur le modèle de celui qui démontre que
+// les bornes de [pixel] sont inatteignables. Ce qu'il surveille est une propriété tenue
+// par trois valeurs indépendantes, et qui ne laisse **pas un bit de marge** : une
+// matrice acceptée a `|c|+|d| ≤ 2^31 − 1`, [quantize] sature `floor` à cette même
+// valeur, et leur somme vaut exactement [maxOrdinateSum]. Baisser le seuil ou changer
+// la saturation ouvrirait le trou en silence ; ce cas rougit alors.
+//
+// La garde reste dans le code pour cette raison, et non parce qu'on l'aurait vue
+// mordre : mesuré sur cent soixante-quinze couples de matrice et de hauteur, aucun ne
+// l'atteint.
+func TestFloorHeightCannotOverflow(t *testing.T) {
+	if 2*int64(math.MaxInt32) != maxOrdinateSum {
+		t.Errorf("deux fois la saturation de quantize vaut %d, le seuil %d :"+
+			" la garde de WithFloorHeight peut désormais mordre, et il lui faut un cas",
+			2*int64(math.MaxInt32), maxOrdinateSum)
+	}
+
+	// La dernière matrice que le montage accepte, et la plus grande hauteur d'étage
+	// qu'un appelant puisse exprimer. Le couple le plus défavorable qui existe.
+	worst := Dimetric(32, 32767)
+	if worst == (Matrix{}) {
+		t.Fatal("la matrice de référence est refusée au montage")
+	}
+	if got := worst.WithFloorHeight(math.MaxInt32); got == (Matrix{}) {
+		t.Error("le couple le plus défavorable dégénère, alors que rien ne devrait l'atteindre")
 	}
 }
