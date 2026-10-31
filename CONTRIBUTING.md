@@ -59,9 +59,10 @@ places where one change tips over others.
 - **The direction of dependencies between packages.** It never inverts. If a
   backend needs to sort, to project or to consult the scene, the boundary is in
   the wrong place and the fix belongs in the core, not in the backend.
-- **The layout of `Quad` and `DrawList`.** Fixed-size fields, contiguous array, no
-  string, no interface, no nested slice. A single field added to the wrong type
-  makes the engine unusable from another language.
+- **The layout of `Quad` and `DrawList`, `Overlap` and `OverlapList`.** Fixed-size
+  fields, contiguous array, no string, no interface, no nested slice. A single field
+  added to the wrong type makes the engine unusable from another language, and a case
+  in the `render` package pins the sizes as well as the offsets.
 - **How the sort key is composed.** It orders drawing everywhere it does not leave
   two things tied, and its bit budget sets the engine's documented limits.
 - **`testdata/references/`.** The images are authoritative for rendering;
