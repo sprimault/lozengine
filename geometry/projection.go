@@ -125,13 +125,7 @@ func (m Matrix) MaxCells(width, height int32) int {
 func depthOf(fx, fy int32) uint32 {
 	quarters := (int64(fx) + int64(fy)) >> quartBits
 
-	if quarters < 0 {
-		return 0
-	}
-	if quarters > math.MaxUint32 {
-		return math.MaxUint32
-	}
-	return uint32(quarters)
+	return saturate[uint32](quarters, 0, math.MaxUint32)
 }
 
 // heightOf compte la hauteur au-dessus du sol en quarts de cellule.
@@ -141,7 +135,7 @@ func depthOf(fx, fy int32) uint32 {
 // arrondi que le pixel, et pour la même raison que la profondeur.
 //
 // Si elle se calculait ailleurs, il faudrait y refaire la conversion saturée qui rend
-// le résultat identique d'une machine à l'autre — celle que quantize porte, et qui
+// le résultat identique d'une machine à l'autre — celle que [saturate] porte, et qui
 // n'a aucune raison d'exister en deux endroits.
 //
 // Non signée : un point sous le sol se range au niveau du sol plutôt que de repasser
@@ -149,13 +143,7 @@ func depthOf(fx, fy int32) uint32 {
 func heightOf(fz int32) uint16 {
 	quarters := int64(fz) >> quartBits
 
-	if quarters < 0 {
-		return 0
-	}
-	if quarters > math.MaxUint16 {
-		return math.MaxUint16
-	}
-	return uint16(quarters)
+	return saturate[uint16](quarters, 0, math.MaxUint16)
 }
 
 // clamp ramène un pixel dans la plage où son produit par un coefficient de
