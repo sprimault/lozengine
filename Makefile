@@ -13,10 +13,17 @@ export CGO_ENABLED := 0
 
 -include makefile.local
 
-.PHONY: build example test bench cover depot fmt vet deps entetes frontiere procedures \
-        cross check \
-        floor container container-clean references journal notes titre clean
+# `.PHONY` se déclare au-dessus de chaque cible, et non en un bloc de tête. Le bloc
+# s'est désynchronisé trois fois de suite, une par cible ajoutée : `bancs`, `liens` et
+# `surface` y manquaient, dont deux que `check` appelle. Un fichier du même nom à la
+# racine aurait alors fait sauter la cible — `make` sort avec zéro et n'a rien à dire —,
+# donc `check` au vert sans avoir exécuté ni `liens` ni `surface`. Les trois noms sont
+# plausibles : `surface` est déjà celui de fichiers de travail.
+#
+# Au-dessus de sa cible, une cible ajoutée sans sa ligne se voit dans le même morceau
+# de diff. C'est ce que le bloc ne permettait pas.
 
+.PHONY: build
 build:
 	go build ./...
 
@@ -31,6 +38,7 @@ build:
 # sortie.
 EXAMPLE ?= hello
 
+.PHONY: example
 example:
 	go run ./examples/$(EXAMPLE)
 
@@ -48,8 +56,24 @@ RUN ?=
 # Aucun test n'ouvre de fenêtre. La suite de non-régression est visuelle mais
 # passe par le rastériseur logiciel, donc elle tourne sans écran — c'est ce qui
 # permet de la lancer en intégration continue et de juger le noyau sans backend.
+#
+# **`-count=1`, parce que le cache de Go porte aussi les résultats de tests.** Sans lui,
+# le second appel rendait `ok (cached)` pour neuf paquets sur douze : vert sans avoir
+# exécuté un seul de leurs tests, alors que `/verif` se relance plusieurs fois par lot.
+# Le régime fautif est nommé : dix gardes `AllocsPerRun` vivent dans ces neuf paquets, et
+# une qui ne tombe qu'une fois sur dix est annoncée verte par tous les passages suivants.
+#
+# Ce qui a décidé est que la réexécution est **gratuite** — la suite entière tourne en
+# moins d'une seconde, le temps étant dans la compilation —, donc il n'y avait aucun
+# compromis à peser.
+#
+# Et ce n'est pas une parade de poste : l'intégration continue a le même cache.
+# `actions/setup-go` le restaure, et sa clé suit `go.mod`, qui est vide et ne change
+# presque jamais — mesuré le 31 octobre 2026, des entrées créées le 23 y servaient
+# encore huit jours plus tard. Le drapeau vaut donc pour les trois régimes.
+.PHONY: test
 test:
-	go test $(if $(RUN),-run '$(RUN)') $(PKG)
+	go test -count=1 $(if $(RUN),-run '$(RUN)') $(PKG)
 
 # Rien ne crée le répertoire de sortie : il est ignoré par git, donc absent d'un
 # clone neuf, et `make clean` le supprime. Les cibles qui y écrivent en dépendent.
@@ -67,6 +91,7 @@ $(SORTIE):
 #
 # `-o` place aussi le binaire de test dans la sortie, au lieu de l'abandonner à la
 # racine du dépôt.
+.PHONY: bench
 bench: | $(SORTIE)
 	@for p in $$(go list $(PKG)); do \
 	  nom=$$(basename $$p); \
@@ -104,6 +129,7 @@ bench: | $(SORTIE)
 # 2026 sur `Sorter.Sheets`, donnée muette alors que le pas du moteur l'appelle à chaque
 # image — instrumentée, elle est à 100 %. La liste des paquets est celle du chemin chaud
 # et se dérive de la même variable, donc les deux ne peuvent pas diverger.
+.PHONY: bancs
 bancs: | $(SORTIE)
 	@go test $(CHEMIN_CHAUD) -run '^$$' -bench . -benchtime 1x \
 	  -coverpkg $(shell echo $(CHEMIN_CHAUD) | tr ' ' ',') \
@@ -123,6 +149,7 @@ bancs: | $(SORTIE)
 # temporaire du système — que `GOTMPDIR` ne couvre pas, celui-ci suivant `TMP` — et
 # ouvre le navigateur par défaut. Une cible de lecture ne prend pas la main sur la
 # session de qui la lance, et tout ce que la chaîne Go produit reste dans la sortie.
+.PHONY: cover
 cover: | $(SORTIE)
 	go test -coverprofile=$(SORTIE)/couverture.out $(PKG)
 	go tool cover -html=$(SORTIE)/couverture.out -o $(SORTIE)/couverture.html
@@ -130,6 +157,7 @@ cover: | $(SORTIE)
 # Plusieurs contrôles tirent leur périmètre de git. Hors d'un dépôt, la liste
 # revient vide et la cible passe au vert sans avoir rien lu : un contrôle qui ne
 # peut pas échouer n'en est pas un.
+.PHONY: depot
 depot:
 	@git rev-parse --git-dir >/dev/null 2>&1 || { \
 	  echo "pas un dépôt git : le périmètre des contrôles ne peut pas être établi"; \
@@ -156,6 +184,7 @@ SUIVIS = git -c core.quotepath=false ls-files --cached --others --exclude-standa
 #
 # La liste vide est traitée à part : `gofmt -l` sans argument lit l'entrée standard
 # et attend indéfiniment.
+.PHONY: fmt
 fmt: depot
 	@fichiers=$$($(SUIVIS) -- '*.go'); \
 	[ -n "$$fichiers" ] || exit 0; \
@@ -183,9 +212,11 @@ fmt: depot
 # première édition au-dessus du site, et le contrôle rougirait sans défaut.
 UNSAFEPTR = internal/backend/window_windows.go=1
 
-# Trois cibles, pour la raison de `deps` : un fichier sous contrainte de construction ne
-# se voit pas depuis une autre. Les comptes portent donc sur l'union des passes, les
-# fichiers étant disjoints par leur suffixe.
+# Les systèmes que parcourt un contrôle qui lit les sources, et ils sont trois.
+#
+# Un fichier sous contrainte de construction ne se voit pas depuis un autre système :
+# une passe par système est donc le minimum, et c'est la raison que `deps` et
+# `frontiere` partagent avec `vet`.
 #
 # **`js/wasm` est la troisième parce qu'elle est la seule à compiler ce qui n'est ni
 # Windows ni Linux.** Le cas de repli du contrat de fenêtre porte la contrainte
@@ -194,8 +225,26 @@ UNSAFEPTR = internal/backend/window_windows.go=1
 # que sa propre godoc démentait. Vérifié le 30 octobre 2026 en y introduisant une
 # variable inutilisée : seule la passe `js/wasm` l'a refusée.
 #
-# Une architecture est nommée pour chaque cible, `js` n'en acceptant qu'une et le défaut
-# de l'hôte n'ayant aucune raison de valoir pour les autres.
+# **Une seule liste pour les trois cibles, et c'est elle que la variable achète.** Elle
+# était tenue trois fois et avait divergé : `vet` est passé à trois passes le 30 octobre
+# 2026, `deps` et `frontiere` sont restées à deux. Les deux ont donc continué de passer
+# au vert sans avoir lu la famille du navigateur — celle que le jalon 5 écrit. Et le
+# défaut ne se voit pas : d'une liste ajoutée à quatre endroits sur cinq, seul l'endroit
+# oublié cesse de couvrir la famille nouvelle, les quatre autres restant verts.
+#
+# Le job `Plancher` du workflow la double nécessairement, étant dans un autre fichier et
+# ne pouvant pas lire ce Makefile ; son commentaire dit qu'il la double.
+#
+# Une architecture est nommée pour chaque système, `js` n'en acceptant qu'une et le
+# défaut de l'hôte n'ayant aucune raison de valoir pour les autres.
+PASSES = windows/amd64 linux/amd64 js/wasm
+
+# Le décompte d'`UNSAFEPTR` porte sur l'union des passes, **dédoublonnée** : un même
+# diagnostic compte une fois, quel que soit le nombre de passes qui compilent son
+# fichier. Sans cela il n'était juste que par coïncidence — les fichiers de backend
+# étant disjoints par leur suffixe, chaque site n'apparaît aujourd'hui que sous un
+# système, et une seconde passe sur le même système aurait fait échouer la cible sur du
+# code conforme.
 #
 # Les séparateurs sont normalisés avant comparaison, la sortie portant des antislashs
 # sous Windows. L'antislash se donne à `tr` en octal : écrit tel quel, il traverse la
@@ -214,10 +263,11 @@ UNSAFEPTR = internal/backend/window_windows.go=1
 # Et le code de sortie de `go vet` est ignoré au profit de sa sortie : ce qui n'est pas
 # dans la liste reste affiché et fait échouer la cible, y compris une erreur de
 # compilation.
+.PHONY: vet
 vet:
-	@sortie=$$(for cible in windows/amd64 linux/amd64 js/wasm; do \
+	@sortie=$$(for cible in $(PASSES); do \
 	    GOOS=$${cible%/*} GOARCH=$${cible#*/} go vet ./... 2>&1; done \
-	  | tr '\134' '/' | grep -v '^#' || true); \
+	  | tr '\134' '/' | grep -v '^#' | sort -u || true); \
 	reste="$$sortie"; \
 	for site in $(UNSAFEPTR); do \
 	  fichier=$${site%=*}; attendus=$${site#*=}; \
@@ -280,22 +330,24 @@ SANS_DEPENDANCE = render geometry scene raster input appearance internal/sorting
 # dans un fichier `_test.go` passe inaperçu : c'est la seule entorse que quelqu'un
 # aurait une raison de tenter, et c'est précisément celle qui échappait.
 #
-# Les deux plateformes, parce qu'un import placé sous contrainte de construction ne
-# se voit pas depuis l'autre — et les deux boucles, pas seulement la première. Le trou
-# que cela ferme est étroit mais c'est le pire possible : une dépendance **de la liste
-# close** importée dans le cœur sous contrainte de construction. La première boucle la
-# laisse passer puisqu'elle est autorisée ailleurs, et la seconde ne la voyait pas.
+# Les passes de `PASSES`, parce qu'un import placé sous contrainte de construction ne
+# se voit pas depuis un autre système — et les deux boucles, pas seulement la première.
+# Le trou que cela ferme est étroit mais c'est le pire possible : une dépendance **de la
+# liste close** importée dans le cœur sous contrainte de construction. La première
+# boucle la laisse passer puisqu'elle est autorisée ailleurs, et la seconde ne la voyait
+# pas.
 # Éprouvé sur une copie dans `.tmp/`, par un `golang.org/x/image` substitué et importé
 # depuis un fichier `_linux.go` de `raster` : le contrôle passait au vert.
 #
 # Le filtre du module n'est pas ancré : `-test` fait remonter des pseudo-paquets de
 # la forme `paquet [paquet.test]`, dont le chemin du module ne commence pas la ligne.
+.PHONY: deps
 deps:
 	@externes=""; \
-	for os in windows linux; do \
-	  liste=$$(GOOS=$$os go list -deps -test \
+	for cible in $(PASSES); do \
+	  liste=$$(GOOS=$${cible%/*} GOARCH=$${cible#*/} go list -deps -test \
 	    -f '{{if not .Standard}}{{.ImportPath}}{{end}}' ./...) \
-	    || { echo "go list a échoué pour $$os"; exit 1; }; \
+	    || { echo "go list a échoué pour $$cible"; exit 1; }; \
 	  externes="$$externes$$liste "; \
 	done; \
 	externes=$$(printf '%s\n' $$externes \
@@ -306,14 +358,14 @@ deps:
 	  echo "$$hors_liste"; \
 	  exit 1; \
 	fi; \
-	for os in windows linux; do \
+	for cible in $(PASSES); do \
 	  for p in $(SANS_DEPENDANCE); do \
 	    [ -d "$$p" ] || continue; \
-	    atteint=$$(GOOS=$$os go list -deps -test \
+	    atteint=$$(GOOS=$${cible%/*} GOARCH=$${cible#*/} go list -deps -test \
 	      -f '{{if not .Standard}}{{.ImportPath}}{{end}}' ./$$p \
 	      | grep -v 'github.com/sprimault/lozengine'); \
 	    if [ -n "$$atteint" ]; then \
-	      echo "le cœur du moteur n'a droit à aucune dépendance, et $$p atteint sous $$os :"; \
+	      echo "le cœur du moteur n'a droit à aucune dépendance, et $$p atteint sous $$cible :"; \
 	      echo "$$atteint"; \
 	      exit 1; \
 	    fi; \
@@ -330,7 +382,18 @@ NOYAU = render geometry scene raster input appearance internal/sorting
 # `os` n'y est pas, et c'est délibéré : charger une planche ou écrire une image
 # l'emploie légitimement. `net` suffit à attraper la fuite qui compte, puisque le
 # backend Linux ouvre un socket Unix, et qu'`os` ne sait pas le faire.
-INTERDIT = syscall|net|os/exec|github\.com/sprimault/lozengine/internal/backend(/.*)?
+#
+# **Chaque entrée est une famille, et elle ne l'était pas.** Le motif compare le chemin
+# entier, donc `syscall` et `net` nus ne reconnaissaient qu'eux-mêmes : `syscall/js`,
+# `net/http` et n'importe quel sous-paquet passaient sans un mot. L'échéance est nommée
+# — le jalon 5 écrit le backend du navigateur par `syscall/js`.
+#
+# Ce que le correctif attrape, et il faut le dire pour ne pas croire garder plus : **un
+# paquet du noyau qui importe lui-même `syscall/js`**, `raster` appelant `putImageData`
+# ou `input` lisant les événements de la page. Il n'attrape pas un mauvais placement de
+# conversion : une conversion de pixels écrite dans `render` est du Go pur, et reste
+# invisible à tout contrôle qui lit les imports.
+INTERDIT = syscall(/.*)?|net(/.*)?|os/exec|github\.com/sprimault/lozengine/internal/backend(/.*)?
 
 # Le contrôle que `cross` ne fait pas.
 #
@@ -344,21 +407,27 @@ INTERDIT = syscall|net|os/exec|github\.com/sprimault/lozengine/internal/backend(
 # `fmt` tire `os`, qui tire `syscall`, si bien que le moindre paquet du monde
 # deviendrait une fuite. Ce qu'on cherche est l'arête qu'un humain a écrite.
 #
+# Les passes viennent de `PASSES` : un import placé sous contrainte de construction ne
+# se voit pas depuis un autre système, et la famille du navigateur n'était pas lue. Le
+# `sed` qui étiquette une fuite prend `|` comme délimiteur, un couple portant une barre
+# oblique.
+#
 # Le sens des dépendances entre paquets internes n'est pas contrôlé ici. Il est dans
 # docs/conception.md, et l'y recopier ferait deux définitions qui divergeraient.
+.PHONY: frontiere
 frontiere:
 	@fuites=""; \
-	for os in windows linux; do \
+	for cible in $(PASSES); do \
 	  for p in $(NOYAU); do \
 	    [ -d "$$p" ] || continue; \
-	    internes=$$(GOOS=$$os go list -deps ./$$p \
+	    internes=$$(GOOS=$${cible%/*} GOARCH=$${cible#*/} go list -deps ./$$p \
 	      | grep '^github\.com/sprimault/lozengine') \
-	      || { echo "go list a échoué pour $$p"; exit 1; }; \
-	    arcs=$$(GOOS=$$os go list \
+	      || { echo "go list a échoué pour $$p sous $$cible"; exit 1; }; \
+	    arcs=$$(GOOS=$${cible%/*} GOARCH=$${cible#*/} go list \
 	      -f '{{range .Imports}}{{$$.ImportPath}} {{.}}{{"\n"}}{{end}}' $$internes); \
 	    trouve=$$(printf '%s\n' "$$arcs" | grep -E " ($(INTERDIT))$$"); \
 	    if [ -n "$$trouve" ]; then \
-	      fuites="$$fuites$$(printf '%s\n' "$$trouve" | sed "s/\$$/ ($$os)/")\n"; \
+	      fuites="$$fuites$$(printf '%s\n' "$$trouve" | sed "s|\$$| ($$cible)|")\n"; \
 	    fi; \
 	  done; \
 	done; \
@@ -392,6 +461,7 @@ PROCEDURES_GARDEES = setProcessDpiAwarenessContext getDpiForSystem setDIBitsToDe
 #
 # Le décompte exact plutôt qu'une absence : `procAddr` porte les deux seuls usages
 # légitimes, donc un troisième dans ce fichier est un contournement.
+.PHONY: procedures
 procedures:
 	@mauvais=""; \
 	for p in $(PROCEDURES_GARDEES); do \
@@ -435,6 +505,7 @@ procedures:
 CIBLES = windows/amd64 windows/arm64 windows/386 linux/amd64 linux/arm64 \
          linux/arm linux/386 linux/riscv64 js/wasm
 
+.PHONY: cross
 cross:
 	@for cible in $(CIBLES); do \
 	  os=$${cible%/*}; arch=$${cible#*/}; \
@@ -459,6 +530,7 @@ DISPENSES = ^(\.editorconfig|\.gitattributes|\.gitignore|Makefile|go\.mod|LICENS
 # Les deux lignes sont vérifiées, pas seulement la ligne SPDX : docs/go.md impose
 # aussi la ligne de copyright, et un contrôle qui n'en regarde qu'une laisse passer
 # la moitié de ce qu'il annonce. L'année n'est pas figée.
+.PHONY: entetes
 entetes: depot
 	@manquants=$$($(SUIVIS) \
 	  | grep -Ev '$(DISPENSES)' \
@@ -510,6 +582,7 @@ entetes: depot
 # `[autre.T.M]`, qui se résout si le paquet est importé et pas sinon. Le périmètre gardé
 # est celui de l'alias, qui a produit l'essentiel des trente-trois ; les six liens
 # qualifiés du dépôt ont été corrigés à la main dans le même lot.
+.PHONY: liens
 liens:
 	@fautifs=""; \
 	for f in $$(git ls-files '*.go' | grep -v '_test\.go$$' | grep -v '^internal/'); do \
@@ -557,14 +630,21 @@ liens:
 # vu huit listes recopiées diverger toutes les huit.
 #
 # **Ce qu'elle ne voit pas, et il faut le dire** : sans base de comparaison, elle
-# passe. Le contrôle distant reconstitue un index sans historique, et l'intégration
-# continue ne récupère que la branche de la pull request — il y faudrait un
-# `fetch-depth: 0`, qui touche le workflow et non cette cible. Elle ne protège donc que
-# le poste, c'est-à-dire l'endroit où `/verif` tourne avant chaque poussée, qui est le
-# moment où elle sert.
+# passe. C'est le cas du contrôle distant, qui reconstitue un index sans historique.
+#
+# **L'intégration continue, en revanche, la garde depuis le 31 octobre 2026** : le job
+# `Contrôles` récupère l'historique entier, donc `origin/master` existe dans le dépôt du
+# runner et la pull request se compare à lui. Jusque-là le `checkout` ne ramenait que la
+# branche visée, la cible sortait sur « pas de base de comparaison » et rendait zéro :
+# elle ne pouvait pas échouer là où la protection de branche l'exige, et seul un `/verif`
+# tenait le dispositif.
+#
+# Sur une poussée sur `master`, elle compare toujours l'arbre à lui-même et passe. C'est
+# sans conséquence : le passage qui refuse est celui de la pull request, avant la fusion.
 #
 # SANS_JOURNAL=1 la contourne, pour un alias mécanique qui n'a rien à dire. Le
 # contournement s'écrit, il ne se devine pas.
+.PHONY: surface
 surface:
 	@if [ -n "$(SANS_JOURNAL)" ]; then exit 0; fi; \
 	base=$$(git rev-parse --verify --quiet origin/master \
@@ -604,6 +684,7 @@ surface:
 	  exit 1; \
 	fi
 
+.PHONY: check
 check: fmt vet deps entetes frontiere procedures liens journal surface cross test
 
 # Le plancher du module, lu dans `go.mod` et nulle part ailleurs.
@@ -626,6 +707,7 @@ PLANCHER = $(shell awk '/^go /{print $$2; exit}' go.mod)
 #
 # Hors de `check`, et pas seulement par prudence : `check` l'appelant relancerait
 # `check`.
+.PHONY: floor
 floor:
 	@echo "contrôle complet sous Go $(PLANCHER), le plancher du module"
 	@GOTOOLCHAIN=go$(PLANCHER) $(MAKE) check
@@ -675,12 +757,12 @@ CACHE_MONTE = /gocache
 # des sources, un index git et les fichiers du lot précédent — et c'est cette phrase
 # qu'il faut relire avant d'être tenté d'y persister autre chose.
 #
-# **`-count=1` force la réexécution des tests malgré ce cache**, qui porte aussi leurs
-# résultats. Sans lui, un passage sans changement les sauterait tous — et la cible
-# cesserait de rejouer le régime du runner, qui part d'un cache vide et les exécute.
-# Ce qui a décidé est la mesure : la réexécution est **gratuite**, 3 secondes avec ou
-# sans, parce que le temps était dans la compilation et non dans des tests qui durent
-# des millisecondes. Un test non déterministe reste donc attrapé ici.
+# **La réexécution des tests malgré ce cache est portée par la cible `test`**, qui
+# prend `-count=1` pour tous les régimes depuis le 31 octobre 2026 ; le `GOFLAGS` que
+# cette cible posait n'avait plus qu'à partir. Le motif vit donc là-bas, et il y a
+# gagné un fait : contrairement à ce qui s'écrivait ici, **le runner ne part pas d'un
+# cache vide** — `actions/setup-go` lui restaure le même, sur une clé qui suit un
+# `go.mod` vide.
 #
 # **La machine qui porte le démon est partagée.** Tout ce que cette cible crée porte
 # le préfixe du dépôt : un conteneur `--rm` nommé par le dépôt et l'instant, et ce
@@ -692,6 +774,7 @@ CACHE_MONTE = /gocache
 # conteneur en chemins Windows avant que `docker` les voie. Sans elle, Go rapporte
 # « GOCACHE is not an absolute path » et la cible échoue sur un contrôle sans rapport.
 # La variable n'a de sens que sur ce shell, et Linux l'ignore.
+.PHONY: container
 container:
 	@command -v docker >/dev/null || { echo "docker est absent, et cette cible seule en a besoin"; exit 1; }
 	@echo "contrôle complet dans un conteneur, Go $(PLANCHER)"
@@ -701,7 +784,6 @@ container:
 	  -e CGO_ENABLED=0 \
 	  -e GOTOOLCHAIN=local \
 	  -e GOCACHE=$(CACHE_MONTE) \
-	  -e GOFLAGS=-count=1 \
 	  -v $(CACHE_VOLUME):$(CACHE_MONTE) \
 	  golang:$(PLANCHER) \
 	  sh -c 'mkdir -p /src && cd /src && tar -x && git init -q . && git add -A && make check'
@@ -709,6 +791,7 @@ container:
 # Vide le cache du conteneur, et c'est le pendant obligé de sa persistance : ce qui
 # survit à une commande doit avoir un moyen de partir qui ne demande pas de connaître
 # la machine. Rien n'en dépend — le contrôle suivant le remplit en 18 secondes.
+.PHONY: container-clean
 container-clean:
 	@command -v docker >/dev/null || { echo "docker est absent, et cette cible seule en a besoin"; exit 1; }
 	@docker volume rm -f $(CACHE_VOLUME) >/dev/null
@@ -721,6 +804,7 @@ PKG_REFERENCES ?= ./internal/viewer
 
 # Jamais automatique, et toujours justifiée dans le message de commit : une
 # image de référence qui change sans raison énoncée est un bug entériné.
+.PHONY: references
 references:
 	go test $(PKG_REFERENCES) -regenerate
 
@@ -750,6 +834,7 @@ references:
 #
 # Le comptage prend les puces de premier niveau, celles qui commencent la ligne :
 # une continuation est indentée, donc elle ne compte pas deux fois.
+.PHONY: journal
 journal:
 	@ecarts=$$(awk ' \
 	  function solde() { \
@@ -793,6 +878,7 @@ journal:
 VERSION ?=
 JOURNAL ?= CHANGELOG.md
 
+.PHONY: notes
 notes:
 	@[ -n "$(VERSION)" ] || { \
 	  echo "VERSION attendue, par exemple : make notes VERSION=0.1.0"; exit 1; }
@@ -818,6 +904,7 @@ notes:
 # réencode les octets non ASCII d'une ligne de recette avant de les passer au
 # shell, et un tiret long tapé ici ressortirait en mojibake dans le titre. Ce qui
 # vient du journal par `sed`, lui, traverse intact.
+.PHONY: titre
 titre:
 	@[ -n "$(VERSION)" ] || { \
 	  echo "VERSION attendue, par exemple : make titre VERSION=0.1.0"; exit 1; }
@@ -840,6 +927,7 @@ titre:
 
 # Les binaires de test que `bench` produit vont dans la sortie, mais un `go test -c`
 # lancé à la main les dépose à la racine : on les retire aussi.
+.PHONY: clean
 clean:
 	rm -rf $(SORTIE) dist
 	rm -f *.test *.test.exe
