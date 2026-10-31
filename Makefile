@@ -502,11 +502,42 @@ procedures:
 # `freebsd/amd64` et les cibles Apple compilent aussi, mesuré le 5 octobre 2026. Elles ne
 # sont pas ici parce qu'aucun texte ne les annonce : cette liste est celle des promesses
 # tenues, pas celle du possible.
+#
+# **Et c'est elle qui fait foi**, ce que la cible vérifie désormais dans les deux sens :
+# chaque couple d'ici apparaît dans les deux `README`, et chaque couple qu'un `README`
+# nomme est ici. `linux/riscv64` y était entré sans que les `README` le nomment, et les
+# deux comptaient pourtant « neuf » dix lignes plus bas — un décompte juste sur une
+# énumération qui en portait huit.
+#
+# Le contrôle a demandé un préalable : les trois couples du palier « tourne » n'étaient
+# nommés qu'en prose — « Windows et Linux en `amd64` » —, donc un grep littéral aurait
+# crié faux sur eux. Les écrire en couples a été le premier geste du lot.
+#
+# Il passe avant la compilation parce qu'il est instantané : échouer après neuf
+# `go build` ferait attendre une minute pour un défaut de texte.
 CIBLES = windows/amd64 windows/arm64 windows/386 linux/amd64 linux/arm64 \
          linux/arm linux/386 linux/riscv64 js/wasm
 
 .PHONY: cross
 cross:
+	@manque=""; \
+	for cible in $(CIBLES); do \
+	  for r in README.fr.md README.md; do \
+	    grep -qF "\`$$cible\`" $$r || manque="$$manque  $$cible absent de $$r\n"; \
+	  done; \
+	done; \
+	for cible in $$(grep -ohE '`(windows|linux|js|darwin|freebsd|android|ios)/[a-z0-9]+`' \
+	    README.fr.md README.md | tr -d '`' | sort -u); do \
+	  case " $(CIBLES) " in *" $$cible "*) ;; \
+	    *) manque="$$manque  $$cible annoncé dans un README, absent de CIBLES\n";; \
+	  esac; \
+	done; \
+	if [ -n "$$manque" ]; then \
+	  echo "les couples compilés et les couples annoncés ne correspondent pas :"; \
+	  printf '%b' "$$manque" | grep -v '^$$' | sort -u; \
+	  echo "CIBLES fait foi ; les README la reflètent"; \
+	  exit 1; \
+	fi
 	@for cible in $(CIBLES); do \
 	  os=$${cible%/*}; arch=$${cible#*/}; \
 	  echo "GOOS=$$os GOARCH=$$arch go build ./..."; \

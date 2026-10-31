@@ -33,13 +33,13 @@ interne basse remontée vers la fenêtre par un facteur entier.
 
 **Les plateformes, et ce que chacune promet.** Compile, tourne, ou reste vert en
 intégration continue : trois promesses différentes, et seule celle qui est tenue
-est annoncée. Windows et Linux en `amd64`, et Linux en `arm64` — la suite de tests
+est annoncée. `windows/amd64`, `linux/amd64` et `linux/arm64` — la suite de tests
 y passe en intégration continue, à chaque lot, et sur `arm64` elle vérifie en plus
 que la même scène rend exactement les mêmes pixels qu'ailleurs, ce qui est la
 promesse du calcul en nombres entiers. `windows/arm64`, `windows/386`,
-`linux/arm`, `linux/386` et `js/wasm` — ils **compilent**, ce que `make check`
-vérifie, et rien de plus tant que le parc ne contient ni Raspberry Pi, ni
-téléphone. C'est le zéro-dépendance qui ouvre cette liste, et une dépendance cgo
+`linux/arm`, `linux/386`, `linux/riscv64` et `js/wasm` — ils **compilent**, ce que
+`make check` vérifie, et rien de plus tant que le parc ne contient ni Raspberry
+Pi, ni RISC-V, ni téléphone. C'est le zéro-dépendance qui ouvre cette liste, et une dépendance cgo
 la refermerait au lieu de l'élargir : `go build` ne suffirait plus.
 
 Le navigateur est la troisième cible, par WebAssembly, et c'est lui qui donnera
@@ -48,10 +48,12 @@ ce n'est pas la même chose qu'y être inaccessible : la bibliothèque native pr
 la feuille de route le laisse consommer par une application qui fournit la sienne.
 [`ROADMAP.md`](ROADMAP.md) en donne le détail, jalon par jalon.
 
-Deux paquets périphériques font exception, sous licence permissive et par
-décision inscrite : le rendu de polices et la sortie audio. Les réécrire
-coûterait des semaines pour un résultat qui ne distinguerait en rien le moteur.
-Le détail est dans [`docs/go.md`](docs/go.md).
+Deux paquets périphériques sont **admis et non encore employés**, sous licence
+permissive et par décision inscrite : le rendu de polices et la sortie audio. Les
+réécrire coûterait des semaines pour un résultat qui ne distinguerait en rien le
+moteur. Aucun des deux n'est dans `go.mod`, qui est vide et le reste : le texte
+affiché vient d'une planche de glyphes, et l'audio attend son jalon. La colonne
+d'état de [`docs/go.md`](docs/go.md) dit où chacun en est.
 
 ## La frontière qui porte tout
 
@@ -114,6 +116,7 @@ Deux exclusions suivent de la règle de dépendance, et elles sont assumées :
   demande un compilateur C ou une dépendance de plus. iOS va plus loin : Go
   lui-même refuse de lier sans cgo. Le jalon 5 couvre les deux par le navigateur,
   et la frontière backend les garde atteignables si la contrainte change.
+
 Wayland natif n'en est pas une, et c'était une erreur de le ranger là : c'est un
 protocole qu'on écrit sur une socket comme X11, donc il vient à son jalon et non
 jamais. XWayland couvre le besoin jusque-là.
@@ -168,10 +171,9 @@ make bench     # bancs d'essai, un profil par paquet
 make clean
 ```
 
-`make check` enchaîne le formatage, `go vet`, le contrôle d'absence de
-dépendance externe, la mention de licence, l'étanchéité de la frontière,
-l'équilibre des deux langues du journal, la surface publique face au journal, la
-compilation croisée vers les neuf couples annoncés, puis les tests.
+`make check` enchaîne toutes les étapes, et
+[`docs/construction.md`](docs/construction.md) les énumère. Les tenir à deux
+endroits les a déjà fait diverger : ce fichier n'en garde donc aucune liste.
 
 Le contrôle d'étanchéité est celui qui garde l'architecture : aucun paquet du
 noyau ne doit importer `syscall`, `net`, `os/exec` ou un backend, ni directement ni à

@@ -47,9 +47,11 @@ concurrency:
   cancel-in-progress: ${{ github.ref_type != 'tag' && github.ref != 'refs/heads/master' }}
 
 jobs:
-  # Un seul job pour les sept étapes : elles sont rapides, sans dépendance à
-  # installer, et les séparer multiplierait les contextes à nommer dans la
-  # protection de branche sans rien apprendre de plus.
+  # Un seul job pour toutes les étapes de `check` : elles sont rapides, sans dépendance
+  # à installer, et les séparer multiplierait les contextes à nommer dans la protection
+  # de branche sans rien apprendre de plus. Leur nombre ne s'écrit pas ici — il a dit
+  # sept quand il y en avait onze, et `docs/construction.md` est le seul endroit qui les
+  # énumère.
   controles:
     name: Contrôles
     runs-on: ubuntu-latest
@@ -85,16 +87,17 @@ jobs:
           # dépôt. La clé suit `go.mod`, qui est ce que ce module a.
           cache-dependency-path: go.mod
 
-      # Formatage, vet, absence de dépendance externe, mentions de licence,
-      # étanchéité de la frontière, compilation croisée, tests. La liste se passe
-      # entière, ici comme en local.
+      # La liste se passe entière, ici comme en local, et elle n'est énumérée que dans
+      # `docs/construction.md`.
       - name: Contrôle complet
         run: make check
 
   # La compilation croisée du job précédent prouve que le code compile pour chacun
   # des couples annoncés ; elle ne dit rien de ce qu'il fait une fois exécuté. D'où
   # ce job : « tourne » est une autre promesse que « compile », et elle ne vaut que
-  # là où la suite passe nativement — `amd64` sur les deux systèmes.
+  # là où la suite passe nativement — `windows/amd64`, `linux/amd64` et `linux/arm64`,
+  # cette dernière depuis la `0.5.8`. Le commentaire disait « `amd64` sur les deux
+  # systèmes » vingt lignes au-dessus de la matrice qui le démentait.
   #
   # Les deux bouts de la plage annoncée, et pas seulement l'un d'eux. N'éprouver
   # que la dernière version laisserait le plancher de go.mod dériver sans que rien
