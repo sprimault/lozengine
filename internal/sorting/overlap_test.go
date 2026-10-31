@@ -356,8 +356,13 @@ func BenchmarkOverlap(b *testing.B) {
 // Un test qui s'adapterait en silence rendrait la promesse vide.
 //
 // Les trois propriétés sont celles qu'un hôte pourrait prendre pour un contrat : la
-// somme n'élimine pas les doublons, elle ne découpe pas à l'image, et elle compte les
-// pixels transparents.
+// somme n'élimine pas les doublons, elle ne découpe pas à l'image, et elle ne pondère
+// pas par l'opacité d'un cachant.
+//
+// **La troisième disait « elle compte les pixels transparents » et c'était deux choses
+// sous un nom**, ce que son changement du 31 octobre 2026 a montré : les pixels
+// transparents d'une planche comptent toujours, la mesure ne lisant aucun pixel, mais un
+// quad dont la **teinte** a un alpha nul ne compte plus — il ne peint rien.
 func TestOverlapLawIsWhatItSays(t *testing.T) {
 	t.Run("deux cachants superposés versent chacun leur part", func(t *testing.T) {
 		var one, two uint32
@@ -385,9 +390,15 @@ func TestOverlapLawIsWhatItSays(t *testing.T) {
 		}
 	})
 
-	t.Run("un cachant transparent compte autant qu'un opaque", func(t *testing.T) {
-		var opaque, clear uint32
-		for i, tint := range []render.Color{render.White(), {}} {
+	// **Ce sous-test éprouvait l'alpha nul jusqu'au 31 octobre 2026, et il a rougi comme
+	// il devait** : la loi a changé, un quad qui ne peint rien ne compte plus. Ce qui
+	// reste à garder est la propriété non pondérée — la somme ignore *combien* un
+	// cachant est opaque —, et c'est elle qu'un hôte prendrait pour un contrat. La
+	// frontière à zéro est gardée par [TestOverlapIgnoresAQuadThatPaintsNothing], qui
+	// est le cas du lot qui l'a posée.
+	t.Run("un cachant translucide compte autant qu'un opaque", func(t *testing.T) {
+		var opaque, dimmed uint32
+		for i, tint := range []render.Color{render.White(), {R: 64, G: 64, B: 64, A: 128}} {
 			s, _ := measuredScene(t, func(s *scene.Scene) {
 				a := wall()
 				a.Layer, a.Tint = 1, tint
@@ -400,12 +411,49 @@ func TestOverlapLawIsWhatItSays(t *testing.T) {
 			if i == 0 {
 				opaque = sorter.Overlaps()[0].Hidden
 			} else {
-				clear = sorter.Overlaps()[0].Hidden
+				dimmed = sorter.Overlaps()[0].Hidden
 			}
 		}
-		if clear != opaque {
-			t.Errorf("un cachant opaque rend %d, un transparent %d — la mesure regarde "+
-				"désormais les pixels, donc la godoc de Hidden est à reprendre", opaque, clear)
+		if dimmed != opaque {
+			t.Errorf("un cachant opaque rend %d, un translucide %d — la mesure pondère "+
+				"désormais par l'opacité, donc la godoc de Hidden est à reprendre", opaque, dimmed)
 		}
 	})
+}
+
+// TestOverlapIgnoresAQuadThatPaintsNothing garde que la mesure par rectangles n'écoute
+// que ce qui peint quelque chose.
+//
+// **Le cas rougit sur le code d'avant ce lot**, où la boîte entière d'un quad à teinte
+// d'alpha nul entrait dans le compte — mesuré, 128 pixels pour un quad qui n'en écrit
+// aucun, ni `put` ni `fillRect` ne traversant ce régime. Un jeu qui posait un rappel
+// éteint franchissait donc le seuil de révélation à cause de lui, et la bascule de
+// `TintByDecor` avec.
+//
+// **C'est un changement de la loi, et son statut *décrit* est ce qui l'autorise.** La
+// godoc de [render.Overlap.Hidden] portait les deux lectures — « ce qui se peint après la
+// chose » et « transparent compris » —, et c'est la seconde que le dépôt avait gardée :
+// [TestOverlapLawIsWhatItSays] éprouvait exactement ce régime et a rougi. Ce qui plaide
+// pour la nouvelle loi est l'asymétrie qu'elle ferme : la mesure au pixel écartait déjà
+// ce régime pour le sujet, par `paints` dans [Sorter.coverage].
+func TestOverlapIgnoresAQuadThatPaintsNothing(t *testing.T) {
+	s, _ := measuredScene(t, func(s *scene.Scene) {
+		blank := figure()
+		blank.Tint = render.Color{}
+		if _, ok := s.Place(scene.Entity{X: 8.5, Y: 9.5, Aspect: blank}); !ok {
+			t.Fatal("entité invisible refusée")
+		}
+	})
+
+	sorter := New(s)
+	sorter.Frame()
+	list := sorter.Overlaps()
+
+	if len(list) != 1 {
+		t.Fatalf("%d relevés, attendu 1", len(list))
+	}
+	if list[0].Hidden != 0 || list[0].ByDecor != 0 {
+		t.Errorf("Hidden = %d et ByDecor = %d, attendu 0 — un quad qui ne peint rien a compté",
+			list[0].Hidden, list[0].ByDecor)
+	}
 }

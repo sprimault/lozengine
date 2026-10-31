@@ -36,6 +36,14 @@ type Overlap struct {
 	// chose, mais des pixels de boîte — une case de personnage de soixante-quatre sur
 	// soixante-quatre n'en peint en moyenne que quatre cent quarante.
 	//
+	// **« Transparent compris » porte sur les pixels d'un rectangle, pas sur un quad
+	// qui ne peint rien**, et la nuance décide d'un seuil. Un sprite dont la planche a
+	// des bords transparents verse bien tout son rectangle ; un quad dont la teinte a
+	// un alpha nul n'écrit aucun pixel et ne verse rien du tout. Un rappel qu'un jeu
+	// éteint par sa teinte ne franchit donc aucun seuil, là qu'il le faisait jusqu'à
+	// cette version. Un quad additif, lui, compte — il peut cacher en saturant au
+	// blanc, et [scene.Aspect.Uncounted] est la voie pour l'exclure.
+	//
 	// **C'est ce qu'elle fait dans cette version, et il ne faut pas en dépendre.**
 	// Deux choses seulement tiennent d'une version à l'autre : ajouter un cachant ne
 	// la diminue jamais, et elle est nulle quand rien ne se peint après la chose. En
