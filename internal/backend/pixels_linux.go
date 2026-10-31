@@ -14,12 +14,22 @@
 // 29 octobre 2026** : « Windows n'en a aucune à faire — il décrit ses masques au
 // système, qui lit le tampon là où il est. » La description est permise et la copie
 // bien épargnée, mais GDI convertit alors pixel par pixel, pour quarante-sept fois le
-// prix. Les deux backends convertissent donc, et par la même voie — composer le mot
-// depuis les composantes, sans conversion de pointeur.
+// prix. Les deux backends convertissent donc.
+//
+// **Mais pas par la même voie, et l'affirmer était une déduction** — « composer le mot
+// depuis les composantes » décrivait Windows et non ce fichier, où les trois boucles
+// écrivaient trois octets. Ce qui les sépare est structurel : Windows écrit dans un
+// `[]uint32`, donc composer un mot est le geste naturel ; ici la destination est un
+// `[]byte` dont l'ordre vient du serveur, donc poser un mot demande de le sérialiser.
+// Mesuré le 31 octobre 2026, cette sérialisation gagne tout de même 11 à 18 % sur les
+// deux dispositions rapides, et c'est elle qu'elles emploient. La disposition générale
+// garde ses trois octets : elle lit les index au lieu de les tenir en clair, donc le
+// mot ne s'y compose pas à coût constant.
 
 package backend
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/bits"
 
@@ -115,21 +125,43 @@ func pixelOrderOf(s setup) (pixelOrder, error) {
 // appendPixels écrit les pixels à la suite de dst, dans l'ordre que le serveur attend,
 // et rend dst agrandi.
 //
-// **Une copie est inévitable**, et ce n'est pas un défaut de cette fonction : un
-// `[]render.Color` ne devient un `[]byte` que par une conversion de pointeur, et la
-// liste close que la cible `vet` exige ne s'ouvre pas pour une optimisation qu'aucune
-// mesure n'a demandée. Le brief l'avait prévu — la conversion devient la passe de
-// copie de toute façon inévitable vers le tampon d'émission.
+// **Une copie est inévitable sauf dans un cas, et ce n'est pas un défaut de cette
+// fonction** : un `[]render.Color` ne devient un `[]byte` que par une conversion de
+// pointeur, que la liste close de la cible `vet` n'autorise pas. Le brief l'avait
+// prévu — la conversion devient la passe de copie de toute façon inévitable vers le
+// tampon d'émission.
+//
+// Ce que la conversion de pointeur achèterait, mesuré le 31 octobre 2026 et non plus
+// supposé : elle ne vaut que pour [pixelDirect], seule disposition où l'ordre du
+// serveur est déjà celui du moteur — soit le cas qu'on ne rencontre pas, le visuel
+// courant étant échangé. Le chemin qui compte garderait sa copie, donc l'exception à
+// la liste close n'achèterait rien là où le coût est.
 //
 // **Le choix de la boucle se fait une fois par appel, jamais par pixel.** C'est ce que
 // les mesures du rastériseur ont établi : porter le cas jusqu'à la fonction de pixel
 // coûte 2,8 % sur tous les chemins, là où un branchement par séquence est gratuit.
 //
-// **Le quatrième octet n'est pas écrit.** En profondeur 24 sur trente-deux bits, les
-// huit bits hors masques sont indéfinis et le serveur les ignore ; les mettre à zéro
-// coûterait une écriture de plus par pixel pour rien. Ce qui en découle pour le lot
-// qui relira l'image : comparer des mots bruts serait intermittent, il faut masquer
-// des deux côtés.
+// **Les deux dispositions rapides composent le mot et le posent d'un coup**, ce qui
+// écrit l'octet hors masques à zéro. Un rangement de trente-deux bits au lieu de trois
+// de huit : mesuré sur la machine de contrôle, 18,1 % plus rapide en direct et 11,1 %
+// en échangé à 1920×1080, en trois séries dont la base remesurée. Le godoc disait
+// l'inverse jusqu'au 31 octobre 2026 — « les mettre à zéro coûterait une écriture de
+// plus par pixel pour rien » —, et c'était une déduction : il n'y a pas d'écriture de
+// plus, il y en a deux de moins. Voir [BenchmarkAppendPixels].
+//
+// La disposition générale, elle, écrit toujours trois octets aux index que les masques
+// désignent, et laisse le quatrième tel quel. Ce qui en découle pour le lot qui relira
+// l'image : sous cette disposition, comparer des mots bruts reste intermittent et il
+// faut masquer des deux côtés.
+//
+// **Ce que cette fonction coûte, et c'est le maillon le plus chaud du backend X11** :
+// 1,74 ms en direct et 1,90 ms en échangé à 1920×1080 sur la machine de contrôle, soit
+// 10,5 et 11,4 % du budget d'une image à soixante par seconde. Elle est limitée par ses
+// opérations et non par la bande passante — 8,3 Mo écrits, donc environ 4,4 Go/s sur une
+// machine qui en porte deux cent cinquante —, donc sa part brute est déjà sa part et ne
+// se pondère pas. Ce qui resterait à gagner demanderait `unsafe` dans le cœur, et le
+// déclencheur est nommé dans les règles du dépôt : le jour où ce backend manque ses
+// images.
 func (o pixelOrder) appendPixels(dst []byte, pixels []render.Color) []byte {
 	at := len(dst)
 
@@ -150,16 +182,21 @@ func (o pixelOrder) appendPixels(dst []byte, pixels []render.Color) []byte {
 	// dans les boucles vaut mieux que de lire un champ : le compilateur en tire les
 	// décalages, et c'est la boucle la plus parcourue du backend.
 	switch o.kind {
+	// **`LittleEndian` n'est pas une hypothèse sur le serveur, et ce serait la lire à
+	// l'envers.** L'ordre d'octets du serveur est déjà replié dans `o.at` par
+	// [pixelOrderOf], qui en a tiré la disposition ; ce qu'on demande ici est de poser
+	// la composante d'index zéro en premier, ce que seul `LittleEndian` garantit — et
+	// il le garantit sur n'importe quelle machine, là que `NativeEndian` en dépendrait.
 	case pixelDirect:
 		for i, c := range pixels {
-			j := 4 * i
-			out[j], out[j+1], out[j+2] = c.R, c.G, c.B
+			binary.LittleEndian.PutUint32(out[4*i:],
+				uint32(c.R)|uint32(c.G)<<8|uint32(c.B)<<16)
 		}
 
 	case pixelSwapped:
 		for i, c := range pixels {
-			j := 4 * i
-			out[j], out[j+1], out[j+2] = c.B, c.G, c.R
+			binary.LittleEndian.PutUint32(out[4*i:],
+				uint32(c.B)|uint32(c.G)<<8|uint32(c.R)<<16)
 		}
 
 	default:
