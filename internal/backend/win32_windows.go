@@ -64,6 +64,7 @@ var (
 	getKeyState      = user32.NewProc("GetKeyState")
 
 	sendMessageW       = user32.NewProc("SendMessageW")
+	postMessageW       = user32.NewProc("PostMessageW")
 	getSystemMetrics   = user32.NewProc("GetSystemMetrics")
 	createIconIndirect = user32.NewProc("CreateIconIndirect")
 	destroyIcon        = user32.NewProc("DestroyIcon")

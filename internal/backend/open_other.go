@@ -5,10 +5,7 @@
 
 package backend
 
-import (
-	"errors"
-	"runtime"
-)
+import "runtime"
 
 // Open rend une erreur nommant ce qui manque, sur toute plateforme dont le backend
 // n'est pas encore écrit.
@@ -34,6 +31,9 @@ import (
 // l'y voir tourner, et annoncer une plateforme sur la seule foi d'une compilation est
 // précisément ce que les README refusent de faire. La contrainte s'élargira le jour où
 // il y aura une machine pour la vérifier.
+// **Le message vit dans `unsupported`, hors de ce fichier**, parce qu'aucune cible du
+// dépôt n'exécute un `GOOS` qui compile celui-ci : son cas de test ne tournait nulle
+// part. Ici ne reste que l'appel.
 func Open(o Options) (Window, error) {
-	return nil, errors.New("no window on " + runtime.GOOS + ": no backend is written for it yet; the browser comes at milestone 5, Wayland and DRM/KMS at milestone 6")
+	return nil, unsupported(runtime.GOOS)
 }

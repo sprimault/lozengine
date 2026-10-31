@@ -156,13 +156,22 @@ jobs:
       # La suite de non-régression est visuelle mais passe par le rastériseur
       # logiciel : elle n'ouvre aucune fenêtre, et les runners n'ont pas d'écran.
       #
-      # Un cas en ouvre une depuis le jalon 3, et il se saute ici faute de serveur
+      # Un cas en ouvre une depuis le jalon 3, et il est sauté ici faute de serveur
       # d'affichage — c'est le job `Affichage` qui lui en fournit un et lui interdit
-      # de se sauter.
+      # d'être sauté.
       - name: Tests
         run: go test ./...
         env:
           CGO_ENABLED: 0
+          # `LOZENGINE_WINDOW` interdit au cas de fenêtre réelle d'être sauté, sur le
+          # modèle de `LOZENGINE_DISPLAY` côté X11 : sans elle, un runner qui
+          # n'accorderait pas de station de fenêtre rendrait un vert que personne ne
+          # distinguerait d'un vrai.
+          #
+          # Posée sans condition, et c'est sûr : le cas vit dans un fichier sous
+          # contrainte `windows`, donc les lignes Linux de la matrice ne le compilent
+          # même pas.
+          LOZENGINE_WINDOW: 1
 
   # Tout ce qui précède éprouve le moteur sans écran. Ce job est le seul qui parle à
   # un vrai serveur d'affichage, et c'est lui qui dit si le backend X11 parle
@@ -343,7 +352,7 @@ jobs:
           xdpyinfo | grep -i "red, green, blue masks" | head -1
           xdpyinfo -queryExtensions | grep -E "^    (MIT-SHM|BIG-REQUESTS|XKEYBOARD)" || true
 
-      # `LOZENGINE_DISPLAY` interdit au cas de se sauter. Sans elle, un serveur qui
+      # `LOZENGINE_DISPLAY` interdit au cas d'être sauté. Sans elle, un serveur qui
       # n'aurait pas démarré laisserait ce job vert en sautant le seul cas qu'il
       # existe pour exécuter — et un saut n'est pas un échec.
       #
