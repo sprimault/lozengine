@@ -93,6 +93,42 @@ func TestFocusCentersTheTarget(t *testing.T) {
 	}
 }
 
+// TestFocusOnAPixelIsExact garde la recette que la godoc de [Scene.Focus] donne pour
+// cadrer sur une origine de vue en pixels, et elle doit l'atteindre **exactement**.
+//
+// C'est ce qui dispense un jeu d'une marge empirique, et le constat qui a ouvert ce lot
+// affirmait l'inverse — un quantum de 1,6 pixel à rattraper. Il n'y en a aucun : l'écart
+// du sens monde vers écran vit à l'intérieur d'un pixel, donc reprojeter ne peut pas
+// changer de pixel.
+//
+// **La largeur impaire est le sujet, et les quatre orientations avec.** La division
+// entière par deux a lieu deux fois — dans la recette et dans le recadrage — et c'est
+// le seul endroit où les deux pourraient diverger d'un pixel ; les trois cas existants
+// de ce fichier n'emploient que des tailles paires. La rotation est là parce que le
+// remappage et son inverse doivent se compenser, ce qu'aucun d'eux ne vérifie à travers
+// un cadrage.
+func TestFocusOnAPixelIsExact(t *testing.T) {
+	for _, size := range [][2]int32{{100, 60}, {101, 61}} {
+		for _, o := range []Orientation{NoRotation, QuarterTurn, HalfTurn, ThreeQuarters} {
+			s := testRectangle(t)
+			s.Orient(o)
+			s.Focus(2, 3, size[0], size[1])
+
+			for _, want := range [][2]int32{{0, 0}, {-137, 89}, {1000, -1000}} {
+				_, _, w, h := s.View()
+				rx, ry := s.Projection().Unproject(want[0]+w/2, want[1]+h/2)
+				fx, fy := s.Unremap(rx, ry)
+				s.Focus(fx, fy, w, h)
+
+				if x, y, _, _ := s.View(); x != want[0] || y != want[1] {
+					t.Errorf("vue %d×%d, orientation %d : origine (%d, %d) visée, (%d, %d) atteinte",
+						size[0], size[1], o, want[0], want[1], x, y)
+				}
+			}
+		}
+	}
+}
+
 // TestRotationReframes vérifie qu'un quart de tour recalcule la vue.
 //
 // Sans cela, la scène pivoterait sous une origine restée en place et le point suivi

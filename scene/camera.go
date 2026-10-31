@@ -49,6 +49,36 @@ func (s *Scene) Orientation() Orientation { return s.orientation }
 // à chaque pas, d'après la fenêtre et les bornes des options, parce que la vue y suit
 // la fenêtre. La taille donnée ici est alors celle du premier cadrage, et [Scene.View]
 // dit ce qu'elle est devenue. Un hôte qui tient sa propre boucle garde les deux.
+//
+// # Cadrer sur un pixel plutôt que sur un point du monde
+//
+// Le point visé reste en cellules, et ce n'est pas un oubli : une rotation le déplace à
+// l'écran sans le déplacer dans le monde, donc un focus en pixels ne survivrait pas à
+// [Scene.Orient]. Viser une origine de vue en pixels se fait en trois lignes, et le
+// résultat est **exact au pixel** — [geometry.Matrix.Unproject] garantit ce sens :
+//
+//	_, _, w, h := s.View()
+//	rx, ry := s.Projection().Unproject(originX+w/2, originY+h/2)
+//	fx, fy := s.Unremap(rx, ry)
+//	s.Focus(fx, fy, w, h)
+//
+// La taille vient de [Scene.View] et non d'une constante, pour que la division entière
+// par deux soit la même ici et dans le recadrage : les deux troncatures portent alors
+// la même largeur et se compensent. Une vue de largeur impaire décalerait l'origine
+// d'un pixel autrement.
+//
+// La réserve, et elle ne vaut que pour la boucle du paquet racine : celle-ci réimpose
+// la taille **après** le pas du jeu, donc un jeu qui change son retrait de monde dans
+// le même pas voit l'origine glisser de la moitié de la variation d'aire.
+//
+// **Et le piège qui coûte vraiment des pixels, qui n'est pas celui qu'on attend** :
+// une borne d'écran ne se traduit pas en bornes par axe du monde. L'abscisse écran est
+// une combinaison des deux axes, donc borner `x` et `y` séparément contre des valeurs
+// dérivées d'un pixel laisse l'origine dépasser la borne visée. Un cadrage se borne sur
+// un **point** en pixels, avant la conversion ci-dessus, jamais axe par axe après.
+//
+// Où la caméra s'arrête reste une décision de jeu : [Scene.reframe] n'applique aucune
+// borne, et dit pourquoi.
 func (s *Scene) Focus(x, y float64, width, height int32) {
 	s.focusX, s.focusY = x, y
 	s.viewWidth, s.viewHeight = width, height

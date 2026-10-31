@@ -114,14 +114,78 @@ func TestUnprojectExactOnPowersOfTwo(t *testing.T) {
 	}
 }
 
-// TestRoundTripTolerance mesure l'écart de l'aller-retour sur les trois ratios et
-// vérifie qu'il reste sous le quantum annoncé par la godoc d'Unproject.
+// TestRoundTripTolerance mesure l'écart du sens monde vers écran et retour, et vérifie
+// qu'il suit la loi qu'annonce la godoc d'Unproject : la préimage d'un demi-pixel sur
+// chaque axe, soit `(1/l + 1/h)/2` cellule pour une tuile de `l` sur `h`.
 //
-// Ce que le cas protège vraiment : que l'écart reste dominé par l'arrondi au pixel et
-// non par l'inexactitude des coefficients de l'inverse. Réduire inverseBits le ferait
-// rougir, et c'est la seule chose qui le garde.
+// Ce que le cas protège : que l'écart reste dominé par l'arrondi au pixel et non par
+// l'inexactitude des coefficients de l'inverse. Réduire inverseBits le ferait rougir,
+// et c'est la seule chose qui le garde.
+//
+// **Deux choses ont changé le 31 octobre 2026, et chacune corrige un défaut du cas.**
+// Il comparait à un quantum commun de 0,05 cellule, que la godoc annonçait « sur les
+// trois ratios » : c'est faux, l'écart dépendant de la tuile — 0,047 à 32×16 mais
+// 0,052 à 37×13 et 0,094 à 16×8. Et il tirait ses points sur une **droite**, donc les
+// deux axes y étaient corrélés et le pire cas hors d'atteinte : mesuré, cette forme
+// rend 0,0484 à 37×13 là que les deux axes balayés séparément rendent 0,0519 — juste
+// au-delà du seuil qu'il comparait. **C'est ce tirage qui a laissé vivre le chiffre
+// faux**, et un cas qui ne peut pas atteindre le pire ne garde pas ce qu'il annonce.
 func TestRoundTripTolerance(t *testing.T) {
-	const quantum = 0.05
+	cases := []struct {
+		name          string
+		m             Matrix
+		width, height float64
+	}{
+		{"dimétrique", Dimetric(32, 16), 32, 16},
+		{"isométrie vraie", Isometric(32), 32, 32 / math.Sqrt(3)},
+		{"ratio arbitraire", Dimetric(37, 13), 37, 13},
+		{"petite tuile", Dimetric(16, 8), 16, 8},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			// La loi, plus un dixième pour ce que l'arrondi des coefficients ajoute.
+			// Sans cette marge le cas rougirait sur du code juste ; au-delà il cesserait
+			// de distinguer la loi d'un plancher deux fois plus haut.
+			law := (1/c.width + 1/c.height) / 2
+			limit := law * 1.1
+
+			var worst float64
+			for i := 0; i < 700; i++ {
+				for j := 0; j < 700; j++ {
+					ax, ay := float64(i)*0.013, float64(j)*0.017
+					ex, ey, _, _ := c.m.Project(ax, ay, 0)
+					rx, ry := c.m.Unproject(ex, ey)
+
+					worst = max(worst, math.Abs(rx-ax), math.Abs(ry-ay))
+				}
+			}
+
+			t.Logf("écart maximal %.6f cellule, loi %.6f", worst, law)
+			if worst > limit {
+				t.Errorf("écart de %.6f cellule, au-delà de la loi %.6f et de sa marge",
+					worst, law)
+			}
+		})
+	}
+}
+
+// TestRoundTripFromPixelsIsExact garde ce que la godoc d'Unproject annonce comme
+// **garanti** : d'un pixel vers le monde et retour, le pixel revient à l'identique.
+//
+// C'est ce qui permet à un jeu de cadrer en pixels sans marge empirique, et c'est la
+// seule des deux directions à être promise. Le cas rougirait si inverseBits baissait ou
+// si l'arrondi de `pixel` changeait de sens.
+//
+// **Il balaie aussi la bordure de la plage**, qui est l'une des deux conditions de la
+// garantie : au-delà de ±32 768 cellules de monde, le fixe sature et le pixel ne
+// revient plus. L'autre condition — une matrice d'un constructeur — ne se garde pas
+// ici : une matrice de Raw presque singulière perd l'exactitude dans la plage, ce que
+// la godoc dit et que ce cas n'a pas à démentir.
+func TestRoundTripFromPixelsIsExact(t *testing.T) {
+	// La plage du fixe, dérivée du format plutôt qu'écrite : un int32 dont seize bits
+	// sont de la fraction laisse ±32 768 à la partie entière. Le cas suit donc si le
+	// format change, au lieu de garder une borne devenue fausse.
+	const maxCells = 1 << (31 - fractionBits)
 
 	cases := []struct {
 		name string
@@ -129,23 +193,34 @@ func TestRoundTripTolerance(t *testing.T) {
 	}{
 		{"dimétrique", Dimetric(32, 16)},
 		{"isométrie vraie", Isometric(32)},
-		{"ratio arbitraire", Dimetric(37, 13)},
+		{"grille", Grid(16)},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			var worst float64
+			var seen, missed int
 
-			for i := 0; i < 4000; i++ {
-				ax, ay := float64(i)*0.37, float64(i)*0.61
-				ex, ey, _, _ := c.m.Project(ax, ay, 0)
-				rx, ry := c.m.Unproject(ex, ey)
+			for ex := int32(-40000); ex <= 40000; ex += 97 {
+				for ey := int32(-40000); ey <= 40000; ey += 701 {
+					x, y := c.m.Unproject(ex, ey)
 
-				worst = max(worst, math.Abs(rx-ax), math.Abs(ry-ay))
+					// Hors de la plage du fixe, la garantie ne porte pas.
+					if x <= -maxCells || x >= maxCells || y <= -maxCells || y >= maxCells {
+						continue
+					}
+					seen++
+
+					if rx, ry, _, _ := c.m.Project(x, y, 0); rx != ex || ry != ey {
+						missed++
+						if missed == 1 {
+							t.Errorf("(%d, %d) → (%g, %g) → (%d, %d)", ex, ey, x, y, rx, ry)
+						}
+					}
+				}
 			}
 
-			t.Logf("écart maximal : %.6f cellule", worst)
-			if worst > quantum {
-				t.Errorf("écart de %.6f cellule, au-delà du quantum de %g", worst, quantum)
+			t.Logf("%d pixels dans la plage, %d non exacts", seen, missed)
+			if seen == 0 {
+				t.Error("aucun pixel dans la plage : le balayage ne garde rien")
 			}
 		})
 	}

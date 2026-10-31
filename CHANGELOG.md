@@ -71,6 +71,10 @@ notes de publication.
 
 ### Corrigé
 
+- La documentation de `Matrix.Unproject` garantit l'aller-retour depuis un pixel et donne
+  la loi de l'autre sens, là qu'elle annonçait un écart « sous un vingtième de cellule »
+  — faux dès que la tuile est plus petite que 32×16. Cadrer en pixels ne demande aucune
+  marge.
 - La documentation dit comment éclaircir un sprite, ce qu'une teinte ne sait pas faire :
   un jeu qui lisait `Aspect.Tint` pouvait croire la chose impossible, alors que le drapeau
   `Additive` et le champ `Entity.Tier` l'expriment ensemble.
@@ -107,6 +111,10 @@ notes de publication.
 
 ### Fixed
 
+- The documentation of `Matrix.Unproject` now guarantees the round trip from a pixel and
+  states the law of the other direction, where it announced a gap "under a twentieth of a
+  cell" — false as soon as the tile is smaller than 32×16. Framing in pixels needs no
+  margin.
 - The documentation now says how to brighten a sprite, which a tint cannot do: a game
   reading `Aspect.Tint` could believe it impossible, where the `Additive` flag and
   `Entity.Tier` express it together.

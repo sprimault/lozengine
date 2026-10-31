@@ -45,12 +45,30 @@ func (m Matrix) Project(x, y, z float64) (ex, ey int32, depth uint32, height uin
 // curseur. Aucun type de coordonnée en virgule fixe n'a donc à traverser cette
 // frontière.
 //
-// L'aller-retour admet un quantum, et il vient du pixel et non de la matrice :
-// projeter arrondit au pixel entier, donc revenir au monde ne peut pas distinguer
-// deux points qu'un même pixel recouvre. Mesuré sous un vingtième de cellule sur les
-// trois ratios, et l'isométrie vraie — dont la hauteur ne tombe pas sur un entier —
-// n'y est pas moins exacte que le dimétrique : c'est ce qui montre que le plancher
-// est bien l'arrondi au pixel et non la quantification des coefficients.
+// **L'aller-retour n'a pas le même statut dans les deux sens, et c'est ce qu'il faut
+// lire avant de s'y appuyer.**
+//
+// D'un pixel vers le monde et retour, `Project(Unproject(p))` rend `p` **exactement**,
+// et c'est **garanti** : un cadrage calculé en pixels atteint donc le pixel qu'il
+// visait, sans marge à prévoir. Deux conditions, et les deux comptent. Le point du
+// monde rendu doit tenir dans la plage du fixe, ±32 768 cellules ; et la matrice doit
+// venir de [Dimetric], [Isometric] ou [Grid] — une matrice de [Raw] presque
+// singulière perd l'exactitude **à l'intérieur** de la plage, mesuré jusqu'à 200 000
+// pixels d'écart sur tous ses points, l'inverse ayant alors des coefficients énormes.
+//
+// Du monde vers l'écran et retour, l'écart est la préimage d'un demi-pixel sur chaque
+// axe : il vaut donc `(1/l + 1/h)/2` cellule pour une tuile de `l` sur `h`, plus
+// quelques millièmes que l'arrondi des coefficients de l'inverse ajoute. Ce régime est
+// **décrit** et non garanti, mais sa loi suffit à ce qu'on en fait : l'écart
+// **décroît** quand la tuile grandit — 0,047 cellule à 32×16, 0,023 à 64×32 — et
+// croît quand elle rétrécit, 0,052 à 37×13 et 0,094 à 16×8. Aucun nombre commun ne le
+// borne, et c'est pourquoi la loi s'écrit ici plutôt qu'un chiffre.
+//
+// **Ce que la loi interdit de faire, et qui est l'erreur à ne pas commettre** :
+// convertir cet écart en pixels pour s'en prémunir. Il est la largeur de la préimage
+// d'un pixel, donc il vit tout entier *à l'intérieur* d'un pixel — reprojeter un point
+// qui en souffre ne peut pas changer de pixel, ce que la garantie du premier sens dit
+// autrement.
 //
 // **Elle rend aussi une direction, et c'est son troisième usage** : la matrice étant
 // sans translation, lui donner un vecteur d'écran rend le vecteur de monde
