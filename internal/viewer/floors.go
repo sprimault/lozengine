@@ -42,10 +42,16 @@ const (
 
 // Floors éprouve qu'un décor à deux niveaux se dessine à deux hauteurs.
 //
-// **C'est le seul scénario à pouvoir faire échouer cette entrée.** Aucun autre ne pose
-// de décor à un étage : [Core] n'élève qu'une entité, et les autres posent leurs quads
-// à la main sans passer par le tri. Le régime qu'il garde est celui d'une cellule de
-// décor dont l'étage n'est pas zéro, et d'une entité qui se tient dessus.
+// **C'est le seul scénario à pouvoir faire échouer cette entrée, et ce dont il est seul
+// garant est la coexistence.** Non pas « poser du décor à un étage » — `Crossing` le
+// fait aussi —, mais un décor dont l'étage n'est pas zéro **et** une entité qui s'y
+// tient : il est donc le seul à attraper un désaccord entre les deux relèvements, celui
+// de la cellule et celui de l'entité. Les lignes ci-dessous sur les deux figures le
+// disent déjà, et la clause le dit maintenant aussi.
+//
+// La prescription évidente — annuler le relèvement de l'entité — ne vaut pas comme
+// épreuve : mesuré, elle fait rougir en plus les quatre images de `Core`. C'est le
+// désaccord entre les deux, et lui seul, que ce scénario est seul à voir.
 //
 // Ce que le défaut donnait, et que l'image montre : le décor était projeté à hauteur
 // nulle quel que soit son étage, parce que la hauteur d'une cellule n'avait aucun champ

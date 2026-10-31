@@ -329,9 +329,16 @@ republie toujours par alias, pour qu'un jeu n'ait qu'un seul import à écrire.
 
 Conséquence assumée : un paquet public publie tout ce qu'il exporte, donc les deux
 portes par lesquelles le tri lit la scène le sont aussi. Il n'y a pas de voie Go pour
-l'éviter, et le dégât est borné — la clé sature, donc une couche écrite hors borne
-range la chose au plafond sans rien casser d'autre. Leur documentation nomme la voie
-normale.
+l'éviter. Leur documentation nomme la voie normale.
+
+**Le dégât est borné pour une couche, et il ne l'est pas pour un étage** : la clé
+sature, donc une couche écrite hors borne range la chose au plafond sans rien casser
+d'autre — mesuré, son quad sort toujours. Un étage hors borne, lui, fait **disparaître**
+la chose : il élève à l'écran autant qu'il range, donc deux cent cinquante-cinq étages
+portent l'entité à quatre mille pixels au-dessus de la vue, où le retrait hors image
+l'écarte. Écrire derrière le refus de `Place` coûte donc plus que ce paragraphe
+annonçait jusqu'au 31 octobre 2026, et un cas du tri garde désormais les deux
+régimes.
 
 Deux acquis restent entiers. Réorganiser ce qui est interne ne casse aucun
 consommateur. Et un hôte ne peut pas importer un backend pour se lier directement à
