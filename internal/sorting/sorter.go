@@ -97,6 +97,12 @@ type Sorter struct {
 	offsetX, offsetY            int32
 	boundsWidth, boundsHeight   int32
 	surfaceWidth, surfaceHeight int32
+
+	// La place de l'aire de monde dans la surface, relevée une fois par image. La
+	// scène la recalcule à chaque demande — deux compositions de retraits et trois
+	// assainissements —, et la bascule de repère la demandait une fois par pièce
+	// posée en pixels, donc une fois par glyphe d'une ligne de texte.
+	worldX, worldY int32
 }
 
 // request est un relevé de recouvrement demandé : la poignée à nommer, et le rang du
@@ -174,6 +180,10 @@ func (t *Sorter) Frame() render.DrawList {
 		return t.out[:0]
 	}
 	t.surfaceWidth, t.surfaceHeight = t.scene.Surface()
+
+	// L'origine de l'aire se relève ici et nulle part ailleurs : rien de ce qui suit
+	// ne touche à la scène, donc elle ne peut pas bouger d'ici la fin de l'image.
+	t.worldX, t.worldY = t.scene.WorldOrigin()
 	t.frameWorld()
 
 	t.collectDecor()
@@ -194,8 +204,12 @@ func (t *Sorter) Frame() render.DrawList {
 
 // frameWorld fait découper et décaler sur l'aire de monde, qui est le repère de tout ce
 // qui vient de la grille ou d'une entité.
+//
+// Quatre affectations et rien d'autre : l'origine vient du relevé fait en tête de
+// [Sorter.Frame], parce que c'est cette bascule que les pièces d'écran paient pièce par
+// pièce.
 func (t *Sorter) frameWorld() {
-	t.offsetX, t.offsetY = t.scene.WorldOrigin()
+	t.offsetX, t.offsetY = t.worldX, t.worldY
 	t.boundsWidth, t.boundsHeight = t.viewWidth, t.viewHeight
 }
 
@@ -492,6 +506,11 @@ func (t *Sorter) breakTiesIn(start, end int) {
 		}
 	}
 
+	// **Ce `min` n'est pas le doublon de celui de [Key.WithIndex], et il le paraît.**
+	// Il borne la conversion en seize bits, que le second ne peut plus rattraper :
+	// un groupe de plus de soixante-cinq mille clés égales replierait son rang, et
+	// la dernière chose du groupe recevrait un index proche de zéro au lieu du
+	// plafond. [TestIndexSaturatesAtItsCeiling] éprouve les deux bornes.
 	for rank := start; rank < end; rank++ {
 		t.keys[rank] = t.keys[rank].WithIndex(uint16(min(rank-start, MaxIndex)))
 	}

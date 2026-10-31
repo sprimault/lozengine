@@ -55,19 +55,16 @@ func (t *Sorter) revealHidden() {
 			continue
 		}
 
-		// Une seule mesure pour les deux usages : une entité qui demande le relevé et
-		// porte une couche de révélation ne la paie donc qu'une fois.
-		total, decor := t.overlap(i, n)
-
+		// Une seule mesure pour les deux usages et pour les deux échelles : une entité
+		// qui demande le relevé et porte une couche de révélation ne paie qu'un
+		// parcours de l'image.
+		//
 		// La mesure exacte ne se paie que pour ce qu'un hôte a demandé à relever, et
 		// jamais pour une révélation : le seuil d'[scene.Aspect.Reveal] est réglé sur
 		// la mesure par rectangles, et le faire changer d'échelle casserait en silence
 		// tout jeu qui l'a calibré — le peint maximal d'une case du premier jeu est de
 		// 954 là où son seuil vaut 2 048.
-		var painted, covered, coveredByDecor int
-		if asked {
-			painted, covered, coveredByDecor = t.coverage(i, n)
-		}
+		total, decor, painted, covered, coveredByDecor := t.measure(i, n, asked)
 
 		if asked {
 			t.overlaps = append(t.overlaps, render.Overlap{
@@ -114,8 +111,21 @@ func (t *Sorter) revealHidden() {
 	}
 }
 
-// overlap rend le nombre de pixels du quad de rang i que recouvre ce qui se peint après
-// lui, et la part de ce total qui vient du décor.
+// measure rend ce que l'image cache du quad de rang i, aux deux échelles que le relevé
+// porte : la somme des rectangles qui le recouvrent et la part de ce total qui vient du
+// décor, toujours ; le compte exact au pixel en plus quand `exact` est vrai.
+//
+// **Un seul parcours sert les deux, et c'est ce qui les a réunies.** Les deux mesures
+// retenaient exactement les mêmes quads — même filtre `uncounted`, même prédicat
+// d'ordre, même intersection de boîtes — et les cherchaient chacune de son côté : une
+// entité qui demandait le relevé coûtait 2n là qu'elle en coûte n. Ce qui les distingue
+// n'est pas le choix des quads mais ce qu'on en fait, donc la bifurcation se place
+// après le filtre et non à côté de lui.
+//
+// **Deux égalités rendent la fusion sûre, et il faut les écrire** : `hides` implique
+// `paints`, donc le filtre commun ne retire aucun candidat de l'échelle exacte ; et
+// l'exclusion du quad de rang i, que la passe au pixel écrivait à la main, vient déjà
+// du prédicat d'ordre — le départage d'une chose avec elle-même rend faux.
 //
 // **La mesure est exacte et ne sort pas en route.** Une version antérieure s'arrêtait
 // dès que le décor seul dépassait le seuil, ce qui suffisait à décider d'une révélation
@@ -134,10 +144,23 @@ func (t *Sorter) revealHidden() {
 // **L'ordre de dessin ne se lit pas sur la clé seule.** Deux choses de même couche,
 // étage, profondeur, hauteur et rang ont des clés égales, l'index stable n'étant pas
 // encore écrit : c'est le départage qui range leur groupe, et il est déjà connu ici
-// puisque [Sorter.before] ne lit que ce que la collecte a posé. Le quad de rang i
-// s'écarte du même geste, le départage d'une chose avec elle-même rendant faux.
-func (t *Sorter) overlap(i, n int) (total, decor int) {
+// puisque [Sorter.before] ne lit que ce que la collecte a posé.
+func (t *Sorter) measure(i, n int, exact bool) (total, decor, painted, covered, byDecor int) {
+	thing := t.raw[i]
 	key := t.keys[i]
+
+	// L'échelle exacte demande la forme de la chose, et elle n'est pas toujours là :
+	// une chose qui ne peint rien n'a pas de pixels à compter, et une planche sans
+	// masque n'en dit rien. S'éteindre ici plutôt que dans la boucle évite de retenir
+	// des candidats que personne ne lira.
+	var m mask
+	if exact && paints(thing) {
+		m = t.maskOf(thing)
+	}
+	exact = !m.empty()
+	if exact {
+		t.candidates = t.candidates[:0]
+	}
 
 	for j := range n {
 		if t.uncounted[j] {
@@ -166,13 +189,30 @@ func (t *Sorter) overlap(i, n int) (total, decor int) {
 			continue
 		}
 
-		covered := shared(t.raw[i], t.raw[j])
-		total += covered
+		box := shared(thing, t.raw[j])
+		total += box
 		if t.fromDecor[j] {
-			decor += covered
+			decor += box
+		}
+
+		// **Les candidats se retiennent ici, pas une fois par ligne**, et c'est la
+		// différence entre un lot qui tient le budget et un qui le mange. Les
+		// chercher à l'intérieur de la boucle des lignes coûtait 38,7 µs par entité
+		// marquée — mesuré, 2,7 ms à soixante-cinq marquées, un sixième du budget
+		// d'une image — parce que chaque ligne reparcourait les deux mille quads de
+		// la scène. Il n'y en a qu'une quinzaine dont la boîte recouvre celle de la
+		// chose.
+		if exact && box != 0 && hides(t.raw[j]) {
+			t.candidates = append(t.candidates, uint32(j))
 		}
 	}
-	return total, decor
+
+	if !exact {
+		return total, decor, 0, 0, 0
+	}
+
+	painted, covered, byDecor = t.exactly(thing, m)
+	return total, decor, painted, covered, byDecor
 }
 
 // shared rend le nombre de pixels que deux quads se partagent.

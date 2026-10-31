@@ -23,6 +23,12 @@ import "github.com/sprimault/lozengine/scene"
 // dessin viendrait du repère à couche égale — ce que [scene.Scene.PlaceArea] promet
 // l'inverse. Le rang est l'indice dans la liste unique, donc l'ordre reste global.
 //
+// **Quatre affectations, et elles ne l'étaient pas** : jusqu'au 31 octobre 2026,
+// [Sorter.frameWorld] redemandait à la scène où l'aire de monde se place, donc chaque
+// pièce dans l'aire payait une composition de retraits — et une ligne de texte posée
+// par [scene.Font.PlaceArea] la payait une fois par glyphe. L'origine se relève
+// désormais une fois par image, ce qui rend la phrase ci-dessus vraie.
+//
 // **Le rang de pose va dans la profondeur, et c'est ce qui rend le tri rapide ici.**
 // Sans lui, tous les quads d'une ligne de texte partageraient couche, étage, hauteur
 // et rang, donc une seule et même clé : ils tomberaient tous dans le même groupe de
