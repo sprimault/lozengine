@@ -60,6 +60,17 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          # L'historique entier, et c'est le seul job qui en a besoin : `make surface`
+          # compare la surface publique à `origin/master`, qui n'existe pas dans un
+          # dépôt récupéré à la seule branche de la pull request. La cible sortait donc
+          # sur « pas de base de comparaison » et rendait zéro — elle ne pouvait pas
+          # refuser là où la protection de branche l'exige, et c'est précisément le
+          # dégât qu'elle date dans son propre commentaire.
+          #
+          # Les autres jobs gardent la récupération courte : ils compilent et exécutent,
+          # donc l'historique ne leur apprend rien et le ramener coûterait pour rien.
+          fetch-depth: 0
 
       - uses: actions/setup-go@v7
         with:
@@ -490,30 +501,43 @@ jobs:
           sous="${{ steps.sous.outputs.version }}"
           sed -i "s/^go .*/go $sous/" go.mod
 
-          # Les deux plateformes, parce qu'un `go vet ./...` sous Linux ne compile
-          # aucun fichier `_windows.go`. Si le plancher n'était exigé que par du code
-          # Windows, cette passe réussirait et le job conclurait que le plancher est
-          # trop haut — un faux positif qui enverrait l'abaisser à tort.
+          # Les trois systèmes, parce qu'un `go vet ./...` sous Linux ne compile aucun
+          # fichier `_windows.go`. Si le plancher n'était exigé que par du code propre à
+          # un système, les autres passes réussiraient et le job conclurait que le
+          # plancher est trop haut — un faux positif qui enverrait l'abaisser à tort.
           #
-          # Le plancher est juste dès qu'**une** des deux refuse : ce qu'on démontre
+          # **Cette liste double `PASSES` du Makefile, et elle le double
+          # nécessairement** : ce job n'appelle pas `make`, puisqu'il lui faut un
+          # `go vet` nu sur un `go.mod` abaissé dans le dépôt éphémère du runner. Les
+          # deux listes se tiennent donc d'accord à la main, et c'est le prix d'un
+          # contrôle qui vit ici plutôt que dans le Makefile.
+          #
+          # Le plancher est juste dès qu'**une** des passes refuse : ce qu'on démontre
           # est qu'aucune version inférieure ne construit le dépôt entier.
+          #
+          # **Ce que la passe du navigateur apporte aujourd'hui : rien, et il faut le
+          # dire.** Mesuré le 31 octobre 2026 sous Go 1.21, les trois refusent sur le
+          # même site commun — `math/rand/v2` et un `range` sur un entier, que Go 1.22
+          # a apportés —, donc aucune ne décide seule. Elle garde le cas où le plancher
+          # ne serait plus exigé que par un fichier `_js.go`, et c'est le jalon 5 qui
+          # écrit les premiers.
           refus=0
-          for os in linux windows; do
-            echo "::group::Ce que Go $sous refuse de construire pour $os"
-            if GOOS=$os go vet ./...; then
-              echo "$os : construit."
+          for cible in linux/amd64 windows/amd64 js/wasm; do
+            echo "::group::Ce que Go $sous refuse de construire pour $cible"
+            if GOOS=${cible%/*} GOARCH=${cible#*/} go vet ./...; then
+              echo "$cible : construit."
             else
-              echo "$os : refuse."
+              echo "$cible : refuse."
               refus=$((refus + 1))
             fi
             echo "::endgroup::"
           done
 
           if [ "$refus" -eq 0 ]; then
-            echo "::error::Go $sous construit le dépôt sur les deux plateformes : le plancher ${{ steps.sous.outputs.plancher }} de go.mod est trop haut."
+            echo "::error::Go $sous construit le dépôt sur les trois passes : le plancher ${{ steps.sous.outputs.plancher }} de go.mod est trop haut."
             exit 1
           fi
-          echo "Go $sous échoue sur $refus plateforme(s), comme attendu : le plancher déclaré est bien le minimum."
+          echo "Go $sous échoue sur $refus passe(s), comme attendu : le plancher déclaré est bien le minimum."
 
   bilan:
     name: Bilan

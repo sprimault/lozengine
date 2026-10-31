@@ -87,13 +87,14 @@ rouge sur du code parfaitement conforme, et la seule issue serait de
 l'affaiblir.
 
 Elle inclut les dépendances de test, parce que c'est là que l'entorse est
-tentante, et elle interroge les deux plateformes, parce qu'un import placé sous
-contrainte de construction ne se voit pas depuis l'autre.
+tentante, et elle interroge Windows, Linux et le navigateur, parce qu'un import
+placé sous contrainte de construction ne se voit pas depuis un autre système.
 
 **`make frontiere`** vérifie que le noyau ne touche ni au système ni à un
 backend. Aucun paquet parmi `geometry`, `scene`, `sorting`, `render`, `raster`,
 `input` et `appearance` ne doit importer `syscall`, `net`, `os/exec` ou un
-backend — ni directement, ni à travers un autre paquet du moteur.
+backend — ni directement, ni à travers un autre paquet du moteur, et leurs
+sous-paquets comptent, `syscall/js` comme `net/http`.
 
 C'est le contrôle que `make cross` ne fait pas, contrairement à ce qu'on croit
 spontanément. Compiler pour une plateforme ne dit rien de l'étanchéité :
