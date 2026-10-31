@@ -145,9 +145,13 @@ func TestPlaceRefusesWhenFull(t *testing.T) {
 }
 
 // TestPlaceRefusesOutsideKeyBounds couvre le seul défaut de cette surface qui ne se
-// verrait jamais : la composition de la clé ramène une couche ou un étage trop grand au
-// plafond, donc un jeu qui en demande vingt en verrait six se confondre avec la
-// quinzième, sur une image par ailleurs irréprochable.
+// verrait jamais : la composition de la clé ramène une couche, un étage ou une couche
+// de révélation trop grands au plafond, donc un jeu qui en demande vingt en verrait six
+// se confondre avec la quinzième, sur une image par ailleurs irréprochable.
+//
+// La révélation saturait ainsi jusqu'au 31 octobre 2026, et son dégât diffère des deux
+// autres : le rappel ne sortait pas de la couche la plus haute, il s'y mêlait à ce qu'un
+// jeu y avait posé.
 //
 // Les quatre portes sont éprouvées parce qu'elles ont quatre contrôles distincts, et
 // qu'un aspect entre par n'importe laquelle. Chacune rend déjà un booléen : refuser ne
@@ -159,6 +163,7 @@ func TestPlaceRefusesOutsideKeyBounds(t *testing.T) {
 	}{
 		{"couche", Aspect{Width: 32, Height: 16, Tint: render.White(), Layer: render.MaxLayer + 1}},
 		{"étage", Aspect{Width: 32, Height: 16, Tint: render.White(), Floor: render.MaxFloor + 1}},
+		{"révélation", Aspect{Width: 32, Height: 16, Tint: render.White(), Reveal: render.MaxLayer + 1}},
 	}
 	for _, c := range outOfBounds {
 		t.Run(c.name, func(t *testing.T) {
@@ -192,11 +197,15 @@ func TestPlaceRefusesOutsideKeyBounds(t *testing.T) {
 }
 
 // TestPlaceAcceptsTheBounds vérifie que le refus s'arrête à la borne au lieu de la
-// manger. Un hors-par-un ici retirerait la seizième couche et le soixante-quatrième
-// étage, que le moteur annonce pourtant, et aucun autre cas ne le verrait.
+// manger. Un hors-par-un ici retirerait la seizième couche, le soixante-quatrième étage
+// ou la seizième couche de révélation, que le moteur annonce pourtant, et aucun autre
+// cas ne le verrait.
 func TestPlaceAcceptsTheBounds(t *testing.T) {
 	s := testScene(t, 2)
-	extremes := Aspect{Width: 32, Height: 16, Tint: render.White(), Layer: render.MaxLayer, Floor: render.MaxFloor}
+	extremes := Aspect{
+		Width: 32, Height: 16, Tint: render.White(),
+		Layer: render.MaxLayer, Floor: render.MaxFloor, Reveal: render.MaxLayer,
+	}
 
 	if _, ok := s.Place(Entity{Aspect: extremes}); !ok {
 		t.Error("Place a refusé la borne")

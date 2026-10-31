@@ -22,8 +22,8 @@ type ScreenPiece struct {
 	InArea bool
 }
 
-// PlaceScreen pose un aspect à un pixel de la surface, et rend faux si sa couche ou son
-// étage dépasse ce que l'ordre de dessin distingue.
+// PlaceScreen pose un aspect à un pixel de la surface, et rend faux si sa couche, son
+// étage ou sa couche de révélation dépasse ce que l'ordre de dessin distingue.
 //
 // **Le pixel est celui de la surface, marge comprise, et la pièce s'y découpe** : c'est
 // la voie de ce qui n'appartient pas au monde — un bandeau, un score, une minicarte —,
@@ -63,8 +63,8 @@ func (s *Scene) PlaceScreen(ex, ey int32, a Aspect) bool {
 	return s.placePiece(ex, ey, a, false)
 }
 
-// PlaceArea pose un aspect à un pixel de l'aire de monde, et rend faux si sa couche ou
-// son étage dépasse ce que l'ordre de dessin distingue.
+// PlaceArea pose un aspect à un pixel de l'aire de monde, et rend faux si sa couche,
+// son étage ou sa couche de révélation dépasse ce que l'ordre de dessin distingue.
 //
 // **C'est la voie de ce qui accompagne le monde sans en être** : un chiffre de dégâts,
 // l'annonce posée au-dessus d'un objet, une silhouette de rappel. Le pixel donné est

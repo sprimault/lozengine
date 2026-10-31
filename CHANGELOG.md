@@ -45,6 +45,20 @@ notes de publication.
 
 ## [Non publié]
 
+### Corrigé
+
+- Une pose dont la couche de révélation dépasse `MaxLayer` est refusée au lieu d'être
+  ramenée au plafond, ce que la documentation de `MaxLayer` annonçait déjà. Un rappel
+  saturé se mêlait à la couche d'interface du jeu au lieu de passer devant elle.
+
+***
+
+### Fixed
+
+- A placement whose reveal layer goes beyond `MaxLayer` is refused instead of being
+  clamped to the ceiling, which `MaxLayer`'s documentation already announced. A clamped
+  cue blended into the game's interface layer instead of drawing in front of it.
+
 ## [0.5.8] — 2026-10-31
 
 ### Ajouté
