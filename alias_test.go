@@ -262,7 +262,4 @@ func TestMatrixUsableFromTheRoot(t *testing.T) {
 	if x, y := m.Unproject(ex, ey); x != 0.5 || y != 0.5 {
 		t.Errorf("inversé (%g, %g), attendu (0.5, 0.5)", x, y)
 	}
-	if n := m.MaxCells(480, 270); n == 0 {
-		t.Error("majorant de cellules nul")
-	}
 }

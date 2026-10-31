@@ -89,32 +89,6 @@ func (m Matrix) Rise(z float64) int32 {
 	return pixel(int64(m.floor) * int64(quantize(z)))
 }
 
-// MaxCells borne le nombre de cellules qu'un rectangle d'écran peut couvrir,
-// quelle que soit la position de la vue.
-//
-// Elle existe pour dimensionner un relevé qui n'alloue jamais : celui qui retire ce
-// qui sort de l'image a besoin d'un majorant que la position de la caméra ne change
-// pas, et celui-ci ne dépend que du rectangle et de la matrice, fixes tous les deux
-// pour la durée d'une partie. C'est une signature que seul un moteur sans allocation
-// par image réclame.
-//
-// Le losange qu'un rectangle découpe s'étend, sur chacun des deux axes du monde, de
-// la largeur rapportée à l'empreinte d'une cellule plus la hauteur rapportée à la
-// sienne. Un intervalle de cette longueur rencontre au plus sa partie entière plus
-// deux bornes de cellule ; deux cellules de marge complètent le compte, une face
-// posée depuis son sommet s'étendant vers le bas — celle dont le sommet vient de
-// sortir de l'écran y a encore son corps.
-func (m Matrix) MaxCells(width, height int32) int {
-	footprintW := int64(abs(m.a)) + int64(abs(m.b))
-	footprintH := int64(abs(m.c)) + int64(abs(m.d))
-	if width <= 0 || height <= 0 || footprintW == 0 || footprintH == 0 {
-		return 0
-	}
-
-	side := int64(width)*unit/footprintW + int64(height)*unit/footprintH + 4
-	return int(side * side)
-}
-
 // depthOf compte la somme des deux axes du monde en quarts de cellule.
 //
 // Non signée, parce que le champ que la clé de tri lui réserve l'est et que c'est la
@@ -159,14 +133,6 @@ func (m Matrix) clamp(v int32) int32 {
 	}
 	if v < -m.span {
 		return -m.span
-	}
-	return v
-}
-
-// abs rend la valeur absolue d'un coefficient.
-func abs(v int32) int32 {
-	if v < 0 {
-		return -v
 	}
 	return v
 }

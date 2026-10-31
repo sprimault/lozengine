@@ -99,9 +99,6 @@ func TestZeroMatrix(t *testing.T) {
 	if x, y := m.Unproject(100, 100); x != 0 || y != 0 {
 		t.Errorf("inversé (%g, %g), attendu l'origine", x, y)
 	}
-	if n := m.MaxCells(480, 270); n != 0 {
-		t.Errorf("cellules majorées à %d, attendu 0", n)
-	}
 }
 
 // TestNarrowSpanIsNeverNegative garde que la plage de l'inverse ne devient pas négative
