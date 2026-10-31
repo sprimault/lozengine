@@ -53,6 +53,9 @@ notes de publication.
 - Une projection dont l'ordonnée ne tiendrait pas dans les entiers du moteur ramène tout
   point sur l'origine au lieu de replier le signe du pixel. Il y faut une tuile de plus
   de 32 767 pixels de haut, ou des coefficients bruts du même ordre.
+- La documentation de `MaxSheets` dit que mille vingt-quatre est un plafond que le
+  chargement applique, et non ce qu'un `Quad` sait désigner : son champ `Sheet` en adresse
+  soixante-cinq fois plus, et l'index de planche a quitté l'ordre de dessin à la 0.5.4.
 
 ***
 
@@ -64,6 +67,9 @@ notes de publication.
 - A projection whose ordinate would not fit the engine's integers now brings every point
   back to the origin instead of wrapping the pixel's sign. It takes a tile more than
   32,767 pixels tall, or raw coefficients of that order.
+- The documentation of `MaxSheets` now states that 1,024 is a ceiling the loader enforces,
+  not what a `Quad` can address: its `Sheet` field reaches sixty-five times further, and
+  the sheet index left the draw order in 0.5.4.
 
 ## [0.5.8] — 2026-10-31
 

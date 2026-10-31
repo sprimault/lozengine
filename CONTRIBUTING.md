@@ -2,6 +2,9 @@
 
 Français : [CONTRIBUTING.fr.md](CONTRIBUTING.fr.md)
 
+Taking part means agreeing to the
+[Code of Conduct](CODE_OF_CONDUCT.md), which says how a report is made.
+
 ## Before writing code
 
 Open an issue first, for anything beyond a fix. The design is written down in

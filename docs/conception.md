@@ -360,10 +360,16 @@ conséquences :
 
   Les **plafonds de structure** du moteur n'en relèvent pas, et la distinction
   compte : une clé de tri sur 64 bits est par nature un jeu de plafonds — seize
-  couches, soixante-quatre étages, mille vingt-quatre planches —, et les annoncer
+  couches, soixante-quatre étages, seize strates par cellule —, et les annoncer
   dit ce que le format porte au lieu de décider à la place du jeu. La règle
   interdit de fixer combien de couches un jeu emploie, pas de borner ce que la clé
   sait distinguer.
+
+  La clé ne borne plus les planches depuis le 29 octobre 2026 : elle en portait
+  l'index, ce qui faisait décider l'ordre de dessin par l'ordre dans lequel un jeu
+  avait chargé ses images. `MaxSheets` reste à mille vingt-quatre, mais c'est
+  désormais un plafond que le chargement applique, et plus rien dans la clé ne
+  l'exige.
 
 Critère permanent : le hello world tient en moins de 30 lignes. S'il gonfle,
 c'est qu'un défaut manque quelque part.
