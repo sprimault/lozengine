@@ -130,11 +130,16 @@ func BenchmarkStep(b *testing.B) {
 // **Le fait de structure que ces cas disent ensemble, mesuré le 30 octobre 2026 à la
 // charge de contrôle : l'agrandissement domine l'image.** Les trois étapes du pas
 // expliquent bien le pas — tri 57 %, dessin 41 %, effacement 4,5 % —, mais le pas entier
-// ne pèse qu'un tiers de ce qu'une image coûte vraiment : l'agrandissement au facteur 4
-// vaut plus du double du pas à lui seul, soit environ deux tiers du budget.
+// ne pèse qu'un tiers de **la somme de ces quatre étapes** : l'agrandissement au facteur 4
+// vaut plus du double du pas à lui seul, soit environ deux tiers de cette somme.
 //
-// Ce qui en découle, et c'est une surprise : à cette charge, **le chemin le plus chaud du
-// moteur n'est pas le tri mais la recopie de pixels**. Le rapport se lit dans une seule
+// **Cette somme n'est pas un budget, et le mot est réservé** : `frameAt60Hz` le porte, et
+// le seuil de dix pour cent s'y rapporte. Rapportées à lui, les quatre étapes valent 6,7 %,
+// 2,0 %, 1,5 % et 0,15 % — c'est la part qui décide, et la somme ne sert qu'à dire lequel
+// des maillons domine. Confondre les deux a ouvert une porte à tort pendant un jour.
+//
+// Ce qui en découle, et c'est une surprise : à cette charge, **le chemin le plus chaud des
+// quatre n'est pas le tri mais la recopie de pixels**. Le rapport se lit dans une seule
 // série, donc la dérive thermique ne le touche pas ; les valeurs absolues, elles,
 // n'appartiennent qu'à la machine qui mesure.
 //
@@ -184,8 +189,39 @@ func BenchmarkStepStages(b *testing.B) {
 			for range b.N {
 				c.run()
 			}
+			framePart(b)
 		})
 	}
+}
+
+const (
+	// weighting rapporte la mesure à une machine plus lente, pour ce qui dépend de la
+	// bande passante mémoire. Les deux constantes redisent celles des bancs de `raster`
+	// et de `sorting`, pour la raison que celui de `sorting` donne : le tableau des
+	// frontières interdit de les partager, et un paquet commun pour trois lignes de test
+	// coûterait une ligne de plus à ce tableau.
+	weighting = 4
+
+	// frameAt60Hz est le budget d'une image, en nanosecondes. **C'est le seul
+	// dénominateur du seuil de dix pour cent**, et l'écrire ici était ce qui manquait :
+	// la doctrine des tests l'appliquait à la somme des quatre étapes mesurées, soit un
+	// dénominateur quarante fois plus petit, et en concluait que la porte du rastériseur
+	// était ouverte. Une somme d'étapes qu'on a choisi de mesurer n'est pas un budget ;
+	// 16,7 ms est un fait physique.
+	frameAt60Hz = 16_666_667
+)
+
+// framePart rapporte la part d'une image à 60 Hz que l'étape prendrait sur une machine
+// modeste. Le ns/op brut reste rapporté à côté : c'est lui que `benchstat` compare, la
+// pondération n'étant qu'une lecture.
+//
+// **Ce banc ne la rapportait pas, et c'est ce qui a laissé le seuil dériver** : il rendait
+// du `ns/op` seul, là que les bancs de `raster` et de `sorting` portent cette part. Faute
+// d'un chiffre comparable au seuil, les verdicts se sont recalculés à la main contre la
+// somme des étapes — et la divergence reviendra si ce rapport disparaît.
+func framePart(b *testing.B) {
+	perOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
+	b.ReportMetric(perOp*weighting*100/frameAt60Hz, "%image-pondere")
 }
 
 // benchEdgeScene monte une scène propre aux chemins de bord, **distincte de
