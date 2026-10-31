@@ -47,10 +47,19 @@ example:
 # la sortie.
 PKG ?= ./...
 
-# Les paquets que chaque image traverse, et eux seuls : c'est le périmètre de `bancs`.
-# `geometry` n'y est pas — il tourne une fois par entité et non par pixel —, ni aucun
-# chemin de chargement, que `go.md` interdit d'optimiser.
-CHEMIN_CHAUD ?= . ./internal/sorting ./raster ./internal/backend
+# Les paquets dont les chemins par image ont leurs propres bancs : c'est le périmètre de
+# `bancs`. `geometry` n'y est pas — il tourne une fois par entité et non par pixel —, ni
+# aucun chemin de chargement, que `go.md` interdit d'optimiser.
+#
+# `scene`, `input` et `render` n'y entrent pas non plus, et le dire vaut mieux que de le
+# laisser déduire : une image les traverse, mais leurs fonctions par image sont déjà
+# parcourues par les bancs de `sorting` et de `raster`, qui les appellent. Un banc de
+# plus mesurerait la même chose sous un autre nom.
+#
+# `appearance` y est entré le 31 octobre 2026, et c'était le seul paquet du module sans
+# aucun banc : rien ne le regardait, ni cette cible ni une mesure. Ses chemins ne sont
+# parcourus par aucun autre banc, le rendu ne consultant jamais un fournisseur.
+CHEMIN_CHAUD ?= . ./internal/sorting ./raster ./internal/backend ./appearance
 RUN ?=
 
 # Aucun test n'ouvre de fenêtre. La suite de non-régression est visuelle mais
