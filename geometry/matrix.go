@@ -20,6 +20,13 @@ import "math"
 // Sa valeur zéro ne projette rien d'utile — tout point y tombe sur l'origine et
 // l'inverse est dégénérée. Un constructeur est obligatoire, et c'est l'échec visible
 // plutôt que l'image subtilement fausse.
+//
+// **Et c'est aussi ce qu'un constructeur rend quand il ne peut pas faire mieux** :
+// des coefficients dont l'inverse ne tient pas dans les entiers du moteur, une
+// projection qui écrase le monde sur une droite, ou une ordonnée dont la somme
+// quitterait l'`int64` où elle se calcule. Le même repli dans les trois cas, et pour
+// la même raison — un point ramené sur l'origine se voit, une image repliée d'un
+// facteur que personne ne peut rattraper, non.
 type Matrix struct {
 	// ex = a·x + b·y, et ey = c·x + d·y − floor·z. Coefficients et coordonnées sont
 	// en virgule fixe, donc le produit de deux d'entre eux porte deux fois les bits
@@ -113,8 +120,23 @@ func Raw(a, b, c, d float64) Matrix {
 //
 // L'inverse n'est pas recalculée : elle ne porte que le plan des deux premiers axes,
 // où z n'intervient pas.
+//
+// **Une hauteur que l'ordonnée ne peut pas porter rend la matrice nulle**, comme au
+// montage : ce champ entre dans la somme que [Matrix.Project] calcule, donc l'écraser
+// sans revérifier rouvrirait le débordement qu'un constructeur venait de refuser.
+//
+// **Aucune hauteur ne l'atteint aujourd'hui, et c'est mesuré** — mais il n'y a pas un
+// bit de marge, ce qui est la raison de garder le contrôle. Une matrice acceptée a
+// `|c|+|d| ≤ 2^31 − 1`, puisque son `floor` vaut cette même somme et que les deux
+// doivent tenir sous [maxOrdinateSum] ; et [quantize] sature `floor` à `2^31 − 1`.
+// Leur somme vaut donc `2^32 − 2` au pire, soit **exactement** le seuil. La propriété
+// tient par la rencontre de trois valeurs qu'on peut changer séparément, et un cas
+// témoin du paquet rougit si l'une bouge.
 func (m Matrix) WithFloorHeight(height int) Matrix {
 	m.floor = quantize(float64(height))
+	if !m.ordinateFits() {
+		return Matrix{}
+	}
 	return m
 }
 
@@ -130,6 +152,13 @@ func matrix(a, b, c, d float64) Matrix {
 		a: quantize(a), b: quantize(b),
 		c: quantize(c), d: quantize(d),
 		floor: quantize(math.Abs(c) + math.Abs(d)),
+	}
+
+	// **La matrice nulle et non `m`**, à la différence du déterminant nul juste en
+	// dessous : ici ce sont les coefficients directs qui débordent, donc les garder
+	// laisserait [Matrix.Project] replier à chaque point.
+	if !m.ordinateFits() {
+		return Matrix{}
 	}
 
 	// Le déterminant se calcule sur les coefficients déjà entiers, et non sur les
@@ -167,14 +196,56 @@ func matrix(a, b, c, d float64) Matrix {
 	return m
 }
 
+// maxOrdinateSum est la plus grande somme de coefficients d'ordonnée que
+// [Matrix.Project] peut porter : `2^32 − 2`.
+//
+// Les deux retraits ne sont pas une marge de confort, ils viennent du pire cas. La
+// coordonnée extrême est `math.MinInt32`, dont la valeur absolue vaut `2^31` et non
+// `2^31 − 1` ; et [pixel] ajoute encore son biais d'arrondi de `2^31` avant de
+// décaler. À `2^32 − 1`, la somme atteint exactement `2^63` et se replie.
+//
+// L'échelle à retenir : `Dimetric(32, 16)` somme deux millions, soit un deux-millième
+// du seuil, qui ne se croise qu'à partir d'une tuile de 32 768 pixels de haut — là où
+// `floor` sature de son côté.
+const maxOrdinateSum = int64(1)<<32 - 2
+
+// ordinateFits dit si la somme de l'ordonnée tient dans l'`int64` où
+// [Matrix.Project] la calcule.
+//
+// Trois produits s'y ajoutent — `c·x`, `d·y` et `floor·z` —, chacun d'un coefficient
+// par une coordonnée que [quantize] a pu saturer. Au-delà du seuil, l'addition se
+// replie et rend un pixel du **signe opposé** : la chose part à l'autre bout d'un
+// écran qu'elle aurait dû quitter par le bord d'en face. Rien ne la trahit, puisque le
+// quad est écarté dans les deux cas et que l'image reste identique.
+//
+// **Une méthode plutôt qu'une expression recopiée**, et la règle de trois ne s'y
+// oppose pas pour deux appelants : le défaut corrigé ici est précisément qu'un second
+// site écrivait `floor` sans revérifier. Un troisième viendra, et il trouvera le
+// contrôle sous la forme d'une question à poser à la matrice.
+func (m Matrix) ordinateFits() bool {
+	return abs(int64(m.c))+abs(int64(m.d))+abs(int64(m.floor)) <= maxOrdinateSum
+}
+
+// abs rend la valeur absolue d'un entier large.
+//
+// Sur `int64` et non sur `int32`, parce que le seul cas qui compte est celui où la
+// valeur absolue ne tient pas dans son type d'origine : [quantize] peut rendre
+// `math.MinInt32`, dont l'opposé n'est pas un `int32` et se replierait sur lui-même.
+// Convertir d'abord, prendre l'absolu ensuite, est donc la seule forme juste — et
+// `math.MinInt64` garde le même défaut d'un cran plus haut, hors d'atteinte de tout
+// appelant du paquet, qui ne lui passent que des `int32` élargis.
+func abs(v int64) int64 {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
 // maxAbs rend la plus grande valeur absolue d'un jeu de coefficients.
 func maxAbs(values ...int64) int64 {
 	var worst int64
 	for _, v := range values {
-		if v < 0 {
-			v = -v
-		}
-		worst = max(worst, v)
+		worst = max(worst, abs(v))
 	}
 	return worst
 }

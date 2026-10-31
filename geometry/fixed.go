@@ -122,9 +122,12 @@ func saturate[T int32 | uint32 | uint16](v, lo, hi int64) T {
 // moins l'infini : sans lui, un point à mi-pixel tomberait d'un côté au-dessus de
 // l'origine et de l'autre en dessous, et une scène symétrique ne le serait plus.
 //
-// La saturation couvre le produit d'une coordonnée extrême par une grande cellule,
-// qui atteint la plage d'un int32 bien avant d'être absurde : 32 768 cellules de
-// 65 535 pixels y arrivent.
+// **La saturation est le repli sûr d'une conversion, pas un contrôle de plage**, et
+// l'annoncer comme tel a trompé : ce qui garde vraiment ce calcul est que la somme
+// reçue tienne dans son `int64`, ce qu'une matrice vérifie à son montage par
+// `Matrix.ordinateFits`. Sans cette garde, l'addition se repliait **en amont** et la
+// saturation ne voyait plus qu'une valeur déjà fausse, du signe opposé. Ses deux
+// bornes sont par ailleurs inatteignables, et un cas du paquet le démontre.
 func pixel(fixed64 int64) int32 {
 	rounded := (fixed64 + 1<<(2*fractionBits-1)) >> (2 * fractionBits)
 
