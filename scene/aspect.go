@@ -52,10 +52,29 @@ type Aspect struct {
 	// intacte. Attention : la valeur zéro d'une couleur est transparente, donc elle
 	// ne dessine rien — une cellule qu'on veut voir porte une teinte explicite.
 	//
+	// **`White` étant le maximum, une teinte ne peut qu'atténuer.** Aucune valeur n'y
+	// éclaircit : une multiplication par une composante d'au plus 255 ne monte jamais.
+	// Éclaircir un sprite, le surligner, le marquer comme choisi se fait donc
+	// autrement — par le champ `Flags` ci-dessous, et le champ `Tier` d'une [Entity]
+	// pour le ranger.
+	//
 	// Elle est prémultipliée, comme toute couleur du moteur : un voile translucide
 	// s'écrit par [render.Premultiply] ou s'atténue par [render.Color.Scale], et
 	// baisser son seul alpha ne décrit aucune couleur.
-	Tint  render.Color
+	Tint render.Color
+
+	// Flags change la façon de lire la source et de la mélanger au fond :
+	// [render.MirrorX] et [render.MirrorY] la lisent à l'envers, [render.Flat] peint le
+	// rectangle en teinte unie sans lire aucune source, et [render.Additive] ajoute au
+	// fond au lieu de composer par-dessus.
+	//
+	// **C'est `Additive` qui éclaircit**, là où `Tint` ne sait qu'atténuer : il ajoute
+	// composante par composante, chacune plafonnant à sa valeur pleine. Un surlignage
+	// se décrit donc par un second quad additif posé au même point, et le champ `Tier`
+	// d'une [Entity] porte la recette pour le ranger au-dessus du premier.
+	//
+	// Combiné à `Flat`, il donne un fondu lumineux — un rectangle de lumière qui
+	// n'emprunte sa forme à aucune planche.
 	Flags render.Flags
 
 	// AnchorX et AnchorY décalent l'image, vers la droite et vers le bas, depuis là
@@ -287,6 +306,38 @@ type Entity struct {
 	// chose d'un fond de même gamme. Ranger les deux images dans une même planche
 	// marche aussi et n'en ajoute aucune ; les deux autres voies restent fermées —
 	// décaler la hauteur déplace l'image, monter d'une couche passe devant le décor.
+	//
+	// # Éclaircir un sprite, ou le marquer comme choisi
+	//
+	// Deux voies, et **la moins chère d'abord** : une variante déjà éclaircie de
+	// l'image, désignée par un second [appearance.Look]. Elle ne demande ni strate, ni
+	// coïncidence de coordonnées, ni rien de ce qui suit — le jeu change d'apparence et
+	// c'est tout. La table d'un fournisseur étant creuse, elle coûte une entrée par
+	// apparence réellement déclarée.
+	//
+	// L'autre voie est **un second quad additif par-dessus**, et c'est celle d'un
+	// surlignage qui varie dans le temps — une pulsation, un dosage que le jeu calcule.
+	// Elle demande cinq conditions ensemble, et il faut les cinq :
+	//
+	//   - même `Layer` — la couche ouvre le champ le plus fort de l'ordre de dessin,
+	//     donc deux couches différentes n'atteignent jamais ce champ ;
+	//   - même `Floor`, pour la même raison, le champ suivant ;
+	//   - mêmes `X`, `Y` et `Z`, parce que le départage lit l'abscisse projetée avant
+	//     la strate : la seule profondeur égale ne suffit pas, deux points d'une même
+	//     diagonale se départageant sur leur abscisse ;
+	//   - un `Tier` plus grand sur le quad additif, qui est ce que ce champ règle.
+	//
+	// **Et deux réglages de l'aspect additif qui ne se devinent pas** : `Uncounted` à
+	// vrai et `Reveal` à zéro. Sans eux, le surlignage partage la boîte de ce qu'il
+	// surligne, franchit donc le même seuil de recouvrement, reçoit son propre quad
+	// révélé, et la révélation remplace sa teinte de dosage par celle des options en
+	// gardant l'additif — l'image est alors fausse, et `Uncounted` seul n'y suffit pas,
+	// la révélation ne consultant pas ce drapeau pour le sujet qu'elle redessine.
+	//
+	// **Un sprite sombre ne s'éclaircit pas par lui-même**, et c'est de l'arithmétique :
+	// un additif de la planche sur elle-même ajoute ses propres composantes, donc
+	// presque rien là où elles sont basses. La voie est alors une silhouette claire dans
+	// une seconde planche, ou la variante de la première voie.
 	//
 	// **Il départage désormais deux entités de planches différentes**, ce qui n'était
 	// pas le cas jusqu'à la 0.5.3 : l'index de planche figurait dans la clé de tri au-

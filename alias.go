@@ -96,6 +96,10 @@ const (
 	// Additive ajoute la source au fond au lieu de la composer dessus, ce qui est le
 	// mélange de ce qui émet de la lumière. Combiné à [Flat], il donne un fondu
 	// lumineux.
+	//
+	// **C'est la seule voie pour éclaircir**, une teinte ne pouvant qu'atténuer : la
+	// recette d'un sprite surligné est sur le champ `Tier` d'[Entity], que `go doc`
+	// ne montre pas ici.
 	Additive = render.Additive
 )
 
@@ -456,6 +460,11 @@ type Scene = scene.Scene
 // Ses deux cent cinquante-six valeurs sont libres, et [MaxTiers] ne le borne pas — cette
 // borne est celle de la strate d'une cellule de décor, qui est autre chose. Il ne
 // départage jamais contre le décor : un sol passe toujours sous ce qui s'y tient.
+//
+// **Sa godoc dans le paquet de scène porte la recette d'un sprite éclairci ou
+// surligné**, qui demande cinq conditions ensemble et deux réglages de l'aspect
+// additif. `go doc . Entity` ne la montre pas, un alias ne rendant aucun champ :
+// `go doc scene Entity` oui.
 type Entity = scene.Entity
 
 // Aspect est ce qu'une chose montre : de quoi remplir un quad, sans dire où.
@@ -468,6 +477,10 @@ type Entity = scene.Entity
 // s'écrit par [Premultiply] ou s'atténue par [Color.Scale], jamais en baissant le seul
 // alpha d'une teinte opaque — ce qui ne décrit aucune couleur et rend un aplat plus
 // dense que l'opacité annoncée.
+//
+// **Et cette teinte ne peut qu'atténuer**, [White] étant son maximum : éclaircir ou
+// surligner passe par le drapeau [Additive] et par le champ `Tier` d'une [Entity], dont
+// la godoc dans le paquet de scène porte la recette.
 //
 // **Sa méthode `CornerFromFoot` convertit un pixel visé par le pied centré en le coin
 // haut-gauche** que [Scene.PlaceArea] et [Scene.PlaceScreen] attendent. C'est la voie

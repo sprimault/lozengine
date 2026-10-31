@@ -284,11 +284,13 @@ func TestHeightOrdersUpward(t *testing.T) {
 // Un cas qui ne poserait que deux entités passerait sans la strate, les rangs étant
 // croissants tant que rien n'est retiré.
 //
-// **Les deux entités partagent leur planche, et c'est obligatoire** : la planche est un
-// champ de la clé de tri, donc deux planches différentes donnent deux clés différentes
-// et le départage n'est jamais consulté. Une première version de ce cas distinguait les
-// entités par leur planche et passait sans la strate, en ne mesurant que l'ordre des
-// planches. Le marqueur est donc l'abscisse de source, que la clé ne porte pas.
+// **Le marqueur est l'abscisse de source et non la planche, et c'est ce qui rend le cas
+// durable.** Une première version distinguait les entités par leur planche et passait
+// sans la strate, en ne mesurant que l'ordre des planches : l'index de planche était
+// alors un champ de la clé de tri, au-dessus du rang d'empilement. **La 0.5.3 l'en a
+// retiré au profit de la strate**, donc deux planches différentes n'empêchent plus le
+// départage — ce que la godoc de ce cas affirmait encore. Le marqueur par source, lui,
+// n'a jamais rien supposé de la clé.
 func TestTierOrdersSuperposedEntities(t *testing.T) {
 	s := testScene(t, 16, 4)
 
@@ -321,6 +323,58 @@ func TestTierOrdersSuperposedEntities(t *testing.T) {
 	if image[0].SourceX != 1 || image[1].SourceX != 2 {
 		t.Errorf("ordre des sources %d puis %d, attendu 1 puis 2 : la strate ne départage "+
 			"pas, ou le rang réemployé l'emporte", image[0].SourceX, image[1].SourceX)
+	}
+}
+
+// TestAdditiveHighlightFollowsTheRecipe exécute la recette que la godoc du champ Tier
+// d'une entité prescrit pour éclaircir un sprite, et c'est tout son objet.
+//
+// **Cette recette n'avait jamais tourné**, ce qui est sa raison d'être : elle demande
+// cinq conditions et deux réglages ensemble, et aucun cas du dépôt n'en réunissait plus
+// de trois. Une prescription du moteur ne se tire pas d'une déduction.
+//
+// Ce qu'il peut faire rougir : la strate cessant de départager un quad additif, un des
+// cinq champs entrant dans la clé au-dessus d'elle, ou le surlignage comptant dans le
+// recouvrement de ce qu'il surligne malgré son drapeau.
+func TestAdditiveHighlightFollowsTheRecipe(t *testing.T) {
+	s := testScene(t, 16, 4)
+
+	// **Le surlignage se pose en premier, et c'est ce qui rend le cas mordant** : dans
+	// l'ordre naturel, le rang de pose croissant donnerait le bon résultat sans que la
+	// strate soit consultée, et le cas passerait sur un départage cassé.
+	//
+	// Même couche, même étage, même point, strate plus haute, additif — et les deux
+	// réglages qui le retirent de la mesure comme de la révélation.
+	glow := figure()
+	glow.SourceX = 2
+	glow.Flags |= render.Additive
+	glow.Uncounted = true
+	glow.Reveal = 0
+	if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: glow, Tier: 1}); !ok {
+		t.Fatal("surlignage refusé")
+	}
+
+	sprite := figure()
+	sprite.SourceX = 1
+	if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: sprite, Measure: true}); !ok {
+		t.Fatal("sprite refusé")
+	}
+
+	sorter := New(s)
+	image := sorter.Frame()
+
+	if len(image) != 2 {
+		t.Fatalf("%d quads, attendu 2", len(image))
+	}
+	if image[0].SourceX != 1 || image[1].SourceX != 2 {
+		t.Errorf("ordre des sources %d puis %d, attendu 1 puis 2 — le surlignage ne passe "+
+			"pas au-dessus de ce qu'il éclaircit", image[0].SourceX, image[1].SourceX)
+	}
+	if image[1].Flags&render.Additive == 0 {
+		t.Error("le quad du dessus a perdu son mélange additif")
+	}
+	if list := sorter.Overlaps(); len(list) != 1 || list[0].Hidden != 0 {
+		t.Errorf("relevé %v — le surlignage compte dans le recouvrement du sprite", list)
 	}
 }
 

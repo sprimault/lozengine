@@ -71,6 +71,9 @@ notes de publication.
 
 ### Corrigé
 
+- La documentation dit comment éclaircir un sprite, ce qu'une teinte ne sait pas faire :
+  un jeu qui lisait `Aspect.Tint` pouvait croire la chose impossible, alors que le drapeau
+  `Additive` et le champ `Entity.Tier` l'expriment ensemble.
 - Un quad qui ne peint rien ne compte plus dans la mesure de recouvrement : une teinte
   d'alpha nul y versait sa boîte entière, donc un rappel qu'un jeu éteint franchissait le
   seuil de révélation à sa place.
@@ -104,6 +107,9 @@ notes de publication.
 
 ### Fixed
 
+- The documentation now says how to brighten a sprite, which a tint cannot do: a game
+  reading `Aspect.Tint` could believe it impossible, where the `Additive` flag and
+  `Entity.Tier` express it together.
 - A quad that paints nothing no longer counts in the overlap measure: a zero-alpha tint
   poured its whole box in, so a cue a game had switched off crossed the reveal threshold
   on its behalf.
