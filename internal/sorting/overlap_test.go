@@ -255,6 +255,17 @@ func TestOverlapSkipsUncountedQuads(t *testing.T) {
 // révélé n'est de toute façon jamais lu. Ce cas garde l'autre moitié : que les tranches
 // parallèles aient toutes la même longueur à la fin du pas, faute de quoi une lecture
 // au-delà de cette borne lirait le drapeau d'un autre quad.
+//
+// **Il n'en comparait que deux jusqu'au 31 octobre 2026** — `uncounted` et `fromDecor` —
+// alors que sa clause annonçait les sept. Les quatre autres ne gardaient rien : mesuré,
+// retirer l'ajout à `reveals` laissait toute la suite verte, `revealHidden` figeant sa
+// borne avant d'entrer dans sa boucle ; et `keys` est muette de la même façon, puisque
+// `Radix.Sort` borne son travail sur la longueur qu'on lui passe et qu'`assemble`
+// parcourt `sources`.
+//
+// **La table se compare au littéral et non à `len(sorter.raw)`**, et c'est ce qui la rend
+// mordante : contre `raw`, retirer l'ajout à `raw` lui-même raccourcirait les sept de
+// concert, et la table resterait verte sur le désalignement qu'elle existe pour attraper.
 func TestOverlapIgnoresTheEngineOwnReveal(t *testing.T) {
 	s := testScene(t, 16, 4)
 	s.SetRevealing(scene.RevealOptions{After: 1, Tint: render.Color{R: 255, A: 255}})
@@ -268,18 +279,30 @@ func TestOverlapIgnoresTheEngineOwnReveal(t *testing.T) {
 		t.Fatal("mur refusé")
 	}
 
+	const wantQuads = 3
+
 	sorter := New(s)
 	list := sorter.Frame()
-	if len(list) != 3 {
-		t.Fatalf("%d quads, attendu 3 — la révélation n'a pas eu lieu", len(list))
+	if len(list) != wantQuads {
+		t.Fatalf("%d quads, attendu %d — la révélation n'a pas eu lieu", len(list), wantQuads)
 	}
-	if n := len(sorter.uncounted); n != len(sorter.raw) {
-		t.Errorf("%d drapeaux pour %d quads : les tranches parallèles sont désalignées",
-			n, len(sorter.raw))
-	}
-	if n := len(sorter.fromDecor); n != len(sorter.raw) {
-		t.Errorf("%d origines pour %d quads : les tranches parallèles sont désalignées",
-			n, len(sorter.raw))
+
+	for _, slice := range []struct {
+		name string
+		got  int
+	}{
+		{"raw", len(sorter.raw)},
+		{"keys", len(sorter.keys)},
+		{"sources", len(sorter.sources)},
+		{"ties", len(sorter.ties)},
+		{"reveals", len(sorter.reveals)},
+		{"fromDecor", len(sorter.fromDecor)},
+		{"uncounted", len(sorter.uncounted)},
+	} {
+		if slice.got != wantQuads {
+			t.Errorf("%s porte %d entrées pour %d quads : les tranches parallèles sont désalignées",
+				slice.name, slice.got, wantQuads)
+		}
 	}
 }
 
