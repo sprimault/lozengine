@@ -73,6 +73,14 @@ type Aspect struct {
 	// du point projeté et non sur celle de l'image. Sans cela, rembourrer une planche
 	// pour recaler son ancre réordonnerait ce qu'elle côtoie, et un détail de
 	// découpage déciderait de ce qui passe devant.
+	//
+	// **Une ancre écrite pour une pose monde ne se transfère pas à une pose en
+	// pixels**, et c'est le piège de ce champ : elle y corrige une origine qui a
+	// changé. Une ancre qui recentre le pied d'une tuile de sol vaut la moitié de sa
+	// hauteur pour [Scene.Place] ; sur [Scene.PlaceScreen], où l'origine est déjà le
+	// coin, elle décale l'image d'autant. Deux remèdes, selon ce qu'on veut : l'annuler
+	// pour que l'image se pose au coin donné, ou passer le pixel visé par
+	// [Aspect.CornerFromFoot] pour qu'elle se pose par son pied comme dans le monde.
 	AnchorX, AnchorY int16
 
 	// Reveal est la couche où la chose se redessine quand ce qui passe devant elle la
@@ -153,6 +161,27 @@ type Aspect struct {
 	// c'est le seul champ que les trois voies de pose traversent, y compris
 	// [Scene.PlaceScreen], par laquelle un rappel d'interface se pose.
 	Uncounted bool
+}
+
+// CornerFromFoot rend le coin haut-gauche qui pose l'image là où le moteur la poserait
+// pour une entité visant le même pixel.
+//
+// **Les deux familles de pose n'ont pas la même origine, et c'est tout ce qu'il y a à
+// retenir** : [Scene.Place] et [Scene.PlaceCell] visent le pied de l'image, centré, là
+// que [Scene.PlaceArea] et [Scene.PlaceScreen] visent son coin haut-gauche. Un aspect
+// réutilisé de l'une à l'autre se décale donc de la moitié de sa largeur et de toute sa
+// hauteur — sans qu'un compilateur le refuse ni qu'une image désigne la cause.
+//
+// Le coin rendu se donne tel quel à [Scene.PlaceArea], qui le lit dans l'aire de monde
+// et y découpe l'image. Par [Scene.PlaceScreen] il vaut dans le repère de la surface, où
+// c'est au jeu d'ajouter [Scene.WorldOrigin] s'il veut viser l'aire, et où rien ne se
+// découpe.
+//
+// **L'ancre n'entre pas dans le calcul, et il ne faut pas l'y ajouter** : les deux voies
+// l'appliquent d'elles-mêmes. Ce qu'une ancre écrite pour une pose monde devient sur une
+// pose en pixels est dit sur le champ `AnchorX`.
+func (a Aspect) CornerFromFoot(ex, ey int32) (int32, int32) {
+	return ex - int32(a.Width)/2, ey - int32(a.Height)
 }
 
 // fitsInKey dit si la couche et l'étage sont dans ce que l'ordre de dessin sait
