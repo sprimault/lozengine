@@ -2,6 +2,10 @@
 
 English: [CONTRIBUTING.md](CONTRIBUTING.md)
 
+Participer suppose d'accepter le
+[code de conduite](CODE_OF_CONDUCT.fr.md), qui dit par quel canal un
+signalement arrive.
+
 ## Avant d'écrire du code
 
 Ouvrir une issue d'abord, pour tout ce qui dépasse une correction. La conception

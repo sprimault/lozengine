@@ -29,10 +29,10 @@ type Atlas struct {
 // Le blit, lui, ne peut ni encoder ni s'en plaindre — il ne renvoie pas d'erreur et
 // n'alloue pas.
 //
-// L'erreur au-delà de [render.MaxSheets] arrive ici pour la même raison : un index
-// que l'ordre de dessin ne sait plus distinguer se lirait comme une autre planche.
-// Refuser au chargement vaut mieux que ramener au plafond à l'image, ce qui
-// rangerait deux planches ensemble sans rien dire.
+// L'erreur au-delà de [render.MaxSheets] arrive ici pour la même raison : c'est un
+// plafond que le moteur se donne, et le chargement est le seul passage qui puisse le
+// dire. Refuser là vaut mieux que ramener au plafond à l'image, ce qui ferait lire une
+// autre planche que celle demandée sans rien dire.
 //
 // **La planche se fige en entrant, et à moitié seulement.** Add reçoit une copie :
 // l'atlas a son propre encodage, ses propres dimensions et sa propre découpe, donc
@@ -46,7 +46,7 @@ type Atlas struct {
 // de nouveau — l'index est neuf — plutôt que d'écrire dedans.
 func (a *Atlas) Add(p Sheet) (uint16, error) {
 	if len(a.Sheets) >= render.MaxSheets {
-		return 0, fmt.Errorf("adding a sheet: %d at most, what a quad can address", render.MaxSheets)
+		return 0, fmt.Errorf("adding a sheet: %d at most, the engine's atlas ceiling", render.MaxSheets)
 	}
 
 	p.encode()

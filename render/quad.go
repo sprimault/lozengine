@@ -50,19 +50,24 @@ const (
 	Additive
 )
 
-// MaxSheets est le nombre de planches qu'un atlas peut porter, donc la plus grande
-// valeur que le champ Sheet d'un [Quad] puisse désigner.
+// MaxSheets est le nombre de planches qu'un atlas peut porter : mille vingt-quatre.
+//
+// **C'est un plafond que le moteur se donne, et non ce qu'un [Quad] sait désigner.**
+// Le champ `Sheet` est un `uint16`, qui en adresse soixante-cinq mille cinq cent
+// trente-six. Et comme cette constante est un **compte**, le plus grand index qu'un
+// atlas plein porte est mille vingt-trois : c'est la seule des bornes publiées qui
+// compte au lieu de majorer, là que [MaxLayer] et [MaxFloor] s'écrivent `1<<n - 1`.
 //
 // Elle vit ici parce que c'est le seul endroit qu'un hôte puisse lire : celui qui
 // range les planches refuse la mille vingt-cinquième au chargement, et un `Quad` ne
 // porte pas de quoi la dire.
 //
-// **La raison du chiffre a disparu, et il n'a pas encore bougé.** Il venait de la clé
-// de tri, dont un champ de dix bits ne distinguait pas au-delà ; cette clé porte
-// désormais le rang d'empilement à cette place, et l'index de planche n'y figure plus
-// du tout. Rien ne borne donc plus cette valeur que le `uint16` de [Quad.Sheet], soit
-// soixante-cinq mille cinq cent trente-six. La lever est un changement de surface
-// publique, qui se décide seul.
+// **Le chiffre venait de la clé de tri et n'en vient plus** : un champ de dix bits ne
+// distinguait pas au-delà, et cette place porte le rang d'empilement depuis la 0.5.4,
+// l'index de planche ayant quitté la clé. Il reste pourtant à mille vingt-quatre, et
+// c'est tranché : la borne sert de refus au chargement pour un atlas qui s'emballe, la
+// lever n'achète rien, et un plafond publié qui monte se monte à tout moment là que
+// celui qui baisse cesse de compiler chez qui a dimensionné une table dessus.
 //
 // **Seule la limite sort, jamais la répartition.** Un quad ne porte pas sa clé de
 // tri, et l'agencement de ses champs n'a pas à devenir irrévocable en traversant la
@@ -117,9 +122,12 @@ const MaxSide = 32768
 // La disposition est celle qu'un hôte écrirait en C — champs de taille fixe,
 // vingt octets, alignement de deux, dont un octet de remplissage final que la
 // documentation résume en « champ non exporté » : les neuf champs nommés en
-// occupent dix-neuf. D'où trois limites, que le chargement signale
+// occupent dix-neuf. D'où deux limites, que le chargement signale
 // quand il peut mais que le chemin de rendu ne vérifie jamais : un tampon de
-// 32 767 pixels de côté, une planche de 65 535, et [MaxSheets] planches.
+// 32 767 pixels de côté et une planche de 65 535. [MaxSheets] n'en fait pas partie,
+// et l'y compter induisait en erreur : elle ne vient pas de la disposition mémoire —
+// `Sheet` en adresse soixante-cinq fois plus — mais d'un plafond que le moteur se
+// donne.
 //
 // La valeur zéro ne dessine rien, ce qui est l'échec sûr : une structure remplie
 // de zéros par un hôte reste invisible au lieu de peindre n'importe quoi.

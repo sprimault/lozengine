@@ -66,9 +66,9 @@ func TestAddTakesItsOwnCopy(t *testing.T) {
 	}
 }
 
-// TestAddBeyondTheCeiling vérifie le refus de la planche qu'un quad ne saurait plus
-// désigner. L'atlas est rempli de planches vides : c'est le compte qui est éprouvé,
-// pas les pixels.
+// TestAddBeyondTheCeiling vérifie le refus de la planche que le plafond d'atlas du
+// moteur n'accepte plus. L'atlas est rempli de planches vides : c'est le compte qui
+// est éprouvé, pas les pixels.
 func TestAddBeyondTheCeiling(t *testing.T) {
 	a := Atlas{Sheets: make([]Sheet, render.MaxSheets)}
 

@@ -134,8 +134,11 @@ const MaxSide = render.MaxSide
 // Dans son propre bloc et non avec [MaxSide], pour la raison que [MaxSheets] donne.
 const MaxTiers = scene.MaxTiers
 
-// MaxSheets est le nombre de planches qu'un atlas peut porter : mille vingt-quatre,
-// soit ce qu'un [Quad] sait désigner.
+// MaxSheets est le nombre de planches qu'un atlas peut porter : mille vingt-quatre.
+//
+// C'est un plafond que le moteur se donne et que le chargement applique, et non ce
+// qu'un [Quad] sait désigner — son champ `Sheet` en adresse soixante-cinq fois plus,
+// et l'index de planche a quitté l'ordre de dessin à la 0.5.4.
 //
 // La méthode `Add` d'un [Atlas] refuse au-delà au lieu de ramener au plafond : deux
 // planches confondues
