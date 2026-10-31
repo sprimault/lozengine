@@ -251,8 +251,16 @@ AUTORISEES = golang\.org/x/image(/.*)?|github\.com/ebitengine/oto/v3(/.*)?
 # `appearance` y est entré au jalon 4 avec lui-même. La liste close l'avait prévu
 # ouvert, au motif qu'il rastériserait les polices ; l'atlas de glyphes étant une
 # donnée produite hors du dépôt, il n'en tire rien et reste sans dépendance comme
-# le reste du cœur. Ce qui lui est réservé dans la liste attend donc un besoin
-# qu'aucun jalon n'a encore.
+# le reste du cœur.
+#
+# **L'entrée de la liste ne lui est plus réservée, et ne l'est à personne.** Elle
+# nommait `appearance`, qui est ici : elle désignait donc un paquet à qui la seconde
+# boucle de `deps` refuse jusqu'à ce que la liste autorise ailleurs — inapplicable par
+# où elle pointait, et non par ce qu'elle permet. Elle reste admise, puisque
+# l'invariant borne ce qui peut entrer sans obliger à y entrer, et attend un besoin
+# qu'aucun jalon n'a encore. Aucun paquet de remplacement n'est nommé : il n'y en a
+# pas au tableau des dépendances, contrairement à `internal/audio` pour le son, et
+# l'inventer serait une décision que rien ne demande.
 #
 # Tous vivent hors d'`internal/`, parce qu'un consommateur doit pouvoir lire la
 # documentation de leurs champs et de leurs méthodes — un alias vers un paquet

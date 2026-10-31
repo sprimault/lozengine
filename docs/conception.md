@@ -377,9 +377,9 @@ C'est là que la promesse se joue, et elle se vérifie paquet par paquet plutôt
 globalement.
 
 Deux paquets périphériques font exception, sous licence permissive et par
-décision inscrite dans le `Makefile` : le rendu de polices dans `appearance`, la
-sortie audio dans `audio`. Les réécrire coûterait des semaines pour un résultat
-qui ne distinguerait en rien le moteur.
+décision inscrite dans le `Makefile` : le rendu de polices et la sortie audio. Les
+réécrire coûterait des semaines pour un résultat qui ne distinguerait en rien le
+moteur.
 
 Ce qui relève du sujet, en revanche, s'écrit quel qu'en soit le coût — le
 protocole X11 demande aussi des semaines, et elles sont assumées : le déléguer

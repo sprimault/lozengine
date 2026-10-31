@@ -226,7 +226,7 @@ Ailleurs, une **liste close de deux entrées**, et aucune autre :
 
 | Dépendance | Licence | Pour | État |
 | --- | --- | --- | --- |
-| `golang.org/x/image` | BSD-3 | rastériser une police dans `appearance` | admise, **non employée** |
+| `golang.org/x/image` | BSD-3 | rastériser une police à l'exécution | admise, **non employée** |
 | `github.com/ebitengine/oto/v3` | Apache-2.0 | sortie audio dans `audio` | admise, attend le jalon 7 |
 
 **La première n'a pas été tirée au jalon 4, et il faut dire pourquoi** : le texte s'y
