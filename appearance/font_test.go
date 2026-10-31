@@ -24,7 +24,11 @@ func ascii() Font {
 }
 
 // textScene monte une scène vide, de quoi recevoir des pièces d'écran.
-func textScene(t *testing.T) *scene.Scene {
+//
+// Sur `testing.TB` et non sur `*testing.T` : les bancs du paquet veulent le même
+// montage, et deux helpers qui divergeraient feraient mesurer autre chose que ce que
+// les cas éprouvent.
+func textScene(t testing.TB) *scene.Scene {
 	t.Helper()
 
 	s, err := scene.New(8, 8, geometry.Dimetric(32, 16), scene.Options{})

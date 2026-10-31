@@ -37,6 +37,22 @@ func framePart(b *testing.B) {
 	b.ReportMetric(perOp*weighting*100/frameAt60Hz, "%image-pondere")
 }
 
+// rawFramePart rapporte la part d'une image sans pondérer, pour un chemin limité par ses
+// opérations et non par la bande passante mémoire.
+//
+// **Deux unités et non une, et ce n'est pas un relâchement de la convention** : la
+// pondération de [framePart] représente une machine dont la mémoire est quatre fois plus
+// étroite, donc l'appliquer à un chemin qui ne dépend pas de la mémoire le surestime d'un
+// facteur quatre. Ce qui tranche entre les deux n'est pas une intuition mais la mesure sur
+// les deux machines du parc : un chemin limité par la mémoire y diffère d'un facteur deux
+// et demi, un chemin limité par le calcul s'y tient à 10 ou 20 % près.
+//
+// Le nom de la métrique dit laquelle on lit, de sorte qu'aucun lecteur n'ait à diviser.
+func rawFramePart(b *testing.B) {
+	perOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
+	b.ReportMetric(perOp*100/frameAt60Hz, "%image-brut")
+}
+
 // tile rend une tile de sol en losange 32×16 : coins transparents, corps opaque,
 // bord à demi transparent. Les trois genres de séquence y sont représentés dans les
 // proportions d'un vrai sprite, ce qui est tout ce qu'on demande à une mire de
@@ -139,6 +155,68 @@ func BenchmarkQuad(b *testing.B) {
 				Draw(buffer, r, a)
 			}
 		})
+	}
+}
+
+// BenchmarkFlatSurface mesure un aplat de la taille de la surface, qui est la forme de
+// quad la plus chère du moteur et n'avait aucun chiffre.
+//
+// **Pourquoi [BenchmarkQuad] ne le disait pas** : son aplat fait 32×16, donc 512 pixels,
+// et un banc à l'échelle du quad ne reçoit pas de part d'image — ce que la godoc de
+// [framePart] pose. Or un aplat de surface en peint deux mille fois plus : c'est ce
+// qu'un panneau d'interface, une bande ou un fondu demandent, et c'est le seul quad dont
+// la surface croît avec la fenêtre.
+//
+// **Les trois régimes se lisent les uns contre les autres, et c'est là qu'est la
+// surprise.** L'opaque est le seul qui pourrait recopier en bloc — il affecte
+// aujourd'hui pixel par pixel, là que `Clear` emploie une routine du même paquet bien
+// plus rapide ; le translucide et l'additif ne peuvent pas, lisant le fond avant de
+// l'écrire. On s'attendrait donc à ce que l'opaque soit le coûteux. **Il est le moins
+// cher des trois**, de trois à quatre fois : ce qui domine n'est pas la forme de
+// l'écriture mais l'arithmétique par pixel que les deux autres ajoutent.
+//
+// **La part se lit brute et non pondérée, et c'est mesuré.** [framePart] rapporte à une
+// machine dont la bande passante est quatre fois plus étroite, ce qui ne vaut que pour
+// un chemin qui en dépend ; celui-ci n'en dépend pas. Les deux machines du parc, dont
+// les bandes passantes vont de un à deux et demi, rendent ici des chiffres à 23 % près
+// et la plus récente est même la plus lente sur cinq cas sur six — la signature d'un
+// chemin limité par ses opérations, où la part brute est déjà la part.
+//
+// Les deux conditions de `tests.md` restent à remplir avant de corriger : la mesure
+// n'ouvre pas la porte à elle seule, et aucune charge observée ne pose un aplat de la
+// taille de la surface à chaque image.
+func BenchmarkFlatSurface(b *testing.B) {
+	for _, size := range []struct {
+		name          string
+		width, height int32
+	}{
+		{"480×270, la résolution interne du moteur", 480, 270},
+		{"1920×1080, un écran entier", 1920, 1080},
+	} {
+		for _, c := range []struct {
+			name string
+			tint render.Color
+			flag render.Flags
+		}{
+			{"opaque", render.White(), render.Flat},
+			{"translucide", render.Color{R: 128, G: 128, B: 128, A: 128}, render.Flat},
+			{"additif", render.Color{R: 64, G: 64, B: 64, A: 255}, render.Flat | render.Additive},
+		} {
+			b.Run(size.name+"/"+c.name, func(b *testing.B) {
+				buffer := render.NewBuffer(uint16(size.width), uint16(size.height))
+				r := render.DrawList{{
+					Width: uint16(size.width), Height: uint16(size.height),
+					Tint: c.tint, Flags: c.flag,
+				}}
+
+				b.ResetTimer()
+				for range b.N {
+					Draw(buffer, r, nil)
+				}
+
+				rawFramePart(b)
+			})
+		}
 	}
 }
 
