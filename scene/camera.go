@@ -7,6 +7,8 @@
 
 package scene
 
+import "github.com/sprimault/lozengine/render"
+
 // Orientation est l'un des quatre quarts de tour sous lesquels une scène se regarde :
 // [NoRotation], [QuarterTurn], [HalfTurn] et [ThreeQuarters].
 //
@@ -82,8 +84,29 @@ func (s *Scene) Orientation() Orientation { return s.orientation }
 // vide autour.
 func (s *Scene) Focus(x, y float64, width, height int32) {
 	s.focusX, s.focusY = x, y
-	s.viewWidth, s.viewHeight = width, height
+	s.viewWidth, s.viewHeight = sides(width, height)
 	s.reframe()
+}
+
+// sides ramène un couple de côtés dans ce que le trieur sait convertir, soit
+// [render.MaxBufferSide].
+//
+// **Le trieur découpe contre ces côtés puis convertit en seize bits** : au-delà de la
+// borne, la conversion se replie et un quad part à l'autre bout de l'image au lieu
+// d'être écarté. `render.NewBuffer` **panique** pour exactement ce motif, et `Inset.sane`
+// nomme le même dégât — ce paquet était le seul des trois à laisser passer.
+//
+// **Ramené et non refusé**, comme `Inset.sane` : ces trois voies ne rendent rien, et le
+// chemin d'une image ne rapporte pas d'erreur. Un côté nul ou négatif reste traité par
+// chaque appelant, qui en fait un non-événement.
+//
+// **Rien ne le montre aujourd'hui**, et l'échéance est nommée : le seul appelant de
+// `Sorter.Frame` est `Engine.Step`, qui réimpose les deux rectangles à chaque pas depuis
+// des côtés que `NewBuffer` a déjà bornés. Le jalon 11 expose « le noyau, jamais la
+// fenêtre ni la boucle » : un hôte posera ses rectangles lui-même, et cette réimposition
+// ne sera plus sur le chemin. Trois lignes aujourd'hui, la frontière C ensuite.
+func sides(width, height int32) (int32, int32) {
+	return min(width, render.MaxBufferSide), min(height, render.MaxBufferSide)
 }
 
 // ResizeView change la taille de la vue en gardant le point visé, et recadre dessus.
@@ -99,6 +122,7 @@ func (s *Scene) ResizeView(width, height int32) {
 	if width <= 0 || height <= 0 {
 		return
 	}
+	width, height = sides(width, height)
 	if width == s.viewWidth && height == s.viewHeight {
 		return
 	}
@@ -111,6 +135,10 @@ func (s *Scene) ResizeView(width, height int32) {
 //
 // C'est ce que le tri retranche de chaque point projeté, au moment où il écarte ce qui
 // tombe hors de l'image. Les deux gestes sont le même calcul.
+//
+// Les côtés sont bornés à [render.MaxBufferSide], ramenés et non refusés : au-delà, le
+// découpage du tri convertirait en seize bits une valeur qui s'y replie, et un quad
+// partirait à l'autre bout de l'image au lieu d'être écarté.
 func (s *Scene) View() (x, y, width, height int32) {
 	return s.viewX, s.viewY, s.viewWidth, s.viewHeight
 }
@@ -122,6 +150,9 @@ func (s *Scene) View() (x, y, width, height int32) {
 // ne borne pas son aire de monde. Quand un plafond mord, la surface continue de remplir
 // la fenêtre et c'est la vue qui rétrécit : ce que la surface a de plus est la marge, et
 // elle appartient au jeu — c'est là que vont un bandeau, un score, une minicarte.
+//
+// Les côtés sont bornés à [render.MaxBufferSide] comme ceux de [Scene.View], et pour la
+// même raison.
 func (s *Scene) Surface() (width, height int32) {
 	return max(s.surfaceWidth, s.viewWidth), max(s.surfaceHeight, s.viewHeight)
 }
@@ -162,7 +193,7 @@ func (s *Scene) ResizeSurface(width, height int32) {
 		return
 	}
 
-	s.surfaceWidth, s.surfaceHeight = width, height
+	s.surfaceWidth, s.surfaceHeight = sides(width, height)
 }
 
 // SetAlignment pose où l'aire de monde se place dans la surface, un axe après l'autre.

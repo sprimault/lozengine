@@ -515,6 +515,53 @@ func TestIndexSaturatesAtItsCeiling(t *testing.T) {
 	}
 }
 
+// TestOversizedSurfaceDoesNotWrapQuads garde la borne que `scene` pose sur les côtés
+// qu'il accepte, et que le découpage du tri convertit en seize bits.
+//
+// **Le dégât est un quad qui part à l'autre bout de l'image** : au-delà de
+// [render.MaxBufferSide], la conversion se replie et rend une abscisse négative là où le
+// quad aurait dû être écarté. `render.NewBuffer` panique pour ce motif exact et
+// `Inset.sane` ramène pour le même ; `scene` était le seul des trois à laisser passer.
+//
+// **Rien ne le montre dans le moteur assemblé**, et c'est pourquoi le cas vit ici : le
+// seul appelant de [Sorter.Frame] est la boucle, qui réimpose les deux rectangles à
+// chaque pas depuis des côtés qu'un tampon a déjà bornés. Le jalon 11 expose le noyau
+// sans la boucle, et un hôte posera ses rectangles lui-même.
+//
+// **La scène est grande, et ce n'est pas un détail de confort.** Le repli ne se produit
+// que pour un quad dont la coordonnée **relative à l'origine de la vue** dépasse les
+// seize bits : sur une grille de seize cellules, tout tombe à quelques centaines de
+// pixels de l'origine et le cas passe sans rien éprouver — mesuré en l'écrivant. Il faut
+// deux mille cellules de côté et des entités aux quatre coins, et c'est précisément
+// pourquoi ce défaut n'avait jamais été vu.
+//
+// Sans la borne, le quad du coin opposé sort en `(19984, -29560)` : il devait être
+// écarté, et il reparaît de l'autre côté de l'image.
+func TestOversizedSurfaceDoesNotWrapQuads(t *testing.T) {
+	s := testScene(t, 2000, 4)
+	for _, p := range [][2]float64{{0.5, 0.5}, {1999.5, 1999.5}, {1999.5, 0.5}, {0.5, 1999.5}} {
+		if _, ok := s.Place(scene.Entity{X: p[0], Y: p[1], Aspect: figure()}); !ok {
+			t.Fatal("entité refusée")
+		}
+	}
+
+	// Au-delà de ce qu'un int16 porte, par les trois voies qu'un hôte appellera.
+	s.ResizeSurface(40000, 40000)
+	s.ResizeView(40000, 40000)
+	s.Focus(1000, 1000, 40000, 40000)
+
+	if _, _, width, height := s.View(); width > render.MaxBufferSide || height > render.MaxBufferSide {
+		t.Fatalf("vue %d×%d, bornée à %d attendue", width, height, render.MaxBufferSide)
+	}
+
+	for i, q := range New(s).Frame() {
+		if q.X < 0 || q.Y < 0 {
+			t.Errorf("quad %d en (%d, %d) : une coordonnée négative est un repli",
+				i, q.X, q.Y)
+		}
+	}
+}
+
 // TestTheOpenDoorsCannotBreakTheFrame garde la clause qui rend acceptables les deux
 // portes par lesquelles le tri lit la scène, et qu'un jeu peut appeler aussi.
 //
