@@ -11,14 +11,17 @@ import (
 	"testing"
 )
 
-// TestOpenFallsBackWithoutWindow vérifie le seul comportement que ce lot livre : sur une
-// plateforme dont le backend n'est pas écrit, l'ouverture échoue proprement au lieu de
-// rendre une fenêtre inutilisable.
+// TestOpenFallsBackWithoutWindow vérifie que l'ouverture échoue proprement, sans rendre
+// de fenêtre inutilisable.
 //
-// Le cas vérifie aussi que le message nomme la plateforme et le jalon. Une erreur qui
-// dirait seulement « non pris en charge » obligerait à chercher dans la feuille de
-// route ce que le moteur attend encore, et c'est précisément ce qu'on veut éviter à
-// quelqu'un qui essaie le moteur sous Linux aujourd'hui.
+// **Ce cas ne tourne nulle part, et c'est dit plutôt que supposé** : sa contrainte de
+// construction est celle de son fichier, `!windows && !linux`, et aucune cible du dépôt
+// n'exécute un tel `GOOS`. Il ne garde donc que le câblage — qu'`Open` appelle bien
+// `unsupported` et ne rende rien d'autre —, le jour où quelqu'un compilera pour une de
+// ces plateformes.
+//
+// Ce qui est réellement gardé, sur l'hôte, est le message lui-même :
+// [TestUnsupportedNamesThePlatformAndTheMilestone], dans un fichier sans contrainte.
 func TestOpenFallsBackWithoutWindow(t *testing.T) {
 	window, err := Open(Options{Title: "essai", Width: 480, Height: 270})
 
@@ -30,8 +33,5 @@ func TestOpenFallsBackWithoutWindow(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), runtime.GOOS) {
 		t.Errorf("le message ne nomme pas la plateforme : %v", err)
-	}
-	if !strings.Contains(err.Error(), "milestone") {
-		t.Errorf("le message ne nomme pas le jalon qui l'écrira : %v", err)
 	}
 }

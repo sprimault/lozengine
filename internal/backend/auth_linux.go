@@ -20,7 +20,7 @@ import (
 //
 // Les autres — `XDM-AUTHORIZATION-1` et ses successeurs — chiffrent un défi avec une
 // clé partagée, ne servent que les connexions par le réseau, et ne sont posés par
-// aucune session locale. Une entrée qui en porte un se saute donc plutôt que de faire
+// aucune session locale. Une entrée qui en porte un est donc passée plutôt que de faire
 // échouer la lecture.
 const authMagicCookie = "MIT-MAGIC-COOKIE-1"
 

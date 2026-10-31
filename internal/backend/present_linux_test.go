@@ -16,7 +16,7 @@ import (
 )
 
 // displayRequired est la variable par laquelle un job d'intégration continue interdit
-// au cas d'affichage de se sauter.
+// au cas d'affichage d'être sauté.
 const displayRequired = "LOZENGINE_DISPLAY"
 
 // requireDisplay saute le cas quand aucun serveur d'affichage n'est joignable, et
