@@ -24,7 +24,10 @@ import (
 // lecture sans attente repose sur un descripteur non bloquant qui rend `EAGAIN`, et
 // aucune imitation en mémoire ne reproduirait ce régime — c'est précisément celui dont
 // dépend une boucle de jeu qui ne doit jamais s'arrêter sur un événement absent.
-func connPair(t *testing.T) (*conn, *net.UnixConn) {
+// Le paramètre est un `testing.TB` et non un `*testing.T` : un banc du chemin d'entrée a
+// besoin du même montage, et dupliquer celui-ci pour deux lignes de différence ferait
+// deux harnais à tenir d'accord.
+func connPair(t testing.TB) (*conn, *net.UnixConn) {
 	t.Helper()
 
 	fds, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_STREAM, 0)
@@ -91,7 +94,7 @@ func connPair(t *testing.T) (*conn, *net.UnixConn) {
 }
 
 // unixConnOf reprend un descripteur de socket en connexion Go.
-func unixConnOf(t *testing.T, fd int) *net.UnixConn {
+func unixConnOf(t testing.TB, fd int) *net.UnixConn {
 	t.Helper()
 
 	// FileConn duplique le descripteur, donc celui-ci se rend aussitôt.
