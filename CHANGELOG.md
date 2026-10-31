@@ -54,6 +54,12 @@ notes de publication.
   y compare les images au pixel. C'est l'architecture qui pouvait rendre une autre image
   que `amd64`.
 
+### Retiré
+
+- `Matrix.MaxCells` est retirée. Elle majorait le nombre de cellules qu'un écran peut
+  couvrir, pour dimensionner un relevé d'avance ; rien dans le moteur ne procède ainsi, et
+  rien ne la remplace.
+
 ### Corrigé
 
 - La fenêtre s'ouvre sur les Windows antérieurs à la mise à jour d'avril 2017 de
@@ -69,6 +75,11 @@ notes de publication.
 - `linux/arm64` is no longer merely compiled: the test suite runs there on every batch
   and compares images pixel by pixel. It is the architecture that could have rendered a
   different image from `amd64`.
+
+### Removed
+
+- `Matrix.MaxCells` is gone. It bounded how many cells a screen can cover, to size a
+  collection upfront; nothing in the engine works that way, and nothing replaces it.
 
 ### Fixed
 

@@ -151,34 +151,6 @@ func TestRoundTripTolerance(t *testing.T) {
 	}
 }
 
-// TestMaxCellsIsAnUpperBound vérifie que le majorant couvre vraiment ce que le relevé
-// trouvera, pour toute position de la vue : un relevé qui n'alloue pas déborderait
-// sinon, et c'est ce que la signature sert à empêcher.
-func TestMaxCellsIsAnUpperBound(t *testing.T) {
-	const width, height = 480, 270
-
-	m := Dimetric(32, 16)
-	upperBound := m.MaxCells(width, height)
-
-	// Le relevé réel, pour quelques positions de vue : l'englobant en cellules des
-	// quatre coins du tampon, comme le relevé des cellules visibles le calculera.
-	for _, origin := range [][2]int32{{0, 0}, {7, 3}, {1000, -500}, {-13, 9999}} {
-		minX, minY := math.MaxFloat64, math.MaxFloat64
-		maxX, maxY := -math.MaxFloat64, -math.MaxFloat64
-
-		for _, corner := range [4][2]int32{{0, 0}, {width, 0}, {0, height}, {width, height}} {
-			x, y := m.Unproject(origin[0]+corner[0], origin[1]+corner[1])
-			minX, maxX = min(minX, x), max(maxX, x)
-			minY, maxY = min(minY, y), max(maxY, y)
-		}
-
-		cells := (int(maxX) - int(minX) + 1) * (int(maxY) - int(minY) + 1)
-		if cells > upperBound {
-			t.Errorf("vue en (%d, %d) : %d cellules relevées, majorant %d", origin[0], origin[1], cells, upperBound)
-		}
-	}
-}
-
 // TestUnprojectClampsItsInput vérifie que l'inverse sature au lieu de déborder : au
 // -delà de la plage, le produit d'un pixel par un coefficient quitterait un int64 et
 // rendrait un point arbitraire plutôt qu'un point lointain.
