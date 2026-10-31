@@ -108,6 +108,9 @@ type Aspect struct {
 	// arriver de pire à la lisibilité, et cela survient précisément quand on est
 	// encerclé.
 	//
+	// **C'est une couche, donc [render.MaxLayer] la borne** : une pose qui la dépasse
+	// est refusée, comme pour [Aspect.Layer], et jamais ramenée au plafond.
+	//
 	// **Ce qui cache est ce qui se peint après, décor ou entité.** Un mur, un toit,
 	// mais aussi la créature qui vient de s'interposer : être caché est être caché, et
 	// l'encerclement que la phrase ci-dessus nomme est justement un recouvrement par
@@ -203,17 +206,26 @@ func (a Aspect) CornerFromFoot(ex, ey int32) (int32, int32) {
 	return ex - int32(a.Width)/2, ey - int32(a.Height)
 }
 
-// fitsInKey dit si la couche et l'étage sont dans ce que l'ordre de dessin sait
+// fitsInKey dit si les trois champs de l'aspect que la clé de tri porte — la couche,
+// l'étage et la couche de révélation — tiennent dans ce que l'ordre de dessin sait
 // distinguer, soit [render.MaxLayer] et [render.MaxFloor].
 //
-// Les deux champs sont des octets alors que la clé de tri n'en porte que seize et
+// Les champs sont des octets alors que la clé de tri n'en porte que seize et
 // soixante-quatre valeurs, et la composition de la clé ramène une valeur trop grande
 // au plafond. Sans contrôle, un jeu qui demande une vingtième couche en verrait six se
 // confondre avec la quinzième : l'image serait fausse, aucun code ne l'aurait dit, et
 // la cause se chercherait dans le jeu. La pose refuse donc, ce qui est le seul endroit
 // où elle peut être vue — le chemin d'une image ne vérifie rien.
+//
+// **[Aspect.Reveal] est entré ici après les deux autres, et son dégât n'a pas la même
+// forme** : saturé à quinze, un rappel ne sort pas de la couche la plus haute — il
+// entre en collision avec ce qu'un jeu y a posé, son interface, où l'ordre retombe sur
+// la profondeur puis la hauteur. Le rappel peut donc se peindre sous le panneau qu'il
+// devait franchir, et plusieurs couches de révélation distinctes au-delà du plafond
+// s'effondrent en une seule, perdant leur ordre relatif.
 func (a Aspect) fitsInKey() bool {
-	return a.Layer <= render.MaxLayer && a.Floor <= render.MaxFloor
+	return a.Layer <= render.MaxLayer && a.Floor <= render.MaxFloor &&
+		a.Reveal <= render.MaxLayer
 }
 
 // Entity est un aspect posé à un point du monde.

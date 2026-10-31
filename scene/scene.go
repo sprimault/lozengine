@@ -257,9 +257,9 @@ func (s *Scene) Projection() geometry.Matrix { return s.projection }
 
 // Place ajoute une entité et rend la poignée qui la désignera.
 //
-// Le second résultat est faux quand la capacité est atteinte, ou quand la couche ou
-// l'étage de l'aspect dépasse ce que l'ordre de dessin distingue ; rien n'a alors été
-// posé. C'est un refus et non une erreur : il arrive en cours de partie, là où une
+// Le second résultat est faux quand la capacité est atteinte, ou quand la couche,
+// l'étage ou la couche de révélation de l'aspect dépasse ce que l'ordre de dessin
+// distingue ; rien n'a alors été posé. C'est un refus et non une erreur : il arrive en cours de partie, là où une
 // erreur n'aurait personne à qui se plaindre.
 func (s *Scene) Place(e Entity) (Handle, bool) {
 	if !e.fitsInKey() {
@@ -390,8 +390,8 @@ func HandleAt(s *Scene, place int) Handle {
 }
 
 // PlaceCell pose un aspect sur une cellule de la grille, à la strate donnée, et
-// rend faux si la cellule ou la strate sort des bornes, ou si la couche ou l'étage de
-// l'aspect dépasse ce que l'ordre de dessin distingue.
+// rend faux si la cellule ou la strate sort des bornes, ou si la couche, l'étage ou la
+// couche de révélation de l'aspect dépasse ce que l'ordre de dessin distingue.
 //
 // La strate dit ce qui s'empile sur une même cellule sans l'effacer — une chaussée, le
 // passage piéton peint dessus, le véhicule qui s'y gare. Sans elle il faudrait choisir
