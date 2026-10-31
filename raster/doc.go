@@ -19,8 +19,13 @@
 // Pour écrire un jeu en Go, le paquet racine republie [Sheet], [Atlas], [Rectangle] et
 // trois façons d'obtenir une planche — `NewSheet`, `LoadSheet` et
 // `NewSheetFromStraight` —, auxquelles elle ajoute `OpenSheet`, qui lit un fichier et
-// n'a pas d'équivalent ici. Elle ne republie pas les fonctions de dessin, dont la
-// boucle se charge ; un hôte qui garde la sienne les appelle depuis ce paquet.
+// n'a pas d'équivalent ici. Elle republie aussi [ScaleFactor], [Upscale] et
+// [WritePNG] : un hôte qui garde sa propre boucle reçoit l'image du moteur et doit la
+// présenter, et la lui faire chercher dans un second paquet n'achetait rien.
+//
+// Ce qu'elle ne republie pas est le **dessin** — [Clear], [Draw] et les trois formes
+// de pose —, dont la boucle du moteur se charge dans les deux cas. Un hôte qui
+// voudrait dessiner lui-même les appelle depuis ce paquet.
 //
 // Le tampon lui-même vit dans [github.com/sprimault/lozengine/render], parce qu'un
 // hôte en remplit les champs. Les opérations de ce paquet le prennent donc en premier

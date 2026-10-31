@@ -8,6 +8,7 @@
 package lozengine
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/sprimault/lozengine/geometry"
@@ -75,6 +76,49 @@ func TestConstructorsRepublished(t *testing.T) {
 		if c.root != c.core {
 			t.Errorf("%s republié ne rend pas la matrice du noyau", c.name)
 		}
+	}
+}
+
+// TestPresentationRepublished vérifie que les trois voies de présentation s'atteignent
+// depuis la racine, et dans le bon ordre d'arguments.
+//
+// **C'est l'ordre qui est gardé ici, pas la présence.** Les deux tampons de ScaleFactor
+// comme d'Upscale ont le même type, donc une enveloppe qui les échangerait se
+// compilerait sans un mot — c'est le défaut même que leur godoc décrit. Le cas rougit
+// alors de deux façons : le facteur tombe à 1, et la sortie ne reçoit aucun pixel.
+//
+// Une image de deux sur deux au facteur quatre remplit exactement une sortie de huit,
+// donc tout pixel qui n'est pas de la teinte est une bande qui n'aurait pas dû être
+// peinte.
+func TestPresentationRepublished(t *testing.T) {
+	tint := Color{R: 200, G: 100, B: 50, A: 255}
+	inner := NewBuffer(2, 2)
+	for i := range inner.Pixels {
+		inner.Pixels[i] = tint
+	}
+	out := NewBuffer(8, 8)
+
+	if got := ScaleFactor(inner, out); got != 4 {
+		t.Errorf("ScaleFactor republié rend %d, attendu 4", got)
+	}
+
+	Upscale(inner, out, 4, Color{A: 255})
+	painted := 0
+	for _, p := range out.Pixels {
+		if p == tint {
+			painted++
+		}
+	}
+	if painted != len(out.Pixels) {
+		t.Errorf("Upscale republié peint %d pixels sur %d", painted, len(out.Pixels))
+	}
+
+	var png bytes.Buffer
+	if err := WritePNG(out, &png); err != nil {
+		t.Fatalf("WritePNG republié : %v", err)
+	}
+	if png.Len() == 0 {
+		t.Error("WritePNG republié n'a rien écrit")
 	}
 }
 

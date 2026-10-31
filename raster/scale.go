@@ -19,11 +19,22 @@ import "github.com/sprimault/lozengine/render"
 // Une fonction et non une méthode : le tampon vit dans [render], que l'ABI expose, et
 // Go veut qu'une méthode soit déclarée dans le paquet de son type. Vaut pour
 // [Upscale] comme pour celle-ci.
-func ScaleFactor(t, out *render.Buffer) int {
-	if t.Width == 0 || t.Height == 0 {
+//
+// **`inner` est l'image du moteur, `out` la sortie, et aucune des deux n'est écrite
+// ici** : celle-ci ne fait que mesurer. L'ordre compte pourtant, les deux ayant le
+// même type : inversés, elle rend le facteur qui ferait tenir la fenêtre dans l'image,
+// soit 1 dans tous les cas utiles. Là où un tampon s'appelle `t` dans le paquet, il
+// est la destination — [Clear], [Draw], `paintBars` —, d'où ces deux noms ici.
+//
+// [WritePNG] est l'exception apparente et n'en est pas une : son `t` est bien lu, mais
+// son second paramètre est un [io.Writer], donc aucune inversion n'y est possible. Ce
+// qui rend un nom nécessaire est l'ambiguïté de deux paramètres de même type, pas le
+// sens de lecture.
+func ScaleFactor(inner, out *render.Buffer) int {
+	if inner.Width == 0 || inner.Height == 0 {
 		return 1
 	}
-	return max(min(int(out.Width)/int(t.Width), int(out.Height)/int(t.Height)), 1)
+	return max(min(int(out.Width)/int(inner.Width), int(out.Height)/int(inner.Height)), 1)
 }
 
 // Upscale recopie le tampon dans la sortie, centré, au facteur entier donné, en
@@ -44,14 +55,18 @@ func ScaleFactor(t, out *render.Buffer) int {
 //
 // Seul un facteur inférieur à 1 est remonté à 1 : il n'y a pas de réduction ici, la
 // mise à l'échelle entière ne sachant qu'agrandir.
-func Upscale(t, out *render.Buffer, factor int, background render.Color) {
+//
+// **`inner` est l'image du moteur, lue ; `out` est la sortie, écrite.** Les deux ont le
+// même type, donc une inversion compile sans un mot — et elle n'est pas muette pour
+// autant : la fenêtre ne reçoit alors aucun pixel, ce qui se voit à la première image.
+func Upscale(inner, out *render.Buffer, factor int, background render.Color) {
 	if factor < 1 {
 		factor = 1
 	}
 
-	scaledW, scaledH := int(t.Width)*factor, int(t.Height)*factor
-	if factor == 1 && t.Width == out.Width && t.Height == out.Height {
-		copy(out.Pixels, t.Pixels)
+	scaledW, scaledH := int(inner.Width)*factor, int(inner.Height)*factor
+	if factor == 1 && inner.Width == out.Width && inner.Height == out.Height {
+		copy(out.Pixels, inner.Pixels)
 		return
 	}
 
@@ -73,14 +88,14 @@ func Upscale(t, out *render.Buffer, factor int, background render.Color) {
 		paintBars(out, leftBound, topBound, rightBound, bottomBound, background)
 	}
 
-	for sy := 0; sy < int(t.Height); sy++ {
+	for sy := 0; sy < int(inner.Height); sy++ {
 		first := max(offsetY+sy*factor, 0)
 		last := min(offsetY+(sy+1)*factor, int(out.Height))
 		if first >= last {
 			continue
 		}
 
-		src := t.Pixels[sy*int(t.Width) : (sy+1)*int(t.Width)]
+		src := inner.Pixels[sy*int(inner.Width) : (sy+1)*int(inner.Width)]
 		dst := out.Pixels[first*int(out.Width) : (first+1)*int(out.Width)]
 
 		for sx := range src {
