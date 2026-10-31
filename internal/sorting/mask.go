@@ -174,47 +174,21 @@ func hides(q render.Quad) bool {
 // que soit sa source.
 func paints(q render.Quad) bool { return q.Tint.A != 0 }
 
-// coverage compte, au pixel, ce que le quad de rang i peint et ce que les quads qui se
-// peignent après lui en couvrent.
+// exactly compte, au pixel, ce que la chose peint et ce que les candidats retenus par
+// [Sorter.measure] en couvrent.
 //
-// **Chaque pixel ne compte qu'une fois**, là où [Sorter.overlap] additionne les
-// rectangles de chaque couple : c'est toute la différence, et c'est elle qui empêche la
-// mesure exacte de remplacer l'ancienne. Sur la charge du premier jeu, la même scène
-// rend 5 534 en boîte, 144 en somme par paire et 63 en union.
+// **Chaque pixel ne compte qu'une fois**, là où la somme par rectangles additionne les
+// couples : c'est toute la différence, et c'est elle qui empêche la mesure exacte de
+// remplacer l'ancienne. Sur la charge du premier jeu, la même scène rend 5 534 en boîte,
+// 144 en somme par paire et 63 en union.
+//
+// Elle ne cherche pas ses candidats et ne vérifie pas son masque : les deux viennent de
+// l'appelant, qui les a établis dans le parcours qu'il faisait déjà. L'appeler sans ce
+// parcours rendrait un compte nul plutôt qu'un compte faux, la liste étant alors vide.
 //
 // Les quads plus larges que soixante-quatre pixels se traitent par tranches de cette
 // largeur, l'accumulateur portant une ligne de la chose à la fois.
-func (t *Sorter) coverage(i, n int) (painted, covered, byDecor int) {
-	thing := t.raw[i]
-	if !paints(thing) {
-		return 0, 0, 0
-	}
-	m := t.maskOf(thing)
-	if m.empty() {
-		return 0, 0, 0
-	}
-
-	// **Les candidats se trouvent une fois, pas une fois par ligne**, et c'est la
-	// différence entre un lot qui tient le budget et un qui le mange. Chercher les
-	// cachants à l'intérieur de la boucle des lignes coûtait 38,7 µs par entité
-	// marquée — mesuré, 2,7 ms à soixante-cinq marquées, un sixième du budget d'une
-	// image — parce que chaque ligne reparcourait les deux mille quads de la scène. Il
-	// n'y en a qu'une quinzaine dont la boîte recouvre celle de la chose.
-	t.candidates = t.candidates[:0]
-	key := t.keys[i]
-	for j := range n {
-		if t.uncounted[j] || j == i {
-			continue
-		}
-		if key > t.keys[j] || (key == t.keys[j] && !t.before(uint32(i), uint32(j))) {
-			continue
-		}
-		if !hides(t.raw[j]) || shared(thing, t.raw[j]) == 0 {
-			continue
-		}
-		t.candidates = append(t.candidates, uint32(j))
-	}
-
+func (t *Sorter) exactly(thing render.Quad, m mask) (painted, covered, byDecor int) {
 	for slice := 0; slice < int(thing.Width); slice += 64 {
 		width := min(64, int(thing.Width)-slice)
 

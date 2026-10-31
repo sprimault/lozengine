@@ -102,6 +102,12 @@ func byPixel(t *Sorter, i, n int) (painted, covered, byDecor int) {
 // miroir sur une largeur impaire, une source non alignée sur un mot sont des cas que
 // trois scènes écrites à la main manqueraient. Les deux calculs n'ont en commun que
 // la lecture d'un bit.
+//
+// **Il porte depuis le 31 octobre 2026 sur le chemin de production entier**, et non
+// plus sur la seule passe au pixel : la recherche des candidats est remontée dans
+// [Sorter.measure], qui la fait dans le parcours qu'il faisait déjà, donc appeler la
+// passe seule ne contrôlerait plus qu'une liste vide. Le cas y gagne — ce qu'il
+// confronte est ce qu'un hôte reçoit.
 func TestCoverageMatchesThePixelByPixelCount(t *testing.T) {
 	r := rand.New(rand.NewPCG(1, 2))
 
@@ -157,7 +163,7 @@ func TestCoverageMatchesThePixelByPixelCount(t *testing.T) {
 		n := len(sorter.raw)
 		for i := range n {
 			wp, wc, wd := byPixel(sorter, i, n)
-			gp, gc, gd := sorter.coverage(i, n)
+			_, _, gp, gc, gd := sorter.measure(i, n, true)
 			if gp != wp || gc != wc || gd != wd {
 				t.Fatalf("ronde %d, quad %d : la passe rend (%d, %d, %d), le pixel par pixel (%d, %d, %d)",
 					round, i, gp, gc, gd, wp, wc, wd)

@@ -111,6 +111,14 @@ func (c Key) Index() uint16 { return uint16(c) & MaxIndex }
 // écriture n'en est qu'un enregistrement.** Rien ne la relit : le rangement suit cette
 // liste, et [Key.Index] n'a aucun appelant de production. Une clé lue après coup dit donc
 // le rang qu'elle a reçu, elle ne le porte pas.
+//
+// **Et cet enregistrement se garde, ce qui a été tranché le 31 octobre 2026.** Puisque
+// personne ne le relit, le retirer gagnerait un passage sur les rangs de chaque groupe —
+// sous le demi pour cent du tri, mesuré. Ce qui l'emporte est ce qu'il rend possible :
+// c'est le seul endroit où le départage laisse une trace lisible, trois cas l'éprouvent
+// contre le rang qu'ils attendent, et c'est par lui que le brief du jalon 4 a pu établir
+// que la vérité de l'ordre était la liste des provenances. Une clé qui ne dirait rien de
+// son groupe se déboguerait par `print`.
 func (c Key) WithIndex(index uint16) Key {
 	return c&^MaxIndex | Key(min(uint64(index), MaxIndex))
 }

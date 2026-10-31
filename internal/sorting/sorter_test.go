@@ -9,6 +9,7 @@
 package sorting
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -478,40 +479,46 @@ func TestIndexNumbersWithinOneDepth(t *testing.T) {
 // du rangement par paquets sont sautées et le départage est linéaire sur une entrée
 // déjà ordonnée.
 //
-// **La saturation est écrite deux fois, et l'écrire ici l'a montré** : `breakTiesIn`
-// passe son rang par un `min` avant d'appeler [Key.WithIndex], qui sature de son côté.
-// Retirer celui de l'appelant ne change donc aucune valeur — ce cas reste vert —, et
-// seul retirer les deux le fait rougir. C'est une défensive en trop sur le chemin le
-// plus chaud du moteur ; elle se retirera dans le lot de perf qui touche déjà
-// `breakTies`, pas dans un lot de tests.
+// **Deux bornes et non une seule écrite deux fois, et ce cas le disait à l'envers
+// jusqu'au 31 octobre 2026.** Il annonçait le `min` de `breakTiesIn` comme le doublon
+// de celui de [Key.WithIndex], donc comme une défensive à retirer sur le chemin le plus
+// chaud du moteur. C'est faux, et le second cas le mesure : celui de l'appelant borne la
+// **conversion en seize bits**, que `WithIndex` ne peut plus rattraper puisqu'il reçoit
+// déjà la valeur repliée. Retiré, un groupe de 65 537 clés égales donne un index de 0 au
+// lieu de [MaxIndex] — et le premier cas, lui, reste vert, ce qui est exactement ce qui
+// avait fait conclure au doublon.
+//
+// **Bon marché, et il faut le dire pour que personne ne le raccourcisse** : les choses
+// d'un cas partagent un point, donc leurs clés sont égales, donc les huit passes du
+// rangement par paquets sont sautées et le départage est linéaire sur une entrée déjà
+// ordonnée.
 func TestIndexSaturatesAtItsCeiling(t *testing.T) {
-	const n = MaxIndex + 2
+	for _, n := range []int{MaxIndex + 2, 1<<16 + 1} {
+		t.Run(fmt.Sprintf("%d choses sur un point", n), func(t *testing.T) {
+			s := testScene(t, 16, n)
+			for range n {
+				s.Place(scene.Entity{X: 8, Y: 8, Aspect: figure()})
+			}
 
-	s := testScene(t, 16, n)
-	for range n {
-		s.Place(scene.Entity{X: 8, Y: 8, Aspect: figure()})
-	}
+			sorter := New(s)
+			sorter.Frame()
 
-	sorter := New(s)
-	sorter.Frame()
-
-	if len(sorter.keys) != n {
-		t.Fatalf("%d clés, attendu %d", len(sorter.keys), n)
-	}
-	for i, c := range sorter.keys {
-		want := uint16(i)
-		if i >= MaxIndex {
-			want = MaxIndex
-		}
-		if c.Index() != want {
-			t.Fatalf("clé %d : index %d, attendu %d", i, c.Index(), want)
-		}
-	}
-	for i := 1; i < len(sorter.sources); i++ {
-		if sorter.sources[i] <= sorter.sources[i-1] {
-			t.Fatalf("provenances %d et %d : %d après %d, l'ordre n'est plus monotone",
-				i-1, i, sorter.sources[i], sorter.sources[i-1])
-		}
+			if len(sorter.keys) != n {
+				t.Fatalf("%d clés, attendu %d", len(sorter.keys), n)
+			}
+			for i, c := range sorter.keys {
+				want := uint16(min(i, MaxIndex))
+				if c.Index() != want {
+					t.Fatalf("clé %d : index %d, attendu %d", i, c.Index(), want)
+				}
+			}
+			for i := 1; i < len(sorter.sources); i++ {
+				if sorter.sources[i] <= sorter.sources[i-1] {
+					t.Fatalf("provenances %d et %d : %d après %d, l'ordre n'est plus monotone",
+						i-1, i, sorter.sources[i], sorter.sources[i-1])
+				}
+			}
+		})
 	}
 }
 
