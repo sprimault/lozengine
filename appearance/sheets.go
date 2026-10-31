@@ -27,7 +27,8 @@ const Directions = 8
 // Entry décrit ce qu'une planche porte pour un couple de chose et d'état.
 //
 // La planche se lit en grille : une colonne par direction, une ligne par image
-// d'animation, dans l'ordre que [raster.Sheet.CutGrid] produit. Une entrée dont la
+// d'animation, dans l'ordre que produit la méthode `CutGrid` d'une planche. Une entrée
+// dont la
 // largeur ou la hauteur est nulle ne dessine rien, comme la valeur zéro d'un aspect.
 type Entry struct {
 	// Sheet est la planche dans l'atlas, Width et Height la taille d'une case.
