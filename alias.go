@@ -386,6 +386,41 @@ func NewSheetFromStraight(width, height uint16, pixels []uint8) (Sheet, error) {
 	return raster.NewSheetFromStraight(width, height, pixels)
 }
 
+// ScaleFactor rend le plus grand facteur entier qui fait tenir l'image du moteur dans
+// la sortie, et jamais moins de 1.
+//
+// **C'est pour la seconde porte d'entrée, celle qui garde sa propre boucle** : [Run]
+// agrandit et centre lui-même, donc un jeu qui passe par lui n'a rien à appeler ici.
+// Un hôte qui tient sa boucle, lui, reçoit l'image par [Engine.Frame] et la présente
+// à sa façon — ces trois fonctions sont ce que cela demande.
+//
+// Le facteur est un défaut et non une obligation : un hôte peut le plafonner plutôt
+// que d'afficher des pixels de sept pixels de côté sur un écran 4K, [Upscale] le
+// prenant en paramètre.
+func ScaleFactor(inner, out *Buffer) int { return raster.ScaleFactor(inner, out) }
+
+// Upscale recopie l'image du moteur dans la sortie, centrée, au facteur entier donné,
+// en peignant de fond ce qui reste autour.
+//
+// `inner` est l'image du moteur, lue ; `out` est la sortie, écrite. Jamais de facteur
+// fractionnaire : à cette résolution, un pixel et demi donne des colonnes inégales que
+// l'œil suit d'un bout à l'autre de l'écran, et les bandes sont le prix assumé de
+// cette règle. Une sortie plus petite que l'image la découpe au lieu d'échouer, un
+// redimensionnement de fenêtre n'ayant pas à être un cas d'erreur.
+func Upscale(inner, out *Buffer, factor int, background Color) {
+	raster.Upscale(inner, out, factor, background)
+}
+
+// WritePNG écrit un tampon en PNG.
+//
+// De quoi capturer une image sans passer par le paquet du rastériseur : c'est aussi ce
+// qui rend la suite de non-régression du moteur exécutable sans écran.
+//
+// L'aller-retour n'est pas l'identité quand des pixels ont un alpha partiel — le PNG
+// stocke ses composantes non prémultipliées, et un tiers des couleurs valides perdent
+// un cran par composante en route. Un tampon opaque, lui, revient exact.
+func WritePNG(t *Buffer, w io.Writer) error { return raster.WritePNG(t, w) }
+
 // Scene porte une grille de décor, des entités qui s'y déplacent, et la vue par
 // laquelle on les regarde.
 //

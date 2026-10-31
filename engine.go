@@ -507,6 +507,11 @@ func (e *Engine) Step(g Game, in Input) {
 // Le tampon est celui du moteur et il est réécrit au pas suivant : un appelant qui
 // veut le garder en fait une copie. L'agrandissement vers une fenêtre appartient à
 // celui qui présente, et il est entier — jamais fractionnaire.
+//
+// Ce qu'il faut pour le présenter est republié ici même : `ScaleFactor` mesure le
+// facteur, `Upscale` recopie l'image centrée en peignant les bandes, et `WritePNG`
+// l'écrit dans un fichier. Un jeu qui passe par [Run] n'a rien de tout cela à appeler,
+// la boucle s'en chargeant.
 func (e *Engine) Frame() *Buffer {
 	return e.frame
 }

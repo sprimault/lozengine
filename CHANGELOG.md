@@ -47,6 +47,9 @@ notes de publication.
 
 ### Ajouté
 
+- `ScaleFactor`, `Upscale` et `WritePNG` se lisent depuis le paquet racine : un hôte qui
+  tient sa propre boucle reçoit l'image par `Engine.Frame` et a désormais de quoi la
+  présenter ou la capturer sans second import.
 - `linux/arm64` n'est plus seulement compilée : la suite de tests y passe à chaque lot et
   y compare les images au pixel. C'est l'architecture qui pouvait rendre une autre image
   que `amd64`.
@@ -60,6 +63,9 @@ notes de publication.
 
 ### Added
 
+- `ScaleFactor`, `Upscale` and `WritePNG` can be read from the root package: a host
+  holding its own loop receives the image through `Engine.Frame` and now has what it
+  takes to present or capture it without a second import.
 - `linux/arm64` is no longer merely compiled: the test suite runs there on every batch
   and compares images pixel by pixel. It is the architecture that could have rendered a
   different image from `amd64`.
