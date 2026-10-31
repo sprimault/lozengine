@@ -16,6 +16,7 @@ make procedures   # aucune procédure système appelée sans garde de présence
 make liens        # aucun lien de godoc qui ne se résoudra pas
 make journal      # chaque section du CHANGELOG dit la même chose dans ses deux langues
 make surface      # refuse un ajout à la surface publique sans entrée de journal
+make hello        # le hello world tient sous trente lignes de code
 make cross        # compile pour chacun des couples de CIBLES
 make floor        # le contrôle complet sous le plancher du module
 make container    # le même, dans un conteneur, au plus près du runner

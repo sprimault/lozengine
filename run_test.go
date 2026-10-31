@@ -278,3 +278,42 @@ func TestEngineDoesNotAskToQuit(t *testing.T) {
 		t.Errorf("pas avancés : %d, attendu 2 — l'étape a tenu compte de Quitting", g.steps)
 	}
 }
+
+// TestIconsKeepsWhatABackendCanRead garde la reprise des planches d'icône, seul
+// auxiliaire extrait de la boucle qu'aucun cas n'appelait — `fit`, `aim`, `pace` et
+// `floorDiv` le sont tous.
+//
+// **Deux propriétés, et la seconde est celle que sa godoc annonce** : les planches vides
+// restent de côté, dans l'ordre reçu pour les autres ; et la tranche de pixels est
+// **partagée**, pas copiée. Une icône se lit une fois à l'ouverture, donc la recopier
+// serait un coût pour rien — mais c'est aussi une contrainte sur l'appelant, et rien ne
+// la gardait. Inverser la condition du filtre laissait le dépôt entier vert.
+//
+// Trois formes de vide, parce que le filtre en teste trois et qu'une seule aurait laissé
+// deux branches muettes : largeur nulle, hauteur nulle, et une planche dimensionnée dont
+// les pixels manquent.
+func TestIconsKeepsWhatABackendCanRead(t *testing.T) {
+	small := NewSheet(16, 16)
+	large := NewSheet(32, 32)
+
+	got := icons([]Sheet{
+		{Width: 0, Height: 16, Pixels: make([]Color, 16)},
+		small,
+		{Width: 16, Height: 0, Pixels: make([]Color, 16)},
+		{Width: 8, Height: 8},
+		large,
+	})
+
+	if len(got) != 2 {
+		t.Fatalf("%d icônes retenues, attendu 2", len(got))
+	}
+	if got[0].Width != 16 || got[1].Width != 32 {
+		t.Errorf("ordre perdu : %d puis %d, attendu 16 puis 32", got[0].Width, got[1].Width)
+	}
+	if &got[0].Pixels[0] != &small.Pixels[0] {
+		t.Error("les pixels de la première icône sont copiés, pas partagés")
+	}
+	if &got[1].Pixels[0] != &large.Pixels[0] {
+		t.Error("les pixels de la seconde icône sont copiés, pas partagés")
+	}
+}
