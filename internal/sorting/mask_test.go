@@ -31,6 +31,42 @@ func shape(width, height uint16, seed uint64) []render.Color {
 	return pixels
 }
 
+// at dit si un pixel d'un plan est posé, à une colonne et une ligne comptées dans le
+// quad et non dans la planche.
+//
+// **Elle existe pour [byPixel] et pour elle seule**, [mask.line] étant ce que la mesure
+// emploie : lire un bit à la fois coûterait soixante-quatre fois plus. Elle vivait dans
+// `mask.go` jusqu'au 31 octobre 2026, où sa godoc disait déjà n'avoir aucun appelant de
+// production — de sorte que `make bancs` la nommait parmi les chemins qu'aucun banc ne
+// traverse, ce qu'elle n'est pas. Ici, elle ne peut plus passer pour un intrus.
+//
+// **Ce que son accord avec [mask.line] vaut, et ce qu'il ne vaut pas.** Les deux
+// partagent la convention de miroir, donc leur accord ne la valide pas — c'est le
+// rastériseur qui en est la vérité, et un cas de la racine la confronte à lui. Mais
+// elles ont chacune leur garde de lecture hors planche, écrite séparément : muter l'une
+// seule fait rougir [TestCoverageMatchesThePixelByPixelCount], et seule une mutation des
+// deux ensemble demande le cas de la racine. Croire qu'elles partageaient cette garde
+// aussi était une généralisation de la première phrase, et la mesure l'a défaite.
+func (m mask) at(plane []uint64, q render.Quad, x, y int) bool {
+	if m.empty() {
+		return false
+	}
+
+	sx, sy := int(q.SourceX)+x, int(q.SourceY)+y
+	if q.Flags&render.MirrorX != 0 {
+		sx = int(q.SourceX) + int(q.Width) - 1 - x
+	}
+	if q.Flags&render.MirrorY != 0 {
+		sy = int(q.SourceY) + int(q.Height) - 1 - y
+	}
+	if sx < 0 || sy < 0 || sx >= int(m.width) || sy >= int(m.height) {
+		return false
+	}
+
+	word := sy*m.stride + sx/64
+	return word < len(plane) && plane[word]&(1<<uint(sx%64)) != 0
+}
+
 // byPixel compte, pixel par pixel, ce que le quad de rang i peint et ce qui le couvre.
 //
 // **C'est la référence du lot, et elle est volontairement naïve** : un parcours par

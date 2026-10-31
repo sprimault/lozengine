@@ -529,61 +529,96 @@ func peints(b *render.Buffer, background Color) int {
 // autour de la planche plutôt qu'autour du rectangle du quad rougirait — c'est le
 // défaut que la première écriture de ce lot portait, et qu'aucun autre cas n'aurait vu
 // sur une planche d'une seule case.
+//
+// **Le second régime éprouve la convention du rectangle source hors planche, et c'est
+// ici qu'elle se juge.** `raster` la tranche de son côté — une source plus haute que la
+// planche s'arrête à la dernière ligne au lieu de lire la suivante —, et la mesure
+// exacte a la sienne, une lecture hors planche rendant « pas peint ». Les deux sont
+// écrites séparément, donc rien ne garantit qu'elles comptent les mêmes pixels.
+//
+// **Ce que ce régime est le seul à pouvoir faire échouer, mesuré en le mutant** : la
+// même convention changée **des deux côtés** de la mesure exacte. Ramener une lecture
+// hors planche à la dernière ligne, dans la passe par mots et dans la référence naïve
+// à la fois, laisse les douze paquets verts — `sorting` compare ses deux lecteurs entre
+// eux, donc ils s'accordent sur une erreur commune — et seul ce cas rougit, parce qu'il
+// confronte au tampon peint, qui est la vérité de ce qu'une image porte. Mesuré sur ce
+// cas : 44 pixels relevés contre 39 dessinés.
+//
+// Les quatre cas où la source tient restent verts sous cette mutation, ce qui est la
+// seconde moitié de la preuve : c'est bien le débordement qu'ils n'atteignaient pas.
 func TestPaintedMatchesWhatTheRasteriserDraws(t *testing.T) {
-	for _, flags := range []Flags{0, MirrorX, MirrorY, MirrorX | MirrorY} {
-		t.Run(fmt.Sprintf("drapeaux_%d", flags), func(t *testing.T) {
-			s, err := NewScene(8, 8, Grid(16), SceneOptions{Entities: 2})
-			if err != nil {
-				t.Fatalf("montage de la scène : %v", err)
-			}
+	// La planche fait huit lignes. Le second cas en demande neuf, soit une de trop,
+	// qui est la plus petite entrée qui traverse les deux conventions.
+	for _, source := range []struct {
+		name   string
+		height uint16
+	}{
+		{"la source tient dans la planche", 8},
+		{"la source dépasse d'une ligne", 9},
+	} {
+		for _, flags := range []Flags{0, MirrorX, MirrorY, MirrorX | MirrorY} {
+			t.Run(fmt.Sprintf("%s/drapeaux_%d", source.name, flags), func(t *testing.T) {
+				paintedMatchesRasteriser(t, source.height, flags)
+			})
+		}
+	}
+}
 
-			// Une planche de deux cases côte à côte, dont une seule est prise : c'est
-			// ce qui distingue un miroir du rectangle d'un miroir de la planche. La
-			// case retenue porte un motif asymétrique.
-			sheet := NewSheet(32, 8)
-			for y := range 8 {
-				for x := range 32 {
-					if x >= 16 && x < 16+4+y%3 {
-						sheet.Pixels[y*32+x] = Color{R: 255, G: 255, B: 255, A: 255}
-					}
-				}
-			}
-			var atlas Atlas
-			if _, err := atlas.Add(sheet); err != nil {
-				t.Fatalf("ajout de la planche : %v", err)
-			}
+// paintedMatchesRasteriser monte la scène d'un cas de
+// [TestPaintedMatchesWhatTheRasteriserDraws] et confronte les deux comptes.
+func paintedMatchesRasteriser(t *testing.T, height uint16, flags Flags) {
+	t.Helper()
 
-			if _, ok := s.Place(Entity{X: 4, Y: 4, Measure: true, Aspect: Aspect{
-				SourceX: 16, Width: 16, Height: 8, Tint: White(), Flags: flags,
-			}}); !ok {
-				t.Fatal("entité refusée")
-			}
+	s, err := NewScene(8, 8, Grid(16), SceneOptions{Entities: 2})
+	if err != nil {
+		t.Fatalf("montage de la scène : %v", err)
+	}
 
-			e, err := NewEngine(s, Options{Atlas: &atlas, Width: 64, Height: 64,
-				MaxWidth: 64, MaxHeight: 64, Background: Color{A: 255}})
-			if err != nil {
-				t.Fatalf("montage : %v", err)
+	// Une planche de deux cases côte à côte, dont une seule est prise : c'est ce qui
+	// distingue un miroir du rectangle d'un miroir de la planche. La case retenue porte
+	// un motif asymétrique.
+	sheet := NewSheet(32, 8)
+	for y := range 8 {
+		for x := range 32 {
+			if x >= 16 && x < 16+4+y%3 {
+				sheet.Pixels[y*32+x] = Color{R: 255, G: 255, B: 255, A: 255}
 			}
-			e.Step(nil, Input{})
+		}
+	}
+	var atlas Atlas
+	if _, err := atlas.Add(sheet); err != nil {
+		t.Fatalf("ajout de la planche : %v", err)
+	}
 
-			list := e.Overlaps()
-			if len(list) != 1 {
-				t.Fatalf("%d relevés, attendu 1", len(list))
-			}
+	if _, ok := s.Place(Entity{X: 4, Y: 4, Measure: true, Aspect: Aspect{
+		SourceX: 16, Width: 16, Height: height, Tint: White(), Flags: flags,
+	}}); !ok {
+		t.Fatal("entité refusée")
+	}
 
-			// Ce que le rastériseur a réellement posé : tout pixel qui n'est plus le
-			// fond. La planche est opaque, donc le compte est exact.
-			drawn := uint32(0)
-			for _, c := range e.Frame().Pixels {
-				if c != (Color{A: 255}) {
-					drawn++
-				}
-			}
+	e, err := NewEngine(s, Options{Atlas: &atlas, Width: 64, Height: 64,
+		MaxWidth: 64, MaxHeight: 64, Background: Color{A: 255}})
+	if err != nil {
+		t.Fatalf("montage : %v", err)
+	}
+	e.Step(nil, Input{})
 
-			if list[0].Painted != drawn {
-				t.Errorf("Painted vaut %d, le rastériseur en a posé %d", list[0].Painted, drawn)
-			}
-		})
+	list := e.Overlaps()
+	if len(list) != 1 {
+		t.Fatalf("%d relevés, attendu 1", len(list))
+	}
+
+	// Ce que le rastériseur a réellement posé : tout pixel qui n'est plus le fond. La
+	// planche est opaque, donc le compte est exact.
+	drawn := uint32(0)
+	for _, c := range e.Frame().Pixels {
+		if c != (Color{A: 255}) {
+			drawn++
+		}
+	}
+
+	if list[0].Painted != drawn {
+		t.Errorf("Painted vaut %d, le rastériseur en a posé %d", list[0].Painted, drawn)
 	}
 }
 

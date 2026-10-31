@@ -132,33 +132,6 @@ func (m mask) line(plane []uint64, q render.Quad, y, slice, width int) uint64 {
 	return got
 }
 
-// at dit si un pixel d'un plan est posé, à une colonne et une ligne comptées dans le
-// quad et non dans la planche.
-//
-// **Elle existe pour la référence du test et pour elle seule**, [mask.line] étant ce
-// que la mesure emploie : lire un bit à la fois coûterait soixante-quatre fois plus.
-// Les deux partagent la convention de miroir, donc leur accord ne la valide pas — c'est
-// le rastériseur qui en est la vérité, et un cas distinct la confronte à lui.
-func (m mask) at(plane []uint64, q render.Quad, x, y int) bool {
-	if m.empty() {
-		return false
-	}
-
-	sx, sy := int(q.SourceX)+x, int(q.SourceY)+y
-	if q.Flags&render.MirrorX != 0 {
-		sx = int(q.SourceX) + int(q.Width) - 1 - x
-	}
-	if q.Flags&render.MirrorY != 0 {
-		sy = int(q.SourceY) + int(q.Height) - 1 - y
-	}
-	if sx < 0 || sy < 0 || sx >= int(m.width) || sy >= int(m.height) {
-		return false
-	}
-
-	word := sy*m.stride + sx/64
-	return word < len(plane) && plane[word]&(1<<uint(sx%64)) != 0
-}
-
 // hides dit qu'un quad cache ce qui est derrière lui, et non qu'il se contente de s'y
 // ajouter ou de le teinter.
 //
