@@ -74,7 +74,12 @@ func destination(t testing.TB, width, height int32) (uintptr, []uint32) {
 // présentation parcoure son chemin, c'est-à-dire un contexte et ce qui se monte à
 // l'ouverture.
 func testWindow(dc uintptr) *window {
-	return &window{dc: dc, info: newBitmapInfo(), args: newPresentArgs()}
+	// L'adresse de la présentation se résout ici parce que l'ouverture la résout : un
+	// cas qui présenterait sans elle appellerait l'adresse zéro. L'erreur ne se
+	// rapporte pas — `SetDIBitsToDevice` est dans gdi32 depuis Windows 2000, et c'est
+	// précisément ce qu'une signature sans `testing.TB` permet de garder ici.
+	present, _ := procAddr(setDIBitsToDevice)
+	return &window{dc: dc, info: newBitmapInfo(), args: newPresentArgs(), presentProc: present}
 }
 
 // TestPresentKeepsTheComponentsInOrder vérifie que les composantes arrivent où il

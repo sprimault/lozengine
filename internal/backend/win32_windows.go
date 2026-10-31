@@ -74,18 +74,42 @@ var (
 	// vérification manuelle qui l'a trouvée.
 	getModuleHandleW = kernel32.NewProc("GetModuleHandleW")
 
+	// La conscience de densité, que Windows ne porte qu'à partir de la version 1703 de
+	// Windows 10 — la mise à jour d'avril 2017. Elle se cherche avant de s'appeler,
+	// comme celle qui suit : voir [procAddr].
 	setProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 
 	// La densité de l'écran, pour ouvrir la fenêtre à la taille que le jeu demande en
-	// points et non en pixels physiques. Elle se cherche avant de s'appeler : voir
-	// [densityFactor].
+	// points et non en pixels physiques. Absente avant la version 1607 de Windows 10
+	// — août 2016 —, et cherchée avant de s'appeler : voir [densityFactor].
 	getDpiForSystem = user32.NewProc("GetDpiForSystem")
 
+	// La remise du tampon à l'écran. Son adresse se prend une fois à l'ouverture de la
+	// fenêtre, jamais par image : voir [window.presentProc].
 	setDIBitsToDevice = gdi32.NewProc("SetDIBitsToDevice")
 	createDIBSection  = gdi32.NewProc("CreateDIBSection")
 	createBitmap      = gdi32.NewProc("CreateBitmap")
 	deleteObject      = gdi32.NewProc("DeleteObject")
 )
+
+// procAddr rend l'adresse d'une procédure chargée à la demande, et l'erreur de
+// recherche quand le système ne la porte pas.
+//
+// C'est la seule façon d'atteindre une procédure dont la présence n'est pas acquise.
+// `LazyProc.Call` et `LazyProc.Addr` passent tous deux par `mustFind`, donc ils
+// **paniquent** là où un moteur doit se replier ou refuser proprement — un appel
+// système manquant est une version de Windows plus ancienne que prévu, pas un défaut
+// de programmation.
+//
+// Les vingt-sept autres procédures du backend s'appellent directement : toutes sont
+// antérieures à Windows 2000, donc leur absence signifierait un système qui ne peut
+// de toute façon pas exécuter un binaire Go.
+func procAddr(p *syscall.LazyProc) (uintptr, error) {
+	if err := p.Find(); err != nil {
+		return 0, err
+	}
+	return p.Addr(), nil
+}
 
 // Les styles de classe et de fenêtre.
 const (
@@ -255,13 +279,13 @@ const baseDPI = 96
 // Un échec rend un, donc la taille demandée telle quelle : `GetDpiForSystem` n'existe
 // pas avant Windows 10 1607, et un moteur qui plante pour une question de confort
 // d'affichage serait pire que le confort qu'il cherche. C'est aussi pourquoi la
-// procédure se cherche au lieu de s'appeler — `LazyProc.Call` panique sur une
-// procédure absente, ce que la godoc d'`Open` ne dit pas de son propre appel.
+// procédure se cherche au lieu de s'appeler, et [procAddr] dit ce que coûte l'oubli.
 func densityFactor() int {
-	if err := getDpiForSystem.Find(); err != nil {
+	addr, err := procAddr(getDpiForSystem)
+	if err != nil {
 		return 1
 	}
-	dpi, _, _ := getDpiForSystem.Call()
+	dpi, _, _ := syscall.SyscallN(addr)
 	return factorForDPI(int(dpi))
 }
 

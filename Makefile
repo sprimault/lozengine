@@ -13,7 +13,8 @@ export CGO_ENABLED := 0
 
 -include makefile.local
 
-.PHONY: build example test bench cover depot fmt vet deps entetes frontiere cross check \
+.PHONY: build example test bench cover depot fmt vet deps entetes frontiere procedures \
+        cross check \
         floor container container-clean references journal notes titre clean
 
 build:
@@ -350,6 +351,49 @@ frontiere:
 	  exit 1; \
 	fi
 
+# Les procédures que Windows n'a pas toujours portées.
+#
+# `LazyProc.Call` et `LazyProc.Addr` passent tous deux par `mustFind`, donc ils
+# paniquent sur une procédure que le système ne porte pas. Le défaut a vécu du jalon 2
+# au jalon 4 sur `SetProcessDpiAwarenessContext`, et il faisait planter au démarrage
+# tout Windows antérieur à la version 1703 de Windows 10.
+#
+# **C'est l'inventaire qui a manqué, pas la garde**, et c'est pourquoi une cible
+# remplace ici une vigilance : le relevé par `grep "\.Call("` n'avait pas vu le second
+# site, qui employait `Addr()` dans le chemin de présentation. Une forme d'appel qu'on
+# n'a pas pensé à chercher ne se trouve jamais à la relecture.
+#
+# La liste est close et courte, et elle n'a pas à grandir sans raison : les
+# vingt-sept autres procédures du backend sont antérieures à Windows 2000, donc leur
+# absence signifierait un système qui n'exécute pas un binaire Go.
+PROCEDURES_GARDEES = setProcessDpiAwarenessContext getDpiForSystem setDIBitsToDevice
+
+# Deux volets, et aucun ne porte de faux positif : les procédures de la liste ne
+# s'appellent jamais directement, et ni `Addr` ni `Find` ne s'écrivent hors de
+# `procAddr`, qui est la garde elle-même. Le second est le plus utile des deux — il
+# attrape une procédure ajoutée plus tard que personne n'aurait inscrite.
+#
+# Le décompte exact plutôt qu'une absence : `procAddr` porte les deux seuls usages
+# légitimes, donc un troisième dans ce fichier est un contournement.
+procedures:
+	@mauvais=""; \
+	for p in $(PROCEDURES_GARDEES); do \
+	  direct=$$(grep -nE "$$p\.(Call|Addr|Find)\(" internal/backend/*.go || true); \
+	  if [ -n "$$direct" ]; then mauvais="$$mauvais$$direct\n"; fi; \
+	done; \
+	hors=$$(grep -nE "\.(Addr|Find)\(\)" internal/backend/*.go \
+	  | grep -v '^internal/backend/win32_windows\.go:' || true); \
+	if [ -n "$$hors" ]; then mauvais="$$mauvais$$hors\n"; fi; \
+	n=$$(grep -cE "\.(Addr|Find)\(\)" internal/backend/win32_windows.go); \
+	if [ "$$n" != "2" ]; then \
+	  mauvais="$$mauvais""win32_windows.go: $$n usages de Addr ou Find, attendu les 2 de procAddr\n"; \
+	fi; \
+	if [ -n "$$mauvais" ]; then \
+	  echo "une procédure différée est atteinte sans sa garde :"; \
+	  printf '%b' "$$mauvais" | grep -v '^$$' | sort -u; \
+	  exit 1; \
+	fi
+
 # Produit un binaire par couple, qu'on jette : ce qui compte est que le code compile
 # pour chacun sans compilateur C.
 # Les couples que les README annoncent, et rien de plus. « Compile » est tout ce que
@@ -473,7 +517,7 @@ surface:
 	  exit 1; \
 	fi
 
-check: fmt vet deps entetes frontiere journal surface cross test
+check: fmt vet deps entetes frontiere procedures journal surface cross test
 
 # Le plancher du module, lu dans `go.mod` et nulle part ailleurs.
 #

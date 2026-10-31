@@ -86,5 +86,5 @@ func (w *window) Present(t *render.Buffer) {
 	w.args[9] = uintptr(unsafe.Pointer(&w.bgra[0]))
 	w.args[10] = uintptr(unsafe.Pointer(&w.info))
 
-	syscall.SyscallN(setDIBitsToDevice.Addr(), w.args...)
+	syscall.SyscallN(w.presentProc, w.args...)
 }

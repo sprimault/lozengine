@@ -67,6 +67,14 @@ type window struct {
 	// montage, et la présentation ne touche que celles qui changent.
 	args []uintptr
 
+	// presentProc est l'adresse de `SetDIBitsToDevice`, résolue à l'ouverture.
+	//
+	// Elle est gardée pour la même raison que les deux champs ci-dessus, et pour une
+	// seconde : la demander par image ferait **paniquer** la présentation sur un
+	// système qui ne porte pas la procédure, là où l'ouverture peut encore refuser.
+	// Voir [procAddr].
+	presentProc uintptr
+
 	// minimized suit `wmSize`, et lastW et lastH gardent la dernière taille utile
 	// connue.
 	minimized bool
