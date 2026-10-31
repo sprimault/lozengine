@@ -43,6 +43,10 @@ const (
 	//
 	// Il se combine avec [Flat], et c'est de là que vient un fondu lumineux : un
 	// rectangle sans source qui s'ajoute à toute l'image.
+	//
+	// **C'est aussi la seule voie pour éclaircir**, une teinte de quad ne pouvant
+	// qu'atténuer. Comment ranger un quad additif au-dessus de celui qu'il éclaircit
+	// est décrit sur le champ `Tier` d'une entité, dans le paquet de scène.
 	Additive
 )
 
