@@ -114,8 +114,15 @@ func crossingScene(frame int) *scene.Scene {
 
 	// La traversée, en diagonale d'un coin à l'autre : c'est le trajet qui passe le
 	// plus longtemps sous la plateforme.
-	part := float64(frame) / float64(crossingFrames-1)
-	at := 0.5 + part*(crossingSide-1)
+	//
+	// Le produit est entier et la division vient après, pour qu'il ne reste ici aucun
+	// « x·y + z » flottant : c'est le motif qu'arm64 et riscv64 fusionnent en une
+	// instruction unique et qu'amd64 ne fusionne pas, et ce scénario produit des images
+	// de référence comparées au pixel. Un produit entier ne se fusionne pas, donc la
+	// forme tient par construction et non par vigilance — là où séparer les deux
+	// opérations sur deux lignes n'aurait rien garanti, la spécification autorisant la
+	// fusion « possibly across statements ».
+	at := 0.5 + float64(frame*(crossingSide-1))/float64(crossingFrames-1)
 
 	figure := scene.Aspect{
 		Sheet: crossingFigureSheet, Width: tileW / 3, Height: tileH * 3 / 2,

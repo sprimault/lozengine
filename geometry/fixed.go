@@ -63,12 +63,14 @@ const inverseBits = 24
 // n'est ni supérieur ni inférieur à quoi que ce soit, et serait donc passé à une
 // conversion dont le résultat est lui aussi laissé à l'implémentation.
 //
-// C'est le seul calcul flottant que le chemin de rendu traverse, et la
-// multiplication y est seule sur sa ligne : elle doit le rester. Une addition au
-// même endroit en ferait le motif « x·y + z » que la spécification autorise à
-// fusionner en une instruction unique, pratiquée par arm64 et riscv64 mais pas par
-// amd64 — et l'arrondi redeviendrait dépendant de la machine, ce que toute cette
-// virgule fixe sert justement à empêcher.
+// C'est le seul calcul flottant que le chemin de rendu traverse, et ce qui le rend sûr
+// est qu'il n'y a **aucune addition à fusionner** avec la multiplication — non le fait
+// qu'elle soit seule sur sa ligne. La spécification autorise la fusion « possibly
+// across statements », donc isoler une ligne ne protège de rien, et seule une
+// conversion explicite vers float64 force l'arrondi. Une addition introduite ici, où
+// qu'elle s'écrive, en ferait le motif « x·y + z » qu'arm64 et riscv64 fusionnent en
+// une instruction unique et qu'amd64 ne fusionne pas — et l'arrondi redeviendrait
+// dépendant de la machine, ce que toute cette virgule fixe sert à empêcher.
 func quantize(v float64) int32 {
 	f := math.Round(v * unit)
 
@@ -84,6 +86,35 @@ func quantize(v float64) int32 {
 	return int32(f)
 }
 
+// saturate ramène un entier large dans la plage d'un type plus étroit, en bornant
+// plutôt qu'en repliant.
+//
+// Trois conversions du paquet ont cette forme au bit près — [pixel], depthOf et
+// heightOf —, et c'est ce compte qui autorise à les réunir plutôt qu'à le devancer.
+// Ce qu'elles gardent toutes les trois : une conversion qui déborde au lieu de saturer
+// rend un résultat que la spécification du langage laisse à l'implémentation, donc
+// dépendant de la machine, et c'est ce que toute la virgule fixe sert à empêcher.
+//
+// Les bornes sont des paramètres parce qu'un type-paramètre ne donne pas les siennes :
+// `math.MaxInt32` ne s'atteint pas depuis T. Elles s'écrivent donc au site d'appel, où
+// elles se relisent à côté du type qu'elles bornent.
+//
+// **Quatre autres conversions du paquet restent dehors, chacune pour un motif propre**,
+// et les réunir demanderait de les tordre : quantize traite le NaN, qu'aucune
+// comparaison de borne n'attrape ; [Matrix.clamp] borne contre un champ de la matrice
+// et non contre la plage d'un type ; la plage de l'inverse est déjà une expression
+// unique par le `min` natif ; et inverseCoefficient **refuse** au lieu de saturer, un
+// inverse hors plage n'ayant aucune valeur raisonnable à rendre.
+func saturate[T int32 | uint32 | uint16](v, lo, hi int64) T {
+	if v < lo {
+		return T(lo)
+	}
+	if v > hi {
+		return T(hi)
+	}
+	return T(v)
+}
+
 // pixel ramène un produit en fixe à un pixel entier, arrondi au plus proche et
 // saturé.
 //
@@ -97,11 +128,5 @@ func quantize(v float64) int32 {
 func pixel(fixed64 int64) int32 {
 	rounded := (fixed64 + 1<<(2*fractionBits-1)) >> (2 * fractionBits)
 
-	if rounded > math.MaxInt32 {
-		return math.MaxInt32
-	}
-	if rounded < math.MinInt32 {
-		return math.MinInt32
-	}
-	return int32(rounded)
+	return saturate[int32](rounded, math.MinInt32, math.MaxInt32)
 }
