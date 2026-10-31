@@ -36,14 +36,32 @@ var registration struct {
 // Le premier geste est de déclarer la conscience de densité, et c'est une condition de
 // l'échelle entière : sans elle, le système montre un écran plus petit que le vrai,
 // puis étire l'image pour remplir le vrai — soit une mise à l'échelle fractionnaire
-// que rien, dans les nombres lus, ne trahirait. L'échec est ignoré, et il ne signifie
-// qu'une chose : un hôte a déjà décidé pour le processus, ce qui est son droit.
+// que rien, dans les nombres lus, ne trahirait. Deux issues sont sans conséquence et
+// ne se rapportent donc pas : la procédure absente, sur tout Windows antérieur à la
+// version 1703 de Windows 10, et l'appel refusé, qui dit qu'un hôte a déjà décidé pour
+// le processus — ce qui est son droit. La première se cherche plutôt que de s'appeler,
+// et [procAddr] dit ce que coûte l'oubli.
 //
 // Le déclarer par appel plutôt que par manifeste est un arbitrage assumé : Go
 // n'embarque pas de manifeste sans ressource compilée par un outil de plus, et
 // `go build` doit suffire.
+//
+// **L'absence de la procédure de présentation, elle, est une erreur**, et c'est la
+// seule des trois : une fenêtre qui ne pourra jamais rien afficher se refuse ici
+// plutôt que de s'ouvrir et de rester noire sans rien dire.
 func Open(o Options) (Window, error) {
-	setProcessDpiAwarenessContext.Call(perMonitorAwareV2)
+	if addr, err := procAddr(setProcessDpiAwarenessContext); err == nil {
+		syscall.SyscallN(addr, perMonitorAwareV2)
+	}
+
+	// L'adresse de la présentation se prend ici, et c'est ce qui la retire du chemin
+	// par image : la prendre à chaque présentation y laisserait la recherche que
+	// `LazyProc` fait pour son compte, et une panique soixante fois par seconde là
+	// où il n'y a rien à rattraper.
+	present, err := procAddr(setDIBitsToDevice)
+	if err != nil {
+		return nil, fmt.Errorf("locating the presentation procedure: %w", err)
+	}
 
 	name, err := registerClass()
 	if err != nil {
@@ -72,13 +90,14 @@ func Open(o Options) (Window, error) {
 	outerW, outerH := outerSize(clientW, clientH, wsOverlappedWindow)
 
 	w := &window{
-		lastW:      clientW,
-		lastH:      clientH,
-		minW:       outerW,
-		minH:       outerH,
-		info:       newBitmapInfo(),
-		args:       newPresentArgs(),
-		hideCursor: o.HideCursor,
+		lastW:       clientW,
+		lastH:       clientH,
+		minW:        outerW,
+		minH:        outerH,
+		info:        newBitmapInfo(),
+		args:        newPresentArgs(),
+		presentProc: present,
+		hideCursor:  o.HideCursor,
 	}
 
 	hwnd, _, err := createWindowExW.Call(

@@ -45,6 +45,18 @@ notes de publication.
 
 ## [Non publié]
 
+### Corrigé
+
+- La fenêtre s'ouvre sur les Windows antérieurs à la mise à jour d'avril 2017 de
+  Windows 10, Windows 7, 8 et 8.1 compris, où le moteur plantait au démarrage.
+
+***
+
+### Fixed
+
+- The window opens on Windows versions older than the April 2017 update to Windows 10,
+  including Windows 7, 8 and 8.1, where the engine crashed at startup.
+
 ## [0.5.7] — 2026-10-30
 
 ### Ajouté
