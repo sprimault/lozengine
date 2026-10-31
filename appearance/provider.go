@@ -91,10 +91,10 @@ type Provider interface {
 // fait paraître les choses tourner d'un quart dans l'autre. Une chose qui allait vers
 // le bas-droite de l'écran va vers le haut-droite après un quart de tour.
 //
-// **Elle suppose le sens d'axes de [geometry.Dimetric] et [geometry.Isometric]** — `x`
+// **Elle suppose le sens d'axes des constructeurs `Dimetric` et `Isometric`** — `x`
 // vers le bas-gauche de l'écran, `y` vers le bas-droite —, parce que la table des
 // directions est écrite dans ce repère. Un jeu qui bâtit sa projection par
-// [geometry.Raw] en retournant le premier axe garde des directions justes dans son
+// la matrice brute en retournant le premier axe garde des directions justes dans son
 // monde et les voit fausses à l'écran sur six des huit pas, les demi-tours exceptés.
 //
 // Un jeu dont la caméra ne tourne pas ne la croise jamais, l'orientation valant alors

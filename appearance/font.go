@@ -19,7 +19,8 @@ import (
 // texte. C'est ce qui garde son `go.mod` vide.
 //
 // Les glyphes sont rangés en grille, de gauche à droite puis de haut en bas, dans
-// l'ordre que [raster.Sheet.CutGrid] produit. Le caractère de rang zéro est [Font.First]
+// l'ordre que produit la méthode `CutGrid` d'une planche. Le caractère de rang zéro est
+// [Font.First]
 // et les suivants se déduisent de leur écart avec lui, ce qui convient à un jeu de
 // caractères contigu — l'ASCII imprimable, par exemple, de l'espace au tilde.
 //
@@ -102,7 +103,8 @@ func (f Font) Glyph(r rune) (scene.Aspect, bool) {
 
 // Place pose une ligne sur la scène, en pixels de l'image, et rend sa largeur.
 //
-// C'est du sucre au-dessus de [Font.Glyph] et de [scene.Scene.PlaceScreen], et non un
+// C'est du sucre au-dessus de [Font.Glyph] et de la méthode `PlaceScreen` d'une scène,
+// et non un
 // second chemin : chaque glyphe devient un quad ordinaire, rangé par la couche de la
 // police comme tout le reste. Un jeu qui veut autre chose — une courbe, un espacement
 // variable, une ombre portée — pose ses glyphes lui-même.

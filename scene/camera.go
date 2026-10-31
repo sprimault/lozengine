@@ -77,8 +77,9 @@ func (s *Scene) Orientation() Orientation { return s.orientation }
 // dérivées d'un pixel laisse l'origine dépasser la borne visée. Un cadrage se borne sur
 // un **point** en pixels, avant la conversion ci-dessus, jamais axe par axe après.
 //
-// Où la caméra s'arrête reste une décision de jeu : [Scene.reframe] n'applique aucune
-// borne, et dit pourquoi.
+// Où la caméra s'arrête reste une décision de jeu, et le moteur n'applique donc aucune
+// borne aux bords de la grille : certains veulent buter sur le bord, d'autres montrer le
+// vide autour.
 func (s *Scene) Focus(x, y float64, width, height int32) {
 	s.focusX, s.focusY = x, y
 	s.viewWidth, s.viewHeight = width, height
@@ -239,7 +240,8 @@ func (s *Scene) Unremap(x, y float64) (float64, float64) {
 // revenir au repère où le jeu a posé sa grille.
 //
 // **Le pixel est celui de la surface, pas celui de la fenêtre ni celui de l'aire de
-// monde.** C'est exactement ce que [input.Input.Pointer] rend, la boucle ayant déjà
+// monde.** C'est exactement ce que rend la méthode `Pointer` d'une entrée, la boucle
+// ayant déjà
 // défait l'agrandissement et les bandes. Un pixel pris dans la marge rend donc un point
 // hors de l'aire, et c'est au jeu de le refuser s'il y a posé son interface — ce que
 // [Scene.Surface] et [Scene.WorldOrigin] lui permettent de décider.

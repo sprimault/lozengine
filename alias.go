@@ -68,8 +68,8 @@ func NewBuffer(width, height uint16) *Buffer { return render.NewBuffer(width, he
 // Color est une couleur RVBA sur quatre octets, à alpha prémultiplié.
 //
 // [Premultiply] la construit depuis les composantes séparées qu'un éditeur d'images
-// affiche, [Color.Scale] l'atténue sans rompre sa cohérence, et [Color.Valid] dit si
-// une couleur écrite à la main en a une.
+// affiche, la méthode `Scale` d'une [Color] l'atténue sans rompre sa cohérence, et sa
+// méthode `Valid` dit si une couleur écrite à la main en a une.
 type Color = render.Color
 
 // Premultiply rend la couleur prémultipliée que décrivent des composantes séparées : un
@@ -123,8 +123,8 @@ const MaxFloor = render.MaxFloor
 // [NewScene] refuse au-delà. Le lire évite d'avoir à essayer pour le savoir.
 const MaxSide = render.MaxSide
 
-// MaxTiers est le nombre de choses qu'une cellule peut empiler, et
-// [Scene.PlaceCell] refuse au-delà.
+// MaxTiers est le nombre de choses qu'une cellule peut empiler, et la méthode
+// `PlaceCell` d'une [Scene] refuse au-delà.
 //
 // Un plafond dit jusqu'où aller, jamais ce qu'un cran coûte : une strate pleine ajoute
 // un quad par cellule visible à chaque image, soit environ dix fois ce que coûtent
@@ -137,7 +137,8 @@ const MaxTiers = scene.MaxTiers
 // MaxSheets est le nombre de planches qu'un atlas peut porter : mille vingt-quatre,
 // soit ce qu'un [Quad] sait désigner.
 //
-// [Atlas.Add] refuse au-delà au lieu de ramener au plafond : deux planches confondues
+// La méthode `Add` d'un [Atlas] refuse au-delà au lieu de ramener au plafond : deux
+// planches confondues
 // ne se verraient qu'à l'image. Dans son propre bloc et non avec les autres bornes,
 // parce que `go doc` abrège un bloc de constantes après la première.
 const MaxSheets = render.MaxSheets
@@ -203,7 +204,8 @@ func Raw(a, b, c, d float64) Matrix { return geometry.Raw(a, b, c, d) }
 // par appui.
 //
 // La position du pointeur est en pixels de l'image, la boucle ayant défait
-// l'agrandissement et les bandes : elle se donne telle quelle à [Scene.At].
+// l'agrandissement et les bandes : elle se donne telle quelle à la méthode `At` d'une
+// [Scene].
 type Input = input.Input
 
 // Key désigne une place sur le clavier, et non le caractère qu'elle produit : la
@@ -347,13 +349,13 @@ const (
 // sans remplissage : le pixel (x, y) est à l'index y×Width + x.
 //
 // Ses composantes sont prémultipliées, comme celles de [Color]. Son champ Rectangles
-// porte la découpe, que [Sheet.CutGrid] remplit ou qu'on écrit à la main ; vide, la
-// planche vaut pour elle-même.
+// porte la découpe, que sa méthode `CutGrid` remplit ou qu'on écrit à la main ; vide,
+// la planche vaut pour elle-même.
 type Sheet = raster.Sheet
 
 // Atlas est la suite des planches qu'un quad désigne par index.
 //
-// [Atlas.Add] est le seul passage obligé avant qu'un quad puisse désigner une
+// Sa méthode `Add` est le seul passage obligé avant qu'un quad puisse désigner une
 // planche : c'est là qu'elle est préparée pour le dessin, donc l'oubli n'est pas
 // possible.
 type Atlas = raster.Atlas
@@ -474,7 +476,8 @@ type Entity = scene.Entity
 // donc une chose qu'on veut voir porte [White] ou une teinte explicite.
 //
 // **Et cette teinte est prémultipliée comme toute [Color]** : un voile translucide
-// s'écrit par [Premultiply] ou s'atténue par [Color.Scale], jamais en baissant le seul
+// s'écrit par [Premultiply] ou s'atténue par la méthode `Scale` d'une [Color], jamais
+// en baissant le seul
 // alpha d'une teinte opaque — ce qui ne décrit aucune couleur et rend un aplat plus
 // dense que l'opacité annoncée.
 //
@@ -483,7 +486,8 @@ type Entity = scene.Entity
 // la godoc dans le paquet de scène porte la recette.
 //
 // **Sa méthode `CornerFromFoot` convertit un pixel visé par le pied centré en le coin
-// haut-gauche** que [Scene.PlaceArea] et [Scene.PlaceScreen] attendent. C'est la voie
+// haut-gauche** que les méthodes `PlaceArea` et `PlaceScreen` d'une [Scene] attendent.
+// C'est la voie
 // pour réutiliser un aspect d'une pose monde à une pose en pixels sans qu'il se décale
 // de la moitié de sa largeur et de toute sa hauteur. Elle est nommée ici parce qu'un
 // alias ne montre aucune méthode : `go doc . Aspect` ne la rend pas, `go doc scene
@@ -498,16 +502,18 @@ type Handle = scene.Handle
 // une barre de vie, un panneau, une ligne de texte.
 //
 // La position est celle du coin haut-gauche, et elle ne bouge pas avec la caméra.
-// [Aspect.Layer] décide si cela passe au-dessus du monde — rien n'y échappe à l'ordre
+// Le champ `Layer` d'un [Aspect] décide si cela passe au-dessus du monde — rien n'y
+// échappe à l'ordre
 // commun.
 //
 // Le coin, là où une entité vise son pied : c'est la seule voie du moteur où l'origine
-// change, et l'ancre de l'aspect s'ajoute à ce coin. [Scene.PlaceScreen] donne la
+// change, et l'ancre de l'aspect s'ajoute à ce coin. La méthode `PlaceScreen` d'une
+// [Scene] donne la
 // recette pour poser par le pied malgré tout.
 //
 // **Deux voies la posent, et le rectangle visé n'est pas le même.**
-// [Scene.PlaceScreen] vise la surface de dessin, marge comprise : c'est la voie de ce
-// qui n'appartient pas au monde, un bandeau ou un score. [Scene.PlaceArea] vise l'aire
+// `PlaceScreen` vise la surface de dessin, marge comprise : c'est la voie de ce
+// qui n'appartient pas au monde, un bandeau ou un score. `PlaceArea` vise l'aire
 // de monde et découpe la pièce dessus : c'est la voie de ce qui accompagne le monde sans
 // en être, un chiffre de dégâts ou une annonce. Le champ InArea dit laquelle a posé.
 //
@@ -571,7 +577,8 @@ const (
 // Inset est la marge que le monde ne traverse pas, côté par côté et en pixels de la
 // surface de dessin.
 //
-// Il sert [Options.WorldInset], et [Scene.SetWorldInset] le change en cours de partie.
+// Il sert [Options.WorldInset], et la méthode `SetWorldInset` d'une [Scene] le change
+// en cours de partie.
 // Sa valeur zéro laisse toute la surface au monde.
 //
 // **C'est le complément du plafond** : un retrait fixe la marge et laisse l'aire prendre
@@ -584,7 +591,8 @@ type Inset = scene.Inset
 // quel recouvrement une chose cachée se redessine, et sous quelle teinte.
 //
 // Une structure et non des paramètres : ses deux couleurs s'inverseraient sans que
-// rien ne refuse, et l'image qui en sortirait serait plausible. [Scene.SetRevealing]
+// rien ne refuse, et l'image qui en sortirait serait plausible. La méthode
+// `SetRevealing` d'une [Scene]
 // les change en cours de partie.
 type RevealOptions = scene.RevealOptions
 
@@ -609,7 +617,8 @@ func NewScene(width, height int, projection Matrix, o SceneOptions) (*Scene, err
 // moment de son animation.
 //
 // Le moteur ne l'appelle jamais : c'est le jeu qui le consulte quand une apparence
-// change, puis écrit le résultat par [Scene.SetAspect]. Tout y est facultatif, et un
+// change, puis écrit le résultat par la méthode `SetAspect` d'une [Scene]. Tout y est
+// facultatif, et un
 // jeu qui compose ses aspects à la main ne le rencontre pas.
 type Provider = appearance.Provider
 
@@ -631,7 +640,8 @@ type Look = appearance.Look
 type Facing = appearance.Facing
 
 // Turn rend la direction sous laquelle l'orientation courante de la caméra présente
-// une direction du monde. C'est ce qu'on passe à [Provider.Aspect] quand la vue tourne.
+// une direction du monde. C'est ce qu'on passe à la méthode `Aspect` d'un [Provider]
+// quand la vue tourne.
 func Turn(f Facing, o Orientation, directions int) Facing {
 	return appearance.Turn(f, o, directions)
 }
@@ -640,7 +650,7 @@ func Turn(f Facing, o Orientation, directions int) Facing {
 //
 // Rien n'y est gardé d'une image à la suivante : l'image courante se dérive du numéro
 // de pas, donc deux rendus du même pas donnent la même image. Elle s'emploie par
-// [Clip.Loop], qui tourne sans fin, et [Clip.Once], qui joue une fois.
+// ses méthodes `Loop`, qui tourne sans fin, et `Once`, qui joue une fois.
 type Clip = appearance.Clip
 
 // Entry décrit ce qu'une planche porte pour un [Look] : où lire, quelle taille, quelle
@@ -649,7 +659,7 @@ type Entry = appearance.Entry
 
 // Sheets est le fournisseur de référence, qui résout une apparence depuis des planches
 // dessinées, découpées en colonnes de directions et en lignes d'images. Une entrée s'y
-// déclare par [Sheets.Set], qui prend le [Look] qu'elle sert.
+// déclare par sa méthode `Set`, qui prend le [Look] qu'elle sert.
 //
 // Il ne pose ni couche ni étage : ceux-là disent où une chose se range, ce qui dépend
 // d'où elle se trouve et non de ce qu'elle montre.
@@ -663,11 +673,13 @@ func NewSheets() *Sheets { return appearance.NewSheets() }
 //
 // **C'est le nombre de ce fournisseur-là, pas une borne du moteur**, qui n'en impose
 // aucun — un fournisseur volumique en déclare seize, et rien ailleurs ne suppose l'un
-// ou l'autre. Il se lit aussi par [Sheets.Directions], et c'est cette voie qu'emploie
+// ou l'autre. Il se lit aussi par la méthode `Directions` de [Sheets], et c'est cette
+// voie qu'emploie
 // du code qui accepte n'importe quel [Provider].
 //
 // Republié parce que c'est le nombre de colonnes qu'une planche doit porter, donc ce
-// qu'il faut connaître avant d'appeler [Sheet.CutGrid]. Le retenir obligeait un jeu à
+// qu'il faut connaître avant d'appeler la méthode `CutGrid` d'une [Sheet]. Le retenir
+// obligeait un jeu à
 // écrire le huit chez lui, c'est-à-dire à le dupliquer hors du paquet qui le déclare —
 // l'inverse de ce qu'on cherchait.
 const Directions = appearance.Directions
@@ -675,9 +687,9 @@ const Directions = appearance.Directions
 // Font décrit une planche de glyphes à cellule fixe, et c'est tout ce qu'il faut au
 // moteur pour afficher du texte — il ne rastérise aucun fichier de police.
 //
-// Elle s'emploie par [Font.Measure], qui dit ce qu'une ligne occupera, et par deux
-// voies de pose qui visent des rectangles différents : [Font.Place] vise la surface de
-// dessin, marge comprise, et [Font.PlaceArea] l'aire de monde, où la ligne se découpe.
+// Elle s'emploie par sa méthode `Measure`, qui dit ce qu'une ligne occupera, et par deux
+// voies de pose qui visent des rectangles différents : `Place` vise la surface de
+// dessin, marge comprise, et `PlaceArea` l'aire de monde, où la ligne se découpe.
 // La seconde est celle d'un texte accroché à une chose du monde — un chiffre de dégâts,
 // un nom au-dessus d'une créature —, qui écrirait sinon dans la marge quand la chose
 // sort de l'aire. [ScreenPiece] porte ce que les deux repères ont de commun.

@@ -77,8 +77,9 @@ type Quitter interface {
 //
 // Ce qu'un jeu en fait est à lui : un contour, une flèche, une silhouette tirée d'un
 // autre dessin, ou rien du tout si le seuil qu'il se donne n'est pas atteint.
-// [Aspect.Reveal] redessine la chose elle-même et ne demande pas cette interface ; tout
-// autre rappel passe par ici, et [Aspect.Uncounted] évite qu'il se mesure lui-même.
+// Le champ `Reveal` d'un [Aspect] redessine la chose elle-même et ne demande pas cette
+// interface ; tout autre rappel passe par ici, et son champ `Uncounted` évite qu'il se
+// mesure lui-même.
 type Overlapped interface {
 	// Overlaps reçoit le relevé du pas précédent, et la tranche n'est valable que
 	// pendant l'appel : un jeu qui veut la garder en fait une copie.
@@ -451,7 +452,8 @@ func worldSize(surfaceWidth, surfaceHeight int, i Inset, maxWidth, maxHeight int
 // décor qu'il n'avait pas encore employée alloue sa tranche, et poser plus de pièces en
 // pixels qu'à aucune image précédente allonge la leur. Les deux sont des plus hautes
 // occupations, donc elles cessent d'allouer une fois atteintes — un jeu dont l'interface
-// ne grandit plus n'alloue plus, et [Scene.ClearScreen] garde la capacité d'une image à
+// ne grandit plus n'alloue plus, et la méthode `ClearScreen` d'une [Scene] garde la
+// capacité d'une image à
 // l'autre.
 //
 // Trois choses qu'elle ne fait pas, et qu'un hôte fait donc lui-même. Elle **n'a pas
@@ -532,7 +534,8 @@ func (e *Engine) Tick() time.Duration {
 // champ `Reveal` d'un [Aspect] redessine la chose, et un rappel d'une autre nature — un
 // contour, une flèche, une silhouette tirée d'un autre dessin — demandait de refaire ce
 // calcul en entier. Le relevé le rend : l'hôte y prend son propre seuil et dessine ce
-// qu'il veut, en marquant son dessin d'[Aspect.Uncounted] pour qu'il ne se compte pas.
+// qu'il veut, en marquant son dessin du champ `Uncounted` d'un [Aspect] pour qu'il ne
+// se compte pas.
 //
 // Ce que ce nombre mesure exactement, et ce sur quoi on ne doit pas s'appuyer, est dit
 // par [render.Overlap.Hidden].

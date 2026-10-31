@@ -478,6 +478,56 @@ entetes: depot
 	  exit 1; \
 	fi
 
+# Les liens de godoc qui ne se résolvent pas, et il y en avait trente-trois.
+#
+# Un lien `[Type.Membre]` ne se résout que si le type est **déclaré** dans le paquet qui
+# l'écrit. Trois régimes le cassent, mesurés le 28 octobre 2026 puis le 31 : un membre
+# d'un type que le paquet racine ne fait qu'**aliaser**, un membre qualifié d'un paquet
+# que le paquet n'importe pas — le paquet et non le fichier —, et un lien vers une
+# déclaration non exportée, qui n'est dans aucune documentation. Le lecteur voit alors des
+# crochets en texte brut, et `pkg.go.dev` ne les résout pas davantage : vérifié sur la
+# page du module.
+#
+# **Le contrôle lit les sources et non `go doc`**, et c'est la mesure qui l'impose : sous
+# le plancher du module, `go doc` ne résout **aucun** lien vers un champ ni vers une
+# méthode, donc une cible bâtie sur lui serait verte ici et rouge chez le runner. C'est le
+# défaut exact qui a mordu la cible `vet` le 27 octobre 2026.
+#
+# Trois exclusions, et chacune porte son motif. Les fichiers de test, dont la godoc n'est
+# rendue nulle part. `internal/`, dont aucun consommateur ne lit la documentation. Et les
+# **commentaires de champ**, reconnus à leur indentation : `go doc` y affiche le bloc
+# verbatim, donc les crochets ne gênent personne et restent cliquables sur un site qui les
+# résout. Le relevé ne garde donc que les lignes de commentaire en colonne zéro.
+#
+# **Ce qui distingue un lien juste d'un lien mort est l'alias, et la cible le lit.** Un
+# `type T = autre.T` ne publie qu'un nom, donc aucun de ses membres n'est atteignable ;
+# un `type T struct` les publie tous. Elle cherche donc, dans le répertoire du fichier,
+# une déclaration de `T` qui ne soit pas un alias, et ne se plaint qu'à défaut. Sans ce
+# filtre elle criait sur `[Engine.Overlaps]`, `[Options.MaxWidth]` et `[Font.First]`, qui
+# se résolvent tous — mesuré en l'écrivant, et une cible qui crie faux se contourne.
+#
+# Ce qu'elle ne garde pas, faute de pouvoir le distinguer : un lien **qualifié**, du type
+# `[autre.T.M]`, qui se résout si le paquet est importé et pas sinon. Le périmètre gardé
+# est celui de l'alias, qui a produit l'essentiel des trente-trois ; les six liens
+# qualifiés du dépôt ont été corrigés à la main dans le même lot.
+liens:
+	@fautifs=""; \
+	for f in $$(git ls-files '*.go' | grep -v '_test\.go$$' | grep -v '^internal/'); do \
+	  d=$$(dirname $$f); \
+	  for c in $$(grep -E '^// ' $$f \
+	      | grep -oE '\[[A-Z][A-Za-z]*\.[a-zA-Z][A-Za-z]*\]' | tr -d '[]' | sort -u); do \
+	    t=$${c%%.*}; \
+	    grep -qhE "^type $$t[[:space:]]+[^=]" $$d/*.go 2>/dev/null && continue; \
+	    fautifs="$$fautifs  $$f : [$$c]\n"; \
+	  done; \
+	done; \
+	if [ -n "$$fautifs" ]; then \
+	  echo "des liens de godoc visent un membre et ne se résoudront pas :"; \
+	  printf '%b' "$$fautifs" | grep -v '^$$' | sort -u; \
+	  echo "nommer le membre en texte et lier le type qui le porte"; \
+	  exit 1; \
+	fi
+
 # Un changement de la surface publique sans entrée de journal ne se rattrape plus après
 # le tag : une section publiée ne se retouche pas, donc le trou est définitif. C'est
 # arrivé deux fois dans la même série, et seule la chance l'a rendu réparable — la
@@ -554,7 +604,7 @@ surface:
 	  exit 1; \
 	fi
 
-check: fmt vet deps entetes frontiere procedures journal surface cross test
+check: fmt vet deps entetes frontiere procedures liens journal surface cross test
 
 # Le plancher du module, lu dans `go.mod` et nulle part ailleurs.
 #
