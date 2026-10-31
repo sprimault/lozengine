@@ -38,7 +38,8 @@ de tri, l'échelle du facteur entier.
 La boucle s'appuie sur une étape appelable, qu'un hôte pilote lui-même.
 
 Fin : un exemple affiche une grille et un personnage déplaçable, et le hello world tient
-en moins de 30 lignes.
+en moins de 30 lignes de code, en-tête de licence et commentaires exclus. `make hello`
+le compte.
 
 Deux exigences et non une, parce qu'elles mesurent deux choses : la première dit que la
 chaîne entière tourne, la seconde que les valeurs par défaut suffisent à démarrer. Les

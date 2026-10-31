@@ -55,15 +55,55 @@ func TestReferences(t *testing.T) {
 
 			for _, frame := range scenario.ReferenceFrames() {
 				buffer := replay.Frame(frame, "")
+				file := fmt.Sprintf("%s-%04d.png", name, frame)
 				if *regenerate {
-					if err := replay.Write(referencesDir, frame, 1); err != nil {
-						t.Fatalf("régénération : %v", err)
-					}
+					regenerateOne(t, replay, file, frame, buffer)
 					continue
 				}
-				compare(t, fmt.Sprintf("%s-%04d.png", name, frame), buffer)
+				compare(t, file, buffer)
 			}
 		})
+	}
+}
+
+// regenerateOne réécrit une image de référence **seulement si ses pixels changent**.
+//
+// **Sans cela, une régénération réécrit tout le paquet**, et les octets changent même
+// quand l'image ne change pas : l'encodage PNG ne se reproduit pas d'une chaîne Go à la
+// suivante. Ajouter un scénario réécrivait donc les images de tous les autres, dont le
+// contenu visuel était intact. Le dépôt a payé cette classe — un commit a versé sept
+// images réécrites sans qu'un pixel bouge, et l'entrée est restée ouverte onze jours
+// faute de savoir pourquoi.
+//
+// La parade était un geste manuel : restaurer après coup ce qui n'avait pas à changer,
+// puis relancer la suite. Elle vit maintenant dans le code qui écrit, donc elle ne
+// s'oublie plus — et la consigne correspondante a quitté la doctrine des tests.
+//
+// Deux régimes passent sans comparer : l'image absente, qu'on écrit, et celle dont les
+// dimensions diffèrent, qu'on écrit aussi — comparer des suites de longueurs
+// différentes n'a pas de sens, et `pixelGaps` parcourt la plus courte.
+func regenerateOne(t *testing.T, replay *Replay, name string, frame int, buffer *render.Buffer) {
+	t.Helper()
+
+	write := func() {
+		if err := replay.Write(referencesDir, frame, 1); err != nil {
+			t.Fatalf("régénération : %v", err)
+		}
+	}
+
+	file, err := os.Open(filepath.Join(referencesDir, name))
+	if err != nil {
+		write()
+		return
+	}
+	reference, err := raster.LoadSheet(file)
+	file.Close()
+	if err != nil || reference.Width != buffer.Width || reference.Height != buffer.Height {
+		write()
+		return
+	}
+	if gaps, _ := pixelGaps(buffer.Pixels, reference.Pixels); gaps != 0 {
+		write()
 	}
 }
 

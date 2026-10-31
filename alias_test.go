@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/sprimault/lozengine/appearance"
 	"github.com/sprimault/lozengine/geometry"
 	"github.com/sprimault/lozengine/input"
 	"github.com/sprimault/lozengine/render"
@@ -35,6 +36,176 @@ func TestConstantsRepublished(t *testing.T) {
 		if c.root != c.core {
 			t.Errorf("%s republié : %#b, attendu %#b", c.name, c.root, c.core)
 		}
+	}
+}
+
+// TestKeysRepublished vérifie la **valeur** des quatre-vingt-six places de clavier que
+// la racine republie, et c'est la seule chose qu'aucun autre contrôle ne regarde.
+//
+// `make surface` compare les identifiants exportés, donc il verrait un nom qui
+// disparaît ; il ne voit pas une valeur fausse. Et le régime qui la produit est celui
+// que la godoc du cas précédent nomme : un bloc `const` Go répète l'expression
+// précédente quand une ligne n'en porte pas, donc un `KeyF13` ajouté sans expression
+// prendrait la valeur de la ligne d'avant — et `KeyNumpad7 = input.KeyNumpad1` compile
+// aussi bien que la bonne.
+//
+// La surface est juste aujourd'hui, comparée nom à nom en écrivant ce cas. Ce qui le
+// rend utile est le prochain ajout, pas celui-ci.
+func TestKeysRepublished(t *testing.T) {
+	for _, c := range []struct {
+		name       string
+		root, core Key
+	}{
+		{"KeyA", KeyA, input.KeyA}, {"KeyB", KeyB, input.KeyB},
+		{"KeyC", KeyC, input.KeyC}, {"KeyD", KeyD, input.KeyD},
+		{"KeyE", KeyE, input.KeyE}, {"KeyF", KeyF, input.KeyF},
+		{"KeyG", KeyG, input.KeyG}, {"KeyH", KeyH, input.KeyH},
+		{"KeyI", KeyI, input.KeyI}, {"KeyJ", KeyJ, input.KeyJ},
+		{"KeyK", KeyK, input.KeyK}, {"KeyL", KeyL, input.KeyL},
+		{"KeyM", KeyM, input.KeyM}, {"KeyN", KeyN, input.KeyN},
+		{"KeyO", KeyO, input.KeyO}, {"KeyP", KeyP, input.KeyP},
+		{"KeyQ", KeyQ, input.KeyQ}, {"KeyR", KeyR, input.KeyR},
+		{"KeyS", KeyS, input.KeyS}, {"KeyT", KeyT, input.KeyT},
+		{"KeyU", KeyU, input.KeyU}, {"KeyV", KeyV, input.KeyV},
+		{"KeyW", KeyW, input.KeyW}, {"KeyX", KeyX, input.KeyX},
+		{"KeyY", KeyY, input.KeyY}, {"KeyZ", KeyZ, input.KeyZ},
+
+		{"Key1", Key1, input.Key1}, {"Key2", Key2, input.Key2},
+		{"Key3", Key3, input.Key3}, {"Key4", Key4, input.Key4},
+		{"Key5", Key5, input.Key5}, {"Key6", Key6, input.Key6},
+		{"Key7", Key7, input.Key7}, {"Key8", Key8, input.Key8},
+		{"Key9", Key9, input.Key9}, {"Key0", Key0, input.Key0},
+
+		{"KeyUp", KeyUp, input.KeyUp}, {"KeyLeft", KeyLeft, input.KeyLeft},
+		{"KeyRight", KeyRight, input.KeyRight}, {"KeyDown", KeyDown, input.KeyDown},
+
+		{"KeyEscape", KeyEscape, input.KeyEscape},
+		{"KeyBackspace", KeyBackspace, input.KeyBackspace},
+		{"KeyTab", KeyTab, input.KeyTab},
+		{"KeyEnter", KeyEnter, input.KeyEnter},
+		{"KeySpace", KeySpace, input.KeySpace},
+
+		{"KeyLeftShift", KeyLeftShift, input.KeyLeftShift},
+		{"KeyRightShift", KeyRightShift, input.KeyRightShift},
+		{"KeyLeftControl", KeyLeftControl, input.KeyLeftControl},
+		{"KeyRightControl", KeyRightControl, input.KeyRightControl},
+		{"KeyLeftAlt", KeyLeftAlt, input.KeyLeftAlt},
+		{"KeyRightAlt", KeyRightAlt, input.KeyRightAlt},
+
+		{"KeyF1", KeyF1, input.KeyF1}, {"KeyF2", KeyF2, input.KeyF2},
+		{"KeyF3", KeyF3, input.KeyF3}, {"KeyF4", KeyF4, input.KeyF4},
+		{"KeyF5", KeyF5, input.KeyF5}, {"KeyF6", KeyF6, input.KeyF6},
+		{"KeyF7", KeyF7, input.KeyF7}, {"KeyF8", KeyF8, input.KeyF8},
+		{"KeyF9", KeyF9, input.KeyF9}, {"KeyF10", KeyF10, input.KeyF10},
+		{"KeyF11", KeyF11, input.KeyF11}, {"KeyF12", KeyF12, input.KeyF12},
+
+		{"KeyHome", KeyHome, input.KeyHome}, {"KeyEnd", KeyEnd, input.KeyEnd},
+		{"KeyPageUp", KeyPageUp, input.KeyPageUp},
+		{"KeyPageDown", KeyPageDown, input.KeyPageDown},
+		{"KeyInsert", KeyInsert, input.KeyInsert},
+		{"KeyDelete", KeyDelete, input.KeyDelete},
+
+		{"KeyNumpad0", KeyNumpad0, input.KeyNumpad0},
+		{"KeyNumpad1", KeyNumpad1, input.KeyNumpad1},
+		{"KeyNumpad2", KeyNumpad2, input.KeyNumpad2},
+		{"KeyNumpad3", KeyNumpad3, input.KeyNumpad3},
+		{"KeyNumpad4", KeyNumpad4, input.KeyNumpad4},
+		{"KeyNumpad5", KeyNumpad5, input.KeyNumpad5},
+		{"KeyNumpad6", KeyNumpad6, input.KeyNumpad6},
+		{"KeyNumpad7", KeyNumpad7, input.KeyNumpad7},
+		{"KeyNumpad8", KeyNumpad8, input.KeyNumpad8},
+		{"KeyNumpad9", KeyNumpad9, input.KeyNumpad9},
+		{"KeyNumpadDecimal", KeyNumpadDecimal, input.KeyNumpadDecimal},
+		{"KeyNumpadMultiply", KeyNumpadMultiply, input.KeyNumpadMultiply},
+		{"KeyNumpadSubtract", KeyNumpadSubtract, input.KeyNumpadSubtract},
+		{"KeyNumpadAdd", KeyNumpadAdd, input.KeyNumpadAdd},
+		{"KeyNumpadDivide", KeyNumpadDivide, input.KeyNumpadDivide},
+		{"KeyNumpadEnter", KeyNumpadEnter, input.KeyNumpadEnter},
+		{"KeyNumLock", KeyNumLock, input.KeyNumLock},
+	} {
+		if c.root != c.core {
+			t.Errorf("%s republié : %d, attendu %d", c.name, c.root, c.core)
+		}
+	}
+}
+
+// TestButtonsAndBoundsRepublished vérifie la valeur des républications qui restaient
+// sans garde : les cinq boutons, les trois alignements et le nombre de directions.
+//
+// Même régime que les touches, et les boutons y sont le plus exposés : cinq lignes
+// voisines dans un seul bloc `const`.
+func TestButtonsAndBoundsRepublished(t *testing.T) {
+	for _, c := range []struct {
+		name       string
+		root, core Button
+	}{
+		{"ButtonLeft", ButtonLeft, input.ButtonLeft},
+		{"ButtonRight", ButtonRight, input.ButtonRight},
+		{"ButtonMiddle", ButtonMiddle, input.ButtonMiddle},
+		{"ButtonBack", ButtonBack, input.ButtonBack},
+		{"ButtonForward", ButtonForward, input.ButtonForward},
+	} {
+		if c.root != c.core {
+			t.Errorf("%s republié : %d, attendu %d", c.name, c.root, c.core)
+		}
+	}
+
+	for _, c := range []struct {
+		name       string
+		root, core Alignment
+	}{
+		{"AlignCenter", AlignCenter, scene.AlignCenter},
+		{"AlignStart", AlignStart, scene.AlignStart},
+		{"AlignEnd", AlignEnd, scene.AlignEnd},
+	} {
+		if c.root != c.core {
+			t.Errorf("%s republié : %d, attendu %d", c.name, c.root, c.core)
+		}
+	}
+
+	if Directions != appearance.Directions {
+		t.Errorf("Directions republié : %d, attendu %d", Directions, appearance.Directions)
+	}
+}
+
+// TestWrappersPassTheirArgumentsThrough garde les cinq enveloppes de la racine qu'aucun
+// cas n'appelait, et deux d'entre elles portent des paramètres interchangeables.
+//
+// **Ce qui les rend dangereuses est l'absence de refus** : `Premultiply(r, g, b, a)` a
+// quatre paramètres du même type, `NewSheetFromStraight(width, height, …)` deux. Écrire
+// `render.Premultiply(b, g, r, a)` dans l'enveloppe compile, et laissait tout le dépôt
+// vert.
+//
+// **Deux conditions sans lesquelles l'inversion survit au cas**, et c'est pourquoi elles
+// sont écrites ici : quatre valeurs **distinctes** pour la couleur, et une planche **non
+// carrée**. Avec `(10, 10, 10, 255)` ou un carré, toute permutation passerait.
+func TestWrappersPassTheirArgumentsThrough(t *testing.T) {
+	// Opaque, donc la prémultiplication laisse les trois composantes intactes et la
+	// comparaison porte bien sur leur ordre.
+	if got, want := Premultiply(10, 20, 30, 255), render.Premultiply(10, 20, 30, 255); got != want {
+		t.Errorf("Premultiply : %+v, attendu %+v", got, want)
+	}
+
+	straight := make([]uint8, 4*8*2)
+	sheet, err := NewSheetFromStraight(8, 2, straight)
+	if err != nil {
+		t.Fatalf("NewSheetFromStraight : %v", err)
+	}
+	if sheet.Width != 8 || sheet.Height != 2 {
+		t.Errorf("planche %d×%d, attendu 8×2 — les deux dimensions sont inversées",
+			sheet.Width, sheet.Height)
+	}
+
+	// Les trois autres n'ont pas de paramètre interchangeable : un appel qui aboutit
+	// suffit à garder le câblage.
+	if _, err := LoadSheet(bytes.NewReader(nil)); err == nil {
+		t.Error("LoadSheet a accepté un flux vide")
+	}
+	if got, want := Turn(1, QuarterTurn, Directions), appearance.Turn(1, scene.QuarterTurn, appearance.Directions); got != want {
+		t.Errorf("Turn : %d, attendu %d", got, want)
+	}
+	if NewSheets() == nil {
+		t.Error("NewSheets rend nil")
 	}
 }
 

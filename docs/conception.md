@@ -397,8 +397,11 @@ conséquences :
   désormais un plafond que le chargement applique, et plus rien dans la clé ne
   l'exige.
 
-Critère permanent : le hello world tient en moins de 30 lignes. S'il gonfle,
-c'est qu'un défaut manque quelque part.
+Critère permanent : le hello world tient en moins de 30 lignes de code, en-tête de
+licence et commentaires exclus. S'il gonfle, c'est qu'un défaut manque quelque part.
+`make hello` le compte et refuse au-delà, donc le critère ne se lit plus de trois
+façons — le fichier fait 47 lignes au total et 38 non vides, et seule la troisième
+lecture passe.
 
 ## Dépendances
 

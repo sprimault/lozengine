@@ -732,8 +732,31 @@ surface:
 	  exit 1; \
 	fi
 
+# Le critère permanent de l'universalité, rendu mécanique : le hello world tient en
+# moins de trente lignes, et s'il gonfle c'est qu'un défaut manque quelque part.
+#
+# **Ce qu'on compte doit être dit, sinon le critère n'en est pas un.** Le fichier fait
+# aujourd'hui 47 lignes, 38 non vides, et 27 ni vides ni commentaires : seule la
+# troisième lecture passe, avec trois lignes de marge. Un lecteur qui applique `wc -l`
+# conclut que le critère est déjà faux depuis longtemps — et c'est ce qui est arrivé.
+# Les deux textes qui portent le critère disent donc la même chose que cette cible.
+#
+# L'en-tête de licence est exclu comme tout commentaire, et une ligne de code suivie
+# d'un commentaire compte : le motif n'écarte que les lignes **commençant** par `//`.
+HELLO = examples/hello/main.go
+HELLO_MAX = 30
+
+.PHONY: hello
+hello:
+	@n=$$(grep -vE '^[[:space:]]*(//|$$)' $(HELLO) | grep -c . || true); \
+	if [ "$$n" -gt $(HELLO_MAX) ]; then \
+	  echo "$(HELLO) : $$n lignes de code, $(HELLO_MAX) au plus"; \
+	  echo "le hello world qui gonfle dit qu'un défaut manque quelque part"; \
+	  exit 1; \
+	fi
+
 .PHONY: check
-check: fmt vet deps entetes frontiere procedures liens journal surface cross test
+check: fmt vet deps entetes frontiere procedures liens journal surface hello cross test
 
 # Le plancher du module, lu dans `go.mod` et nulle part ailleurs.
 #
