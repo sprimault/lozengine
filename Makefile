@@ -565,11 +565,17 @@ entetes: depot
 # méthode, donc une cible bâtie sur lui serait verte ici et rouge chez le runner. C'est le
 # défaut exact qui a mordu la cible `vet` le 27 octobre 2026.
 #
-# Trois exclusions, et chacune porte son motif. Les fichiers de test, dont la godoc n'est
-# rendue nulle part. `internal/`, dont aucun consommateur ne lit la documentation. Et les
-# **commentaires de champ**, reconnus à leur indentation : `go doc` y affiche le bloc
-# verbatim, donc les crochets ne gênent personne et restent cliquables sur un site qui les
-# résout. Le relevé ne garde donc que les lignes de commentaire en colonne zéro.
+# Deux exclusions, et chacune porte son motif. Les fichiers de test, dont la godoc n'est
+# rendue nulle part. `internal/`, dont aucun consommateur ne lit la documentation.
+#
+# **Il y en avait une troisième et elle reposait sur une confusion** : les commentaires de
+# champ, reconnus à leur indentation, au motif que « `go doc` y affiche le bloc verbatim,
+# donc les crochets ne gênent personne et restent cliquables sur un site qui les résout ».
+# C'est vrai d'un lien **résoluble** et faux d'un lien qui ne l'est pas : celui-là montre
+# ses crochets partout, dans `go doc` comme sur `pkg.go.dev`, et l'indentation n'y change
+# rien. L'ancrage en colonne zéro est donc retiré le 31 octobre 2026 — il cachait les deux
+# liens morts de la documentation de champ d'`Overlap`, qui sont ceux qui ont fait relever
+# la classe.
 #
 # **Ce qui distingue un lien juste d'un lien mort est l'alias, et la cible le lit.** Un
 # `type T = autre.T` ne publie qu'un nom, donc aucun de ses membres n'est atteignable ;
@@ -578,20 +584,31 @@ entetes: depot
 # filtre elle criait sur `[Engine.Overlaps]`, `[Options.MaxWidth]` et `[Font.First]`, qui
 # se résolvent tous — mesuré en l'écrivant, et une cible qui crie faux se contourne.
 #
-# Ce qu'elle ne garde pas, faute de pouvoir le distinguer : un lien **qualifié**, du type
-# `[autre.T.M]`, qui se résout si le paquet est importé et pas sinon. Le périmètre gardé
-# est celui de l'alias, qui a produit l'essentiel des trente-trois ; les six liens
-# qualifiés du dépôt ont été corrigés à la main dans le même lot.
+# **Le second volet garde les liens qualifiés**, `[autre.T.M]`, qu'elle laissait passer
+# faute de pouvoir les distinguer : ils ne se résolvent que si le paquet est importé. Le
+# critère est **le paquet et non le fichier** — la godoc se résout dans le scope du
+# paquet —, d'où le relevé des imports sur tous ses fichiers non-test. Mesuré avant de
+# l'écrire : sur quarante-neuf liens qualifiés, trois seulement étaient morts, et les
+# trois sur une ligne indentée que l'ancrage retiré ci-dessus cachait. Le même relevé au
+# critère du fichier en annonçait dix, dont sept faux.
 .PHONY: liens
 liens:
 	@fautifs=""; \
 	for f in $$(git ls-files '*.go' | grep -v '_test\.go$$' | grep -v '^internal/'); do \
 	  d=$$(dirname $$f); \
-	  for c in $$(grep -E '^// ' $$f \
+	  sources=$$(ls $$d/*.go 2>/dev/null | grep -v '_test\.go$$'); \
+	  for c in $$(grep -E '^[[:space:]]*// ' $$f \
 	      | grep -oE '\[[A-Z][A-Za-z]*\.[a-zA-Z][A-Za-z]*\]' | tr -d '[]' | sort -u); do \
 	    t=$${c%%.*}; \
 	    grep -qhE "^type $$t[[:space:]]+[^=]" $$d/*.go 2>/dev/null && continue; \
 	    fautifs="$$fautifs  $$f : [$$c]\n"; \
+	  done; \
+	  for c in $$(grep -E '^[[:space:]]*// ' $$f \
+	      | grep -oE '\[[a-z][A-Za-z0-9]*\.[A-Z][A-Za-z0-9.]*\]' | tr -d '[]' | sort -u); do \
+	    p=$${c%%.*}; \
+	    [ -n "$$sources" ] || continue; \
+	    grep -qhE "\"([^\"]*/)?$$p\"" $$sources 2>/dev/null && continue; \
+	    fautifs="$$fautifs  $$f : [$$c] — le paquet $$p n'est pas importé\n"; \
 	  done; \
 	done; \
 	if [ -n "$$fautifs" ]; then \

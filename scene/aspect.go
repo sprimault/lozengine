@@ -152,9 +152,16 @@ type Aspect struct {
 	Floor uint8
 
 	// Uncounted retire ce quad de la mesure de recouvrement : ce qu'il recouvre ne
-	// compte ni dans [render.Overlap.Hidden] et [render.Overlap.ByDecor], ni dans le
+	// compte dans **aucune** mesure de recouvrement de [render.Overlap], ni dans le
 	// seuil de [Aspect.Reveal]. Il se dessine et cache à l'œil comme tout autre ; c'est
 	// la mesure qu'il quitte, pas l'image.
+	//
+	// Les quatre et non deux : le relevé par boîte comme celui au pixel l'écartent, et
+	// nommer les deux premiers seulement poussait un hôte venu du second à croire son
+	// rappel encore compté — donc à renoncer au drapeau, et à retomber sur le défaut
+	// qu'il existe pour fermer. « De recouvrement » est nécessaire dans la phrase :
+	// [render.Overlap.Painted] ne compte jamais ce qu'un quad recouvre, et ce drapeau
+	// ne la touche pas.
 	//
 	// **C'est pour ce qu'un jeu pose afin de rappeler une chose cachée** — un contour,
 	// une flèche, une silhouette — et pour ce qui ne cache jamais rien à ses yeux : une
@@ -172,7 +179,8 @@ type Aspect struct {
 	// **Une propriété de la chose posée, jamais d'un couple.** Elle vaut pour tous les
 	// relevés : marquer une créature que d'autres doivent continuer à compter la retire
 	// de tous. Ce que le décor cache et ce que les entités cachent se lit à part, dans
-	// [render.Overlap.ByDecor].
+	// [render.Overlap.ByDecor] pour l'échelle de boîte et [render.Overlap.CoveredByDecor]
+	// pour celle du pixel.
 	//
 	// **À remettre dans chaque aspect passé à [Scene.SetAspect]**, qui remplace
 	// l'aspect en entier : un jeu qui change l'apparence de son rappel à chaque image
@@ -322,7 +330,7 @@ type Entity struct {
 	// # Éclaircir un sprite, ou le marquer comme choisi
 	//
 	// Deux voies, et **la moins chère d'abord** : une variante déjà éclaircie de
-	// l'image, désignée par un second [appearance.Look]. Elle ne demande ni strate, ni
+	// l'image, désignée par un second `Look` d'apparence. Elle ne demande ni strate, ni
 	// coïncidence de coordonnées, ni rien de ce qui suit — le jeu change d'apparence et
 	// c'est tout. La table d'un fournisseur étant creuse, elle coûte une entrée par
 	// apparence réellement déclarée.

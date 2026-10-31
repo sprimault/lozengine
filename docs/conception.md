@@ -283,8 +283,14 @@ planches et son atlas, donc leurs champs doivent se lire ; mais le rastériseur 
 deux méthodes privées de `Sheet` — l'encodage des lignes qui lui donne des segments
 à traiter en bloc —, et laisser le dessin derrière aurait obligé à publier le détail de
 cette optimisation dans un type que l'ABI exposera. Les cinq fonctions de dessin sont
-donc publiques ; ce sont celles que le jalon 11 exposera de toute façon, et le paquet
-racine ne les republie pas, un jeu n'ayant pas à les appeler.
+donc publiques ; ce sont celles que le jalon 11 exposera de toute façon.
+
+Le paquet racine en republie **trois** — la mesure du facteur d'échelle,
+l'agrandissement et l'écriture d'un PNG —, parce qu'un hôte qui garde sa propre boucle
+reçoit l'image du moteur et doit bien la présenter ou la capturer. Les deux qui restent
+sont le dessin lui-même, dont la boucle se charge dans les deux cas. Le motif inverse,
+« un jeu n'ayant pas à les appeler », a tenu jusqu'à la `0.5.8` et c'est elle qui l'a
+renversé.
 
 **Le critère est mécanique, et il s'est vérifié quatre fois.** Un type publié par alias
 ne montre rien quand il désigne un paquet `internal` : un consommateur lisait

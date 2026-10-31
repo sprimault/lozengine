@@ -50,8 +50,15 @@ type OverlapList = render.OverlapList
 // Buffer est l'image dans laquelle le moteur écrit : des pixels contigus, ligne par
 // ligne, prémultipliés comme ceux d'une planche.
 //
-// Un hôte peut l'allouer lui-même et laisser le moteur écrire dedans, ce qui évite
-// d'avoir à négocier qui possède cette mémoire.
+// **L'image de dessin appartient au moteur** : [NewEngine] l'alloue, [Engine.Fit] la
+// réalloue quand la fenêtre change, et [Engine.Frame] la rend. `Options` n'a pas de
+// champ pour en fournir une, et chercher celui qui n'existe pas est la déception que
+// cette godoc causait en promettant l'inverse.
+//
+// Ce qu'un hôte alloue, c'est le tampon de **présentation**, celui qu'[Upscale]
+// remplit — et c'est là que « l'hôte alloue, le moteur écrit » a un sens aujourd'hui.
+// Le même contrat sur l'image de dessin est l'un des deux que la bibliothèque native
+// livrera ; la feuille de route dit à quel jalon.
 type Buffer = render.Buffer
 
 // MaxBufferSide est le plus grand côté qu'un tampon puisse avoir : la plus grande
@@ -120,7 +127,13 @@ const MaxFloor = render.MaxFloor
 
 // MaxSide est le plus grand côté qu'une grille de scène puisse avoir, en cellules.
 //
-// [NewScene] refuse au-delà. Le lire évite d'avoir à essayer pour le savoir.
+// [NewScene] refuse au-delà.
+//
+// **C'est ce que la clé de tri sait ordonner, pas ce qu'une machine porte**, et la
+// distinction se paie dès la première strate de décor : `NewScene(32768, 32768, …)`
+// réussit, parce qu'une strate ne s'alloue qu'à sa première pose — et cette pose
+// demande alors un aspect par cellule, soit un milliard au plafond. [MaxTiers] chiffre
+// ce qu'une strate coûte par image.
 const MaxSide = render.MaxSide
 
 // MaxTiers est le nombre de choses qu'une cellule peut empiler, et la méthode
@@ -195,6 +208,12 @@ func Grid(side int) Matrix { return geometry.Grid(side) }
 // Raw rend la projection de quatre coefficients donnés, pour ce qu'aucun des trois
 // autres constructeurs n'exprime : l'abscisse écran vaut a·x + b·y et l'ordonnée
 // c·x + d·y. Sans translation, la vue étant cadrée ailleurs.
+//
+// **C'est le seul constructeur qui puisse rompre le sens des axes** — `x` vers le
+// bas-gauche de l'écran et `y` vers le bas-droite sous les deux losanges, `x` à droite
+// et `y` en bas sous [Grid]. Trois mécanismes le supposent sans se régler : le
+// départage de l'ordre de dessin, le relevé de recouvrement et la table de directions
+// de [Turn]. La rompre se fait les yeux ouverts.
 func Raw(a, b, c, d float64) Matrix { return geometry.Raw(a, b, c, d) }
 
 // Input est ce que les entrées disent à une image : les touches et les boutons tenus,
@@ -406,13 +425,22 @@ func NewSheetFromStraight(width, height uint16, pixels []uint8) (Sheet, error) {
 // Le facteur est un défaut et non une obligation : un hôte peut le plafonner plutôt
 // que d'afficher des pixels de sept pixels de côté sur un écran 4K, [Upscale] le
 // prenant en paramètre.
+//
+// **`inner` est l'image du moteur, `out` la sortie, et l'ordre compte** : les deux ont
+// le même type, donc une inversion compile sans un mot. Inversés, elle rend le facteur
+// qui ferait tenir la fenêtre dans l'image, soit 1 dans tous les cas utiles — un hôte
+// présente alors une image non agrandie, et aucune erreur ne se produit.
 func ScaleFactor(inner, out *Buffer) int { return raster.ScaleFactor(inner, out) }
 
 // Upscale recopie l'image du moteur dans la sortie, centrée, au facteur entier donné,
 // en peignant de fond ce qui reste autour.
 //
-// `inner` est l'image du moteur, lue ; `out` est la sortie, écrite. Jamais de facteur
-// fractionnaire : à cette résolution, un pixel et demi donne des colonnes inégales que
+// **`inner` est l'image du moteur, lue ; `out` est la sortie, écrite.** Les deux ont le
+// même type, donc une inversion compile sans un mot — et elle n'est pas muette pour
+// autant : la fenêtre ne reçoit alors aucun pixel, ce qui se voit à la première image.
+//
+// Jamais de facteur fractionnaire : à cette résolution, un pixel et demi donne des
+// colonnes inégales que
 // l'œil suit d'un bout à l'autre de l'écran, et les bandes sont le prix assumé de
 // cette règle. Une sortie plus petite que l'image la découpe au lieu d'échouer, un
 // redimensionnement de fenêtre n'ayant pas à être un cas d'erreur.
@@ -645,6 +673,9 @@ type Facing = appearance.Facing
 // Turn rend la direction sous laquelle l'orientation courante de la caméra présente
 // une direction du monde. C'est ce qu'on passe à la méthode `Aspect` d'un [Provider]
 // quand la vue tourne.
+//
+// Sa table suppose le sens des axes que les constructeurs de projection imposent, et
+// seul [Raw] peut le rompre : ce que cela coûte est dit là.
 func Turn(f Facing, o Orientation, directions int) Facing {
 	return appearance.Turn(f, o, directions)
 }
