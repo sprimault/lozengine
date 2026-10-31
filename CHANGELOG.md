@@ -45,6 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.8] — 2026-10-31
+
 ### Ajouté
 
 - `Aspect.CornerFromFoot` convertit un pixel visé par le pied centré de l'image en le coin
