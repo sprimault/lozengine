@@ -12,9 +12,11 @@ make vet
 make deps         # échoue si une dépendance externe est entrée
 make entetes      # la mention de licence, sur ce que le dépôt publie
 make frontiere    # le noyau ne touche ni au système ni à un backend
+make procedures   # aucune procédure système appelée sans garde de présence
+make liens        # aucun lien de godoc qui ne se résoudra pas
 make journal      # chaque section du CHANGELOG dit la même chose dans ses deux langues
 make surface      # refuse un ajout à la surface publique sans entrée de journal
-make cross        # compile pour chacun des couples que les README annoncent
+make cross        # compile pour chacun des couples de CIBLES
 make floor        # le contrôle complet sous le plancher du module
 make container    # le même, dans un conteneur, au plus près du runner
 make container-clean   # vide le cache de compilation du conteneur
@@ -63,15 +65,14 @@ que de passer au vert sur une liste vide.
 make check
 ```
 
-Formatage, `go vet`, absence de dépendance externe, mention de licence,
-étanchéité de la frontière, équilibre des deux langues du journal, surface
-publique face au journal, compilation croisée vers tous les couples annoncés,
-puis la suite de tests. **La liste se passe entière**, jamais
-réduite à ce qui touche au changement qu'on vient d'écrire : composer sa liste
-revient à ne vérifier que ce qu'on a déjà en tête, et le défaut est ailleurs par
-construction.
+Les étapes sont celles que le bloc de commandes ci-dessus énumère, et c'est le
+seul endroit du dépôt qui les liste : la phrase récapitulative qui vivait ici les
+comptait **neuf** quand il y en avait onze, et trois autres textes portaient leur
+propre version du même décompte. **La liste se passe entière**, jamais réduite à
+ce qui touche au changement qu'on vient d'écrire : composer sa liste revient à ne
+vérifier que ce qu'on a déjà en tête, et le défaut est ailleurs par construction.
 
-Quatre de ces étapes méritent un mot, parce qu'elles vérifient autre chose que ce
+Cinq de ces étapes méritent un mot, parce qu'elles vérifient autre chose que ce
 que leur nom laisse croire.
 
 **`make deps`** est la règle du dépôt rendue exécutable. Elle liste les
@@ -118,17 +119,30 @@ section de trois entrées puis une donne la même signature des deux côtés, qu
 soit la langue. Elle attrape donc une catégorie oubliée et une entrée oubliée, mais
 elle ne dit pas qu'une traduction est juste — cela se relit.
 
+**`make procedures`** garde ce qui décide si le moteur démarre sur un Windows
+ancien. Une procédure système appelée sans vérifier qu'elle existe fait paniquer
+le programme au lancement : le défaut a vécu trois jalons sur
+`SetProcessDpiAwarenessContext`, et il rendait le moteur inutilisable sur tout
+Windows antérieur à la mise à jour d'avril 2017 de Windows 10. La cible exige que
+les procédures de sa liste passent par la garde, et elle compte les usages au lieu
+de constater une absence — ce qui attrape celle qu'on ajoutera plus tard sans y
+penser.
+
 **`make cross`** n'est pas là pour produire un binaire ; les artefacts sont
 jetés. Elle vérifie que le code compile sans compilateur C pour chaque couple de
 la variable `CIBLES`, ce qui attrape l'usage d'une API absente d'un système ou
 d'une architecture.
 
-**`CIBLES` est la liste des promesses tenues, pas celle du possible.** Elle porte
-les neuf couples que le dépôt annonce — `windows/amd64`, `windows/arm64`,
-`windows/386`, `linux/amd64`, `linux/arm64`, `linux/arm`, `linux/386`,
-`linux/riscv64` et `js/wasm` —, et « compile » est tout ce qu'elle prouve :
-« tourne » et « reste vert en intégration continue » sont deux autres promesses, et
-elles ne valent que pour `amd64`. D'autres couples compilent aussi —
+**`CIBLES` est la liste des promesses tenues, pas celle du possible**, et c'est
+elle qui fait foi : les deux `README` la reflètent, et un contrôle le vérifie dans
+les deux sens. L'énumération ne se recopie donc pas ici.
+
+« Compile » est tout ce qu'elle prouve : « tourne » et « reste vert en intégration
+continue » sont deux autres promesses. **Elles valent pour `windows/amd64`,
+`linux/amd64` et `linux/arm64`** — cette dernière depuis la `0.5.8`, et c'est
+l'architecture qui compte, puisqu'elle fusionne les multiplications-additions là
+où `amd64` ne le fait pas : elle est la seule à pouvoir rendre une autre image, et
+la suite y compare les pixels. D'autres couples compilent aussi —
 `darwin/amd64` et `darwin/arm64` ; ils n'entrent ici que si un texte du dépôt les
 annonce, faute de quoi la cible vérifierait plus que ce que le dépôt promet et
 personne ne saurait lequel des deux croire.

@@ -54,8 +54,8 @@ A pull request touching any of these without prior discussion will be sent back
 to an issue, whatever its quality — not on principle, but because these are the
 places where one change tips over others.
 
-- **[`docs/conception.md`](docs/conception.md)** is authoritative. The code
-  conforms to it, so changing a line there changes what the code must do.
+- **[`docs/conception.md`](docs/conception.md)** (French) is authoritative. The
+  code conforms to it, so changing a line there changes what the code must do.
 - **The direction of dependencies between packages.** It never inverts. If a
   backend needs to sort, to project or to consult the scene, the boundary is in
   the wrong place and the fix belongs in the core, not in the backend.
@@ -161,7 +161,7 @@ internal refactors, not tests, not tooling.
 
 **Documentation ships with the change.** Before committing, check what the
 change makes false elsewhere: the status stated in the README, a decision in
-[`docs/conception.md`](docs/conception.md), a completion criterion in
+[`docs/conception.md`](docs/conception.md) (French), a completion criterion in
 [`ROADMAP.md`](ROADMAP.md) (French).
 
 **A message says what changes and why**, shaped as `nature(scope): subject in

@@ -33,13 +33,13 @@ internal resolution scaled up to the window by an integer factor.
 
 **The platforms, and what each one promises.** Compiles, runs, or stays green in
 continuous integration: three different promises, and only the one actually kept
-is announced. Windows and Linux on `amd64`, and Linux on `arm64` — the test suite
+is announced. `windows/amd64`, `linux/amd64` and `linux/arm64` — the test suite
 passes there in continuous integration, on every batch, and on `arm64` it also
 verifies that one and the same scene renders exactly the same pixels as
 elsewhere, which is what the integer arithmetic promises. `windows/arm64`,
-`windows/386`, `linux/arm`, `linux/386` and `js/wasm` — they **compile**, which
-`make check` verifies, and nothing more as long as the hardware at hand holds
-neither a Raspberry Pi nor a phone. It is the zero-dependency rule that opens
+`windows/386`, `linux/arm`, `linux/386`, `linux/riscv64` and `js/wasm` — they
+**compile**, which `make check` verifies, and nothing more as long as the
+hardware at hand holds neither a Raspberry Pi, nor RISC-V, nor a phone. It is the zero-dependency rule that opens
 this list, and a cgo dependency would close it rather than widen it: `go build`
 would no longer be enough.
 
@@ -49,10 +49,12 @@ the same as being out of reach there: the native library the roadmap plans for l
 application that provides its own window consume the engine.
 [`ROADMAP.md`](ROADMAP.md) (French) gives the detail, milestone by milestone.
 
-Two peripheral packages are the exception, permissively licensed and admitted by
-a recorded decision: font rasterising and audio output. Rewriting them would
-cost weeks for a result that would set this engine apart in no way. The detail
-is in [`docs/go.md`](docs/go.md) (French).
+Two peripheral packages are **admitted and not yet used**, permissively licensed
+and by a recorded decision: font rasterising and audio output. Rewriting them
+would cost weeks for a result that would set this engine apart in no way. Neither
+is in `go.mod`, which is empty and stays that way: text comes from a glyph sheet,
+and audio waits for its milestone. The status column in
+[`docs/go.md`](docs/go.md) (French) says where each one stands.
 
 ## The boundary that carries everything
 
@@ -113,6 +115,7 @@ Two exclusions follow from the dependency rule, and they are deliberate:
   compiler or one more dependency. iOS goes further: Go itself refuses to link
   without cgo. Milestone 5 covers both through the browser, and the backend
   boundary keeps them reachable should that constraint change.
+
 Native Wayland is not one of them, and listing it there was a mistake: it is a
 protocol one writes on a socket just like X11, so it comes at its milestone rather
 than never. XWayland covers the need until then.
@@ -166,10 +169,10 @@ make bench     # benchmarks, one profile per package
 make clean
 ```
 
-`make check` chains formatting, `go vet`, the check for external dependencies,
-the licence header, the boundary check, the balance of the changelog's two
-languages, the public surface against the changelog, cross-compilation to the
-nine announced pairs, then the tests.
+`make check` chains every step, and
+[`docs/construction.md`](docs/construction.md) (French) enumerates them. Keeping
+the list in two places has already made the two diverge: this file therefore
+keeps none.
 
 The boundary check is the one that guards the architecture: no core package may
 import `syscall`, `net`, `os/exec` or a backend, neither directly nor through another

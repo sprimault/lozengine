@@ -113,9 +113,13 @@ Quatre conséquences, à ne pas redécouvrir :
   l'implémentation, `amd64` rendant le plus petit entier là où `arm64` sature au
   plus grand. Deux comparaisons par appel, et une entité posée hors plage cesse de
   rendre des pixels différents selon la machine.
-- **L'aller-retour admet un quantum.** L'inverse d'une matrice en virgule fixe
-  n'est pas exact ; la tolérance s'écrit dans la godoc plutôt que de se supposer
-  nulle.
+- **L'aller-retour depuis un pixel est exact, et l'autre sens a une loi.** La
+  godoc de `Matrix.Unproject` les énonce, et c'est elle qu'il faut lire plutôt que
+  de prévoir une marge : cadrer une vue en pixels n'en demande aucune. La
+  garantie tient à deux conditions — le point dans ±32 768 cellules, et une
+  matrice venue de `Dimetric`, `Isometric` ou `Grid` ; une matrice de `Raw`
+  presque singulière perd l'exactitude à l'intérieur même de la plage. La
+  tolérance s'écrit donc dans la godoc plutôt que de se supposer nulle.
 
 **Le format n'est pas qu'un choix de plage : c'est ce qui rend l'entrée flottante
 gratuite.** Un consommateur qui tient déjà ses positions en virgule fixe au même
@@ -245,7 +249,7 @@ Le sens des dépendances ne s'inverse jamais.
 lozengine             surface publique, boucle, assemblage      tous les internes
 geometry              projection, matrices, conversions         aucune
 scene                 grille, entités, couches, caméra          geometry, render
-internal/sorting      retrait hors image, clé, départage        geometry, scene, render
+internal/sorting      retrait hors image, clé, départage        scene, render
 render                structures Quad et DrawList, publiques    aucune
 raster                planches, atlas, rastériseur, PNG         render
 appearance            interface fournisseur, animation          render, scene
@@ -256,6 +260,13 @@ internal/viewer       scènes scriptées, rejeu, images           tous les préc
 cmd/viewer            commande de rejeu                         viewer
 examples/…            ce qu'un jeu écrit, en entier             lozengine
 ```
+
+**Ce tableau se dérive de `go list`, et c'est ce qui tranche quand il paraît faux.** La
+ligne du tri a porté `geometry` jusqu'au 31 octobre 2026 : il ne l'importe pas, il reçoit
+la matrice de `scene`, dont la ligne porte déjà l'arête. Il y touche pourtant, et quatre
+fois par image — Go n'exige aucun import pour appeler les méthodes d'une valeur reçue
+d'ailleurs, donc une arête réelle peut n'apparaître dans aucun import. La colonne dit ce
+qu'un paquet importe, jamais ce qu'il atteint.
 
 Les exemples sont dans ce tableau parce qu'ils sont la mesure du critère de fin d'un
 jalon : ils n'importent que le paquet racine, et le jour où l'un d'eux doit atteindre un

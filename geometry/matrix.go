@@ -272,6 +272,21 @@ func maxAbs(values ...int64) int64 {
 // bits significatifs contre les cinquante-trois d'un float64 — et la division qui
 // suit est à arrondi correct, donc identique sur toutes les architectures.
 //
+// **Il y a une troisième conversion et elle manquait ici : `float64(det)`.** Le
+// déterminant est un `int64`, donc il peut porter jusqu'à soixante-trois bits
+// significatifs là où un `float64` en garantit cinquante-trois. Ce qui tient alors le
+// déterminisme n'est pas l'exactitude mais le **mode d'arrondi** : la conversion d'un
+// entier vers un flottant arrondit au plus proche sur toutes les architectures que
+// `CIBLES` compile, `js/wasm` et `386` comprises — aucune n'a de précision étendue
+// depuis que `GO386` vaut `sse2`. La conclusion de ce paragraphe tenait donc, mais pas
+// par l'argument qu'il donnait.
+//
+// **Et aucune matrice du moteur n'atteint ce régime**, mesuré le 31 octobre 2026 : les
+// coefficients sortent de [quantize], donc ils sont des multiples de 2^15 ou 2^16, et
+// leurs produits restent exactement représentables très au-delà de 2^53. Au plafond,
+// `Dimetric(32766, 32766)` rend un déterminant de l'ordre de 2^61 et la conversion est
+// exacte. Ce qui compte est donc l'arrondi, pas un seuil de magnitude.
+//
 // **Le second retour se lit avant la conversion, et c'est lui qui tient le
 // déterminisme** : hors plage, convertir un flottant vers un entier rend un résultat
 // que la spécification du langage laisse à l'implémentation, et amd64 n'y choisit pas

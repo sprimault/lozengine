@@ -13,8 +13,8 @@ import (
 // Open rend une erreur nommant ce qui manque, sur toute plateforme dont le backend
 // n'est pas encore écrit.
 //
-// Un repli et non une absence de fonction : le moteur compile alors pour les huit
-// couples annoncés, et la suite de tests tourne partout. Ce qui ne marche pas le dit
+// Un repli et non une absence de fonction : le moteur compile alors pour tous les
+// couples que `CIBLES` énumère, et la suite de tests tourne partout. Ce qui ne marche pas le dit
 // à l'exécution, en nommant le jalon qui le fera marcher, plutôt que d'échouer à la
 // compilation sur un symbole introuvable.
 //
