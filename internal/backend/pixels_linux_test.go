@@ -134,31 +134,54 @@ func TestPixelOrderWritesWhereTheMasksPointTo(t *testing.T) {
 	}
 }
 
-// TestPixelOrderLeavesThePaddingByteAlone vérifie que le quatrième octet n'est pas
-// écrit.
+// TestPixelOrderSaysWhatTheOctetOutsideTheMasksHolds vérifie ce que porte l'octet hors
+// masques, qui n'est plus la même chose selon la disposition.
 //
-// En profondeur 24 sur trente-deux bits, les huit bits hors masques sont indéfinis et
-// le serveur les ignore : les mettre à zéro coûterait une écriture de plus par pixel
-// pour rien. Le cas fixe ce choix, parce qu'il a une conséquence pour le lot qui
-// relira l'image — comparer des mots bruts serait intermittent, il faudra masquer des
-// deux côtés.
-func TestPixelOrderLeavesThePaddingByteAlone(t *testing.T) {
-	o, err := pixelOrderOf(visualOf(lsbFirst, 0xFF0000, 0x00FF00, 0x0000FF))
-	if err != nil {
-		t.Fatalf("visuel refusé : %v", err)
-	}
+// En profondeur 24 sur trente-deux bits, les huit bits hors masques sont ignorés par le
+// serveur. **Les deux dispositions rapides les écrivent désormais à zéro**, parce
+// qu'elles composent le mot entier et le posent d'un coup : un seul rangement de
+// trente-deux bits au lieu de trois de huit, mesuré 11 à 18 % plus rapide. La
+// disposition générale, elle, continue de les laisser — elle écrit trois octets aux
+// index que les masques désignent, et l'octet restant n'est pas toujours le quatrième.
+//
+// **Ce cas était le témoin de l'ancien choix et il a rougi comme il devait**, le
+// 31 octobre 2026 : il exigeait que rien n'écrive le quatrième octet. Ce qu'il garde
+// maintenant est la frontière entre les deux régimes, qui a une conséquence pour le lot
+// qui relira l'image — comparer des mots bruts reste intermittent sous la disposition
+// générale, donc il faut masquer des deux côtés.
+func TestPixelOrderSaysWhatTheOctetOutsideTheMasksHolds(t *testing.T) {
+	for _, c := range []struct {
+		name  string
+		setup setup
+		at    int  // l'index de l'octet hors masques
+		kept  bool // vrai si la marque doit y survivre
+	}{
+		{"échangé", visualOf(lsbFirst, 0xFF0000, 0x00FF00, 0x0000FF), 3, false},
+		{"direct", visualOf(lsbFirst, 0x0000FF, 0x00FF00, 0xFF0000), 3, false},
+		{"général", visualOf(msbFirst, 0xFF0000, 0x00FF00, 0x0000FF), 0, true},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			o, err := pixelOrderOf(c.setup)
+			if err != nil {
+				t.Fatalf("visuel refusé : %v", err)
+			}
 
-	// Un tampon dont le quatrième octet porte une marque reconnaissable, et une
-	// capacité suffisante pour que la conversion le réemploie au lieu d'en allouer
-	// un neuf.
-	dst := make([]byte, 4, 4)
-	dst[3] = 0xAA
-	dst = dst[:0]
+			// Un tampon dont l'octet visé porte une marque reconnaissable, et une
+			// capacité suffisante pour que la conversion le réemploie au lieu d'en
+			// allouer un neuf.
+			dst := make([]byte, 4, 4)
+			dst[c.at] = 0xAA
+			dst = dst[:0]
 
-	dst = o.appendPixels(dst, []render.Color{{R: 1, G: 2, B: 3, A: 4}})
+			dst = o.appendPixels(dst, []render.Color{{R: 1, G: 2, B: 3, A: 4}})
 
-	if dst[3] != 0xAA {
-		t.Errorf("le quatrième octet vaut %#x, et rien ne devait l'écrire", dst[3])
+			switch {
+			case c.kept && dst[c.at] != 0xAA:
+				t.Errorf("l'octet %d vaut %#x, et rien ne devait l'écrire", c.at, dst[c.at])
+			case !c.kept && dst[c.at] != 0:
+				t.Errorf("l'octet %d vaut %#x, attendu zéro", c.at, dst[c.at])
+			}
+		})
 	}
 }
 
@@ -209,38 +232,53 @@ func TestPixelOrderRefusesWhatAPermutationCannotServe(t *testing.T) {
 // le banc de présentation qui le dit, non les durées, qui sont des faits de machine.
 //
 // Il tourne partout, lui : aucun serveur n'est nécessaire pour convertir des octets.
+//
+// **Les deux dispositions rapides y sont depuis le 31 octobre 2026, et une seule y
+// était.** Le banc ne montait qu'un visuel échangé, qui est celui qu'on rencontre en
+// pratique ; `pixelDirect` n'avait donc aucun chiffre, alors que les deux boucles sont
+// distinctes et que le choix de leur forme se juge sur les deux. `pixelMapped` reste
+// dehors : il lit trois indices au lieu de les tenir en clair, donc sa forme ne se
+// discute pas de la même façon.
 func BenchmarkAppendPixels(b *testing.B) {
-	o, err := pixelOrderOf(visualOf(lsbFirst, 0xFF0000, 0x00FF00, 0x0000FF))
-	if err != nil {
-		b.Fatalf("visuel refusé : %v", err)
-	}
-
-	for _, size := range []struct {
-		name          string
-		width, height int
+	for _, kind := range []struct {
+		name  string
+		setup setup
 	}{
-		{"480×270, la résolution interne du moteur", 480, 270},
-		{"1280×720", 1280, 720},
-		{"1920×1080, un écran entier", 1920, 1080},
+		{"échangé", visualOf(lsbFirst, 0xFF0000, 0x00FF00, 0x0000FF)},
+		{"direct", visualOf(lsbFirst, 0x0000FF, 0x00FF00, 0xFF0000)},
 	} {
-		b.Run(size.name, func(b *testing.B) {
-			pixels := make([]render.Color, size.width*size.height)
-			for i := range pixels {
-				pixels[i] = render.Color{R: uint8(i), G: uint8(i >> 8), B: uint8(i >> 16), A: 255}
-			}
+		o, err := pixelOrderOf(kind.setup)
+		if err != nil {
+			b.Fatalf("visuel %s refusé : %v", kind.name, err)
+		}
 
-			// Le tampon est monté hors de la boucle, comme la présentation le fait :
-			// mesurer l'agrandissement reviendrait à mesurer la première image et
-			// non les soixante suivantes.
-			dst := o.appendPixels(nil, pixels)
+		for _, size := range []struct {
+			name          string
+			width, height int
+		}{
+			{"480×270, la résolution interne du moteur", 480, 270},
+			{"1280×720", 1280, 720},
+			{"1920×1080, un écran entier", 1920, 1080},
+		} {
+			b.Run(kind.name+"/"+size.name, func(b *testing.B) {
+				pixels := make([]render.Color, size.width*size.height)
+				for i := range pixels {
+					pixels[i] = render.Color{R: uint8(i), G: uint8(i >> 8), B: uint8(i >> 16), A: 255}
+				}
 
-			b.SetBytes(int64(4 * len(pixels)))
-			b.ResetTimer()
+				// Le tampon est monté hors de la boucle, comme la présentation le
+				// fait : mesurer l'agrandissement reviendrait à mesurer la première
+				// image et non les soixante suivantes.
+				dst := o.appendPixels(nil, pixels)
 
-			for range b.N {
-				dst = o.appendPixels(dst[:0], pixels)
-			}
-		})
+				b.SetBytes(int64(4 * len(pixels)))
+				b.ResetTimer()
+
+				for range b.N {
+					dst = o.appendPixels(dst[:0], pixels)
+				}
+			})
+		}
 	}
 }
 
