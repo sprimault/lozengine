@@ -56,6 +56,9 @@ notes de publication.
 - La documentation de `MaxSheets` dit que mille vingt-quatre est un plafond que le
   chargement applique, et non ce qu'un `Quad` sait désigner : son champ `Sheet` en adresse
   soixante-cinq fois plus, et l'index de planche a quitté l'ordre de dessin à la 0.5.4.
+- La documentation du paquet `render` compte `Overlap` et `OverlapList` parmi les
+  structures en disposition compatible C, ce que leur propre documentation annonçait sans
+  que l'énumération du paquet les nomme. Un hôte pouvait les croire exclues.
 
 ***
 
@@ -70,6 +73,9 @@ notes de publication.
 - The documentation of `MaxSheets` now states that 1,024 is a ceiling the loader enforces,
   not what a `Quad` can address: its `Sheet` field reaches sixty-five times further, and
   the sheet index left the draw order in 0.5.4.
+- The `render` package documentation now counts `Overlap` and `OverlapList` among the
+  C-compatible layouts, which their own documentation announced while the package's list
+  left them out. A host could believe them excluded.
 
 ## [0.5.8] — 2026-10-31
 

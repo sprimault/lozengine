@@ -17,8 +17,8 @@ package render
 // son rappel.
 //
 // Disposition compatible C, comme [Quad] : vingt-quatre octets, champs de taille fixe,
-// aucun
-// pointeur. C'est ce qui permet à un hôte de lire le tableau sans conversion.
+// aucun pointeur. C'est ce qui permet à un hôte de lire le tableau sans conversion, et
+// un cas de ce paquet fige la taille comme les six décalages.
 type Overlap struct {
 	// Identity est la poignée de l'entité relevée, celle que sa pose a rendue.
 	//

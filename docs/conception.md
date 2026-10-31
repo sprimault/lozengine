@@ -141,9 +141,11 @@ racine carrée d'IEEE-754 sont à arrondi correct.
   renseigné a un défaut raisonnable. Une exception, et une seule : l'atlas des
   options de la boucle, qui n'a pas de défaut possible, donc une valeur zéro y est
   refusée au montage.
-- **Disposition compatible C.** `Quad` et `DrawList` n'emploient que des champs de
-  taille fixe, dans un tableau contigu. Pas de chaîne, pas d'interface, pas de
-  slice imbriquée, pas de pointeur vers de la mémoire gérée.
+- **Disposition compatible C.** `Quad` et `DrawList`, `Overlap` et `OverlapList`
+  n'emploient que des champs de taille fixe, dans un tableau contigu. Pas de chaîne,
+  pas d'interface, pas de slice imbriquée, pas de pointeur vers de la mémoire gérée.
+  Un cas du paquet `render` fige les tailles et les décalages : l'énumération seule
+  n'a pas empêché la taille d'`Overlap` de doubler entre deux versions.
 - **Aucun rappel dans le chemin de rendu.** L'apparence est résolue en amont,
   jamais par une fonction appelée pendant le rendu.
 

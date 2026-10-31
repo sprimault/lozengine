@@ -10,8 +10,12 @@
 // aux backends système de consommer exactement la même chose, et donc à la suite de
 // non-régression de juger le rendu sans jamais ouvrir de fenêtre.
 //
-// [Quad] et [DrawList] gardent une disposition compatible C : champs de taille fixe,
-// tableau contigu, ni chaîne ni interface ni slice imbriquée. La contrainte vient de
+// [Quad] et [DrawList], [Overlap] et [OverlapList] gardent une disposition compatible
+// C : champs de taille fixe, tableau contigu, ni chaîne ni interface ni slice
+// imbriquée. Un cas du paquet fige la taille et les décalages des deux structures, et
+// la contiguïté des deux listes — sans quoi l'énumération ci-dessus serait la seule
+// garde, et la taille d'`Overlap` a doublé entre deux versions sans que rien ne le
+// voie. La contrainte vient de
 // ce que ces structures seront un jour lues par du code écrit dans un autre langage,
 // selon la convention d'appel du C, et elle vaut avant même que la bibliothèque
 // native existe — une chaîne dans un quad imposerait une conversion par quad et par
