@@ -96,8 +96,17 @@ bench: | $(SORTIE)
 # chargement de planche ou une écriture PNG n'est pas un chemin par image, et `go.md`
 # interdit même de l'optimiser. Ce qu'on cherche dans cette liste est l'intrus : un chemin
 # que chaque image traverse et que personne ne chiffre.
+#
+# **`-coverpkg` est ce qui la rend juste, et son absence lui faisait porter des faux
+# positifs.** Sans lui, chaque binaire de test n'instrumente que son propre paquet : un
+# banc de la racine qui traverse `sorting` laisse donc tout `sorting` à zéro pour cent, et
+# la cible accuse des fonctions qu'un banc traverse à chaque appel. Mesuré le 30 octobre
+# 2026 sur `Sorter.Sheets`, donnée muette alors que le pas du moteur l'appelle à chaque
+# image — instrumentée, elle est à 100 %. La liste des paquets est celle du chemin chaud
+# et se dérive de la même variable, donc les deux ne peuvent pas diverger.
 bancs: | $(SORTIE)
 	@go test $(CHEMIN_CHAUD) -run '^$$' -bench . -benchtime 1x \
+	  -coverpkg $(shell echo $(CHEMIN_CHAUD) | tr ' ' ',') \
 	  -coverprofile $(SORTIE)/bancs.cover -o $(SORTIE) >/dev/null \
 	  || { echo "les bancs n'ont pas tourné"; exit 1; }
 	@muets=$$(go tool cover -func=$(SORTIE)/bancs.cover | awk '$$3 == "0.0%" { print "  " $$1 " " $$2 }'); \
@@ -461,10 +470,23 @@ entetes: depot
 	  exit 1; \
 	fi
 
-# Un ajout à la surface publique sans entrée de journal ne se rattrape plus après le
-# tag : une section publiée ne se retouche pas, donc le trou est définitif. C'est
+# Un changement de la surface publique sans entrée de journal ne se rattrape plus après
+# le tag : une section publiée ne se retouche pas, donc le trou est définitif. C'est
 # arrivé deux fois dans la même série, et seule la chance l'a rendu réparable — la
 # section n'était pas encore taguée.
+#
+# **Les deux sens comptent, et le retrait n'était pas gardé jusqu'au 31 octobre 2026.**
+# La comparaison ne lisait que `comm -13`, les lignes propres à l'arbre courant, donc un
+# identifiant qui **disparaît** ne produisait aucune sortie et la cible passait au vert.
+# Relevé en livrant le retrait de `Matrix.MaxCells`, le premier de la série à réduire la
+# surface : son entrée `Retiré` a été écrite parce qu'on y a pensé, et rien ne l'aurait
+# exigée. C'est pourtant le changement le plus brutal pour un consommateur, puisqu'il
+# cesse de compiler.
+#
+# La forme vient de la cible `vet`, qui exige depuis toujours ce que sa liste décrit —
+# un site de plus échoue, un site qui disparaît aussi, au motif qu'« une liste qui
+# survit à ce qu'elle décrit ne garde rien ». Un renommage sort des deux listes à la
+# fois et se plaint deux fois, ce qui est juste : c'est un retrait et un ajout.
 #
 # Ce qu'elle compare : les identifiants exportés des paquets publics, entre la base et
 # l'arbre courant, par `go doc -all`. C'est la surface telle qu'un consommateur la lit,
@@ -510,9 +532,16 @@ surface:
 	releve | sort > $(CURDIR)/.tmp/surface-tete.txt; \
 	git worktree remove --force "$$arbre" >/dev/null 2>&1; \
 	ajouts=$$(comm -13 $(CURDIR)/.tmp/surface-base.txt $(CURDIR)/.tmp/surface-tete.txt); \
-	if [ -n "$$ajouts" ]; then \
-	  echo "surface publique élargie sans entrée dans $(JOURNAL) :"; \
-	  printf '%s\n' "$$ajouts" | sed 's/^/  /'; \
+	retraits=$$(comm -23 $(CURDIR)/.tmp/surface-base.txt $(CURDIR)/.tmp/surface-tete.txt); \
+	if [ -n "$$ajouts" ] || [ -n "$$retraits" ]; then \
+	  if [ -n "$$ajouts" ]; then \
+	    echo "surface publique élargie sans entrée dans $(JOURNAL) :"; \
+	    printf '%s\n' "$$ajouts" | sed 's/^/  + /'; \
+	  fi; \
+	  if [ -n "$$retraits" ]; then \
+	    echo "surface publique réduite sans entrée dans $(JOURNAL) :"; \
+	    printf '%s\n' "$$retraits" | sed 's/^/  - /'; \
+	  fi; \
 	  echo "écrire l'entrée, ou contourner par SANS_JOURNAL=1 en disant pourquoi"; \
 	  exit 1; \
 	fi
