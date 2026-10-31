@@ -214,7 +214,8 @@ func TestAreaPieceLandsWhereAnEntityLands(t *testing.T) {
 
 	inArea := marginScene(t, 1)
 	a.Layer = 1
-	if !inArea.PlaceArea(px-int32(a.Width)/2, py-int32(a.Height), a) {
+	cx, cy := a.CornerFromFoot(px, py)
+	if !inArea.PlaceArea(cx, cy, a) {
 		t.Fatal("pièce d'aire refusée")
 	}
 	got := New(inArea).Frame()[0]
@@ -369,7 +370,8 @@ func TestScreenPieceByTheFootMatchesAnEntity(t *testing.T) {
 
 		onScreen := testScene(t, 32, 1)
 		a.Layer = 1
-		if !onScreen.PlaceScreen(px-int32(width)/2, py-int32(a.Height), a) {
+		cx, cy := a.CornerFromFoot(px, py)
+		if !onScreen.PlaceScreen(cx, cy, a) {
 			t.Fatal("pièce d'écran refusée")
 		}
 		got := New(onScreen).Frame()[0]

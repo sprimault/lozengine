@@ -47,6 +47,9 @@ notes de publication.
 
 ### Ajouté
 
+- `Aspect.CornerFromFoot` convertit un pixel visé par le pied centré de l'image en le coin
+  haut-gauche que `Scene.PlaceArea` et `Scene.PlaceScreen` attendent. Un aspect réutilisé
+  d'une pose monde à une pose en pixels se décalait de sa demi-largeur et de sa hauteur.
 - `ScaleFactor`, `Upscale` et `WritePNG` se lisent depuis le paquet racine : un hôte qui
   tient sa propre boucle reçoit l'image par `Engine.Frame` et a désormais de quoi la
   présenter ou la capturer sans second import.
@@ -75,6 +78,9 @@ notes de publication.
 
 ### Added
 
+- `Aspect.CornerFromFoot` converts a pixel aimed at the image's centred foot into the
+  top-left corner `Scene.PlaceArea` and `Scene.PlaceScreen` expect. An aspect reused from
+  a world placement to a pixel one was off by half its width and all its height.
 - `ScaleFactor`, `Upscale` and `WritePNG` can be read from the root package: a host
   holding its own loop receives the image through `Engine.Frame` and now has what it
   takes to present or capture it without a second import.

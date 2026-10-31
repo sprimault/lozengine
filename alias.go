@@ -468,6 +468,13 @@ type Entity = scene.Entity
 // s'écrit par [Premultiply] ou s'atténue par [Color.Scale], jamais en baissant le seul
 // alpha d'une teinte opaque — ce qui ne décrit aucune couleur et rend un aplat plus
 // dense que l'opacité annoncée.
+//
+// **Sa méthode `CornerFromFoot` convertit un pixel visé par le pied centré en le coin
+// haut-gauche** que [Scene.PlaceArea] et [Scene.PlaceScreen] attendent. C'est la voie
+// pour réutiliser un aspect d'une pose monde à une pose en pixels sans qu'il se décale
+// de la moitié de sa largeur et de toute sa hauteur. Elle est nommée ici parce qu'un
+// alias ne montre aucune méthode : `go doc . Aspect` ne la rend pas, `go doc scene
+// Aspect` oui.
 type Aspect = scene.Aspect
 
 // Handle désigne une entité posée, et lui reste fidèle quand le retrait d'une autre la
