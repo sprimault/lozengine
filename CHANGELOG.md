@@ -54,6 +54,12 @@ notes de publication.
   y compare les images au pixel. C'est l'architecture qui pouvait rendre une autre image
   que `amd64`.
 
+### Modifié
+
+- `Provider.Aspect`, `Sheets.Set` et `Sheets.Aspect` prennent un `Look` à la place des
+  deux entiers `kind` et `cycle` : deux voisins de même type s'échangeaient sans qu'on
+  puisse distinguer l'erreur d'une apparence non déclarée. Les champs se nomment.
+
 ### Retiré
 
 - `Matrix.MaxCells` est retirée. Elle majorait le nombre de cellules qu'un écran peut
@@ -75,6 +81,12 @@ notes de publication.
 - `linux/arm64` is no longer merely compiled: the test suite runs there on every batch
   and compares images pixel by pixel. It is the architecture that could have rendered a
   different image from `amd64`.
+
+### Changed
+
+- `Provider.Aspect`, `Sheets.Set` and `Sheets.Aspect` take a `Look` in place of the two
+  integers `kind` and `cycle`: two same-typed neighbours could be swapped with no way to
+  tell the mistake from an undeclared appearance. The fields are named.
 
 ### Removed
 

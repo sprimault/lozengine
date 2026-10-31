@@ -585,13 +585,23 @@ func NewScene(width, height int, projection Matrix, o SceneOptions) (*Scene, err
 	return scene.New(width, height, projection, o)
 }
 
-// Provider résout ce qu'une chose montre, à partir de ce qu'elle est, de son état, de
-// sa direction et du moment de son animation.
+// Provider résout ce qu'une chose montre, à partir d'un [Look], d'une direction et du
+// moment de son animation.
 //
 // Le moteur ne l'appelle jamais : c'est le jeu qui le consulte quand une apparence
 // change, puis écrit le résultat par [Scene.SetAspect]. Tout y est facultatif, et un
 // jeu qui compose ses aspects à la main ne le rencontre pas.
 type Provider = appearance.Provider
+
+// Look désigne ce qu'une chose montre : son champ `Kind` est ce qu'elle est, son champ
+// `Cycle` l'état où elle se trouve. Les deux ne valent que pour le jeu, qui les nomme
+// comme il l'entend.
+//
+// C'est une structure et non deux paramètres parce que deux entiers voisins du même
+// type s'échangent sans que rien ne refuse, et qu'une apparence inversée est
+// indistinguable d'une apparence non déclarée. Les champs se renseignent donc par leur
+// nom — `go vet` refuse la forme positionnelle.
+type Look = appearance.Look
 
 // Facing est une direction, comptée en pas dans le sens horaire à l'écran depuis le
 // sud.
@@ -613,12 +623,13 @@ func Turn(f Facing, o Orientation, directions int) Facing {
 // [Clip.Loop], qui tourne sans fin, et [Clip.Once], qui joue une fois.
 type Clip = appearance.Clip
 
-// Entry décrit ce qu'une planche porte pour un couple de chose et d'état : où lire,
-// quelle taille, quelle cadence.
+// Entry décrit ce qu'une planche porte pour un [Look] : où lire, quelle taille, quelle
+// cadence.
 type Entry = appearance.Entry
 
 // Sheets est le fournisseur de référence, qui résout une apparence depuis des planches
-// dessinées, découpées en colonnes de directions et en lignes d'images.
+// dessinées, découpées en colonnes de directions et en lignes d'images. Une entrée s'y
+// déclare par [Sheets.Set], qui prend le [Look] qu'elle sert.
 //
 // Il ne pose ni couche ni étage : ceux-là disent où une chose se range, ce qui dépend
 // d'où elle se trouve et non de ce qu'elle montre.

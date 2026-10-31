@@ -70,13 +70,12 @@ func NewSheets() *Sheets {
 	return &Sheets{entries: make(map[uint32]Entry)}
 }
 
-// Set déclare ce qu'une chose montre dans un état donné, et remplace ce qui s'y
-// trouvait.
+// Set déclare ce qu'un [Look] montre, et remplace ce qui s'y trouvait.
 //
-// Les deux premiers nombres n'ont de sens que pour le jeu : il nomme ses types et ses
+// Les deux champs du `Look` n'ont de sens que pour le jeu : il nomme ses types et ses
 // états comme il l'entend, et c'est ce qui permet au moteur de n'en coder aucun.
-func (s *Sheets) Set(kind, cycle uint16, e Entry) {
-	s.entries[entryKey(kind, cycle)] = e
+func (s *Sheets) Set(l Look, e Entry) {
+	s.entries[entryKey(l)] = e
 }
 
 // Directions rend le nombre de directions que cette implémentation porte, et il est
@@ -95,8 +94,8 @@ func (s *Sheets) Directions() int { return Directions }
 //
 // La direction et l'image sont ramenées dans ce que l'entrée porte, de sorte qu'un
 // numéro venu d'un compteur qui a débordé reste sur la planche.
-func (s *Sheets) Aspect(kind, cycle uint16, facing Facing, frame int) scene.Aspect {
-	e, ok := s.entries[entryKey(kind, cycle)]
+func (s *Sheets) Aspect(l Look, facing Facing, frame int) scene.Aspect {
+	e, ok := s.entries[entryKey(l)]
 	if !ok {
 		return scene.Aspect{}
 	}
@@ -120,8 +119,8 @@ func (s *Sheets) Aspect(kind, cycle uint16, facing Facing, frame int) scene.Aspe
 	}
 }
 
-// entryKey assemble la clé d'une entrée. Deux entiers de seize bits tiennent dans un
-// de trente-deux, donc la table n'a pas de structure à hacher.
-func entryKey(kind, cycle uint16) uint32 {
-	return uint32(kind)<<16 | uint32(cycle)
+// entryKey assemble la clé d'une entrée. Les deux champs d'un [Look] tiennent dans un
+// entier de trente-deux bits, donc la table n'a pas de structure à hacher.
+func entryKey(l Look) uint32 {
+	return uint32(l.Kind)<<16 | uint32(l.Cycle)
 }
