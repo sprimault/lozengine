@@ -65,6 +65,9 @@ notes de publication.
 - La documentation du relevé de recouvrement dit l'échelle de chaque mesure, et que
   `Aspect.Uncounted` retire un quad des quatre : un hôte venu de la mesure au pixel
   pouvait croire son rappel encore compté, et renoncer au drapeau.
+- `Scene.Focus`, `Scene.ResizeView` et `Scene.ResizeSurface` ramènent leurs côtés à
+  `MaxBufferSide` au lieu de les accepter tels quels. Au-delà, une chose éloignée du
+  centre de la vue reparaissait du côté opposé de l'image plutôt que d'en sortir.
 
 ***
 
@@ -88,6 +91,9 @@ notes de publication.
 - The overlap report's documentation now states the scale of each measure, and that
   `Aspect.Uncounted` takes a quad out of all four: a host coming from the per-pixel
   measure could believe its cue still counted, and give up on the flag.
+- `Scene.Focus`, `Scene.ResizeView` and `Scene.ResizeSurface` clamp their sides to
+  `MaxBufferSide` instead of taking them as given. Beyond it, a thing far from the view's
+  centre reappeared on the opposite side of the image rather than leaving it.
 
 ## [0.5.8] — 2026-10-31
 
