@@ -45,6 +45,8 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.5.9] — 2026-10-31
+
 ### Corrigé
 
 - Une pose dont la couche de révélation dépasse `MaxLayer` est refusée au lieu d'être
