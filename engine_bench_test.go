@@ -187,3 +187,106 @@ func BenchmarkStepStages(b *testing.B) {
 		})
 	}
 }
+
+// benchEdgeScene monte une scène propre aux chemins de bord, **distincte de
+// [benchEngine] et c'est obligatoire** : la godoc de celui-ci pose que sa charge doit
+// rester identique pour que les chiffres de [BenchmarkStep] et [BenchmarkStepStages] se
+// comparent d'une version à l'autre. Y ajouter des pièces d'écran ou des entités suivies
+// les périmerait tous les deux.
+//
+// Elle reste petite — ce qu'on mesure ici n'est pas le tri mais ce qui l'entoure — et
+// porte les deux choses qu'aucun autre montage n'a : des poses en pixels dans les deux
+// repères, et des entités dont le recouvrement se relève.
+func benchEdgeScene(b *testing.B) (*Engine, *Scene) {
+	b.Helper()
+
+	sheet := NewSheet(16, 16)
+	for i := range sheet.Pixels {
+		sheet.Pixels[i] = render.Color{R: 160, G: 150, B: 140, A: 255}
+	}
+
+	var atlas Atlas
+	if _, err := atlas.Add(sheet); err != nil {
+		b.Fatalf("planche : %v", err)
+	}
+
+	s, err := NewScene(64, 64, Isometric(32), SceneOptions{Entities: 256})
+	if err != nil {
+		b.Fatalf("montage de la scène : %v", err)
+	}
+	s.Focus(32, 32, 480, 270)
+
+	// Des entités suivies, pour que le relevé de recouvrement ait quelque chose à
+	// rendre : sans `Measure`, la liste est vide et la mesure ne traverse rien.
+	shape := Aspect{Sheet: 0, Width: 16, Height: 16, Tint: White()}
+	for i := range 64 {
+		x := float64((i*7)%64) + 0.5
+		y := float64((i*11)%64) + 0.5
+		if _, ok := s.Place(Entity{X: x, Y: y, Aspect: shape, Measure: true}); !ok {
+			b.Fatalf("entité %d refusée", i)
+		}
+	}
+
+	e, err := NewEngine(s, Options{Atlas: &atlas, Width: 480, Height: 270})
+	if err != nil {
+		b.Fatalf("montage du moteur : %v", err)
+	}
+	return e, s
+}
+
+// BenchmarkFrameEdges mesure les trois chemins par image que `make bancs` donnait pour
+// muets, et c'est leur seul chiffre.
+//
+// **Aucun n'est dans [Engine.Step]**, ce qui est la raison pour laquelle aucune extension
+// de [BenchmarkStepStages] ne les atteindrait : la collecte des pièces d'écran est dans
+// le trieur mais ne se déclenche qu'avec des poses en pixels, le relevé de recouvrement
+// se demande après le pas, et la conversion du pointeur vit dans la boucle du paquet
+// racine.
+//
+// **Ce qu'on en attend est un ordre de grandeur, pas une surveillance.** Les trois
+// coûtent quelques opérations par image et non par pixel, donc le chiffre sert à
+// l'établir une fois — et à voir le jour où l'un d'eux cesserait d'être négligeable.
+// `aim` entraîne avec lui `floorDiv` et `raster.ScaleFactor`, qui n'avaient pas de banc
+// non plus.
+func BenchmarkFrameEdges(b *testing.B) {
+	e, s := benchEdgeScene(b)
+
+	// Les pièces d'écran survivent d'une image à l'autre — le moteur n'appelle jamais
+	// ClearScreen —, donc les poser une fois suffit et rien n'alloue dans la mesure.
+	piece := Aspect{Sheet: 0, Width: 16, Height: 16, Tint: White(), Layer: 1}
+	for i := range 32 {
+		if !s.PlaceScreen(int32(i*13%440), int32(i*7%240), piece) {
+			b.Fatalf("pièce d'écran %d refusée", i)
+		}
+		if !s.PlaceArea(int32(i*11%440), int32(i*5%240), piece) {
+			b.Fatalf("pièce d'aire %d refusée", i)
+		}
+	}
+
+	e.Step(nil, Input{})
+
+	window := NewBuffer(1920, 1080)
+
+	// Une entrée qui porte un pointeur dans la fenêtre : c'est ce que le backend donne
+	// à la boucle, en pixels de fenêtre et non d'image.
+	var state State
+	state.Move(960, 540)
+	pointer := state.Frame()
+
+	for _, c := range []struct {
+		name string
+		run  func()
+	}{
+		{"le pas avec des pièces d'écran", func() { e.Step(nil, Input{}) }},
+		{"le relevé de recouvrement", func() { e.Overlaps() }},
+		{"la conversion du pointeur", func() { aim(Input(pointer), e.Frame(), window) }},
+	} {
+		b.Run(c.name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				c.run()
+			}
+		})
+	}
+}

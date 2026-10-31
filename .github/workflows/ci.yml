@@ -526,8 +526,21 @@ jobs:
       # serait attendu sans être lu : le bilan passerait au vert sur son échec, et
       # la protection de branche n'y verrait rien. Les deux listes se tiennent donc
       # d'accord, et c'est la seule chose à vérifier en ajoutant un job.
+      # Le contexte entier, et pas seulement les quatre résultats que les tests
+      # ci-dessous lisent. Une seule fois, un bilan a paru vert pendant que deux jobs
+      # d'affichage tournaient encore ; le dossier du run a démenti — ils étaient
+      # acquis —, et la cause lue ce jour-là reste inexpliquée faute de trace. Ce que
+      # cette ligne apporte à la prochaine occurrence : l'état de chaque dépendance
+      # tel que GitHub le donne au job, y compris ce que les quatre `result` ne
+      # montrent pas — un job sauté, une matrice partiellement relancée.
+      #
+      # Elle ne corrige rien et ne doit pas en avoir l'air : ce qui refuse est la
+      # suite de tests, et `if: always()` empêche le **saut** du job, un contexte
+      # requis sauté ne bloquant aucune fusion. Les deux moitiés sont le mécanisme
+      # entier, et aucune ne se retire.
       - name: Résultat des contrôles
         run: |
+          echo '${{ toJSON(needs) }}'
           echo "contrôles : ${{ needs.controles.result }}"
           echo "tests     : ${{ needs.tests.result }}"
           echo "affichage : ${{ needs.affichage.result }}"
