@@ -436,9 +436,15 @@ func TestIndexAssignedPerDepth(t *testing.T) {
 	}
 }
 
-// TestIndexNumbersWithinOneDepth vérifie l'autre moitié : à profondeur égale,
-// les index se suivent, et ils s'arrêtent au plafond du champ au lieu de déborder sur
-// la planche.
+// TestIndexNumbersWithinOneDepth vérifie l'autre moitié : à profondeur égale, les index
+// se suivent.
+//
+// **Il ne garde pas le plafond, et sa clause le prétendait.** Elle disait « ils
+// s'arrêtent au plafond du champ au lieu de déborder sur la planche », ce qui est faux
+// deux fois : la clé ne porte plus d'index de planche depuis la 0.5.3, et quarante
+// entités contre un plafond de 32 767 ne font jamais mordre le `min` qui sature — le
+// retirer ne changerait aucune valeur de ce cas. C'est
+// [TestIndexSaturatesAtItsCeiling] qui l'éprouve.
 func TestIndexNumbersWithinOneDepth(t *testing.T) {
 	const n = 40
 
@@ -454,6 +460,117 @@ func TestIndexNumbersWithinOneDepth(t *testing.T) {
 		if int(c.Index()) != i {
 			t.Fatalf("clé %d : index %d, attendu %d", i, c.Index(), i)
 		}
+	}
+}
+
+// TestIndexSaturatesAtItsCeiling éprouve le plafond de l'index stable, que le cas
+// précédent annonçait sans pouvoir l'atteindre.
+//
+// **Ce qui est gardé est la saturation, et ce qu'elle préserve.** Au-delà de
+// [MaxIndex], l'index cesse de numéroter et toutes les clés suivantes portent la même
+// valeur ; ce qui doit tenir malgré cela est que l'ordre des provenances reste
+// monotone, puisque c'est lui et non la clé qui porte la vérité de l'ordre. Sans le
+// `min`, l'index déborderait sur le champ voisin et remonterait la chose au premier
+// plan.
+//
+// **Bon marché, et il faut le dire pour que personne ne le raccourcisse** : les
+// 32 769 entités partagent un point, donc leurs clés sont égales, donc les huit passes
+// du rangement par paquets sont sautées et le départage est linéaire sur une entrée
+// déjà ordonnée.
+//
+// **La saturation est écrite deux fois, et l'écrire ici l'a montré** : `breakTiesIn`
+// passe son rang par un `min` avant d'appeler [Key.WithIndex], qui sature de son côté.
+// Retirer celui de l'appelant ne change donc aucune valeur — ce cas reste vert —, et
+// seul retirer les deux le fait rougir. C'est une défensive en trop sur le chemin le
+// plus chaud du moteur ; elle se retirera dans le lot de perf qui touche déjà
+// `breakTies`, pas dans un lot de tests.
+func TestIndexSaturatesAtItsCeiling(t *testing.T) {
+	const n = MaxIndex + 2
+
+	s := testScene(t, 16, n)
+	for range n {
+		s.Place(scene.Entity{X: 8, Y: 8, Aspect: figure()})
+	}
+
+	sorter := New(s)
+	sorter.Frame()
+
+	if len(sorter.keys) != n {
+		t.Fatalf("%d clés, attendu %d", len(sorter.keys), n)
+	}
+	for i, c := range sorter.keys {
+		want := uint16(i)
+		if i >= MaxIndex {
+			want = MaxIndex
+		}
+		if c.Index() != want {
+			t.Fatalf("clé %d : index %d, attendu %d", i, c.Index(), want)
+		}
+	}
+	for i := 1; i < len(sorter.sources); i++ {
+		if sorter.sources[i] <= sorter.sources[i-1] {
+			t.Fatalf("provenances %d et %d : %d après %d, l'ordre n'est plus monotone",
+				i-1, i, sorter.sources[i], sorter.sources[i-1])
+		}
+	}
+}
+
+// TestTheOpenDoorsCannotBreakTheFrame garde la clause qui rend acceptables les deux
+// portes par lesquelles le tri lit la scène, et qu'un jeu peut appeler aussi.
+//
+// **Ce que la conception promet publiquement** : un paquet public publie tout ce qu'il
+// exporte, il n'y a pas de voie Go pour l'éviter, « et le dégât est borné — la clé
+// sature, donc une couche écrite hors borne range la chose au plafond sans rien casser
+// d'autre ». Cette phrase n'était gardée par rien. Les usages de `Entities` dans les
+// tests sont des lectures, et le cas qui garde le plafonnement le fait sur `Compose`,
+// pas sur le chemin qui y mène.
+//
+// Ce paquet est le seul à voir les deux côtés : il atteint la porte et il produit
+// l'image.
+//
+// **Les deux champs ne se comportent pas pareil, et la clause ne couvrait que le
+// premier.** Mesuré en écrivant ce cas : une **couche** hors borne rend bien son quad,
+// saturée au plafond, donc le dégât y est borné comme annoncé. Un **étage** hors borne
+// fait disparaître la chose de l'image — il élève à l'écran depuis la 0.5.0, et 255
+// étages portent l'entité quatre mille pixels au-dessus de la vue, où le retrait hors
+// image l'écarte. C'est un dégât plus grand que celui que la conception décrit, et le
+// document le dit maintenant.
+func TestTheOpenDoorsCannotBreakTheFrame(t *testing.T) {
+	for _, c := range []struct {
+		name         string
+		layer, floor uint8
+		wantQuads    int
+	}{
+		{"une couche hors borne sature et reste visible", 255, 0, 1},
+		{"un étage hors borne quitte la vue", 0, 255, 0},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			s := testScene(t, 16, 1)
+			if _, ok := s.Place(scene.Entity{X: 8.5, Y: 8.5, Aspect: figure()}); !ok {
+				t.Fatal("entité refusée")
+			}
+
+			// Par la porte et non par la pose : `Place` refuserait ces valeurs. C'est
+			// tout l'objet du cas — ce qu'un jeu écrit en passant derrière le refus.
+			entities := scene.Entities(s)
+			if len(entities) != 1 {
+				t.Fatalf("%d entités derrière la porte, attendu 1", len(entities))
+			}
+			entities[0].Layer, entities[0].Floor = c.layer, c.floor
+
+			sorter := New(s)
+			if n := len(sorter.Frame()); n != c.wantQuads {
+				t.Fatalf("%d quads, attendu %d", n, c.wantQuads)
+			}
+			if c.wantQuads == 0 {
+				return
+			}
+
+			// `Key` n'expose pas d'accesseur par champ : les décalages se lisent ici.
+			if got := uint8(sorter.keys[0] >> layerShift); got != render.MaxLayer {
+				t.Errorf("couche %d dans la clé, attendu le plafond %d", got, render.MaxLayer)
+			}
+		})
 	}
 }
 
@@ -542,30 +659,82 @@ func TestFrameDoesNotAllocateAfterTheFirst(t *testing.T) {
 	}
 }
 
-// TestFourOrientationsYieldAsManyQuads vérifie qu'une rotation ne perd ni
-// n'invente rien : elle change ce qu'on voit d'où, pas combien il y en a.
+// TestFourOrientationsTurnTheView garde deux choses des quatre vues : qu'une rotation
+// ne perd ni n'invente de quad, et qu'elle **déplace** ce qu'elle montre.
 //
-// Ce cas n'a aucun consommateur réel — cohue n'a pas d'orientation —, donc il est la
-// seule chose qui garde les quatre vues.
-func TestFourOrientationsYieldAsManyQuads(t *testing.T) {
-	s := testScene(t, 24, 1)
-	for v := range 24 {
-		for u := range 24 {
+// **La seconde manquait, et sans elle le cas passait sur un `Orient` sans aucun
+// effet.** Il ne comparait que les quatre nombres de quads, ce qu'une rotation ignorée
+// satisfait : la scène est une grille de cellules identiques cadrée sur son centre,
+// donc un quart de tour y rend la même liste à l'ordre près. Rien d'autre dans ce
+// paquet ne distingue une rotation appliquée d'une rotation ignorée — les quatre images
+// de référence de `core` et les cas de `scene` le font, ailleurs.
+//
+// **Les quatre positions se dérivent, aucune ne se recopie.** Les valeurs attendues
+// sont faciles à écrire de travers : deux relectures de ce cas ont produit trois tables
+// différentes, dont une pour le pixel d'ancre et une autre pour `Quad.X`. Ce qui se
+// vérifie est donc que les quatre couples soient **deux à deux distincts**, ce qu'une
+// rotation sans effet ne peut pas satisfaire et qu'aucune table ne peut fausser.
+//
+// Un repère hors du centre suffit, et « hors des diagonales » serait une précaution
+// inutile : la projection est injective, donc deux cellules distinctes tombent sur deux
+// pixels distincts. Seul « pas le centre » compte, lui seul étant invariant par
+// rotation.
+func TestFourOrientationsTurnTheView(t *testing.T) {
+	const (
+		side = 24
+		mark = 1 // la planche qui distingue le repère du reste de la grille
+	)
+
+	s := testScene(t, side, 1)
+	for v := range side {
+		for u := range side {
 			s.PlaceCell(u, v, 0, figure())
 		}
 	}
 
+	// **Décalé d'une seule cellule, et c'est une contrainte et non une commodité** : la
+	// grille fait 768 pixels de large contre 480 de vue, donc un repère lointain sort
+	// du cadre sous certaines orientations et son quad quitte la liste — le cas
+	// échouerait alors pour une raison qui n'est pas celle qu'il garde.
+	marker := figure()
+	marker.Sheet = mark
+	if !s.PlaceCell(side/2+1, side/2, 0, marker) {
+		t.Fatal("repère refusé")
+	}
+
 	sorter := New(s)
 	counts := make([]int, 0, 4)
+	places := make([][2]int16, 0, 4)
 
 	for _, o := range []scene.Orientation{scene.NoRotation, scene.QuarterTurn, scene.HalfTurn, scene.ThreeQuarters} {
 		s.Orient(o)
-		counts = append(counts, len(sorter.Frame()))
+		list := sorter.Frame()
+		counts = append(counts, len(list))
+
+		at := -1
+		for i, q := range list {
+			if q.Sheet == mark {
+				at = i
+				break
+			}
+		}
+		if at < 0 {
+			t.Fatalf("orientation %d : le repère n'est pas dans la liste", o)
+		}
+		places = append(places, [2]int16{list[at].X, list[at].Y})
 	}
 
 	for i, n := range counts {
 		if n != counts[0] {
 			t.Errorf("quart %d : %d quads, le premier en rend %d", i, n, counts[0])
+		}
+	}
+	for i := range places {
+		for j := i + 1; j < len(places); j++ {
+			if places[i] == places[j] {
+				t.Errorf("quarts %d et %d posent le repère au même pixel %v :"+
+					" la rotation ne déplace rien", i, j, places[i])
+			}
 		}
 	}
 }

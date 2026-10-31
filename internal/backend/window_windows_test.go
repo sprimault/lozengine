@@ -233,13 +233,27 @@ func TestClientSizeOfADeadHandleIsZero(t *testing.T) {
 	}
 }
 
-// TestStructureSizes vérifie la disposition que les appels système lisent, et c'est le
-// seul contrôle qui sépare `amd64` de `386`.
+// TestStructureSizes vérifie la disposition que les appels système lisent.
 //
 // Les tailles ne sont pas écrites dans le code — elles se prennent par `unsafe.Sizeof`
 // —, mais un champ mal ordonné ou mal typé changerait la taille sans rien casser à la
 // compilation, et l'appel lirait de travers. Les valeurs attendues viennent de la
 // sonde du jalon, mesurées sur les deux architectures.
+//
+// **La colonne `on32` ne peut pas rougir sans un `GOARCH=386` tapé à la main, et il
+// faut le dire** : elle ne se prend que sous un pointeur de quatre octets, or
+// `make test` tourne sur l'hôte, les trois runners sont 64 bits, `make cross` ne
+// compile pas les fichiers de test, et le `js/wasm` de `make vet` a un pointeur de huit
+// octets. Reproduit : `GOARCH=386 make test PKG=./internal/backend` passe. Ce cas
+// garde donc `amd64` en permanence et `386` à la demande — la clause qui en faisait
+// « le seul contrôle qui sépare `amd64` de `386` » laissait croire l'inverse.
+//
+// **Ajouter une cible `test32` à `check` serait tenir une promesse qu'aucun texte ne
+// fait** : les deux `README` rangent `windows/386` et `linux/386` dans « ils
+// compilent, et rien de plus », par opposition explicite à « tourne ». Le risque propre
+// à `386` **est** la taille des structures, et la parade est de les obtenir par
+// `unsafe.Sizeof` plutôt que de les coder en dur — ce que chaque champ de taille fait
+// déjà.
 func TestStructureSizes(t *testing.T) {
 	const pointer = unsafe.Sizeof(uintptr(0))
 

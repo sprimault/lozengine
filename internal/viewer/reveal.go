@@ -37,8 +37,16 @@ const (
 
 // Reveal éprouve qu'un personnage caché par le décor se redessine au-dessus de lui.
 //
-// **C'est le seul scénario à pouvoir faire échouer la révélation**, et il existe parce
-// qu'aucun autre ne met une chose marquée derrière un décor qui la couvre. Le régime
+// **Ce n'est pas le seul scénario à pouvoir faire échouer la révélation, et la clause
+// qui le disait était fausse.** Mesuré le 31 octobre 2026 en neutralisant
+// `revealHidden` : `crossing-0000.png` rougit aussi, de 160 pixels, contre 240 ici. Son
+// image 0 tombe dans les quatre pas où la révélation s'exerce, et elle est versée.
+//
+// Ce que ce scénario-ci apporte est donc **l'isolement du régime**, non l'exclusivité :
+// un mur plus proche qui recouvre entièrement une chose marquée, sans déplacement, sans
+// étage et sans traversée. Un écart s'y lit sur une cause unique, là que la même
+// différence dans `crossing` peut venir de l'ordre de dessin, du relèvement d'étage ou
+// du cadrage. C'est ce qui le garde utile quand les deux rougissent ensemble. Le régime
 // qu'il garde est celui qui arrive quand on est encerclé : le mur est plus proche que
 // le personnage, donc il se peint après et le recouvre entièrement — c'est l'ordre
 // juste, et c'est précisément ce qui fait perdre son personnage.

@@ -123,9 +123,14 @@ func TestCoverageMatchesThePixelByPixelCount(t *testing.T) {
 				SourceX: uint16(r.IntN(3)),
 				SourceY: uint16(r.IntN(4)),
 				Width:   width - uint16(r.IntN(3)),
-				Height:  uint16(8 + r.IntN(8)),
-				Tint:    render.White(),
-				Layer:   uint8(r.IntN(2)),
+				// Jusqu'à 47, et non 15 : la planche fait 40 lignes, donc une hauteur
+				// bornée à 15 ajoutée à un `SourceY` de 0 à 3 ne dépassait jamais la
+				// 18e ligne. La garde de ligne hors planche de `line` était le seul
+				// bloc du relevé exact que ce tirage n'exécutait jamais, et la
+				// référence naïve `byPixel` suit l'élargissement sans retouche.
+				Height: uint16(8 + r.IntN(40)),
+				Tint:   render.White(),
+				Layer:  uint8(r.IntN(2)),
 			}
 			if r.IntN(4) == 0 {
 				a.Flags |= render.MirrorX

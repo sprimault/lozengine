@@ -59,10 +59,16 @@ var crossingFigureTint = render.Color{R: 224, G: 96, B: 96, A: 255}
 // personnage » — et ce qui arrive avec un ordre de dessin pourtant juste, l'étage
 // dominant la profondeur dans la clé.
 //
-// **Trois images seulement sont versées**, aux moments qui décident : avant d'entrer,
-// au milieu du passage, et après être ressorti. Le comptage de pixels, lui, parcourt
-// les huit — c'est lui qui rend le critère de fin mécanique, une image de référence
-// verrouillant des pixels et non une impression.
+// **Trois images seulement sont versées** : la 0, la 4 et la 7. Et aucune des trois ne
+// montre la révélation à l'œuvre, ce qu'il faut dire plutôt que de laisser croire
+// l'inverse — la godoc annonçait « au milieu du passage ». Mesuré : elle s'exerce aux
+// images 0 à 3, qui rendent deux quads de personnage, et plus aux 4 à 7, qui n'en
+// rendent qu'un. La 0 est donc la seule des trois versées à la montrer, et elle est
+// aussi le premier pas.
+//
+// Le comptage de pixels, lui, parcourt les huit — c'est lui qui rend le critère de fin
+// mécanique, une image de référence verrouillant des pixels et non une impression, et
+// c'est lui qui voit les quatre images où la chose se révèle.
 func Crossing() Scenario {
 	return Scenario{
 		Name:       "crossing",
