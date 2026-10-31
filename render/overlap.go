@@ -1,14 +1,20 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Le relevé de recouvrement : combien de pixels d'une chose suivie se font cacher, et
-// par quoi. C'est la mesure que le tri fait déjà pour décider d'une révélation, rendue
-// à qui veut dessiner son propre rappel.
+// Le relevé de recouvrement : ce qui se fait cacher d'une chose suivie, et par quoi.
+// C'est la mesure que le tri fait déjà pour décider d'une révélation, rendue à qui veut
+// dessiner son propre rappel.
+//
+// Deux échelles, et le type dit laquelle chaque champ porte : une somme de rectangles
+// de boîte, et un compte de pixels réellement peints. Ne jamais écrire l'une sans
+// l'autre — « combien de ses pixels » désigne la seconde et a longtemps servi à
+// annoncer la première.
 
 package render
 
-// Overlap dit, pour une chose suivie, combien de ses pixels se font recouvrir par ce
-// qui se peint après elle.
+// Overlap dit, pour une chose suivie, ce que recouvre d'elle ce qui se peint après
+// elle — dans deux échelles que ses champs distinguent : une somme de rectangles de
+// boîte, et un compte de pixels réellement peints.
 //
 // **La mesure existait et ne sortait pas.** Le tri la fait pour décider si une chose
 // marquée se redessine, en pixels et par origine ; un hôte dont le rappel est d'une
@@ -42,14 +48,14 @@ type Overlap struct {
 	// un alpha nul n'écrit aucun pixel et ne verse rien du tout. Un rappel qu'un jeu
 	// éteint par sa teinte ne franchit donc aucun seuil, là qu'il le faisait jusqu'à
 	// cette version. Un quad additif, lui, compte — il peut cacher en saturant au
-	// blanc, et [scene.Aspect.Uncounted] est la voie pour l'exclure.
+	// blanc, et le champ `Uncounted` d'un aspect est la voie pour l'exclure.
 	//
 	// **C'est ce qu'elle fait dans cette version, et il ne faut pas en dépendre.**
 	// Deux choses seulement tiennent d'une version à l'autre : ajouter un cachant ne
 	// la diminue jamais, et elle est nulle quand rien ne se peint après la chose. En
 	// particulier, ne pas retrancher de ce nombre ce qu'un rappel y a versé —
-	// [scene.Aspect.Uncounted] l'exclut à la source, et c'est la voie prévue pour
-	// cela. La soustraction marche aujourd'hui parce que la loi est additive ; une
+	// le champ `Uncounted` d'un aspect l'exclut à la source, et c'est la voie prévue
+	// pour cela. La soustraction marche aujourd'hui parce que la loi est additive ; une
 	// mesure exacte ne compterait chaque pixel qu'une fois et la rendrait fausse.
 	Hidden uint32
 
@@ -65,7 +71,7 @@ type Overlap struct {
 	// de la planche n'est pas nul. Zéro quand l'hôte n'a pas donné la forme de ses
 	// planches au moteur, ou quand la teinte du quad est transparente.
 	//
-	// **C'est l'échelle des trois champs qui suivent, et elle n'est pas celle de
+	// **C'est l'échelle des champs qui comptent au pixel, et elle n'est pas celle de
 	// [Overlap.Hidden]** : une case de personnage de soixante-quatre sur soixante-
 	// quatre en peint quatre cent quarante en moyenne, soit un dixième de sa boîte. Un
 	// seuil réglé sur l'une ne vaut rien pour l'autre, et c'est la raison pour laquelle

@@ -120,8 +120,9 @@ type Options struct {
 	//
 	// **L'aire de monde, elle, peut être plus petite que ce plancher**, et c'est voulu :
 	// [Options.MaxWidth] et [Options.WorldInset] la bornent à l'intérieur de la surface.
-	// Une interface se dimensionne contre [Scene.Surface], le monde contre [Scene.View],
-	// et les confondre décale l'interface sans qu'aucune erreur ne le dise.
+	// Une interface se dimensionne contre la méthode `Surface` d'une [Scene], le monde
+	// contre sa méthode `View`, et les confondre décale l'interface sans qu'aucune
+	// erreur ne le dise.
 	Width, Height int
 
 	// MaxWidth et MaxHeight bornent l'**aire de monde** : la part de la surface dans
@@ -131,8 +132,8 @@ type Options struct {
 	// **La surface, elle, remplit toujours la fenêtre**, au facteur entier près — il
 	// reste donc au plus facteur − 1 pixel de bande par axe, quoi qu'on borne. Borner
 	// ne ramène pas de bandes : ce que la surface a de plus que l'aire est une marge,
-	// elle appartient au jeu, et [Scene.Surface] avec [Scene.WorldOrigin] disent où
-	// elle se trouve. [Options.WorldAlignX] et [Options.WorldAlignY] disent de quel
+	// elle appartient au jeu, et les méthodes `Surface` et `WorldOrigin` d'une [Scene]
+	// disent où elle se trouve. [Options.WorldAlignX] et [Options.WorldAlignY] disent de quel
 	// côté.
 	//
 	// **C'est ce qui rend l'aire de jeu constante, et c'est leur raison d'être** :
@@ -154,7 +155,8 @@ type Options struct {
 	// celui où l'on voit le jeu pour la première fois.
 	//
 	// **Ce que cela demande à un jeu qui pose une interface** : lire ses bornes par
-	// [Scene.Surface], et l'aire par [Scene.View]. Une position calculée depuis une
+	// la méthode `Surface` d'une [Scene], et l'aire par sa méthode `View`. Une position
+	// calculée depuis une
 	// constante ne tombe plus au bon endroit dès que la fenêtre change de forme, et
 	// rien ne le signale — c'est l'interface qui se décale, pas le monde.
 	MaxWidth, MaxHeight int
@@ -176,7 +178,8 @@ type Options struct {
 	// celui d'une aire constante ; la godoc d'[Inset] dit comment les deux se composent
 	// et ce que chacun décide.
 	//
-	// **Il se change aussi en cours de partie**, par [Scene.SetWorldInset] : la boucle
+	// **Il se change aussi en cours de partie**, par la méthode `SetWorldInset` d'une
+	// [Scene] : la boucle
 	// le relit à chaque pas, donc une interface qui se replie rend au monde ce qu'elle
 	// occupait, sans redimensionner quoi que ce soit.
 	WorldInset Inset
@@ -234,7 +237,7 @@ type Options struct {
 	//
 	// Le moteur ne dessine aucun curseur à la place : ce qu'on montre sous le
 	// pointeur — une flèche, une case surlignée, rien — est une décision de jeu, et
-	// [Input.Pointer] donne où le poser.
+	// le champ `Pointer` d'un [Input] donne où le poser.
 	//
 	// La boucle seule s'en sert, comme pour les icônes.
 	HideCursor bool
@@ -482,7 +485,8 @@ func (e *Engine) Step(g Game, in Input) {
 	}
 
 	// La taille de la vue se réimpose après le pas du jeu, et c'est le moteur qui la
-	// possède depuis que la vue suit la fenêtre. Un [Scene.Focus] appelé avec une
+	// possède depuis que la vue suit la fenêtre. Un appel à la méthode `Focus` d'une
+	// [Scene] avec une
 	// autre taille — ce que fait tout jeu qui recentre sa caméra — donnerait sinon une
 	// image coupée ou décentrée, sans erreur ni trace : mesuré, un cadrage à 960×540
 	// sur un tampon de 480×270 ne peint que la moitié de l'entité visée. Le point
@@ -527,8 +531,7 @@ func (e *Engine) Tick() time.Duration {
 }
 
 // Overlaps rend, pour chaque entité qu'un jeu a marquée par le champ `Measure` d'une
-// [Entity], combien de ses pixels le dernier pas a recouverts et quelle part vient du
-// décor.
+// [Entity], ce que le dernier pas a recouvert d'elle et quelle part vient du décor.
 //
 // **C'est la mesure que le tri fait de toute façon pour décider d'une révélation.** Le
 // champ `Reveal` d'un [Aspect] redessine la chose, et un rappel d'une autre nature — un
@@ -537,8 +540,13 @@ func (e *Engine) Tick() time.Duration {
 // qu'il veut, en marquant son dessin du champ `Uncounted` d'un [Aspect] pour qu'il ne
 // se compte pas.
 //
-// Ce que ce nombre mesure exactement, et ce sur quoi on ne doit pas s'appuyer, est dit
-// par [render.Overlap.Hidden].
+// **Le relevé porte deux échelles, et un seuil réglé sur l'une ne vaut rien pour
+// l'autre** : une somme de rectangles de boîte, transparents compris, et un compte de
+// pixels réellement peints où chaque pixel ne compte qu'une fois. Sur une même scène,
+// la première rend 5 534 là où la seconde rend 63.
+//
+// Ce que chacun des six champs mesure, et ce sur quoi on ne doit pas s'appuyer, est dit
+// par [render.Overlap].
 //
 // **Il porte le pas précédent**, et c'est inhérent : le recouvrement ne se connaît
 // qu'après le tri, donc après le pas. Sans conséquence pour un rappel de lisibilité à

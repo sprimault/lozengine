@@ -59,6 +59,12 @@ notes de publication.
 - La documentation du paquet `render` compte `Overlap` et `OverlapList` parmi les
   structures en disposition compatible C, ce que leur propre documentation annonçait sans
   que l'énumération du paquet les nomme. Un hôte pouvait les croire exclues.
+- Les godoc du paquet racine rendent ce que celles du noyau portaient seules : ce que
+  coûte une inversion de `ScaleFactor` ou d'`Upscale`, que `MaxSide` borne la clé de tri
+  et non la mémoire, que `Raw` peut rompre le sens des axes, à qui appartient `Buffer`.
+- La documentation du relevé de recouvrement dit l'échelle de chaque mesure, et que
+  `Aspect.Uncounted` retire un quad des quatre : un hôte venu de la mesure au pixel
+  pouvait croire son rappel encore compté, et renoncer au drapeau.
 
 ***
 
@@ -76,6 +82,12 @@ notes de publication.
 - The `render` package documentation now counts `Overlap` and `OverlapList` among the
   C-compatible layouts, which their own documentation announced while the package's list
   left them out. A host could believe them excluded.
+- The root package's doc comments now carry what the core's alone held: what swapping the
+  arguments of `ScaleFactor` or `Upscale` costs, that `MaxSide` bounds the sort key rather
+  than memory, that `Raw` can break the axis convention, and who owns `Buffer`.
+- The overlap report's documentation now states the scale of each measure, and that
+  `Aspect.Uncounted` takes a quad out of all four: a host coming from the per-pixel
+  measure could believe its cue still counted, and give up on the flag.
 
 ## [0.5.8] — 2026-10-31
 

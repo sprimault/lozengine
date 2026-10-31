@@ -23,9 +23,9 @@
 // [WritePNG] : un hôte qui garde sa propre boucle reçoit l'image du moteur et doit la
 // présenter, et la lui faire chercher dans un second paquet n'achetait rien.
 //
-// Ce qu'elle ne republie pas est le **dessin** — [Clear], [Draw] et les trois formes
-// de pose —, dont la boucle du moteur se charge dans les deux cas. Un hôte qui
-// voudrait dessiner lui-même les appelle depuis ce paquet.
+// Ce qu'elle ne republie pas est le **dessin** — [Clear] et [Draw] —, dont la boucle du
+// moteur se charge dans les deux cas. Un hôte qui voudrait dessiner lui-même les
+// appelle depuis ce paquet.
 //
 // Le tampon lui-même vit dans [github.com/sprimault/lozengine/render], parce qu'un
 // hôte en remplit les champs. Les opérations de ce paquet le prennent donc en premier

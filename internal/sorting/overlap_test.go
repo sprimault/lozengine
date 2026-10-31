@@ -217,14 +217,30 @@ func TestOverlapCostsNoAllocation(t *testing.T) {
 // au-dessus du seuil qui l'a déclenché, et le jeu le repose indéfiniment. Les deux cas
 // opposent la même scène avec et sans la marque — c'est l'écart entre les deux qui est
 // la propriété, un seul des deux ne disant rien.
+//
+// **Les deux échelles, et non la seule mesure par boîte.** Le drapeau est lu à deux
+// endroits — le relevé par rectangles et celui au pixel —, donc n'asserter que
+// `Hidden` laissait une mutation du second au vert, alors que la godoc du champ promet
+// les quatre mesures.
+//
+// Deux conditions sans lesquelles l'échelle au pixel ne garde rien, et toutes deux ont
+// été mesurées en l'écrivant. Il faut **donner une planche au trieur**, sans quoi
+// `Painted` reste nul et la mesure exacte n'existe pas. Et il faut qu'elle soit **assez
+// haute pour le quad qui cache** : à 32×16 contre un mur de 48, les lignes hors planche
+// sont écartées du masque et `Covered` reste nul dans les deux cas — le cas passait
+// alors sans rien éprouver.
+//
+// `CoveredByDecor` n'est pas asserté, et c'est volontaire : le rappel est une entité,
+// donc ce champ vaut zéro des deux côtés et ne distinguerait rien ici.
 func TestOverlapSkipsUncountedQuads(t *testing.T) {
 	for _, c := range []struct {
-		name      string
-		uncounted bool
-		want      uint32
+		name        string
+		uncounted   bool
+		want        uint32
+		wantCovered uint32
 	}{
-		{"un rappel qui compte masque la chose", false, 512},
-		{"le même rappel marqué ne compte pas", true, 0},
+		{"un rappel qui compte masque la chose", false, 512, 512},
+		{"le même rappel marqué ne compte pas", true, 0, 0},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			s, _ := measuredScene(t, func(s *scene.Scene) {
@@ -236,13 +252,25 @@ func TestOverlapSkipsUncountedQuads(t *testing.T) {
 			})
 
 			sorter := New(s)
+
+			// Opaque et de la hauteur du mur : voir la documentation du cas.
+			pixels := make([]render.Color, 32*48)
+			for i := range pixels {
+				pixels[i] = render.White()
+			}
+			sorter.AddSheet(32, 48, pixels)
+
 			sorter.Frame()
 			list := sorter.Overlaps()
 			if len(list) != 1 {
 				t.Fatalf("%d relevés, attendu 1", len(list))
 			}
 			if list[0].Hidden != c.want {
-				t.Errorf("%d pixels cachés, attendu %d", list[0].Hidden, c.want)
+				t.Errorf("%d pixels cachés par boîte, attendu %d", list[0].Hidden, c.want)
+			}
+			if list[0].Covered != c.wantCovered {
+				t.Errorf("%d pixels cachés au pixel, attendu %d",
+					list[0].Covered, c.wantCovered)
 			}
 		})
 	}

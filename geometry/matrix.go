@@ -106,6 +106,16 @@ func Grid(side int) Matrix {
 // Les quatre coefficients sont ceux d'une application linéaire : ex = a·x + b·y et
 // ey = c·x + d·y. Pas de translation, parce que la scène retranche l'origine de la
 // vue et qu'aucun appelant n'en a l'usage.
+//
+// **C'est le seul constructeur qui puisse rompre le sens des axes**, et c'est ici que
+// l'avertissement manquait : [Dimetric] et [Isometric] le portent, eux qui l'imposent.
+// La convention est `x` vers le bas-gauche de l'écran et `y` vers le bas-droite sous
+// les deux losanges, `x` vers la droite et `y` vers le bas sous [Grid].
+//
+// Trois mécanismes la supposent et aucun ne se règle : le départage de l'ordre de
+// dessin, le relevé de recouvrement, et la table de directions de `appearance.Turn`.
+// Chacun qui s'y adosse ajoute un site, donc le coût d'un rétablissement croît — la
+// rompre se fait les yeux ouverts, pas en découvrant son monde retourné.
 func Raw(a, b, c, d float64) Matrix {
 	return matrix(a, b, c, d)
 }
