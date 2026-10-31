@@ -100,7 +100,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # `ubuntu-24.04-arm` est la seule ligne qui éprouve le déterminisme entre
+        # architectures, et sans elle rien ne le garde : les deux machines du parc sont
+        # x86-64, les autres jobs tournent sur `ubuntu-latest`, et `make cross` ne fait
+        # que compiler.
+        #
+        # Ce qu'elle apporte tient à une liberté du langage : la spécification autorise
+        # à fondre `x*y + z` en une instruction unique, qu'`arm64` pratique et
+        # qu'`amd64` ne pratique pas — donc un arrondi différent, donc une autre image.
+        # C'est ce que la virgule fixe du moteur sert à rendre impossible, et c'est ici
+        # que la comparaison pixel à pixel le vérifie.
+        #
+        # Un rouge sur cette ligne est un défaut de déterminisme à corriger, jamais une
+        # référence à régénérer.
+        #
+        # Les runners ARM hébergés sont gratuits pour un dépôt public, ce que celui-ci
+        # est. Et aucun contexte requis n'apparaît : la protection de branche n'exige
+        # que `Bilan`, qui agrège par `needs.tests.result`.
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest]
         go: [plancher, dernière]
     steps:
       - uses: actions/checkout@v7

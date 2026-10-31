@@ -33,9 +33,11 @@ internal resolution scaled up to the window by an integer factor.
 
 **The platforms, and what each one promises.** Compiles, runs, or stays green in
 continuous integration: three different promises, and only the one actually kept
-is announced. Windows and Linux on `amd64` — the test suite passes there in
-continuous integration, on every batch. `windows/arm64`, `windows/386`,
-`linux/arm64`, `linux/arm`, `linux/386` and `js/wasm` — they **compile**, which
+is announced. Windows and Linux on `amd64`, and Linux on `arm64` — the test suite
+passes there in continuous integration, on every batch, and on `arm64` it also
+verifies that one and the same scene renders exactly the same pixels as
+elsewhere, which is what the integer arithmetic promises. `windows/arm64`,
+`windows/386`, `linux/arm`, `linux/386` and `js/wasm` — they **compile**, which
 `make check` verifies, and nothing more as long as the hardware at hand holds
 neither a Raspberry Pi nor a phone. It is the zero-dependency rule that opens
 this list, and a cgo dependency would close it rather than widen it: `go build`

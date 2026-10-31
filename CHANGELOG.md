@@ -45,12 +45,24 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `linux/arm64` n'est plus seulement compilée : la suite de tests y passe à chaque lot et
+  y compare les images au pixel. C'est l'architecture qui pouvait rendre une autre image
+  que `amd64`.
+
 ### Corrigé
 
 - La fenêtre s'ouvre sur les Windows antérieurs à la mise à jour d'avril 2017 de
   Windows 10, Windows 7, 8 et 8.1 compris, où le moteur plantait au démarrage.
 
 ***
+
+### Added
+
+- `linux/arm64` is no longer merely compiled: the test suite runs there on every batch
+  and compares images pixel by pixel. It is the architecture that could have rendered a
+  different image from `amd64`.
 
 ### Fixed
 

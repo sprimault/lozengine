@@ -33,8 +33,10 @@ interne basse remontée vers la fenêtre par un facteur entier.
 
 **Les plateformes, et ce que chacune promet.** Compile, tourne, ou reste vert en
 intégration continue : trois promesses différentes, et seule celle qui est tenue
-est annoncée. Windows et Linux en `amd64` — la suite de tests y passe en
-intégration continue, à chaque lot. `windows/arm64`, `windows/386`, `linux/arm64`,
+est annoncée. Windows et Linux en `amd64`, et Linux en `arm64` — la suite de tests
+y passe en intégration continue, à chaque lot, et sur `arm64` elle vérifie en plus
+que la même scène rend exactement les mêmes pixels qu'ailleurs, ce qui est la
+promesse du calcul en nombres entiers. `windows/arm64`, `windows/386`,
 `linux/arm`, `linux/386` et `js/wasm` — ils **compilent**, ce que `make check`
 vérifie, et rien de plus tant que le parc ne contient ni Raspberry Pi, ni
 téléphone. C'est le zéro-dépendance qui ouvre cette liste, et une dépendance cgo
