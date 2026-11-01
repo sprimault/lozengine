@@ -10,6 +10,7 @@ make check        # ce qui doit passer avant un commit
 make fmt          # échoue si un fichier n'est pas au format
 make vet
 make deps         # échoue si une dépendance externe est entrée
+make conversions  # échoue si une conversion de pointeur est entrée ou a disparu
 make entetes      # la mention de licence, sur ce que le dépôt publie
 make frontiere    # le noyau ne touche ni au système ni à un backend
 make procedures   # aucune procédure système appelée sans garde de présence
@@ -91,6 +92,16 @@ l'affaiblir.
 Elle inclut les dépendances de test, parce que c'est là que l'entorse est
 tentante, et elle interroge Windows, Linux et le navigateur, parce qu'un import
 placé sous contrainte de construction ne se voit pas depuis un autre système.
+
+**`make conversions`** compte les conversions de pointeur du dépôt —
+`unsafe.Pointer`, `unsafe.Slice`, `unsafe.String` et `unsafe.Add` — par fichier,
+et les compare à une liste close. Un site de plus échoue, un site qui disparaît
+aussi : la liste est ce qui rend la décision visible en relecture.
+
+`go vet` ne couvre pas ce terrain, et c'est la raison d'être de la cible : son
+analyseur `unsafeptr` ne signale que les allers-retours par `uintptr`. Les
+lectures de disposition — `unsafe.Sizeof` et ses voisines — ne comptent pas,
+puisqu'elles ne convertissent rien.
 
 **`make frontiere`** vérifie que le noyau ne touche ni au système ni à un
 backend. Aucun paquet parmi `geometry`, `scene`, `sorting`, `render`, `raster`,

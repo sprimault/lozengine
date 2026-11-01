@@ -4,10 +4,14 @@
 // L'étape qu'un hôte pilote lui-même : une image, sans fenêtre ni horloge.
 //
 // C'est la capacité, et la boucle n'est que du sucre au-dessus. Un jeu hôte possède
-// déjà sa boucle et son thread principal, et ne les cédera pas — c'est pourquoi le
-// moteur n'expose pas de boucle qui ne rend la main qu'à l'arrêt, et aussi ce qui rend
-// le navigateur atteignable : sous WebAssembly, une boucle Go qui ne rend pas la main
-// empêche `requestAnimationFrame` de se déclencher.
+// déjà sa boucle et son thread principal, et ne les cédera pas : l'étape existe pour
+// qu'il n'ait pas à le faire.
+//
+// Ce qu'il ne faut pas en déduire, et que ce bloc énonçait : que le moteur « n'expose
+// pas de boucle qui ne rend la main qu'à l'arrêt ». Il en expose une, [Run], et elle
+// rend la main à l'hôte entre deux images — mesuré, 756 tours d'un minuteur du
+// navigateur pendant trois secondes de boucle. Ce qui gèle une boucle d'événements est
+// une goroutine qui ne se gare jamais, pas une boucle longue.
 
 package lozengine
 
