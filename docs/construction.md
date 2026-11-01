@@ -18,6 +18,7 @@ make liens        # aucun lien de godoc qui ne se résoudra pas
 make journal      # chaque section du CHANGELOG dit la même chose dans ses deux langues
 make surface      # refuse un ajout à la surface publique sans entrée de journal
 make hello        # le hello world tient sous trente lignes de code
+make wasm-test    # la suite entière sous js/wasm, par node — hors de make check
 make cross        # compile pour chacun des couples de CIBLES
 make floor        # le contrôle complet sous le plancher du module
 make container    # le même, dans un conteneur, au plus près du runner
@@ -105,6 +106,24 @@ aussi : la liste est ce qui rend la décision visible en relecture.
 analyseur `unsafeptr` ne signale que les allers-retours par `uintptr`. Les
 lectures de disposition — `unsafe.Sizeof` et ses voisines — ne comptent pas,
 puisqu'elles ne convertissent rien.
+
+**`make wasm-test`** exécute la suite entière compilée pour `js/wasm`, par
+`node`. C'est une quatrième cible d'exécution, à côté des trois systèmes de la
+matrice : les contrôles qui lisent les sources ne font que les lire, et la
+compilation croisée ne fait que construire. Ce que cette cible apporte et qu'ils
+ne donnent pas, c'est la comparaison des images de référence au pixel sous un
+second backend de compilation.
+
+Elle reste **hors de `make check`**, et pour une raison qui n'est pas la durée :
+une chaîne Go distribuée en module ne porte pas le fichier de liaison que `node`
+exige, donc le contrôle du plancher échouerait sur son absence et non sur un
+défaut. La cible le dit elle-même quand elle ne trouve pas le fichier, en
+nommant les deux chemins où elle l'a cherché.
+
+Sous Windows, elle écarte quatre cas qui lisent le disque : l'hôte `node` n'y
+gère pas l'ouverture d'un répertoire, ce que la bibliothèque standard note dans
+son propre code. Les quatre passent ailleurs, donc c'est la cible qui écarte, et
+sur la seule machine concernée.
 
 **`make frontiere`** vérifie que le noyau ne touche ni au système ni à un
 backend. Aucun paquet parmi `geometry`, `scene`, `sorting`, `render`, `raster`,

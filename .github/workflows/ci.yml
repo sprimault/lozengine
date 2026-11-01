@@ -555,10 +555,37 @@ jobs:
           fi
           echo "Go $sous échoue sur $refus passe(s), comme attendu : le plancher déclaré est bien le minimum."
 
+  # La suite entière sous `js/wasm`, qui est une quatrième cible d'exécution.
+  #
+  # **Ce qu'elle apporte et qu'aucun autre job ne donne** : les dix scénarios de référence
+  # comparés au pixel sous un second backend de compilation. La passe `js/wasm` des
+  # contrôles ne fait que lire les sources, et la compilation croisée ne fait que
+  # construire. C'est le pendant de la ligne `ubuntu-24.04-arm` du job de tests, dont le
+  # commentaire dit qu'elle est la seule à éprouver le déterminisme entre architectures.
+  #
+  # **Elle peut partir avant la première ligne du backend web, et c'est voulu** : mesurée
+  # verte le 1er novembre 2026, elle est son propre témoin. Un job qui n'arrive qu'avec le
+  # code qu'il garde ne dit pas si c'est le code ou le job qui est faux.
+  #
+  # Sur une version récente seulement : la chaîne du plancher distribuée en module ne porte
+  # pas le fichier de liaison node, ce que la cible dit elle-même. Le job `Plancher` lit
+  # déjà `js/wasm`, mais sans exécuter.
+  navigateur:
+    name: Navigateur
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+      - name: La suite sous js/wasm
+        run: make wasm-test
+
   bilan:
     name: Bilan
     if: always()
-    needs: [controles, tests, affichage, plancher]
+    needs: [controles, tests, affichage, plancher, navigateur]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -585,7 +612,9 @@ jobs:
           echo "tests     : ${{ needs.tests.result }}"
           echo "affichage : ${{ needs.affichage.result }}"
           echo "plancher  : ${{ needs.plancher.result }}"
+          echo "navigateur: ${{ needs.navigateur.result }}"
           [ "${{ needs.controles.result }}" = "success" ] || exit 1
           [ "${{ needs.tests.result }}" = "success" ] || exit 1
           [ "${{ needs.affichage.result }}" = "success" ] || exit 1
           [ "${{ needs.plancher.result }}" = "success" ] || exit 1
+          [ "${{ needs.navigateur.result }}" = "success" ] || exit 1
