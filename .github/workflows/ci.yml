@@ -527,14 +527,18 @@ jobs:
           # Le plancher est juste dès qu'**une** des passes refuse : ce qu'on démontre
           # est qu'aucune version inférieure ne construit le dépôt entier.
           #
-          # **Ce que la passe du navigateur apporte aujourd'hui : rien, et il faut le
-          # dire.** Mesuré le 31 octobre 2026 sous Go 1.21, les trois refusent sur le
-          # même site commun — `math/rand/v2` et un `range` sur un entier, que Go 1.22
-          # a apportés —, donc aucune ne décide seule. Elle garde le cas où le plancher
-          # ne serait plus exigé que par un fichier `_js.go`, et c'est le jalon 5 qui
-          # écrit les premiers.
+          # **Ce que les passes du navigateur et de macOS apportent aujourd'hui : rien,
+          # et il faut le dire.** Mesuré le 31 octobre 2026 sous Go 1.21, les trois
+          # premières refusent sur le même site commun — `math/rand/v2` et un `range`
+          # sur un entier, que Go 1.22 a apportés —, donc aucune ne décide seule. Elles
+          # gardent le cas où le plancher ne serait plus exigé que par un fichier sous
+          # contrainte, et c'est le jalon 5 qui écrit les premiers.
+          #
+          # `darwin/amd64` est la quatrième depuis le 1er novembre 2026, pour la raison
+          # que le commentaire de `PASSES` donne : c'est elle qui lira le repli du
+          # contrat de fenêtre quand `js` cessera de le faire.
           refus=0
-          for cible in linux/amd64 windows/amd64 js/wasm; do
+          for cible in linux/amd64 windows/amd64 js/wasm darwin/amd64; do
             echo "::group::Ce que Go $sous refuse de construire pour $cible"
             if GOOS=${cible%/*} GOARCH=${cible#*/} go vet ./...; then
               echo "$cible : construit."

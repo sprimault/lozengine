@@ -221,18 +221,35 @@ fmt: depot
 # première édition au-dessus du site, et le contrôle rougirait sans défaut.
 UNSAFEPTR = internal/backend/window_windows.go=1
 
-# Les systèmes que parcourt un contrôle qui lit les sources, et ils sont trois.
+# Les systèmes que parcourt un contrôle qui lit les sources, et ils sont quatre.
 #
 # Un fichier sous contrainte de construction ne se voit pas depuis un autre système :
 # une passe par système est donc le minimum, et c'est la raison que `deps` et
 # `frontiere` partagent avec `vet`.
 #
-# **`js/wasm` est la troisième parce qu'elle est la seule à compiler ce qui n'est ni
-# Windows ni Linux.** Le cas de repli du contrat de fenêtre porte la contrainte
-# `!windows && !linux` : les deux premières passes ne le voient pas, et `cross` le manque
-# aussi puisque `go build` ignore les fichiers de test. Il ne pouvait donc pas rougir, ce
-# que sa propre godoc démentait. Vérifié le 30 octobre 2026 en y introduisant une
-# variable inutilisée : seule la passe `js/wasm` l'a refusée.
+# **`js/wasm` est la troisième parce qu'elle compile ce qui n'est ni Windows ni Linux.**
+# Le cas de repli du contrat de fenêtre porte la contrainte `!windows && !linux` : les
+# deux premières passes ne le voient pas, et `cross` le manque aussi puisque `go build`
+# ignore les fichiers de test. Il ne pouvait donc pas rougir, ce que sa propre godoc
+# démentait. Vérifié le 30 octobre 2026 en y introduisant une variable inutilisée :
+# seule la passe `js/wasm` l'a refusée.
+#
+# **`darwin/amd64` est la quatrième, et elle est là pour le jour où `js` cessera de lire
+# ce repli.** Le jalon 5 livre un `Open` pour la page, donc la contrainte se resserre en
+# `!windows && !linux && !js` — sans quoi deux `Open` se disputent la plateforme —, et le
+# repli redevient lu par aucune passe. C'est exactement le défaut qu'`unsupported.go` a
+# été créé pour fermer : un cas qui ne tourne nulle part.
+#
+# **Pourquoi `darwin` et non `freebsd`, qui compile aussi** : une passe qui lit le repli
+# doit être une plateforme qui n'en sortira jamais. La godoc d'`open_other.go` annonce
+# que les BSD quitteront ce repli le jour où une machine entrera au parc, donc la passe
+# y redeviendrait aveugle au moment où elle servirait. macOS est fermé par arbitrage de
+# coût, et `plateformes.md` porte la raison : il n'aura pas de backend.
+#
+# Mesuré le 1er novembre 2026 : `GOOS=darwin GOARCH=amd64` construit et passe `go vet`
+# sans rien toucher, et `go list` y rend bien `open_other.go`, `unsupported.go` et leurs
+# deux cas de test. La cible n'entre pas dans `CIBLES` pour autant : elle n'engage aucune
+# promesse de `README`, et `plateformes.md` la garde hors périmètre.
 #
 # **Une seule liste pour les trois cibles, et c'est elle que la variable achète.** Elle
 # était tenue trois fois et avait divergé : `vet` est passé à trois passes le 30 octobre
@@ -246,7 +263,7 @@ UNSAFEPTR = internal/backend/window_windows.go=1
 #
 # Une architecture est nommée pour chaque système, `js` n'en acceptant qu'une et le
 # défaut de l'hôte n'ayant aucune raison de valoir pour les autres.
-PASSES = windows/amd64 linux/amd64 js/wasm
+PASSES = windows/amd64 linux/amd64 js/wasm darwin/amd64
 
 # Le décompte d'`UNSAFEPTR` porte sur l'union des passes, **dédoublonnée** : un même
 # diagnostic compte une fois, quel que soit le nombre de passes qui compilent son

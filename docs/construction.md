@@ -90,8 +90,11 @@ rouge sur du code parfaitement conforme, et la seule issue serait de
 l'affaiblir.
 
 Elle inclut les dépendances de test, parce que c'est là que l'entorse est
-tentante, et elle interroge Windows, Linux et le navigateur, parce qu'un import
-placé sous contrainte de construction ne se voit pas depuis un autre système.
+tentante, et elle interroge quatre systèmes — Windows, Linux, le navigateur et
+macOS —, parce qu'un import placé sous contrainte de construction ne se voit pas
+depuis un autre système. Les deux derniers sont là pour ce qu'aucun des deux
+premiers ne compile : le cas de repli du contrat de fenêtre, qui sert les
+systèmes sans backend.
 
 **`make conversions`** compte les conversions de pointeur du dépôt —
 `unsafe.Pointer`, `unsafe.Slice`, `unsafe.String` et `unsafe.Add` — par fichier,
