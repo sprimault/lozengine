@@ -45,6 +45,20 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- `js/wasm` n'est plus seulement compilée : la suite de tests y passe à chaque lot et y
+  compare les images au pixel. C'est la cible dont le moteur de compilation diffère le
+  plus de celui des plateformes natives.
+
+***
+
+### Added
+
+- `js/wasm` is no longer merely compiled: the test suite runs there on every batch and
+  compares images pixel by pixel. It is the target whose compiler backend differs most
+  from the native platforms' one.
+
 ## [0.5.9] — 2026-10-31
 
 ### Corrigé

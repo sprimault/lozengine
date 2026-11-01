@@ -84,6 +84,56 @@ RUN ?=
 test:
 	go test -count=1 $(if $(RUN),-run '$(RUN)') $(PKG)
 
+# Les quatre cas que l'hôte node refuse sous Windows, et eux seuls.
+#
+# **La cause est l'hôte, pas la plateforme** : `fs_js.go` de la chaîne Go le dit en
+# commentaire — « NodeJS on Windows does not support O_DIRECTORY » —, et les quatre mêmes
+# cas passent sous `js/wasm` sur la machine Linux. Un `t.Skip` dans les fichiers de test
+# masquerait donc un contrôle du dépôt pour une raison fausse : c'est la **cible** qui
+# écarte, sur la seule machine concernée, et qui le dit.
+#
+# Les quatre lisent le disque — trois balaient les sources d'un paquet, le quatrième liste
+# les images de référence. Mesuré le 1er novembre 2026 : sans eux, les treize paquets
+# passent sous `js/wasm` sur le poste.
+SAUTS_WASM_WINDOWS = TestIdentifiersAreNotFrench|TestNoPlaceIsNamedTwice|TestTheSweepReachesEveryFormOfPlace|TestReferencesMatchTheCatalog
+ifeq ($(OS),Windows_NT)
+SAUTS_WASM = -skip '$(SAUTS_WASM_WINDOWS)'
+endif
+
+# La suite entière sous `js/wasm`, et c'est une quatrième cible d'exécution.
+#
+# **Ce qu'elle apporte et que rien d'autre ne donne** : les dix scénarios de référence
+# comparés au pixel sous un second backend de compilation. La passe `js/wasm` de `vet`, de
+# `deps` et de `frontiere` ne fait que lire les sources, et `cross` ne fait que construire ;
+# aucune n'exécute. C'est le pendant de la ligne `ubuntu-24.04-arm` du workflow, dont le
+# commentaire dit qu'elle est la seule à éprouver le déterminisme entre architectures.
+#
+# **Hors de `check`, et pour une raison mesurée** : la chaîne du plancher distribuée en
+# module ne porte ni `lib/wasm` ni `misc/wasm`, donc `make floor` et le conteneur du
+# plancher échoueraient sur l'absence du fichier de liaison, pas sur un défaut.
+#
+# **La forme de l'invocation n'est pas interchangeable.** `-exec` avec le chemin **cité**
+# marche sur le poste malgré l'espace de `C:/Program Files/Go` ; étendre le `PATH` échoue,
+# `go_js_wasm_exec` étant un script bash sans extension que Windows ne sait pas lancer —
+# « %1 is not a valid Win32 application ». Une seule forme sert donc les deux machines.
+.PHONY: wasm-test
+wasm-test:
+	@R="$$(go env GOROOT)"; \
+	liaison=""; \
+	for d in lib/wasm misc/wasm; do \
+	  if [ -f "$$R/$$d/wasm_exec_node.js" ]; then liaison="$$R/$$d/wasm_exec_node.js"; break; fi; \
+	done; \
+	if [ -z "$$liaison" ]; then \
+	  echo "the resolved Go toolchain carries no node bridge for js/wasm"; \
+	  echo "looked in $$R/lib/wasm and $$R/misc/wasm"; \
+	  exit 1; \
+	fi; \
+	if ! command -v node >/dev/null 2>&1; then \
+	  echo "node is not on PATH, and the js/wasm executor needs it"; \
+	  exit 1; \
+	fi; \
+	GOOS=js GOARCH=wasm go test -count=1 $(SAUTS_WASM) -exec "node \"$$liaison\"" ./...
+
 # Rien ne crée le répertoire de sortie : il est ignoré par git, donc absent d'un
 # clone neuf, et `make clean` le supprime. Les cibles qui y écrivent en dépendent.
 $(SORTIE):
