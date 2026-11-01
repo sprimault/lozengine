@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sprimault/lozengine/internal/bench"
 	"github.com/sprimault/lozengine/render"
 )
 
@@ -208,6 +209,7 @@ func BenchmarkPresent(b *testing.B) {
 			for range b.N {
 				w.Present(buffer)
 			}
+			bench.Part(b)
 
 			// Le relevé se lit après la boucle et jamais pendant : une écriture dans
 			// la mesure fabrique le symptôme qu'on cherche.

@@ -1,9 +1,9 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// La mesure du chemin complet d'une image, à la cible de contrôle du jalon. Les
-// chiffres se lisent pondérés : une mesure brute dit ce que vaut la machine qui
-// mesure, pas la part d'image que l'étape prendrait ailleurs.
+// La mesure du chemin complet d'une image, à la cible de contrôle du jalon. Les chiffres
+// se lisent en part d'une image, que [bench.Part] rapporte : une mesure brute dit ce que
+// vaut la machine qui mesure, pas si l'étape mérite qu'on y touche.
 
 package sorting
 
@@ -11,30 +11,10 @@ import (
 	"testing"
 
 	"github.com/sprimault/lozengine/geometry"
+	"github.com/sprimault/lozengine/internal/bench"
 	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
-
-// Une mesure brute dit ce que l'opération coûte sur la machine qui mesure. Ce qu'on
-// veut savoir est la part d'image qu'elle prendrait sur une machine modeste : les
-// chiffres de ce banc se lisent donc pondérés, jamais bruts.
-//
-// Les deux constantes et la fonction qui suit redisent celles du banc de `raster`. Ce
-// n'est pas un oubli de factorisation : le tableau des frontières interdit à `tri`
-// d'atteindre `raster`, et un paquet commun pour trois lignes de test coûterait une
-// ligne de plus à ce tableau.
-const (
-	weight      = 4
-	frameAt60Hz = 16_666_667
-)
-
-// reportFrameShare rapporte la part d'une image à 60 Hz que l'étape prendrait sur une machine
-// modeste. Le ns/op brut reste rapporté à côté : c'est lui que `benchstat` compare, la
-// pondération n'étant qu'une lecture.
-func reportFrameShare(b *testing.B) {
-	perOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
-	b.ReportMetric(perOp*weight*100/frameAt60Hz, "%image-pondere")
-}
 
 // benchScene monte une scène de la taille et du contenu demandés, vue par une
 // fenêtre à la résolution interne du moteur.
@@ -113,7 +93,7 @@ func BenchmarkFrame(b *testing.B) {
 				sorter.Frame()
 			}
 
-			reportFrameShare(b)
+			bench.Part(b)
 			b.ReportMetric(float64(quads), "quads")
 		})
 	}

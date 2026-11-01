@@ -14,6 +14,7 @@ import (
 	"testing"
 	"unsafe"
 
+	"github.com/sprimault/lozengine/internal/bench"
 	"github.com/sprimault/lozengine/render"
 )
 
@@ -292,6 +293,7 @@ func BenchmarkPresent(b *testing.B) {
 			for range b.N {
 				w.Present(buffer)
 			}
+			bench.Part(b)
 		})
 	}
 }
@@ -317,10 +319,12 @@ func BenchmarkToBGRA(b *testing.B) {
 		b.Run(s.name, func(b *testing.B) {
 			src := make([]render.Color, s.w*s.h)
 			dst := make([]uint32, len(src))
+			b.SetBytes(int64(len(src)) * 4)
 			b.ResetTimer()
 			for range b.N {
 				dst = toBGRA(dst, src)
 			}
+			bench.Part(b)
 		})
 	}
 }
