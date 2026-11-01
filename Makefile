@@ -92,10 +92,16 @@ test:
 # masquerait donc un contrôle du dépôt pour une raison fausse : c'est la **cible** qui
 # écarte, sur la seule machine concernée, et qui le dit.
 #
-# Les quatre lisent le disque — trois balaient les sources d'un paquet, le quatrième liste
-# les images de référence. Mesuré le 1er novembre 2026 : sans eux, les treize paquets
-# passent sous `js/wasm` sur le poste.
-SAUTS_WASM_WINDOWS = TestIdentifiersAreNotFrench|TestNoPlaceIsNamedTwice|TestTheSweepReachesEveryFormOfPlace|TestReferencesMatchTheCatalog
+# Ils lisent le disque — quatre balaient les sources d'un paquet, le cinquième liste les
+# images de référence. Mesuré le 1er novembre 2026 : sans eux, les treize paquets passent
+# sous `js/wasm` sur le poste.
+#
+# **La liste s'allonge quand un cas relève une déclaration depuis les sources**, ce qui est
+# la bonne façon de garder une table close contre une liste tenue à la main. Le cinquième
+# est entré ainsi : il exige que chaque place du clavier déclarée par `input` soit atteinte
+# par un `code` de la page, et une liste de quatre-vingt-six noms recopiée dans le test
+# aurait dérivé avec ce qu'elle contrôle.
+SAUTS_WASM_WINDOWS = TestIdentifiersAreNotFrench|TestNoPlaceIsNamedTwice|TestTheSweepReachesEveryFormOfPlace|TestReferencesMatchTheCatalog|TestEveryDeclaredPlaceIsReachable
 ifeq ($(OS),Windows_NT)
 SAUTS_WASM = -skip '$(SAUTS_WASM_WINDOWS)'
 endif
