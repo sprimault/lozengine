@@ -1,57 +1,31 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// Les quatre étapes d'une image mesurées séparément, et leur part d'un budget à
-// soixante images par seconde sur une machine modeste. C'est ce rapport qui décide
-// qu'on optimise ou non, jamais la mesure brute de la machine qui mesure.
+// Les quatre étapes d'une image mesurées séparément, et la part d'un budget à soixante
+// images par seconde que chacune prend. C'est cette part qui décide qu'on optimise ou non,
+// et elle se lit à la surface qu'on nomme : la surface de dessin suit la fenêtre, donc un
+// chiffre pris à la résolution d'ouverture ne dit rien de ce qu'une fenêtre maximisée coûte.
 
 package raster
 
 import (
 	"testing"
 
+	"github.com/sprimault/lozengine/internal/bench"
 	"github.com/sprimault/lozengine/render"
 )
 
-// Une mesure brute dit ce que l'opération coûte sur la machine qui mesure. Ce qu'on
-// veut savoir est la part d'image qu'elle prendrait sur une machine modeste : les
-// chiffres de ces bancs se lisent donc pondérés, jamais bruts.
-const (
-	// weighting rapporte la mesure à une machine plus lente, pour ce qui dépend de
-	// la bande passante mémoire.
-	weighting = 4
-
-	// frameAt60Hz est le budget d'une image, en nanosecondes.
-	frameAt60Hz = 16_666_667
-)
-
-// framePart rapporte la part d'une image à 60 Hz que l'opération prendrait sur une
-// machine modeste. Le ns/op brut reste rapporté à côté : c'est lui que `benchstat`
-// compare, la pondération n'étant qu'une lecture.
+// Une mesure brute dit ce que l'opération coûte sur la machine qui mesure. Ce qu'on veut
+// savoir est la part d'une image qu'elle prend, et [bench.Part] la rapporte.
 //
-// Elle n'a de sens que pour ce qui se fait une fois par image. Un banc à l'échelle du
-// quad n'en reçoit pas : ce qu'on y lit est un rapport entre chemins, et un rapport
-// n'a pas besoin d'être pondéré.
-func framePart(b *testing.B) {
-	perOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
-	b.ReportMetric(perOp*weighting*100/frameAt60Hz, "%image-pondere")
-}
-
-// rawFramePart rapporte la part d'une image sans pondérer, pour un chemin limité par ses
-// opérations et non par la bande passante mémoire.
+// **Ce fichier portait deux rapporteurs et une pondération par quatre, tous retirés** : la
+// pondération était appliquée à l'envers, et la godoc du paquet [bench] porte la mesure qui
+// l'a défaite. Un chemin se classe désormais par son débit, [bench.Throughput], qui tranche
+// sur la machine qui mesure.
 //
-// **Deux unités et non une, et ce n'est pas un relâchement de la convention** : la
-// pondération de [framePart] représente une machine dont la mémoire est quatre fois plus
-// étroite, donc l'appliquer à un chemin qui ne dépend pas de la mémoire le surestime d'un
-// facteur quatre. Ce qui tranche entre les deux n'est pas une intuition mais la mesure sur
-// les deux machines du parc : un chemin limité par la mémoire y diffère d'un facteur deux
-// et demi, un chemin limité par le calcul s'y tient à 10 ou 20 % près.
-//
-// Le nom de la métrique dit laquelle on lit, de sorte qu'aucun lecteur n'ait à diviser.
-func rawFramePart(b *testing.B) {
-	perOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
-	b.ReportMetric(perOp*100/frameAt60Hz, "%image-brut")
-}
+// La part n'a de sens que pour ce qui se fait une fois par image. Un banc à l'échelle du
+// quad n'en reçoit pas : ce qu'on y lit est un rapport entre chemins, et un rapport n'a
+// besoin d'aucun dénominateur.
 
 // tile rend une tile de sol en losange 32×16 : coins transparents, corps opaque,
 // bord à demi transparent. Les trois genres de séquence y sont représentés dans les
@@ -162,8 +136,8 @@ func BenchmarkQuad(b *testing.B) {
 // quad la plus chère du moteur et n'avait aucun chiffre.
 //
 // **Pourquoi [BenchmarkQuad] ne le disait pas** : son aplat fait 32×16, donc 512 pixels,
-// et un banc à l'échelle du quad ne reçoit pas de part d'image — ce que la godoc de
-// [framePart] pose. Or un aplat de surface en peint deux mille fois plus : c'est ce
+// et un banc à l'échelle du quad ne reçoit pas de part d'image — ce que la tête de ce
+// fichier pose. Or un aplat de surface en peint deux mille fois plus : c'est ce
 // qu'un panneau d'interface, une bande ou un fondu demandent, et c'est le seul quad dont
 // la surface croît avec la fenêtre.
 //
@@ -175,12 +149,12 @@ func BenchmarkQuad(b *testing.B) {
 // cher des trois**, de trois à quatre fois : ce qui domine n'est pas la forme de
 // l'écriture mais l'arithmétique par pixel que les deux autres ajoutent.
 //
-// **La part se lit brute et non pondérée, et c'est mesuré.** [framePart] rapporte à une
-// machine dont la bande passante est quatre fois plus étroite, ce qui ne vaut que pour
-// un chemin qui en dépend ; celui-ci n'en dépend pas. Les deux machines du parc, dont
-// les bandes passantes vont de un à deux et demi, rendent ici des chiffres à 23 % près
-// et la plus récente est même la plus lente sur cinq cas sur six — la signature d'un
-// chemin limité par ses opérations, où la part brute est déjà la part.
+// **Ce chemin est limité par ses opérations, et c'est mesuré.** Les deux machines du
+// parc, dont les bandes passantes vont de un à deux et demi, rendent ici des chiffres à
+// 23 % près, et la plus récente est même la plus lente sur cinq cas sur six. C'était
+// l'argument qui lui épargnait une pondération par quatre, du temps où les bancs en
+// portaient une ; elle est retirée depuis, pour une raison que [bench] explique et qui
+// vaut pour tous les chemins.
 //
 // Les deux conditions de `tests.md` restent à remplir avant de corriger : la mesure
 // n'ouvre pas la porte à elle seule, et aucune charge observée ne pose un aplat de la
@@ -214,7 +188,7 @@ func BenchmarkFlatSurface(b *testing.B) {
 					Draw(buffer, r, nil)
 				}
 
-				rawFramePart(b)
+				bench.Part(b)
 			})
 		}
 	}
@@ -235,11 +209,17 @@ func BenchmarkClear(b *testing.B) {
 		b.Run(c.name, func(b *testing.B) {
 			buffer := render.NewBuffer(480, 270)
 
+			// Le débit atteint est le discriminant entre un chemin limité par la
+			// mémoire et un chemin limité par ses opérations, et c'est lui qui a
+			// renversé le classement de cette étape : elle dépasse le débit de la
+			// mémoire principale des deux machines du parc, donc elle est servie par
+			// le cache.
+			b.SetBytes(int64(len(buffer.Pixels)) * 4)
 			b.ResetTimer()
 			for range b.N {
 				Clear(buffer, c.color)
 			}
-			framePart(b)
+			bench.Part(b)
 		})
 	}
 }
@@ -262,11 +242,16 @@ func BenchmarkUpscale(b *testing.B) {
 			Clear(inner, render.Color{R: 60, G: 80, B: 60, A: 255})
 			out := render.NewBuffer(c.outWidth, c.outHeight)
 
+			// Les octets écrits, pour le débit : celui-ci tient le quart de ce que
+			// la mémoire principale livre, donc c'est le chemin du pas qui dépend
+			// vraiment d'elle — l'inverse de ce qu'une pondération gardée sur
+			// l'effacement supposait.
+			b.SetBytes(int64(len(out.Pixels)) * 4)
 			b.ResetTimer()
 			for range b.N {
 				Upscale(inner, out, c.factor, render.Color{A: 255})
 			}
-			framePart(b)
+			bench.Part(b)
 		})
 	}
 }
@@ -306,5 +291,5 @@ func BenchmarkFrame(b *testing.B) {
 	}
 	b.ReportMetric(float64(b.N)/b.Elapsed().Seconds(), "images/s")
 	b.ReportMetric(float64(tiles), "tuiles/image")
-	framePart(b)
+	bench.Part(b)
 }

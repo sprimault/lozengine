@@ -20,23 +20,10 @@ package appearance
 import (
 	"testing"
 
+	"github.com/sprimault/lozengine/internal/bench"
 	"github.com/sprimault/lozengine/render"
 	"github.com/sprimault/lozengine/scene"
 )
-
-// Les deux constantes du budget, redites de celles des bancs de `raster` et de
-// `sorting`. Ce n'est pas un oubli de factorisation : le tableau des frontières ne donne
-// à `appearance` que `render` et `scene`, et un paquet commun pour trois lignes de test
-// coûterait une arête de plus à ce tableau.
-const frameAt60Hz = 16_666_667
-
-// framePart rapporte la part d'une image à soixante par seconde, sans pondérer : la
-// résolution d'apparence est une lecture de table de hachage et de l'arithmétique
-// entière, donc elle ne dépend pas de la bande passante mémoire.
-func framePart(b *testing.B) {
-	perOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
-	b.ReportMetric(perOp*100/frameAt60Hz, "%image-brut")
-}
 
 // benchSheets monte un fournisseur portant le nombre de types demandé, chacun animé.
 //
@@ -85,7 +72,7 @@ func BenchmarkAspect(b *testing.B) {
 				}
 			}
 
-			framePart(b)
+			bench.Part(b)
 		})
 	}
 }
@@ -127,7 +114,7 @@ func BenchmarkPlaceLine(b *testing.B) {
 				s.ClearScreen()
 			}
 
-			framePart(b)
+			bench.Part(b)
 		})
 	}
 }
@@ -181,7 +168,7 @@ func BenchmarkPerFrame(b *testing.B) {
 				}
 			}
 
-			framePart(b)
+			bench.Part(b)
 			b.ReportMetric(float64(sum&1), "temoin")
 		})
 	}

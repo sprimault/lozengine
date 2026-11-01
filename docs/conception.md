@@ -256,6 +256,7 @@ appearance            interface fournisseur, animation          render, scene
 input                 touches, état du clavier                  aucune
 internal/backend/…    contrat de fenêtre, familles, présentation  input, render
 internal/audio        mixeur et sorties système                 aucune
+internal/bench        budget d'une image, part qu'une étape prend  aucune
 internal/viewer       scènes scriptées, rejeu, images           tous les précédents
 cmd/viewer            commande de rejeu                         viewer
 examples/…            ce qu'un jeu écrit, en entier             lozengine

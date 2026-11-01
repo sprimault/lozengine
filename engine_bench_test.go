@@ -10,6 +10,7 @@ package lozengine
 import (
 	"testing"
 
+	"github.com/sprimault/lozengine/internal/bench"
 	"github.com/sprimault/lozengine/internal/sorting"
 	"github.com/sprimault/lozengine/raster"
 	"github.com/sprimault/lozengine/render"
@@ -127,33 +128,36 @@ func BenchmarkStep(b *testing.B) {
 // image, donc l'exclure de la répartition donnerait une part trop belle au dessin. Son
 // facteur est celui qu'une fenêtre de bureau impose à la résolution d'ouverture.
 //
-// **Le fait de structure que ces cas disent ensemble, mesuré le 30 octobre 2026 à la
-// charge de contrôle : l'agrandissement domine l'image.** Les trois étapes du pas
-// expliquent bien le pas — tri 57 %, dessin 41 %, effacement 4,5 % —, mais le pas entier
-// ne pèse qu'un tiers de **la somme de ces quatre étapes** : l'agrandissement au facteur 4
-// vaut plus du double du pas à lui seul, soit environ deux tiers de cette somme.
+// **Le fait de structure que ces cas disent ensemble : l'agrandissement domine, et les
+// cinq sont loin du seuil à cette surface.** Médianes de trois séries de 200 itérations
+// sur le poste, sous go1.27.0, avec leur étendue entre séries — le pas entier 175 µs
+// (±10 %) soit 1,05 % d'une image, l'agrandissement au facteur 4 318 µs (±15 %) soit
+// 1,91 %, le tri 97 µs, le dessin 71 µs (±18 %), l'effacement 8,1 µs. L'agrandissement
+// vaut donc à lui seul près du double du pas entier.
 //
-// **Cette somme n'est pas un budget, et le mot est réservé** : `frameAt60Hz` le porte, et
-// le seuil de dix pour cent s'y rapporte. Rapportées à lui, les quatre étapes valent 6,7 %,
-// 2,0 %, 1,5 % et 0,15 % — c'est la part qui décide, et la somme ne sert qu'à dire lequel
-// des maillons domine. Confondre les deux a ouvert une porte à tort pendant un jour.
+// **Cette somme n'est pas un budget, et le mot est réservé** : [bench.FrameAt60Hz] le
+// porte, et le seuil de dix pour cent s'y rapporte. Lue contre la somme des quatre étapes,
+// une étape peut valoir 60 % et dépasser tout seuil ; lue contre une image, elle en vaut
+// deux. Confondre les deux a ouvert une porte à tort pendant un jour. La somme ne sert
+// qu'à dire lequel des maillons domine.
 //
 // Ce qui en découle, et c'est une surprise : à cette charge, **le chemin le plus chaud des
 // quatre n'est pas le tri mais la recopie de pixels**. Le rapport se lit dans une seule
-// série, donc la dérive thermique ne le touche pas ; les valeurs absolues, elles,
-// n'appartiennent qu'à la machine qui mesure.
+// série ; les valeurs absolues n'appartiennent qu'à la machine et à la chaîne qui mesurent.
 //
-// **Et ce rapport dépend de la machine, ce qui dit comment le pondérer.** Mesuré sur deux
-// processeurs de même génération dont la bande passante mémoire diffère d'un facteur deux
-// et demi : le tri et le dessin se tiennent à 10 % près — la machine la plus large est même
-// légèrement plus lente, le calcul la limitant —, là que l'effacement y va deux fois plus
-// vite et l'agrandissement d'un cinquième. Ces deux-là sont donc limités par la mémoire, et
-// **la part de l'agrandissement croît quand la bande passante baisse** : deux tiers de
-// l'image sur la machine la plus étroite, trois cinquièmes sur l'autre.
+// **Et ce que ces chiffres ne disent pas, c'est la taille de la fenêtre.** Ils sont pris à
+// la résolution d'ouverture, agrandie au facteur 4 vers 1920×1080. La surface de dessin
+// suit la fenêtre, donc à fenêtre 3840×2160 l'agrandissement écrit 33 Mo quel que soit le
+// facteur et l'effacement porte sur la même surface : mesuré le 1er novembre 2026, ils
+// valent alors 13,7 à 14,6 % et 9,2 à 11,1 % du budget d'une image. **Les deux conditions
+// pour toucher au rastériseur sont donc réunies à une taille de fenêtre ordinaire**, et un
+// seuil ne se lit plus sans dire à quelle surface — c'est la dimension qui manquait au
+// verdict du 31 octobre 2026.
 //
-// Conséquence pour qui dimensionne une scène : une machine modeste est plus défavorable à
-// ce maillon, jamais moins. C'est l'inverse de ce qu'on suppose en lisant un budget mesuré
-// sur du matériel récent.
+// **Il n'y a plus de pondération**, et [bench] porte la mesure qui l'a défaite : elle était
+// gardée sur l'effacement, qui dépasse le débit de la mémoire principale des deux machines
+// et vient donc du cache, et retirée de l'agrandissement, qui en tient le quart. Elle était
+// appliquée à l'envers. Le débit que `b.SetBytes` rapporte le tranche sur une seule machine.
 func BenchmarkStepStages(b *testing.B) {
 	const width, height = 480, 270
 
@@ -169,7 +173,15 @@ func BenchmarkStepStages(b *testing.B) {
 		p := &e.atlas.Sheets[i]
 		sorter.AddSheet(p.Width, p.Height, p.Pixels)
 	}
-	list := sorter.Frame()
+	// Une **copie**, et c'est obligatoire : `Frame` rend une tranche sur le tampon de
+	// sortie du trieur, que le cas du tri réécrit à chaque itération. Le contenu est
+	// identique aujourd'hui, la scène étant immobile, donc rien ne se voyait — mais le
+	// jour où un cas la fait bouger, le dessin recevrait la longueur du montage et le
+	// contenu de la dernière image. Relevé le 1er novembre 2026.
+	//
+	// La copie se prend ici et non dans le cas, sans quoi l'entrée dépendrait du `b.N`
+	// des cas qui précèdent.
+	list := append(render.DrawList(nil), sorter.Frame()...)
 
 	for _, c := range []struct {
 		name string
@@ -189,40 +201,21 @@ func BenchmarkStepStages(b *testing.B) {
 			for range b.N {
 				c.run()
 			}
-			framePart(b)
+			bench.Part(b)
 		})
 	}
 }
 
-const (
-	// weighting rapporte la mesure à une machine plus lente, pour ce qui dépend de la
-	// bande passante mémoire. Les deux constantes redisent celles des bancs de `raster`
-	// et de `sorting`, pour la raison que celui de `sorting` donne : le tableau des
-	// frontières interdit de les partager, et un paquet commun pour trois lignes de test
-	// coûterait une ligne de plus à ce tableau.
-	weighting = 4
-
-	// frameAt60Hz est le budget d'une image, en nanosecondes. **C'est le seul
-	// dénominateur du seuil de dix pour cent**, et l'écrire ici était ce qui manquait :
-	// la doctrine des tests l'appliquait à la somme des quatre étapes mesurées, soit un
-	// dénominateur quarante fois plus petit, et en concluait que la porte du rastériseur
-	// était ouverte. Une somme d'étapes qu'on a choisi de mesurer n'est pas un budget ;
-	// 16,7 ms est un fait physique.
-	frameAt60Hz = 16_666_667
-)
-
-// framePart rapporte la part d'une image à 60 Hz que l'étape prendrait sur une machine
-// modeste. Le ns/op brut reste rapporté à côté : c'est lui que `benchstat` compare, la
-// pondération n'étant qu'une lecture.
+// Le budget et le rapporteur vivaient ici, en copie de ceux de `raster` et de `sorting`,
+// au motif qu'un paquet commun « coûterait une ligne de plus au tableau des frontières ».
+// Mesuré faux le 1er novembre 2026 — le tableau se dérive des imports du code et non de
+// ceux des tests —, donc ils sont dans [bench], et la pondération par quatre est partie
+// avec eux : elle était appliquée à l'envers, ce que la godoc de ce paquet établit.
 //
-// **Ce banc ne la rapportait pas, et c'est ce qui a laissé le seuil dériver** : il rendait
-// du `ns/op` seul, là que les bancs de `raster` et de `sorting` portent cette part. Faute
-// d'un chiffre comparable au seuil, les verdicts se sont recalculés à la main contre la
-// somme des étapes — et la divergence reviendra si ce rapport disparaît.
-func framePart(b *testing.B) {
-	perOp := float64(b.Elapsed().Nanoseconds()) / float64(b.N)
-	b.ReportMetric(perOp*weighting*100/frameAt60Hz, "%image-pondere")
-}
+// **Ce banc ne rapportait aucune part jusqu'au 31 octobre 2026, et c'est ce qui a laissé
+// le seuil dériver** : il rendait du `ns/op` seul, donc les verdicts se recalculaient à la
+// main contre la somme des quatre étapes — un dénominateur quarante fois plus petit qu'une
+// image, qui déclarait la porte du rastériseur ouverte.
 
 // benchEdgeScene monte une scène propre aux chemins de bord, **distincte de
 // [benchEngine] et c'est obligatoire** : la godoc de celui-ci pose que sa charge doit

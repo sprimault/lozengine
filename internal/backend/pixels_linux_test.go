@@ -9,6 +9,7 @@ package backend
 import (
 	"testing"
 
+	"github.com/sprimault/lozengine/internal/bench"
 	"github.com/sprimault/lozengine/render"
 )
 
@@ -277,6 +278,7 @@ func BenchmarkAppendPixels(b *testing.B) {
 				for range b.N {
 					dst = o.appendPixels(dst[:0], pixels)
 				}
+				bench.Part(b)
 			})
 		}
 	}
