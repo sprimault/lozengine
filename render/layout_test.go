@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 // Ce que l'exposition à l'ABI rend irrévocable : la taille et la position de chaque
-// champ d'un quad et d'un relevé de recouvrement, la contiguïté des deux listes, et
-// les deux valeurs qu'un hôte compare sans lire notre documentation.
+// champ d'un quad, d'un relevé de recouvrement et d'une couleur, la contiguïté des deux
+// listes, et les deux valeurs qu'un hôte compare sans lire notre documentation.
 
 package render
 
@@ -48,6 +48,46 @@ func TestLayout(t *testing.T) {
 
 	if got, want := unsafe.Sizeof(Color{}), uintptr(4); got != want {
 		t.Errorf("taille de Color : %d, attendu %d", got, want)
+	}
+}
+
+// TestColorLayout fige l'ordre des quatre composantes d'une couleur, et non sa seule
+// taille.
+//
+// **Son argument est l'ABI, pas un backend** : [Quad.Tint] est une Color à l'octet 14 d'un
+// quad, donc un hôte déjà compilé lit ces quatre octets dans cet ordre, et [TestLayout]
+// n'en figeait que la **taille**. Permuter deux composantes garde donc les vingt octets du
+// quad, garde son alignement, garde la position de Tint — et rend une image dont les rouges
+// sont bleus, sans qu'aucune signature bouge.
+//
+// C'est le régime exact qui a laissé Overlap doubler de taille entre deux versions
+// publiées, à un détail près qui le rend plus difficile à voir : les quatre champs sont du
+// même type, donc le compilateur ne se plaint de rien et la taille ne change pas. Les
+// littéraux positionnels de ce paquet rougiraient, mais ils ne sont pas une garde : un
+// littéral nommé passerait.
+//
+// Ce qui le fait rougir : permuter deux champs de Color, ou en insérer un.
+func TestColorLayout(t *testing.T) {
+	var c Color
+
+	if got, want := unsafe.Alignof(c), uintptr(1); got != want {
+		t.Errorf("alignement de Color : %d, attendu %d", got, want)
+	}
+
+	positions := []struct {
+		field string
+		got   uintptr
+		want  uintptr
+	}{
+		{"R", unsafe.Offsetof(c.R), 0},
+		{"G", unsafe.Offsetof(c.G), 1},
+		{"B", unsafe.Offsetof(c.B), 2},
+		{"A", unsafe.Offsetof(c.A), 3},
+	}
+	for _, p := range positions {
+		if p.got != p.want {
+			t.Errorf("position de %s : %d, attendu %d", p.field, p.got, p.want)
+		}
 	}
 }
 
