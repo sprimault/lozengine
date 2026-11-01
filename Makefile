@@ -437,22 +437,30 @@ SANS_DEPENDANCE = render geometry scene raster input appearance internal/sorting
 #
 # Le périmètre est celui d'`entetes`, `$(SUIVIS)` : indexés **et** non suivis non ignorés,
 # donc un fichier neuf est lu sans `git add`.
+#
+# **Par site et non par ligne, et le premier jet comptait les lignes** : `grep -c` compte
+# les lignes qui correspondent, donc deux conversions sur une même ligne n'en faisaient
+# qu'une — et une conversion glissée dans une ligne existante ne bougeait pas le compte.
+# Relevé le 1er novembre 2026 en employant la cible : `unsafe.Slice((*byte)(unsafe.Pointer(…)))`
+# est la forme naturelle de la relecture d'une tranche, et elle porte deux sites sur une
+# ligne. Deux fichiers étaient comptés faux. C'est `grep -o` qui tranche.
 CONVERSIONS = \
   internal/backend/icon_windows.go=4 \
   internal/backend/open_windows.go=3 \
+  internal/backend/pixels_web.go=2 \
   internal/backend/pointer_windows.go=1 \
   internal/backend/present_windows.go=2 \
   internal/backend/present_windows_test.go=3 \
   internal/backend/win32_windows.go=2 \
   internal/backend/window_windows.go=4 \
   internal/backend/window_windows_test.go=2 \
-  render/layout_test.go=2
+  render/layout_test.go=4
 
 .PHONY: conversions
 conversions:
 	@motif='unsafe\.\(Pointer\|Slice\|String\|Add\)'; \
 	releve=$$($(SUIVIS) '*.go' | while read -r f; do \
-	    n=$$(grep -c "$$motif" "$$f" 2>/dev/null || true); \
+	    n=$$(grep -o "$$motif" "$$f" 2>/dev/null | wc -l | tr -d ' '); \
 	    [ "$$n" != "0" ] && echo "$$f=$$n"; done | sort); \
 	attendu=$$(printf '%s\n' $(CONVERSIONS) | sort); \
 	if [ "$$releve" != "$$attendu" ]; then \
