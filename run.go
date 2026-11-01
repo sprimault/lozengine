@@ -33,9 +33,10 @@ import (
 // se trompe donc de tout ce qu'une pause a pris : ce compte est un nombre d'images, et
 // non une horloge.
 //
-// Elle ne rend la main qu'à la fermeture, ce qui convient à un jeu écrit en Go et à
-// lui seul : un hôte qui possède sa boucle emploie [Engine] et appelle un pas par
-// image.
+// Elle ne rend la main **à son appelant** qu'à la fermeture, ce qui convient à un jeu
+// écrit en Go et à lui seul : un hôte qui possède sa boucle emploie [Engine] et appelle
+// un pas par image. À la plateforme, en revanche, elle la rend entre deux images, et
+// c'est ce qu'un navigateur exige pour déclencher son image suivante.
 //
 // **Elle rend nil quand la fenêtre s'est fermée normalement** — le joueur a cliqué la
 // croix, ou le jeu a demandé à partir — et une erreur sinon : la fenêtre n'a pas pu

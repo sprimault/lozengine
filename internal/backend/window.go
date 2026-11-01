@@ -26,10 +26,17 @@ import (
 // **Tout se passe sur le thread qui a ouvert la fenêtre**, et aucune méthode n'est sûre
 // depuis une autre goroutine. La boucle du paquet racine verrouille le sien pour cela.
 //
-// **Size et Closed sont des accesseurs purs** : elles rendent ce que la dernière Input a
-// appris, sans interroger le système. Une famille qui parle par une socket paierait
-// autrement un aller-retour complet par image pour une valeur que le serveur lui a déjà
-// annoncée par un événement.
+// **Size et Closed rendent ce que le pas courant sait, et ne traversent jamais le
+// réseau** : une famille qui parle par une socket paierait autrement un aller-retour
+// complet par image pour une valeur que le serveur lui a déjà annoncée par un événement.
+//
+// **Ce bloc exigeait des « accesseurs purs, sans interroger le système », et c'était faux
+// de Windows depuis toujours** : Size y appelle clientSize à chaque image. Relevé le
+// 1er novembre 2026. C'est la lettre qui était trop large, pas le code — un appel local
+// n'est pas un aller-retour, et une taille mise en cache se désynchronise de l'événement
+// qu'on n'a pas pensé à écouter. X11 rend un champ parce que le serveur le lui annonce ;
+// une famille sans événement de taille peut interroger, tant que cela ne sort pas de la
+// machine.
 type Window interface {
 	// Input rend les entrées du pas qui commence : les touches et les boutons tenus
 	// comme ceux qui viennent d'être enfoncés, la position du pointeur et la molette.

@@ -127,9 +127,14 @@ func pixelOrderOf(s setup) (pixelOrder, error) {
 //
 // **Une copie est inévitable sauf dans un cas, et ce n'est pas un défaut de cette
 // fonction** : un `[]render.Color` ne devient un `[]byte` que par une conversion de
-// pointeur, que la liste close de la cible `vet` n'autorise pas. Le brief l'avait
-// prévu — la conversion devient la passe de copie de toute façon inévitable vers le
-// tampon d'émission.
+// pointeur, qui se décide en pull request et s'inscrit dans la liste close du Makefile.
+// Le brief l'avait prévu — la conversion devient la passe de copie de toute façon
+// inévitable vers le tampon d'émission.
+//
+// **Ce bloc attribuait cette garde à `vet`, et c'était faux** : son analyseur `unsafeptr`
+// ne signale que les allers-retours par `uintptr`, donc il ne voit pas cette forme du
+// tout. Mesuré le 1er novembre 2026, et la cible qui la garde depuis compte les sites par
+// fichier.
 //
 // Ce que la conversion de pointeur achèterait, mesuré le 31 octobre 2026 et non plus
 // supposé : elle ne vaut que pour [pixelDirect], seule disposition où l'ordre du

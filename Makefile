@@ -350,6 +350,52 @@ SANS_DEPENDANCE = render geometry scene raster input appearance internal/sorting
 #
 # Le filtre du module n'est pas ancré : `-test` fait remonter des pseudo-paquets de
 # la forme `paquet [paquet.test]`, dont le chemin du module ne commence pas la ligne.
+
+# Les conversions de pointeur, par fichier et par compte, liste close.
+#
+# **`vet` ne garde pas ce qu'on croyait.** Son analyseur `unsafeptr` ne signale que les
+# allers-retours par `uintptr` — un seul site dans tout le dépôt, celui d'`UNSAFEPTR` —,
+# donc `unsafe.Pointer`, `unsafe.Slice`, `unsafe.Add` et `unsafe.String` lui sont
+# invisibles. Une godoc du backend X11 affirmait pourtant refuser une conversion « que la
+# liste close de la cible vet n'autorise pas » : la discipline annoncée n'existait pas, et
+# une conversion de plus serait entrée sans qu'aucun contrôle rougisse. Mesuré le
+# 1er novembre 2026 sur la forme exacte, dans un module d'essai.
+#
+# Un grep et non un analyseur : il n'existe pas d'analyseur pour « combien de conversions
+# ce fichier porte », et c'est le compte qui est la décision.
+#
+# **Les lectures de disposition n'y sont pas** — `Sizeof`, `Offsetof`, `Alignof` —, et
+# c'est voulu : elles ne convertissent rien, le fichier qui fige les dispositions en porte
+# vingt-deux à lui seul, et les y compter ferait rougir la cible à chaque champ gardé.
+#
+# Le périmètre est celui d'`entetes`, `$(SUIVIS)` : indexés **et** non suivis non ignorés,
+# donc un fichier neuf est lu sans `git add`.
+CONVERSIONS = \
+  internal/backend/icon_windows.go=4 \
+  internal/backend/open_windows.go=3 \
+  internal/backend/pointer_windows.go=1 \
+  internal/backend/present_windows.go=2 \
+  internal/backend/present_windows_test.go=3 \
+  internal/backend/win32_windows.go=2 \
+  internal/backend/window_windows.go=4 \
+  internal/backend/window_windows_test.go=2 \
+  render/layout_test.go=2
+
+.PHONY: conversions
+conversions:
+	@motif='unsafe\.\(Pointer\|Slice\|String\|Add\)'; \
+	releve=$$($(SUIVIS) '*.go' | while read -r f; do \
+	    n=$$(grep -c "$$motif" "$$f" 2>/dev/null || true); \
+	    [ "$$n" != "0" ] && echo "$$f=$$n"; done | sort); \
+	attendu=$$(printf '%s\n' $(CONVERSIONS) | sort); \
+	if [ "$$releve" != "$$attendu" ]; then \
+	  echo "conversions de pointeur : le relevé ne correspond pas à la liste close"; \
+	  echo "une conversion de plus se décide en pull request, elle ne s'ajoute pas"; \
+	  echo "--- relevé ---"; printf '%s\n' "$$releve"; \
+	  echo "--- attendu ---"; printf '%s\n' "$$attendu"; \
+	  exit 1; \
+	fi
+
 .PHONY: deps
 deps:
 	@externes=""; \
@@ -765,7 +811,7 @@ hello:
 	fi
 
 .PHONY: check
-check: fmt vet deps entetes frontiere procedures liens journal surface hello cross test
+check: fmt vet deps conversions entetes frontiere procedures liens journal surface hello cross test
 
 # Le plancher du module, lu dans `go.mod` et nulle part ailleurs.
 #
