@@ -71,6 +71,17 @@ func Run(s *Scene, g Game, o Options) error {
 	}
 	defer window.Close()
 
+	return loop(window, engine, g, o)
+}
+
+// loop fait tourner le jeu devant une fenêtre déjà ouverte, et rend ce qui l'a arrêté.
+//
+// **Séparée de [Run] pour la raison qui a séparé `fit` et `pace` : une décision mêlée à
+// une fenêtre ne s'éprouve pas.** Tant qu'elle vivait dans `Run`, aucun cas ne pouvait
+// l'atteindre — la fenêtre venant d'un appel système au milieu de la fonction —, et la
+// pièce la plus parcourue du paquet racine n'était gardée par rien. Les options arrivent
+// ici avec leurs défauts déjà posés.
+func loop(window backend.Window, engine *Engine, g Game, o Options) error {
 	// Le tampon de la fenêtre est monté une fois et refait seulement quand la
 	// fenêtre change de taille : l'agrandissement écrit dedans à chaque image, et
 	// l'allouer par image mettrait le ramasse-miettes dans le chemin de rendu.
@@ -89,10 +100,31 @@ func Run(s *Scene, g Game, o Options) error {
 	// En visant une date, un tour trop long est absorbé par le suivant.
 	next := time.Now().Add(o.Tick)
 
+	// Une fenêtre qui cadence elle-même change les deux bouts de la boucle, et la
+	// godoc de son contrat dit pourquoi. La réponse est une propriété de la famille,
+	// donc elle se lit une fois.
+	paced := window.Paced()
+
 	for {
 		in := window.Input()
 		if window.Closed() {
 			return window.Err()
+		}
+
+		// **Devant une fenêtre cadencée, c'est ici que le pas se décide et non plus à
+		// la fin.** L'attente a déjà eu lieu dans Input, mais la plateforme compose
+		// plus souvent que le jeu n'avance — trois cents fois par seconde sur un écran
+		// du parc, pour un pas à soixante. Les tours en avance se rendent donc sans
+		// faire de pas, au lieu de dormir pour rattraper une échéance déjà tenue.
+		//
+		// Ce tour-là ne lit pas la taille et n'interroge pas `Quitting` : les deux
+		// attendent le prochain pas, soit au plus un tick.
+		if paced {
+			wait, after := pace(time.Now(), next, o.Tick)
+			if wait > 0 {
+				continue
+			}
+			next = after
 		}
 
 		// Le tampon de la fenêtre se monte avant le pas et non après, parce que la
@@ -136,6 +168,19 @@ func Run(s *Scene, g Game, o Options) error {
 		// de ce pas sort quand même, et la boucle rend la main ensuite.
 		if quitting != nil && quitting.Quitting() {
 			return window.Err()
+		}
+
+		// **Et le sommeil n'a lieu que si la fenêtre ne cadence pas.** Dormir devant
+		// une fenêtre qui cadence écrirait l'image suivante hors du tour que la
+		// plateforme s'apprête à composer : mesuré sous un navigateur, deux tiers des
+		// images à quatre-vingt-dix pour cent de charge, que celle-ci compose alors
+		// pendant que le moteur les réécrit.
+		//
+		// Il reste indispensable aux deux autres familles, dont l'Input rend la main
+		// aussitôt : sans lui, la boucle tournerait à plein régime pour tenir un pas
+		// qu'elle dépasserait de toute façon.
+		if paced {
+			continue
 		}
 
 		wait, after := pace(time.Now(), next, o.Tick)
