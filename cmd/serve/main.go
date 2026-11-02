@@ -10,6 +10,8 @@ import (
 	"flag"
 	"fmt"
 	"go/build"
+	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -32,6 +34,7 @@ const bridgeFile = "wasm_exec.js"
 func main() {
 	module := flag.String("wasm", "", "le module compilé pour js/wasm, à servir")
 	addr := flag.String("addr", "127.0.0.1:8080", "où écouter")
+	once := flag.Bool("once", false, "s'arrêter dès que la page a renvoyé un relevé")
 	flag.Parse()
 
 	if *module == "" {
@@ -69,8 +72,51 @@ func main() {
 		http.ServeFile(w, r, bridgePath)
 	})
 
-	fmt.Printf("lozengine on http://%s/\n", *addr)
-	if err := http.ListenAndServe(*addr, nil); err != nil {
+	// Ce que la page renvoie quand le module a fini d'écrire. Le serveur l'imprime, et
+	// s'arrête quand on l'a lancé pour une seule lecture : c'est ainsi qu'un navigateur
+	// sans écran rend un relevé à une cible de `make`, sans que celle-ci ait à deviner
+	// quand la page a abouti.
+	done := make(chan struct{})
+	http.HandleFunc("/releve", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "post only", http.StatusMethodNotAllowed)
+			return
+		}
+		body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		fmt.Print(string(body))
+		w.WriteHeader(http.StatusNoContent)
+		if *once {
+			close(done)
+		}
+	})
+
+	if *once {
+		go func() {
+			<-done
+			os.Exit(0)
+		}()
+	}
+
+	// L'écoute s'ouvre avant d'annoncer, et l'annonce porte l'adresse **réelle**.
+	//
+	// **C'est ce qui permet de demander un port au système**, par `:0`, et de le lire
+	// ensuite : sous Windows, un port qu'un navigateur vient de visiter reste refusé
+	// environ deux minutes, les connexions acceptées restant en attente de fermeture et
+	// la bibliothèque ne posant pas la réutilisation d'adresse pour une écoute. Une
+	// cible qui relance le serveur deux fois de suite échouait donc, sur un port que
+	// rien ne montrait occupé.
+	listener, err := net.Listen("tcp", *addr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "serve: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("lozengine on http://%s/\n", listener.Addr())
+
+	if err := http.Serve(listener, nil); err != nil {
 		fmt.Fprintf(os.Stderr, "serve: %v\n", err)
 		os.Exit(1)
 	}

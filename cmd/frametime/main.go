@@ -20,6 +20,12 @@ import (
 	"github.com/sprimault/lozengine/render"
 )
 
+// doneMarker ferme le relevé, pour qui le lit sans voir la commande finir.
+//
+// Le même mot est attendu par la page qui renvoie le relevé à son serveur : il est écrit
+// ici parce que c'est la commande qui décide quand elle a fini, et nulle part ailleurs.
+const doneMarker = "fin du relevé"
+
 // stage est une étape du tour, et ce qu'elle a cumulé.
 //
 // **Le cumul et non la moyenne par image**, et ce n'est pas une commodité : l'horloge
@@ -213,4 +219,9 @@ func report(frames int, presented *render.Buffer, stages ...*stage) {
 	fmt.Printf("  %-34s %8.3f ms   %5.2f %%image\n", "les trois ensemble",
 		float64(whole.mean(frames))/float64(time.Millisecond), whole.part(frames))
 	fmt.Println("budget d'une image à 60 Hz : 16,667 ms")
+
+	// La dernière ligne dit que le relevé est complet, et elle existe pour qui le lit
+	// sans voir la commande finir : une page ne sait pas qu'un module a terminé, donc
+	// sans ce marqueur elle renverrait un relevé tronqué sans le savoir.
+	fmt.Println(doneMarker)
 }

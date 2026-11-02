@@ -22,13 +22,55 @@ module exposée, et rien d'autre à faire.
 
   #erreur { color: #e0a0a0; font: 14px/1.5 system-ui, sans-serif; padding: 2rem;
             white-space: pre-wrap }
+
+  /* Le relais de sortie reste caché tant que le module n'écrit rien : un jeu n'écrit
+     jamais, et une zone vide sous le canvas lui coûterait de la place. */
+  #sortie:empty { display: none }
+  #sortie { position: fixed; inset: auto 0 0 0; max-height: 40%; overflow: auto;
+            margin: 0; padding: .75rem 1rem; background: #181820cc; color: #c8c8d0;
+            font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap }
 </style>
 </head>
 <body>
 <canvas id="lozengine" width="480" height="270"></canvas>
+<pre id="sortie"></pre>
 <script src="wasm_exec.js"></script>
 <script>
 "use strict";
+
+// Ce que le module écrit est relayé dans la page, en plus de la console.
+//
+// **Deux lecteurs qu'aucune console ne sert.** Un navigateur sans écran rend le document
+// et non le journal, donc un relevé d'intégration continue se lit ici ; et un téléphone
+// n'a pas de console du tout, ce qui est la raison pour laquelle le relevé du temps par
+// image doit s'afficher dans la page le jour où il s'y mesure.
+//
+// La console garde sa sortie : un développeur la lit là, et la couper pour la déplacer
+// serait échanger un lecteur contre deux.
+const sortie = document.getElementById("sortie");
+
+// Le serveur attend le relevé quand il a été lancé pour cela, et la page le lui renvoie
+// dès que le module dit avoir fini.
+//
+// **C'est ce qui remplace la lecture du document par un navigateur sans écran** : celui-ci
+// rend le document au moment où il finit de charger, donc bien avant qu'un relevé de
+// plusieurs secondes aboutisse, et la seule façon de le faire attendre serait de
+// virtualiser son horloge — celle-là même que le relevé mesure.
+let renvoye = false;
+const renvoyer = () => {
+  if (renvoye) { return; }
+  renvoye = true;
+  fetch("/releve", { method: "POST", body: sortie.textContent }).catch(() => {});
+};
+
+const relaye = (origine) => (...parts) => {
+  origine(...parts);
+  const ligne = parts.join(" ");
+  sortie.textContent += ligne + "\n";
+  if (ligne === "fin du relevé") { renvoyer(); }
+};
+console.log = relaye(console.log.bind(console));
+console.error = relaye(console.error.bind(console));
 
 const dire = (texte) => {
   const p = document.createElement("pre");

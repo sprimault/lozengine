@@ -582,6 +582,19 @@ jobs:
       - name: La suite sous js/wasm
         run: make wasm-test
 
+      # Le relevé du temps par image, lu par un navigateur sans écran. C'est le seul
+      # contrôle du dépôt qui exige un navigateur, et le runner en porte un d'avance :
+      # aucune machine du parc n'en a en ligne de commande.
+      #
+      # **Il ne garde pas un seuil, il garde que le relevé aboutit.** Un chiffre sous
+      # WebAssembly ne vaut que pour un triplet — machine, moteur, chaîne —, et celui
+      # d'un runner change sans prévenir ; en faire un seuil ferait rougir la branche
+      # pour une machine partagée plus chargée qu'hier. Ce qui se casse vraiment et que
+      # ce contrôle attrape est une page qui n'aboutit plus : un canvas introuvable, une
+      # cadence qui ne rend jamais la main, un module qui ne démarre pas.
+      - name: Le relevé par un navigateur sans écran
+        run: make frametime-sans-ecran
+
   bilan:
     name: Bilan
     if: always()
