@@ -71,6 +71,63 @@ frametime: | $(SORTIE)
 	GOOS=js GOARCH=wasm go build -o $(SORTIE)/frametime.wasm ./cmd/frametime
 	go run ./cmd/serve -wasm $(SORTIE)/frametime.wasm
 
+# Le même relevé, lu par un navigateur sans écran.
+#
+# **C'est la seule cible du dépôt qui exige un navigateur**, et aucune machine du parc n'en
+# porte un en ligne de commande — d'où la recherche par noms et l'échec qui les nomme tous.
+# L'intégration continue, elle, en a un d'avance.
+#
+# **La page renvoie le relevé au serveur, qui l'imprime et s'arrête.** Lire le document par
+# `--dump-dom` ne marche pas : un navigateur sans écran le rend dès la fin du chargement,
+# donc avant qu'un relevé de plusieurs secondes aboutisse — mesuré, il rend une page vide.
+# Et le faire attendre demanderait de virtualiser l'horloge, celle-là même que le relevé
+# mesure.
+#
+# La cible n'a donc rien à deviner : elle attend la fin du serveur, dont la sortie porte le
+# relevé. La charge est réduite pour que l'attente reste courte.
+# NAVIGATEUR court-circuite la recherche, et c'est par lui qu'un poste nomme le sien :
+# sous Windows le binaire ne porte aucun des noms ci-dessous et ne vit pas dans le chemin
+# de recherche, donc la cible ne s'y éprouverait pas autrement. Il se pose dans
+# `makefile.local`, comme tout ce qui nomme une machine.
+NAVIGATEURS = google-chrome chromium chromium-browser
+NAVIGATEUR ?=
+RELEVE_ARGS ?= ?frames=60&warmup=30
+.PHONY: frametime-sans-ecran
+frametime-sans-ecran: | $(SORTIE)
+	@navigateur="$(NAVIGATEUR)"; \
+	if [ -z "$$navigateur" ]; then \
+	  for n in $(NAVIGATEURS); do \
+	    if command -v $$n >/dev/null 2>&1; then navigateur=$$n; break; fi; \
+	  done; \
+	fi; \
+	if [ -z "$$navigateur" ]; then \
+	  echo "aucun navigateur en ligne de commande : cherché $(NAVIGATEURS)"; \
+	  echo "un poste qui en porte un sous un autre nom le pose dans NAVIGATEUR"; \
+	  exit 1; \
+	fi; \
+	GOOS=js GOARCH=wasm go build -o $(SORTIE)/frametime.wasm ./cmd/frametime || exit 1; \
+	go run ./cmd/serve -wasm $(SORTIE)/frametime.wasm -addr 127.0.0.1:0 -once \
+	  > $(SORTIE)/frametime.txt 2>&1 & \
+	serveur=$$!; \
+	trap 'kill $$serveur 2>/dev/null' EXIT; \
+	url=""; \
+	for _ in $$(seq 150); do \
+	  url=$$(sed -n 's|^lozengine on \(http://[^/]*\)/$$|\1|p' $(SORTIE)/frametime.txt); \
+	  [ -n "$$url" ] && break; \
+	  sleep 0.2; \
+	done; \
+	if [ -z "$$url" ]; then echo "le serveur n'a pas annoncé son adresse"; exit 1; fi; \
+	"$$navigateur" --headless=new --no-sandbox --disable-gpu \
+	  --force-device-scale-factor=1 --window-size=960,540 \
+	  --user-data-dir="$(CURDIR)/$(SORTIE)/chrome" "$$url/$(RELEVE_ARGS)" \
+	  > $(SORTIE)/chrome.log 2>&1 & \
+	page=$$!; \
+	wait $$serveur; \
+	kill $$page 2>/dev/null; \
+	cat $(SORTIE)/frametime.txt; \
+	grep -q "%image" $(SORTIE)/frametime.txt || { \
+	  echo "le relevé n'a rien rendu : la page n'a pas abouti"; exit 1; }
+
 # PKG et RUN restreignent la portée sans sortir du Makefile : une commande go
 # tapée directement perd les réglages du poste, et l'oubli ne se voit pas dans
 # la sortie.
