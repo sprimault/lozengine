@@ -233,3 +233,25 @@ func shared(a, b render.Quad) int {
 
 	return (right - left) * (bottom - top)
 }
+
+// masksAsDecor dit si un quad compte comme du décor dans le relevé, l'aspect l'emportant
+// sur la voie par laquelle il a été posé.
+//
+// **La voie de pose reste le défaut et non le critère**, et c'est tout le sujet : elle
+// est aussi un arbitrage de coût, la godoc de [scene.MaxTiers] recommandant de décrire
+// en entités ce qui ouvrirait une strate pour quelques objets. Un relevé qui suit la voie
+// seule change donc de réponse quand un jeu suit cette recommandation, sans que rien de
+// ce que ses objets sont n'ait changé.
+//
+// Elle ne décide que la colonne du relevé. Le rang d'empilement, lui, suit la voie de
+// pose et rien d'autre : une entité passe devant la cellule qu'elle foule, et ce rang
+// est un invariant du moteur.
+func masksAsDecor(m scene.Masking, placedAsDecor bool) bool {
+	switch m {
+	case scene.MaskAsDecor:
+		return true
+	case scene.MaskAsEntity:
+		return false
+	}
+	return placedAsDecor
+}

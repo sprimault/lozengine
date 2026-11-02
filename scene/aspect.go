@@ -191,6 +191,23 @@ type Aspect struct {
 	// c'est le seul champ que les trois voies de pose traversent, y compris
 	// [Scene.PlaceScreen], par laquelle un rappel d'interface se pose.
 	Uncounted bool
+
+	// Masks dit dans quelle colonne du relevé de recouvrement ce quad compte, quand sa
+	// voie de pose ne dit pas ce qu'il est. Sa valeur zéro, [MaskAsPlaced], laisse la
+	// voie décider, donc un jeu qui ne le renseigne pas ne voit rien changer.
+	//
+	// **C'est la voie pour décrire du décor en entités sans fausser le relevé**, ce que
+	// la godoc de [MaxTiers] recommande pour le coût : une strate pleine ajoute un quad
+	// par cellule visible. Sans ce champ, suivre cette recommandation reclassait d'un
+	// coup tout ce qu'elle déplace.
+	//
+	// La godoc de [Masking] dit ce qu'il ne touche pas — ni l'ordre de dessin, ni le
+	// fait qu'un quad compte, qui est [Aspect.Uncounted].
+	//
+	// **À remettre dans chaque aspect passé à [Scene.SetAspect]**, comme
+	// [Aspect.Uncounted] et pour la même raison : cette méthode remplace l'aspect en
+	// entier.
+	Masks Masking
 }
 
 // CornerFromFoot rend le coin haut-gauche qui pose l'image là où le moteur la poserait
