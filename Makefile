@@ -455,6 +455,7 @@ CONVERSIONS = \
   internal/backend/open_windows.go=3 \
   internal/backend/pixels_web.go=2 \
   internal/backend/pointer_windows.go=1 \
+  internal/backend/present_js.go=1 \
   internal/backend/present_windows.go=2 \
   internal/backend/present_windows_test.go=3 \
   internal/backend/win32_windows.go=2 \
