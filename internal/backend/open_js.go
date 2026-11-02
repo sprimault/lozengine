@@ -89,6 +89,7 @@ func Open(o Options) (Window, error) {
 	}
 
 	w := &window{canvas: canvas, ctx: ctx}
+	w.newFrames()
 	if memory := js.Global().Get(linearMemory); memory.Truthy() {
 		w.frame.memory = memory
 	}

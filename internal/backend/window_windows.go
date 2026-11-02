@@ -285,3 +285,9 @@ func (w *window) Close() {
 
 	w.hwnd = 0
 }
+
+// Paced dit que cette fenêtre ne cadence pas la boucle : `Paced` rend donc faux.
+//
+// La pompe de messages vide ce qui est arrivé et rend la main aussitôt, qu'il y ait eu
+// un message ou non — c'est à la boucle de tenir le pas, et elle dort pour cela.
+func (w *window) Paced() bool { return false }

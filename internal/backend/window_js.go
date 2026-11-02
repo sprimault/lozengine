@@ -65,6 +65,12 @@ type window struct {
 	contactID int
 	contact   bool
 
+	// frames porte les images que la page réclame, et onFrame est le rappel qui les y
+	// pose. armed dit qu'une demande est en vol, pour n'en poser qu'une à la fois.
+	frames  chan struct{}
+	onFrame js.Func
+	armed   bool
+
 	// closed retient que la fenêtre ne présentera plus rien. Il ne se relève jamais.
 	closed bool
 }
@@ -164,5 +170,6 @@ func (w *window) Err() error {
 func (w *window) Close() {
 	w.closed = true
 	w.silence()
+	w.releaseFrames()
 	w.frame.release()
 }

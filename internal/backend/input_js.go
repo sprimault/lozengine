@@ -176,13 +176,20 @@ func (w *window) track(e js.Value) {
 	w.buttons = playButtons(&w.state, w.buttons, uint8(e.Get("buttons").Int()))
 }
 
-// Input rend les entrées du pas qui commence.
+// Input attend l'image que la page s'apprête à composer, puis rend les entrées du pas
+// qui commence.
 //
 // **Rien à vider ici, contrairement aux deux autres familles** : les écouteurs ont déjà
 // écrit dans l'état quand la page les a appelés, et une page n'a pas de file de messages
-// à pomper. Ce que cette méthode fait de plus est d'apprendre la taille du pas, ce que la
-// godoc de [window.measure] explique.
+// à pomper. Ce que cette méthode fait est donc l'inverse — elle **attend**, et c'est ce
+// qui cadence la boucle, [Window.Paced] le déclarant.
+//
+// L'ordre compte : l'attente vient d'abord, de sorte que tout ce que les écouteurs ont
+// rapporté pendant qu'elle durait entre dans ce pas-ci. Mesurer ensuite lit une mise en
+// page que le navigateur vient de calculer pour composer, ce que la godoc de
+// [window.measure] explique.
 func (w *window) Input() input.Input {
+	w.awaitFrame()
 	w.measure()
 	return w.state.Frame()
 }

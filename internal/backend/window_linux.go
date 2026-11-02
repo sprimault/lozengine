@@ -315,3 +315,9 @@ func (w *window) Close() {
 	w.c.Close()
 	w.c = nil
 }
+
+// Paced dit que cette fenêtre ne cadence pas la boucle : `Paced` rend donc faux.
+//
+// Le serveur envoie ses événements quand il en a, sans jamais réclamer d'image : rien
+// dans le protocole ne dit quand présenter, donc c'est à la boucle de tenir le pas.
+func (w *window) Paced() bool { return false }

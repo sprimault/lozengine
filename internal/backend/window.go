@@ -14,9 +14,9 @@ import (
 
 // Window est ce qu'une famille de plateformes doit savoir faire, et rien de plus.
 //
-// Six méthodes, parce que la boucle n'a besoin que de cela : lire le clavier, présenter
+// Sept méthodes, parce que la boucle n'a besoin que de cela : lire le clavier, présenter
 // une image, savoir dans quoi elle présente, savoir si on lui a demandé de partir, dire
-// ce qui l'a fait partir, et partir.
+// ce qui l'a fait partir, partir, et dire qui tient la cadence.
 //
 // **L'ordre d'appel fait partie du contrat, et Input vient en premier** : c'est elle qui
 // vide la file d'événements, donc tout ce que les autres rapportent d'un pas a été
@@ -79,6 +79,29 @@ type Window interface {
 
 	// Close rend au système ce qu'Open a pris. Appeler deux fois est sans effet.
 	Close()
+
+	// Paced dit que cette fenêtre cadence elle-même la boucle, en attendant dans
+	// Input jusqu'à ce que sa plateforme veuille une image.
+	//
+	// **Une famille sur trois le fait, et c'est le navigateur.** Une page n'offre pas
+	// d'horloge au jeu : elle appelle le module quand elle s'apprête à composer une
+	// image, et c'est le seul instant où une présentation est certaine d'entrer dans
+	// l'image qu'elle compose. Mesuré le 2 novembre 2026, une boucle qui dort pour
+	// tenir son pas écrit **deux tiers de ses images hors de ce tour** à quatre-vingt-
+	// dix pour cent de charge : le navigateur compose alors un tampon que le moteur
+	// réécrit.
+	//
+	// **Ce que la boucle en fait, et pourquoi elle ne peut pas le deviner** : devant
+	// une fenêtre cadencée, elle ne dort jamais et rend au contraire la main sans
+	// faire de pas quand le tour arrive en avance sur l'échéance. Devant les autres,
+	// elle dort, parce qu'un Input qui rend tout de suite ferait tourner la boucle à
+	// plein régime. Les deux régimes ne se distinguent par rien d'observable — un
+	// Input lent peut être une plateforme chargée —, d'où cette méthode plutôt qu'une
+	// mesure.
+	//
+	// Elle ne varie pas pendant la vie d'une fenêtre : c'est une propriété de la
+	// famille, pas de l'instant.
+	Paced() bool
 }
 
 // Options porte ce qu'une fenêtre admet de régler à l'ouverture.
