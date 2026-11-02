@@ -208,8 +208,15 @@ func parseSetup(b []byte, screen int) (setup, error) {
 // backend emploie.
 //
 // Les champs qu'il laisse de côté — taille en pixels et en millimètres, tables de
-// couleurs installables, conservation du contenu masqué — décideraient d'un plein
-// écran ou d'une densité, et aucun des deux n'est du ressort d'un backend.
+// couleurs installables, conservation du contenu masqué — décideraient d'un plein écran
+// ou d'une densité, dont **ce backend** ne fait rien.
+//
+// **Et non « dont aucun backend ne fait rien », ce que cette godoc affirmait** : Windows
+// ouvre sa fenêtre à la densité de l'écran, et le navigateur dimensionne son canvas sur
+// celle de la page. Une famille qui ne lit pas la densité est une famille qui ne l'a pas
+// encore lue, pas une doctrine — ici parce que la source juste est `Xft.dpi` dans la base
+// de ressources de la racine, qu'un `Xvfb` nu ne porte pas, donc rien ne permettrait de
+// l'éprouver.
 type screenInfo struct {
 	root   uint32
 	visual uint32

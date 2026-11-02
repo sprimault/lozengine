@@ -62,6 +62,12 @@ notes de publication.
 - `cmd/frametime` relève ce qu'une image coûte, étape par étape, sur la plateforme qui
   l'exécute — y compris dans une page, où le relevé s'affiche faute de console.
 
+### Corrigé
+
+- La documentation d'`Options.Width` dit que la taille demandée est en points : elle
+  annonçait un agrandissement d'un à l'ouverture, ce qui cesse d'être vrai dès 150 %, où
+  la fenêtre reçoit deux fois plus de pixels pour la même surface visible.
+
 ***
 
 ### Added
@@ -80,6 +86,12 @@ notes de publication.
   file to copy.
 - `cmd/frametime` reports what a frame costs, stage by stage, on the platform running it —
   including inside a page, where the report is displayed for want of a console.
+
+### Fixed
+
+- The documentation of `Options.Width` now states that the requested size is in points: it
+  announced an upscale of one at startup, which stops being true from 150 % on, where the
+  window gets twice as many pixels for the same visible area.
 
 ## [0.5.9] — 2026-10-31
 
