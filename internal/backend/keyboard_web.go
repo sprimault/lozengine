@@ -103,3 +103,28 @@ var codePlaces = map[string]input.Key{
 
 	"NumLock": input.KeyNumLock,
 }
+
+// scrollsThePage dit si une place est de celles qu'une page emploie pour défiler, et que
+// le moteur doit donc l'empêcher d'employer tant que la fenêtre est ouverte.
+//
+// **Un jeu qui déplace son personnage aux flèches ferait sinon défiler la page sous lui**,
+// et c'est le défaut le plus visible qu'une page de jeu puisse avoir.
+//
+// **La liste est celle du défilement, pas celle des touches que le jeu lit.** Empêcher
+// tout ce que le moteur nomme retirerait au joueur l'actualisation, la fermeture de
+// l'onglet et la navigation au clavier, pour un bénéfice nul : ces places-là ne déplacent
+// pas la page. Le backend n'empêche d'ailleurs rien quand un modificateur accompagne la
+// touche, ce qui laisse passer `Ctrl+R`, `Cmd+W` et le retour en arrière par
+// `Alt+Flèche` — seule la conséquence dans la page est retirée, jamais la lecture par le
+// jeu.
+//
+// Sans contrainte de plateforme, comme la table ci-dessus et pour la même raison : son cas
+// tourne alors partout, et pas seulement sur la cible qui la consomme.
+func scrollsThePage(code string) bool {
+	switch code {
+	case "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+		"PageUp", "PageDown", "Home", "End":
+		return true
+	}
+	return false
+}
