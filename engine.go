@@ -110,8 +110,14 @@ type Options struct {
 	// moteur dessine avant l'agrandissement entier vers la fenêtre. Zéro vaut 480×270,
 	// et [MaxBufferSide] est la borne.
 	//
-	// **La fenêtre s'ouvre à cette taille**, donc l'agrandissement vaut un tant que
-	// le joueur ne l'a pas redimensionnée. Un jeu qui se veut grand à l'ouverture
+	// **La fenêtre s'ouvre à cette taille, en points et non en pixels**, de sorte que
+	// le jeu occupe la même surface visible quelle que soit la densité de l'écran. Sur
+	// un écran ordinaire les deux se confondent et l'agrandissement vaut donc un tant
+	// que le joueur ne redimensionne pas ; à 150 % il vaut deux, à 250 % trois, et la
+	// fenêtre reçoit d'autant plus de pixels. Dans une page, c'est la page qui donne
+	// sa taille au canvas, et le moteur n'ouvre rien.
+	//
+	// Un jeu qui se veut grand à l'ouverture
 	// demande une résolution interne plus grande, et non une fenêtre plus grande : le
 	// facteur est entier, et c'est la résolution interne qui dit ce qu'une tuile
 	// couvre.
