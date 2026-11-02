@@ -33,18 +33,21 @@ internal resolution scaled up to the window by an integer factor.
 
 **The platforms, and what each one promises.** Compiles, runs, or stays green in
 continuous integration: three different promises, and only the one actually kept
-is announced. `windows/amd64`, `linux/amd64` and `linux/arm64` — the test suite
-passes there in continuous integration, on every batch, and on `arm64` it also
-verifies that one and the same scene renders exactly the same pixels as
-elsewhere, which is what the integer arithmetic promises. `windows/arm64`,
-`windows/386`, `linux/arm`, `linux/386`, `linux/riscv64` and `js/wasm` — they
-**compile**, which `make check` verifies, and nothing more as long as the
-hardware at hand holds neither a Raspberry Pi, nor RISC-V, nor a phone. It is the zero-dependency rule that opens
+is announced. `windows/amd64`, `linux/amd64`, `linux/arm64` and `js/wasm` — the test
+suite passes there in continuous integration, on every batch; on `arm64` it also
+verifies that one and the same scene renders exactly the same pixels as elsewhere,
+which is what the integer arithmetic promises, and under `js/wasm` a headless browser
+reports what a frame costs there. `windows/arm64`, `windows/386`,
+`linux/arm`, `linux/386` and `linux/riscv64` — they **compile**, which `make check`
+verifies, and nothing more as long as the hardware at hand holds neither a Raspberry
+Pi, nor RISC-V, nor a phone. It is the zero-dependency rule that opens
 this list, and a cgo dependency would close it rather than widen it: `go build`
 would no longer be enough.
 
-The browser is the third target, through WebAssembly, and it is what will bring
-Android and iOS. The engine opens no **native** window on macOS or iOS, which is not
+The browser is the third target, through WebAssembly, and it is what brings Android
+and iOS: a game on a full-screen page is indistinguishable from an application to
+whoever plays it. `make web EXAMPLE=walk` builds an example and serves it.
+The engine opens no **native** window on macOS or iOS, which is not
 the same as being out of reach there: the native library the roadmap plans for lets an
 application that provides its own window consume the engine.
 [`ROADMAP.md`](ROADMAP.md) (French) gives the detail, milestone by milestone.

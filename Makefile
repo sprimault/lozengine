@@ -376,8 +376,8 @@ UNSAFEPTR = internal/backend/window_windows.go=1
 # démentait. Vérifié le 30 octobre 2026 en y introduisant une variable inutilisée :
 # seule la passe `js/wasm` l'a refusée.
 #
-# **`darwin/amd64` est la quatrième, et elle est là pour le jour où `js` cessera de lire
-# ce repli.** Le jalon 5 livre un `Open` pour la page, donc la contrainte se resserre en
+# **`darwin/amd64` est la quatrième, et c'est elle qui lit ce repli depuis que `js` a son
+# propre `Open`.** Le jalon 5 l'a livré, donc la contrainte s'est resserrée en
 # `!windows && !linux && !js` — sans quoi deux `Open` se disputent la plateforme —, et le
 # repli redevient lu par aucune passe. C'est exactement le défaut qu'`unsupported.go` a
 # été créé pour fermer : un cas qui ne tourne nulle part.
@@ -608,8 +608,8 @@ NOYAU = render geometry scene raster input appearance internal/sorting
 #
 # **Chaque entrée est une famille, et elle ne l'était pas.** Le motif compare le chemin
 # entier, donc `syscall` et `net` nus ne reconnaissaient qu'eux-mêmes : `syscall/js`,
-# `net/http` et n'importe quel sous-paquet passaient sans un mot. L'échéance est nommée
-# — le jalon 5 écrit le backend du navigateur par `syscall/js`.
+# `net/http` et n'importe quel sous-paquet passaient sans un mot. L'échéance est échue :
+# le jalon 5 a écrit le backend du navigateur par `syscall/js`.
 #
 # Ce que le correctif attrape, et il faut le dire pour ne pas croire garder plus : **un
 # paquet du noyau qui importe lui-même `syscall/js`**, `raster` appelant `putImageData`

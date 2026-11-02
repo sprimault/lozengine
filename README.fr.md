@@ -33,17 +33,19 @@ interne basse remontée vers la fenêtre par un facteur entier.
 
 **Les plateformes, et ce que chacune promet.** Compile, tourne, ou reste vert en
 intégration continue : trois promesses différentes, et seule celle qui est tenue
-est annoncée. `windows/amd64`, `linux/amd64` et `linux/arm64` — la suite de tests
-y passe en intégration continue, à chaque lot, et sur `arm64` elle vérifie en plus
-que la même scène rend exactement les mêmes pixels qu'ailleurs, ce qui est la
-promesse du calcul en nombres entiers. `windows/arm64`, `windows/386`,
-`linux/arm`, `linux/386`, `linux/riscv64` et `js/wasm` — ils **compilent**, ce que
-`make check` vérifie, et rien de plus tant que le parc ne contient ni Raspberry
-Pi, ni RISC-V, ni téléphone. C'est le zéro-dépendance qui ouvre cette liste, et une dépendance cgo
+est annoncée. `windows/amd64`, `linux/amd64`, `linux/arm64` et `js/wasm` — la suite
+de tests y passe en intégration continue, à chaque lot ; sur `arm64` elle vérifie en
+plus que la même scène rend exactement les mêmes pixels qu'ailleurs, ce qui est la
+promesse du calcul en nombres entiers, et sous `js/wasm` un navigateur sans écran
+relève ce qu'une image y coûte. `windows/arm64`, `windows/386`, `linux/arm`,
+`linux/386` et `linux/riscv64` — ils **compilent**, ce que `make check` vérifie, et
+rien de plus tant que le parc ne contient ni Raspberry Pi, ni RISC-V, ni téléphone. C'est le zéro-dépendance qui ouvre cette liste, et une dépendance cgo
 la refermerait au lieu de l'élargir : `go build` ne suffirait plus.
 
-Le navigateur est la troisième cible, par WebAssembly, et c'est lui qui donnera
-Android et iOS. Le moteur n'ouvre pas de fenêtre **native** sur macOS ni sur iOS, et
+Le navigateur est la troisième cible, par WebAssembly, et c'est lui qui apporte
+Android et iOS : un jeu en page plein écran ne se distingue pas d'une application
+pour qui y joue. `make web EXAMPLE=walk` compile un exemple et le sert.
+Le moteur n'ouvre pas de fenêtre **native** sur macOS ni sur iOS, et
 ce n'est pas la même chose qu'y être inaccessible : la bibliothèque native prévue par
 la feuille de route le laisse consommer par une application qui fournit la sienne.
 [`ROADMAP.md`](ROADMAP.md) en donne le détail, jalon par jalon.

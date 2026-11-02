@@ -53,6 +53,14 @@ notes de publication.
 - `Aspect.Masks` déclare si un quad compte comme décor ou comme entité dans le relevé de
   recouvrement, quelle que soit sa voie de pose. Décrire du décor en entités, ce que la
   documentation de `MaxTiers` recommande pour le coût, le reclassait sinon en entier.
+- Le navigateur est pris en charge : le moteur y ouvre un canvas, lit le clavier, le
+  pointeur et le tactile, et avance au rythme des images que la page compose. Un jeu
+  déjà écrit y tourne sans qu'une ligne change.
+- `cmd/serve` sert un jeu compilé pour le navigateur : il porte la page que le moteur
+  attend et tire le fichier de liaison de la chaîne Go, donc il n'y a ni page à écrire ni
+  fichier à recopier.
+- `cmd/frametime` relève ce qu'une image coûte, étape par étape, sur la plateforme qui
+  l'exécute — y compris dans une page, où le relevé s'affiche faute de console.
 
 ***
 
@@ -64,6 +72,14 @@ notes de publication.
 - `Aspect.Masks` states whether a quad counts as decor or as an entity in the overlap
   report, whatever its placement path. Describing decor as entities, which `MaxTiers`'s
   documentation recommends for cost, otherwise reclassified all of it.
+- The browser is supported: the engine opens a canvas there, reads the keyboard, the
+  pointer and touch, and advances at the rate of the frames the page composes. A game
+  already written runs there without a single line changing.
+- `cmd/serve` serves a game built for the browser: it carries the page the engine expects
+  and pulls the bridge file from the Go toolchain, so there is no page to write and no
+  file to copy.
+- `cmd/frametime` reports what a frame costs, stage by stage, on the platform running it —
+  including inside a page, where the report is displayed for want of a console.
 
 ## [0.5.9] — 2026-10-31
 
