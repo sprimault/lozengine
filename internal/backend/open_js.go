@@ -72,7 +72,13 @@ func Open(o Options) (Window, error) {
 		style.Set("height", cssPixels(float64(o.Height)))
 		body.Call("appendChild", canvas)
 	}
-	canvas.Get("style").Set("imageRendering", "pixelated")
+	style := canvas.Get("style")
+	style.Set("imageRendering", "pixelated")
+
+	// Sans cela, un doigt posé sur le canvas fait défiler ou zoomer la page au lieu de
+	// jouer, et l'événement de pointeur est annulé en route. C'est l'équivalent tactile
+	// de ce que [scrollCodes] empêche au clavier.
+	style.Set("touchAction", "none")
 
 	ctx := canvas.Call("getContext", "2d", map[string]any{"alpha": false})
 	if !ctx.Truthy() {
@@ -90,5 +96,6 @@ func Open(o Options) (Window, error) {
 	// La taille se lit avant de rendre la fenêtre : sans cela, le premier pas
 	// présenterait dans un canvas dont la boucle croit la taille nulle.
 	w.measure()
+	w.listen()
 	return w, nil
 }

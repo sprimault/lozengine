@@ -47,28 +47,39 @@ type window struct {
 	// frame porte ce que la présentation garde d'une image à l'autre.
 	frame presentation
 
+	// listeners porte les écouteurs posés dans la page, pour les retirer et libérer
+	// leurs fonctions à la fermeture.
+	listeners []listener
+
+	// buttons est le masque de boutons du dernier événement de pointeur. Il se compare
+	// au suivant pour n'en jouer que les changements, parce que [input.State] veut
+	// qu'un bouton se presse et se relâche et non qu'il s'affecte.
+	buttons uint8
+
+	// wheel accumule les fractions de cran qu'une page rapporte et qu'une division
+	// entière perdrait.
+	wheel wheel
+
+	// contactID est le contact que la fenêtre suit, et contact dit qu'il y en a un. Un
+	// seul à la fois : la godoc de [window.claim] dit pourquoi.
+	contactID int
+	contact   bool
+
 	// closed retient que la fenêtre ne présentera plus rien. Il ne se relève jamais.
 	closed bool
 }
 
-// Input apprend du pas qui commence ce que la page a changé, puis rend les entrées.
+// measure lit la boîte que la page laisse au canvas et le redimensionne quand elle a
+// changé.
 //
-// **C'est ici que la taille se lit**, et nulle part ailleurs : le contrat de [Window] le
-// permet pour une famille sans événement de taille, à condition que cela ne sorte pas de
-// la machine, et il veut que les autres méthodes ne rapportent que ce que celle-ci a
-// appris. Une page, elle, n'a pas d'événement à vider : les écouteurs ont déjà rempli
-// `state` quand ils se sont déclenchés.
+// **Elle est appelée depuis `Input`, et nulle part ailleurs** : le contrat de [Window]
+// permet à une famille sans événement de taille d'interroger, à condition que cela ne
+// sorte pas de la machine, et il veut que les autres méthodes ne rapportent que ce que
+// cette première a appris.
 //
 // La lecture de la boîte a lieu avant toute écriture dans la page, donc sur une mise en
 // page que le navigateur vient de calculer pour peindre. L'ordre inverse — écrire puis
 // mesurer — est ce qui force un recalcul, et il coûterait une image.
-func (w *window) Input() input.Input {
-	w.measure()
-	return w.state.Frame()
-}
-
-// measure lit la boîte que la page laisse au canvas et le redimensionne quand elle a
-// changé.
 //
 // **Le canvas se redimensionne par ses deux unités ensemble**, et c'est [canvasFor] qui
 // les décide : les attributs portent les pixels d'image, le style les pixels CSS. Poser
@@ -142,11 +153,16 @@ func (w *window) Err() error {
 //
 // Le canvas n'est pas retiré du document : le moteur ne l'a pas forcément créé, et
 // démonter l'élément d'une page qu'on n'a pas mise en page serait une décision qui ne
-// lui appartient pas. Ce qui est libéré est ce que le module tient — la mémoire épinglée
-// pour la présentation.
+// lui appartient pas. Ce qui part est ce que le module a posé **dans** la page — ses
+// écouteurs — et ce qu'il tient pour elle : la mémoire épinglée pour la présentation.
+//
+// **Les écouteurs se retirent et leurs fonctions se libèrent**, les deux et pas l'une :
+// une fonction libérée mais toujours écoutée fait jeter la page au premier événement, et
+// un écouteur retiré sans libération retient la valeur côté Go jusqu'à la fin du module.
 //
 // Appeler deux fois est sans effet.
 func (w *window) Close() {
 	w.closed = true
+	w.silence()
 	w.frame.release()
 }
