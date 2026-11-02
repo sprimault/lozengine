@@ -65,6 +65,13 @@ type Overlap struct {
 	// cache parce que la chose est derrière lui, et un rappel y retire cet indice ; une
 	// créature qui s'interpose ne dit rien de tel. Un hôte qui veut les traiter
 	// différemment a ici de quoi.
+	//
+	// **Ce qui range un quad d'un côté ou de l'autre se déclare**, et la godoc du champ
+	// `Masks` d'un aspect dit comment. À défaut, c'est la voie de pose qui décide — ce
+	// qui vient d'une cellule compte comme décor —, et cette voie est aussi un
+	// arbitrage de coût : un jeu qui décrit en entités le décor épars d'une grande
+	// carte, ce que la documentation du nombre de strates lui recommande, reclasserait
+	// sinon tout ce qu'il déplace.
 	ByDecor uint32
 
 	// Painted est le nombre de pixels que la chose peint réellement, ceux dont l'alpha
@@ -92,6 +99,9 @@ type Overlap struct {
 
 	// CoveredByDecor est la part de [Overlap.Covered] que le décor seul recouvre, dans
 	// la même unité et avec la même déduplication.
+	//
+	// Ce qui range un quad d'un côté ou de l'autre est ce que dit [Overlap.ByDecor] :
+	// les deux échelles classent sur la même déclaration.
 	CoveredByDecor uint32
 }
 

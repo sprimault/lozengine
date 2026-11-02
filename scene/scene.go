@@ -31,6 +31,11 @@ import (
 // mégaoctets sur cinq cents cellules de côté —, qu'elle porte trois objets ou la carte
 // entière. Quelques véhicules sur une grande carte se décrivent donc mieux en entités.
 //
+// **Et ce déplacement ne fausse plus le relevé de recouvrement**, ce qu'il faisait
+// jusqu'ici : celui-ci séparait le décor des entités sur la seule voie de pose, donc
+// suivre cette recommandation reclassait d'un coup tout ce qu'elle déplace.
+// [Aspect.Masks] déclare la nature indépendamment de la voie, et sa godoc dit le reste.
+//
 // **Et son coût par image, qui est celui qu'on sous-estime.** Une strate **pleine**
 // ajoute un quad par cellule visible, à relever, à trier et à peindre à chaque image :
 // ce coût suit donc la surface de la fenêtre en cellules, jamais la taille de la carte.

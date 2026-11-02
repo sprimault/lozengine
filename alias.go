@@ -605,6 +605,32 @@ const (
 	AlignEnd   = scene.AlignEnd
 )
 
+// Masking dit dans quelle colonne du relevé de recouvrement un quad compte : comme du
+// décor, comme une entité, ou selon la voie par laquelle il a été posé.
+//
+// Ses valeurs sont [MaskAsPlaced], [MaskAsDecor] et [MaskAsEntity]. Elles sont nommées
+// ici parce que `go doc` n'en montre aucune pour un type republié : une constante n'est
+// associée qu'au type qui la déclare.
+//
+// Il sert le champ `Masks` d'un [Aspect], et n'a d'effet que sur ce que
+// [Engine.Overlaps] et l'interface `Overlapped` rapportent, plus la bascule
+// `TintByDecor` des options de révélation. **Ni l'ordre de dessin ni le fait qu'un quad
+// compte** : le second est le champ `Uncounted` du même [Aspect], et la godoc de
+// [scene.Masking] dit pourquoi les deux ne se remplacent pas.
+type Masking = scene.Masking
+
+const (
+	// MaskAsPlaced laisse la voie de pose décider, et c'est la valeur zéro : ce qui
+	// vient de `PlaceCell` compte comme décor, le reste comme entité.
+	MaskAsPlaced = scene.MaskAsPlaced
+
+	// MaskAsDecor compte le quad comme du décor quelle que soit sa voie de pose, et
+	// MaskAsEntity comme une entité. Le premier est ce qu'un jeu pose sur un muret
+	// qu'il décrit en entité pour ne pas ouvrir une strate sur toute la carte.
+	MaskAsDecor  = scene.MaskAsDecor
+	MaskAsEntity = scene.MaskAsEntity
+)
+
 // Inset est la marge que le monde ne traverse pas, côté par côté et en pixels de la
 // surface de dessin.
 //

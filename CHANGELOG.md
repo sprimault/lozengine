@@ -50,6 +50,9 @@ notes de publication.
 - `js/wasm` n'est plus seulement compilée : la suite de tests y passe à chaque lot et y
   compare les images au pixel. C'est la cible dont le moteur de compilation diffère le
   plus de celui des plateformes natives.
+- `Aspect.Masks` déclare si un quad compte comme décor ou comme entité dans le relevé de
+  recouvrement, quelle que soit sa voie de pose. Décrire du décor en entités, ce que la
+  documentation de `MaxTiers` recommande pour le coût, le reclassait sinon en entier.
 
 ***
 
@@ -58,6 +61,9 @@ notes de publication.
 - `js/wasm` is no longer merely compiled: the test suite runs there on every batch and
   compares images pixel by pixel. It is the target whose compiler backend differs most
   from the native platforms' one.
+- `Aspect.Masks` states whether a quad counts as decor or as an entity in the overlap
+  report, whatever its placement path. Describing decor as entities, which `MaxTiers`'s
+  documentation recommends for cost, otherwise reclassified all of it.
 
 ## [0.5.9] — 2026-10-31
 

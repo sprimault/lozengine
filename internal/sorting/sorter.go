@@ -455,7 +455,7 @@ func (t *Sorter) place(a scene.Aspect, absoluteX, absoluteY int32, depth uint32,
 	t.keys = append(t.keys, Compose(a.Layer, a.Floor, depth, height, rank, 0))
 	t.ties = append(t.ties, tie{x: ex, identity: identity, tier: tier})
 	t.reveals = append(t.reveals, a.Reveal)
-	t.fromDecor = append(t.fromDecor, t.collectingDecor)
+	t.fromDecor = append(t.fromDecor, masksAsDecor(a.Masks, t.collectingDecor))
 	t.uncounted = append(t.uncounted, a.Uncounted)
 	t.raw = append(t.raw, render.Quad{
 		X: int16(x + t.offsetX), Y: int16(y + t.offsetY),
