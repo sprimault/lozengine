@@ -85,6 +85,36 @@ func straightARGB(icon *render.Buffer) []uint32 {
 	return out
 }
 
+// straightRGBA rend les pixels d'une icône en octets RVBA à alpha **non** prémultiplié.
+//
+// **Des octets et non des mots, contrairement à [straightARGB]**, et les deux coexistent
+// parce que leurs destinataires ne demandent pas la même chose : une icône de système se
+// décrit par la valeur d'un mot, là qu'un tampon de page se décrit par la suite de ses
+// octets. Convertir l'un en l'autre dépendrait du boutisme de la machine, ce que le
+// déterminisme du moteur interdit d'écrire.
+//
+// C'est la disposition qu'un `ImageData` attend, à l'alpha près : celui-ci veut de la
+// couleur droite, là que le moteur prémultiplie. La division est celle de [straight],
+// arrondi compris.
+//
+// Un pixel entièrement transparent ressort nul, ses quatre octets avec.
+func straightRGBA(icon *render.Buffer) []byte {
+	out := make([]byte, len(icon.Pixels)*4)
+
+	for i, pixel := range icon.Pixels {
+		if pixel.A == 0 {
+			continue
+		}
+
+		alpha := uint32(pixel.A)
+		out[i*4] = byte(straight(pixel.R, alpha))
+		out[i*4+1] = byte(straight(pixel.G, alpha))
+		out[i*4+2] = byte(straight(pixel.B, alpha))
+		out[i*4+3] = pixel.A
+	}
+	return out
+}
+
 // straight rend une composante à sa pleine valeur, l'alpha qui la prémultipliait étant
 // donné.
 //

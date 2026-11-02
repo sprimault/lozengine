@@ -46,8 +46,8 @@ const canvasID = "lozengine"
 // agrandi par la densité serait lissé, ce qui est exactement ce que l'échelle entière du
 // moteur existe pour éviter.
 //
-// Le titre, l'icône et le curseur ne sont pas posés : ils viennent avec le lot qui les
-// pose, comme les écouteurs d'entrées viennent avec celui qui les branche.
+// Le titre, l'icône et le curseur sont posés par [window.dress], qui dit ce que chacun
+// devient dans une page.
 //
 // La taille demandée sert de taille d'ouverture **au canvas que le moteur crée**, en
 // pixels CSS — l'équivalent des points d'un système de fenêtrage. Un canvas que la page
@@ -97,6 +97,7 @@ func Open(o Options) (Window, error) {
 	// La taille se lit avant de rendre la fenêtre : sans cela, le premier pas
 	// présenterait dans un canvas dont la boucle croit la taille nulle.
 	w.measure()
+	w.dress(o)
 	w.listen()
 	return w, nil
 }

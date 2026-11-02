@@ -1,0 +1,49 @@
+<!doctype html>
+<!--
+Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
+SPDX-License-Identifier: MIT OR Apache-2.0
+
+La page que le moteur attend d'un hôte web. Elle tient en trois obligations, et le
+serveur qui la sert dit lesquelles : un canvas d'identifiant lozengine, la mémoire du
+module exposée, et rien d'autre à faire.
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>lozengine</title>
+<style>
+  html, body { height: 100%; margin: 0; background: #101014; overflow: hidden }
+  body { display: flex; align-items: center; justify-content: center }
+
+  /* Le canvas prend la place que la page lui laisse ; c'est le moteur qui décide
+     combien de pixels d'image il y met, et la taille CSS qu'il se donne en retour. */
+  #lozengine { max-width: 100%; max-height: 100% }
+
+  #erreur { color: #e0a0a0; font: 14px/1.5 system-ui, sans-serif; padding: 2rem;
+            white-space: pre-wrap }
+</style>
+</head>
+<body>
+<canvas id="lozengine" width="480" height="270"></canvas>
+<script src="wasm_exec.js"></script>
+<script>
+"use strict";
+
+const dire = (texte) => {
+  const p = document.createElement("pre");
+  p.id = "erreur";
+  p.textContent = texte;
+  document.body.replaceChildren(p);
+};
+
+const go = new Go();
+WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((r) => {
+  // La mémoire du module, sous le nom que le moteur cherche. Sans elle il présente
+  // quand même, en copiant son image à chaque tour au lieu de la poser telle quelle.
+  globalThis.lozengineMemory = r.instance.exports.mem;
+  return go.run(r.instance);
+}).catch((e) => dire("le module n'a pas démarré :\n" + e));
+</script>
+</body>
+</html>
