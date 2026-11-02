@@ -38,6 +38,13 @@ const dire = (texte) => {
 };
 
 const go = new Go();
+
+// La chaîne de requête devient les arguments du module : ?frames=600 arrive comme
+// -frames=600. C'est la seule voie qu'une page offre à des drapeaux, et elle sert aux
+// commandes de mesure du dépôt sans rien demander à un jeu, qui n'en lit aucun.
+go.argv = ["lozengine", ...[...new URLSearchParams(location.search)]
+  .map(([nom, valeur]) => valeur === "" ? `-${nom}` : `-${nom}=${valeur}`)];
+
 WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((r) => {
   // La mémoire du module, sous le nom que le moteur cherche. Sans elle il présente
   // quand même, en copiant son image à chaque tour au lieu de la poser telle quelle.

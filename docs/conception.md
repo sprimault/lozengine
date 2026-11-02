@@ -260,6 +260,7 @@ internal/bench        budget d'une image, part qu'une étape prend  aucune
 internal/viewer       scènes scriptées, rejeu, images           tous les précédents
 cmd/viewer            commande de rejeu                         viewer
 cmd/serve             page du navigateur, module et liaison     aucune
+cmd/frametime         relevé du temps par image, par étape      lozengine, backend, bench, raster, render
 examples/…            ce qu'un jeu écrit, en entier             lozengine
 ```
 

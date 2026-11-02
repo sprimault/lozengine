@@ -54,6 +54,7 @@ func main() {
 			http.NotFound(w, r)
 			return
 		}
+		isolate(w)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(page)
 	})
@@ -73,6 +74,21 @@ func main() {
 		fmt.Fprintf(os.Stderr, "serve: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// isolate pose les deux en-têtes qui donnent à la page une horloge fine.
+//
+// **Sans elles, `performance.now()` est arrondi à cent microsecondes**, contre cinq avec —
+// mesuré en instruisant le jalon. Une étape du pas en coûte quelques dizaines, donc un
+// relevé par image y serait entièrement perdu dans l'arrondi, et un relevé par lot y
+// gagnerait quand même en précision.
+//
+// Elles ne coûtent rien ici : la page ne charge aucune ressource d'une autre origine, donc
+// la politique d'incorporation n'a rien à refuser. Une page de jeu qui tirerait des images
+// d'ailleurs devrait, elle, les servir avec l'en-tête qui les autorise.
+func isolate(w http.ResponseWriter) {
+	w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+	w.Header().Set("Cross-Origin-Embedder-Policy", "require-corp")
 }
 
 // bridge rend le chemin du fichier de liaison de la chaîne Go résolue.
