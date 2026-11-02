@@ -64,15 +64,10 @@ type presentation struct {
 
 	// pinner retient le tampon là où il est tant que la page en détient une vue.
 	//
-	// La documentation du paquet `unsafe` déclare invalide ce qu'on fait ici sans lui —
+	// La documentation d'`unsafe.Pointer` déclare invalide ce qu'on fait ici sans lui —
 	// « the garbage collector will not update that uintptr's value if the object
 	// moves » —, et l'épinglage remplace « le ramasse-miettes de Go ne déplace rien
 	// aujourd'hui » par une garantie du langage.
-	//
-	// Le nom du type de pointeur ne s'écrit pas dans cette godoc, et c'est une
-	// contrainte de l'outillage et non du style : la cible qui tient la liste close des
-	// conversions grep le fichier entier, commentaires compris, donc une mention en
-	// prose compte comme une conversion.
 	pinner runtime.Pinner
 }
 
