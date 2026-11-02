@@ -42,6 +42,20 @@ EXAMPLE ?= hello
 example:
 	go run ./examples/$(EXAMPLE)
 
+# Un exemple compilé pour le navigateur, puis servi sur la boucle locale.
+#
+# **Le module va dans la sortie et pas dans le dépôt** : c'est un produit de la chaîne,
+# et `poste.md` veut que tout ce qu'elle écrit reste sous le répertoire ignoré.
+#
+# La page et le fichier de liaison ne sont pas copiés : la commande porte la première et
+# résout le second dans la chaîne résolue. Rien à recopier donc rien à tenir d'accord,
+# ce qui est la raison pour laquelle le serveur s'écrit en Go plutôt qu'en une ligne de
+# serveur de fichiers.
+.PHONY: web
+web: | $(SORTIE)
+	GOOS=js GOARCH=wasm go build -o $(SORTIE)/$(EXAMPLE).wasm ./examples/$(EXAMPLE)
+	go run ./cmd/serve -wasm $(SORTIE)/$(EXAMPLE).wasm
+
 # PKG et RUN restreignent la portée sans sortir du Makefile : une commande go
 # tapée directement perd les réglages du poste, et l'oubli ne se voit pas dans
 # la sortie.

@@ -121,3 +121,55 @@ func TestStraightARGBKeepsABadPixelInItsOwnBytes(t *testing.T) {
 		t.Errorf("pixel : %#08x, attendu %#08x", got, 0x01_FF0000)
 	}
 }
+
+// TestStraightRGBAMatchesTheWordConversion garde que les deux conversions d'icône disent
+// la même chose, l'une en mots et l'autre en octets.
+//
+// **C'est la comparaison qui les tient d'accord**, et aucune valeur écrite à la main ne
+// le ferait aussi bien : les deux partagent leur division, donc un cas qui recopierait
+// des attendus ne verrait pas l'une dériver de l'autre sur l'ordre des composantes — le
+// seul endroit où elles diffèrent vraiment.
+//
+// Le mot se lit par sa valeur, l'octet par sa place : c'est pourquoi la comparaison
+// décompose le premier plutôt que de relire sa mémoire, ce qui dépendrait du boutisme.
+func TestStraightRGBAMatchesTheWordConversion(t *testing.T) {
+	icon := render.NewBuffer(2, 2)
+	icon.Pixels[0] = render.Color{R: 255, G: 0, B: 0, A: 255}
+	icon.Pixels[1] = render.Color{R: 128, G: 0, B: 0, A: 128}
+	icon.Pixels[2] = render.Color{R: 0, G: 0, B: 0, A: 0}
+	icon.Pixels[3] = render.Color{R: 0, G: 64, B: 32, A: 64}
+
+	words, bytes := straightARGB(icon), straightRGBA(icon)
+	if len(bytes) != len(words)*4 {
+		t.Fatalf("%d octets pour %d pixels, attendu quatre par pixel", len(bytes), len(words))
+	}
+
+	for i, word := range words {
+		for _, c := range []struct {
+			name  string
+			shift int
+			at    int
+		}{
+			{"rouge", 16, 0}, {"vert", 8, 1}, {"bleu", 0, 2}, {"alpha", 24, 3},
+		} {
+			want := byte(word >> c.shift)
+			if got := bytes[i*4+c.at]; got != want {
+				t.Errorf("pixel %d, %s : l'octet vaut %d et le mot %d", i, c.name, got, want)
+			}
+		}
+	}
+}
+
+// TestStraightRGBAZeroesATransparentPixel garde les quatre octets d'un pixel que rien ne
+// peint : un alpha nul n'a pas de couleur à retrouver, et laisser passer sa couleur
+// prémultipliée donnerait un halo au bord d'une icône découpée.
+func TestStraightRGBAZeroesATransparentPixel(t *testing.T) {
+	icon := render.NewBuffer(1, 1)
+	icon.Pixels[0] = render.Color{R: 9, G: 9, B: 9, A: 0}
+
+	for i, b := range straightRGBA(icon) {
+		if b != 0 {
+			t.Errorf("octet %d vaut %d, attendu zéro", i, b)
+		}
+	}
+}
