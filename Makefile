@@ -56,6 +56,21 @@ web: | $(SORTIE)
 	GOOS=js GOARCH=wasm go build -o $(SORTIE)/$(EXAMPLE).wasm ./examples/$(EXAMPLE)
 	go run ./cmd/serve -wasm $(SORTIE)/$(EXAMPLE).wasm
 
+# Le relevé du temps par image, servi au navigateur.
+#
+# **Le relevé sort par la console de la page**, et c'est voulu : il se lit de la même façon
+# qu'en natif, donc un navigateur sans écran le ramasse sans rien d'autre à écrire. Ce qui
+# attend un appareil mobile est de l'afficher *dans* la page, faute de console à y lire.
+#
+# **Les drapeaux de la commande passent par l'URL**, pas par cette cible : ils sont lus
+# dans le module, que le serveur se contente de servir. La page les porte à `go.argv`
+# depuis sa chaîne de requête, de sorte que `?frames=600&side=128` suffise à changer la
+# charge sans rien recompiler.
+.PHONY: frametime
+frametime: | $(SORTIE)
+	GOOS=js GOARCH=wasm go build -o $(SORTIE)/frametime.wasm ./cmd/frametime
+	go run ./cmd/serve -wasm $(SORTIE)/frametime.wasm
+
 # PKG et RUN restreignent la portée sans sortir du Makefile : une commande go
 # tapée directement perd les réglages du poste, et l'oubli ne se voit pas dans
 # la sortie.
