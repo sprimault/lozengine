@@ -48,9 +48,9 @@ type Game interface {
 //
 // **C'est la boucle qui demande, et le jeu qui répond.** Une valeur rendue par
 // [Game.Step] aurait touché la signature par laquelle un jeu écrit sa méthode unique,
-// et le jalon 5 restructurera cette boucle pour rendre la main au navigateur entre
-// deux images : une question posée traverse cette reprise, une valeur rendue par le
-// flot de contrôle serait reprise avec elle.
+// et la boucle a depuis été reprise pour rendre la main au navigateur entre deux
+// images : la question posée a traversé cette reprise sans bouger, là qu'une valeur
+// rendue par le flot de contrôle aurait été reprise avec elle.
 //
 // Elle n'ajoute aucune capacité à [Engine], et c'est voulu : un hôte qui tient sa
 // propre boucle décide seul quand s'arrêter, et n'a personne à qui le demander. C'est
