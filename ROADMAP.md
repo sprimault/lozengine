@@ -104,11 +104,15 @@ logiciel paie en latence. DRM/KMS vise le Pi en kiosque et les bornes embarquée
 Même nature de travail qu'au jalon 3 — un protocole décrit, parlé sur une socket Unix,
 `wayland.xml` étant sa description même — et des `ioctl` relevés dans les en-têtes UAPI
 du noyau. `WriteMsgUnix`, `UnixRights`, `Ftruncate` et `Mmap` sont dans la bibliothèque
-standard ; seul `memfd_create` manque à `syscall`, et son numéro se déclare comme se
-déclarent les opcodes.
+standard. La mémoire que le client et le compositeur se partagent passe par un fichier
+ordinaire, retiré de son répertoire aussitôt créé pour que le système le reprenne à la
+fermeture — et non par `memfd_create`, dont le numéro d'appel système manque à `syscall`
+pour trois des cinq architectures Linux visées.
 
-Deux protocoles entiers, chacun comparable à X11 en volume. Les empiler sur le jalon 3
-ferait un jalon qu'on ne finit pas, d'où celui-ci.
+Deux protocoles entiers, et ils ne pèsent pas pareil : le client Wayland est comparable à
+X11 en volume, le chemin DRM/KMS en fait environ la moitié, n'ayant ni socket, ni poignée
+de main, ni jeton d'authentification. Les empiler sur le jalon 3 ferait un jalon qu'on ne
+finit pas, d'où celui-ci.
 
 Fin : le même exemple tourne sous un compositeur Wayland et sur un connecteur DRM/KMS,
 sans serveur graphique.

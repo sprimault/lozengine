@@ -44,6 +44,23 @@ type Window interface {
 	// C'est elle qui vide la file d'événements de la plateforme, donc elle s'appelle
 	// une fois par pas et en premier.
 	//
+	// **Elle a le droit d'attendre, et c'est une extension du contrat plutôt qu'une
+	// tolérance.** Le navigateur y bloque depuis le jalon 5 sur l'image d'animation
+	// que la page lui promet, parce que c'est le seul instant où une présentation est
+	// certaine d'entrer dans l'image composée ; une famille dont la plateforme annonce
+	// qu'elle veut une image peut faire de même. Le contrat disait « vide la file »,
+	// ce qui a suffi tant que les deux familles natives rendaient aussitôt.
+	//
+	// **Ce qu'une attente doit respecter.** Elle se termine sur un événement que la
+	// plateforme produit d'elle-même, jamais sur un délai : la boucle tient déjà une
+	// horloge en visant une date plutôt qu'en dormant d'une durée fixe, et une seconde
+	// horloge ici ferait dériver la première. Elle n'a donc pas d'autre borne que cet
+	// événement — une plateforme qui cesse de composer arrête le jeu, ce qui est voulu,
+	// un jeu que personne ne regarde n'ayant pas d'image à produire.
+	//
+	// **Attendre n'autorise pas Paced à rendre vrai** : sa condition porte sur ce qui
+	// réarme le jeton de la plateforme, et non sur le fait d'attendre.
+	//
 	// **La position est en pixels de fenêtre**, celle que le système rapporte. C'est
 	// à la boucle de la ramener en pixels de l'image : elle seule connaît le facteur
 	// d'agrandissement, qu'un backend n'a aucune raison de calculer.
@@ -83,13 +100,29 @@ type Window interface {
 	// Paced dit que cette fenêtre cadence elle-même la boucle, en attendant dans
 	// Input jusqu'à ce que sa plateforme veuille une image.
 	//
-	// **Une famille sur trois le fait, et c'est le navigateur.** Une page n'offre pas
-	// d'horloge au jeu : elle appelle le module quand elle s'apprête à composer une
-	// image, et c'est le seul instant où une présentation est certaine d'entrer dans
-	// l'image qu'elle compose. Mesuré le 2 novembre 2026, une boucle qui dort pour
-	// tenir son pas écrit **deux tiers de ses images hors de ce tour** à quatre-vingt-
-	// dix pour cent de charge : le navigateur compose alors un tampon que le moteur
-	// réécrit.
+	// **Une page l'impose, et c'est le cas qui a créé cette méthode.** Une page
+	// n'offre pas d'horloge au jeu : elle appelle le module quand elle s'apprête à
+	// composer une image, et c'est le seul instant où une présentation est certaine
+	// d'entrer dans l'image qu'elle compose. Mesuré le 2 novembre 2026, une boucle qui
+	// dort pour tenir son pas écrit **deux tiers de ses images hors de ce tour** à
+	// quatre-vingt-dix pour cent de charge : le navigateur compose alors un tampon que
+	// le moteur réécrit.
+	//
+	// **Ce qu'une réponse vraie exige, et ce n'est pas d'attendre** : que le jeton de
+	// la plateforme se réarme **sans passer par Present**. Devant une fenêtre
+	// cadencée, la boucle rend la main sans présenter quand un tour arrive en avance
+	// sur l'échéance ; une famille dont la plateforme n'autorise l'image suivante
+	// qu'en réponse à la présentation précédente n'a donc rien demandé ce tour-là, et
+	// le tour suivant attend un jeton que personne n'a réclamé — ou rend aussitôt, et
+	// la boucle tourne à plein régime, le sommeil étant interdit sous ce régime. Le
+	// navigateur y échappe en demandant son image d'animation dans Input, pas dans
+	// Present.
+	//
+	// C'est ce qui a fait répondre faux aux deux familles du jalon 6 : sous Wayland,
+	// `wl_surface.frame` ne prend effet qu'au commit suivant, et sous DRM/KMS
+	// l'événement de bascule répond au `PAGE_FLIP` qu'émet la présentation. Le piège
+	// est gardé par un témoin de la boucle, qui rougit si celle-ci cesse de sauter la
+	// présentation d'un tour en avance.
 	//
 	// **Ce que la boucle en fait, et pourquoi elle ne peut pas le deviner** : devant
 	// une fenêtre cadencée, elle ne dort jamais et rend au contraire la main sans
