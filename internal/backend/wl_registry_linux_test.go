@@ -52,44 +52,62 @@ func TestWLFourCCOfTranslatesTheTwoHistoricFormats(t *testing.T) {
 // l'ordre où [render.Color] les porte, donc le tampon part sans être parcouru. Le repli
 // `XR24` coûte l'échange qu'X11 paie déjà.
 //
-// **Le quatrième cas est celui qui compte le plus** : un compositeur qui n'annonce que les
-// deux formats garantis, et dont le seul exploitable arrive sous sa valeur historique.
+// **Le cas qui compte le plus est « le repli seul, sous sa valeur historique »** : un
+// compositeur qui n'annonce que les deux formats garantis, et dont le seul exploitable
+// arrive sous un nombre qui n'est pas son code. Les cas se nomment ici par leur libellé et
+// non par leur rang, que l'insertion d'un cinquième ferait mentir — et la godoc disait
+// « le quatrième » pour celui-ci avant qu'un cas ne s'ajoute.
+//
+// **La valeur rendue est éprouvée autant que la disposition**, et c'est ce qui sépare deux
+// cas que la disposition seule confondrait : « le repli seul » et « le repli annoncé par
+// son code » retiennent tous deux l'échange, et attendent `1` pour l'un et `0x34325258`
+// pour l'autre. C'est cette valeur que `create_buffer` exige, et elle ne se déduit pas du
+// code.
 func TestWLPixelOrderPrefersTheEngineLayout(t *testing.T) {
 	cases := []struct {
-		label   string
-		formats []uint32
-		kind    pixelKind
+		label     string
+		formats   []uint32
+		kind      pixelKind
+		announced uint32
 	}{
 		{
 			"les deux, donc l'ordre du moteur",
 			[]uint32{wlShmARGB8888, wlShmXRGB8888, formatXBGR8888},
 			pixelDirect,
+			formatXBGR8888,
 		},
 		{
 			"le repli seul, sous sa valeur historique",
 			[]uint32{wlShmARGB8888, wlShmXRGB8888},
 			pixelSwapped,
+			wlShmXRGB8888,
 		},
 		{
 			"l'ordre du moteur seul",
 			[]uint32{formatXBGR8888},
 			pixelDirect,
+			formatXBGR8888,
 		},
 		{
 			"le repli annoncé par son code et non par sa valeur",
 			[]uint32{formatXRGB8888},
 			pixelSwapped,
+			formatXRGB8888,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.label, func(t *testing.T) {
-			o, err := wlPixelOrder(c.formats)
+			o, announced, err := wlPixelOrder(c.formats)
 			if err != nil {
 				t.Fatalf("choix du format : %v", err)
 			}
 			if o.kind != c.kind {
 				t.Errorf("la disposition retenue est classée %d, attendu %d", o.kind, c.kind)
+			}
+			if announced != c.announced {
+				t.Errorf("la valeur rendue est %#x, attendu %#x : c'est elle que create_buffer exige",
+					announced, c.announced)
 			}
 		})
 	}
@@ -107,13 +125,13 @@ func TestWLPixelOrderPrefersTheEngineLayout(t *testing.T) {
 // reconnaît pas, et c'est la seule information qu'un intégrateur aura.
 func TestWLPixelOrderRefusesWhatItCannotWrite(t *testing.T) {
 	t.Run("rien du tout", func(t *testing.T) {
-		if _, err := wlPixelOrder(nil); err == nil {
+		if _, _, err := wlPixelOrder(nil); err == nil {
 			t.Fatal("la liste vide est acceptée, attendu un refus")
 		}
 	})
 
 	t.Run("de l'alpha seulement", func(t *testing.T) {
-		_, err := wlPixelOrder([]uint32{wlShmARGB8888, fourcc('A', 'B', '2', '4')})
+		_, _, err := wlPixelOrder([]uint32{wlShmARGB8888, fourcc('A', 'B', '2', '4')})
 		if err == nil {
 			t.Fatal("les formats à alpha sont acceptés, attendu un refus")
 		}

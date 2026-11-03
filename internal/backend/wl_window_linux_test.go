@@ -10,7 +10,39 @@ package backend
 import (
 	"strings"
 	"testing"
+
+	"github.com/sprimault/lozengine/render"
 )
+
+// wlTestFrame est une image de deux pixels sur deux, dont chaque composante est
+// distincte.
+//
+// **Les valeurs sont distinctes exprès** : une image grise ou unie passerait tous les cas
+// de disposition, qui ne font que déplacer des composantes. Et aucune ne vaut zéro, qui
+// est ce que le bourrage porte.
+func wlTestFrame() *render.Buffer {
+	return &render.Buffer{
+		Width: 2, Height: 2,
+		Pixels: []render.Color{
+			{R: 1, G: 2, B: 3, A: 255},
+			{R: 4, G: 5, B: 6, A: 255},
+			{R: 7, G: 8, B: 9, A: 255},
+			{R: 10, G: 11, B: 12, A: 255},
+		},
+	}
+}
+
+// wlShiftedFrame rend la même image décalée, pour qu'une seconde présentation se distingue
+// de la première dans la mémoire partagée.
+func wlShiftedFrame(by uint8) *render.Buffer {
+	frame := wlTestFrame()
+	for i := range frame.Pixels {
+		frame.Pixels[i].R += by
+		frame.Pixels[i].G += by
+		frame.Pixels[i].B += by
+	}
+	return frame
+}
 
 // wlMount monte une fenêtre sur un compositeur de pacotille.
 //
@@ -255,6 +287,251 @@ func TestWLFakeRefusesWhatTheProtocolForbids(t *testing.T) {
 				t.Errorf("le refus dit %q, attendu qu'il nomme %q", refusal, c.says)
 			}
 		})
+	}
+}
+
+// TestWLWindowPresentsIntoTheMemoryTheCompositorReads garde la présentation jusqu'aux
+// octets.
+//
+// **Le compositeur de pacotille projette le descripteur qu'il reçoit**, donc ce cas relit
+// la mémoire exactement comme un vrai compositeur la lirait. C'est ce qui le sépare d'un
+// cas qui vérifierait des requêtes bien formées : une disposition inversée, un pas de ligne
+// faux ou un décalage de tampon manqué composent tous des requêtes impeccables.
+//
+// Les deux dispositions sont éprouvées, et ce sont deux chemins de code : l'ordre du moteur
+// passe par une copie en bloc, où l'octet d'alpha tombe dans l'octet que le format déclare
+// ignoré ; le repli parcourt les pixels et écrit **zéro** dans cet octet, ce qui est la
+// raison pour laquelle les formats à alpha sont refusés ailleurs.
+func TestWLWindowPresentsIntoTheMemoryTheCompositorReads(t *testing.T) {
+	cases := []struct {
+		label   string
+		formats []uint32
+		want    func(render.Color) [4]byte
+	}{
+		{
+			"l'ordre du moteur, recopié en bloc",
+			[]uint32{wlShmXRGB8888, formatXBGR8888},
+			func(c render.Color) [4]byte { return [4]byte{c.R, c.G, c.B, c.A} },
+		},
+		{
+			"le repli, qui échange le rouge et le bleu",
+			[]uint32{wlShmXRGB8888},
+			func(c render.Color) [4]byte { return [4]byte{c.B, c.G, c.R, 0} },
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.label, func(t *testing.T) {
+			f := wlNewFake(wlDefaultGlobals(), c.formats)
+			w, err := wlMount(t, f, wlTestOptions())
+			if err != nil {
+				t.Fatalf("montage de la fenêtre : %v", err)
+			}
+
+			// Deux images distinctes, et c'est ce qui éprouve le décalage : la
+			// seconde présentation prend l'autre tampon, donc écrire au mauvais
+			// endroit se verrait. Avec une seule image, un décalage toujours nul
+			// passerait, le premier tampon étant à zéro.
+			frames := []*render.Buffer{wlTestFrame(), wlShiftedFrame(100)}
+			for _, frame := range frames {
+				wlSettle(t, w.c)
+				w.Present(frame)
+			}
+			wlSettle(t, w.c)
+			if r := f.refusal(); r != "" {
+				t.Fatalf("le compositeur a refusé la présentation : %s", r)
+			}
+
+			for i, frame := range frames {
+				want := make([]byte, 0, 4*len(frame.Pixels))
+				for _, pixel := range frame.Pixels {
+					b := c.want(pixel)
+					want = append(want, b[:]...)
+				}
+
+				at := i * len(want)
+				got := f.shared(at, len(want))
+				if got == nil {
+					t.Fatalf("la mémoire partagée ne porte pas %d octets au décalage %d",
+						len(want), at)
+				}
+				for j := range want {
+					if got[j] != want[j] {
+						t.Fatalf("le tampon %d vaut %v, attendu %v", i, got, want)
+					}
+				}
+			}
+		})
+	}
+}
+
+// TestWLWindowDescribesTheBufferItShares fige la géométrie que `create_buffer` annonce.
+//
+// Le pas de ligne et le décalage sont les deux nombres qu'un compositeur croit sans les
+// vérifier : un pas faux décale chaque ligne d'un peu et rend une image en escalier, un
+// décalage faux fait lire l'autre tampon. Les deux composent des requêtes valides.
+//
+// Le second tampon est éprouvé autant que le premier, parce que c'est son décalage qui dit
+// que les deux ne se recouvrent pas.
+func TestWLWindowDescribesTheBufferItShares(t *testing.T) {
+	f := wlNewFake(wlDefaultGlobals(), []uint32{wlShmXRGB8888, formatXBGR8888})
+	w, err := wlMount(t, f, wlTestOptions())
+	if err != nil {
+		t.Fatalf("montage de la fenêtre : %v", err)
+	}
+
+	w.Present(wlTestFrame())
+	wlSettle(t, w.c)
+
+	frame := 2 * 4 * 2
+	for i, b := range w.pool.buffers {
+		got, ok := f.bufferOf(b.id)
+		if !ok {
+			t.Fatalf("le compositeur ne connaît pas le tampon %d", i)
+		}
+		want := wlFakeBuffer{at: i * frame, width: 2, height: 2, stride: 8, format: formatXBGR8888}
+		if got != want {
+			t.Errorf("le tampon %d est décrit %+v, attendu %+v", i, got, want)
+		}
+	}
+}
+
+// TestWLWindowSkipsAPresentationWhenTheCompositorHoldsEveryBuffer garde le saut.
+//
+// **C'est le régime que le contrat de [Window.Present] autorise en toutes lettres** — « une
+// présentation qui ne peut pas avoir lieu … ne fait rien, ce qui est le bon comportement et
+// non un échec ». Ce que cela évite est d'écrire dans un tampon que le compositeur lit,
+// c'est-à-dire du déchirement qu'aucune erreur ne signale.
+//
+// Le compositeur retient ici ses tampons, ce que la description permet : elle ne garantit
+// le renvoi immédiat que « typically », et seulement quand il garde une copie de la
+// surface.
+func TestWLWindowSkipsAPresentationWhenTheCompositorHoldsEveryBuffer(t *testing.T) {
+	f := wlNewFake(wlDefaultGlobals(), []uint32{wlShmXRGB8888, formatXBGR8888})
+	f.releaseOnCommit = false
+
+	w, err := wlMount(t, f, wlTestOptions())
+	if err != nil {
+		t.Fatalf("montage de la fenêtre : %v", err)
+	}
+
+	for i := 0; i < wlBuffers+2; i++ {
+		w.Present(wlTestFrame())
+		wlSettle(t, w.c)
+	}
+	if r := f.refusal(); r != "" {
+		t.Fatalf("le compositeur a refusé : %s", r)
+	}
+
+	attaches := 0
+	for _, seen := range f.saw() {
+		if strings.HasPrefix(seen, "attach ") {
+			attaches++
+		}
+	}
+	if attaches != wlBuffers {
+		t.Errorf("la fenêtre a attaché %d tampons, attendu %d : les tours suivants sautent",
+			attaches, wlBuffers)
+	}
+	if w.Err() != nil {
+		t.Errorf("un tour sauté a été pris pour une panne : %v", w.Err())
+	}
+}
+
+// TestWLWindowAlternatesItsBuffers garde que le second tampon sert.
+//
+// **Sans ce cas, un backend qui réemploie toujours le même passerait**, puisqu'un
+// compositeur qui rend vite laisse le premier libre à chaque tour. Le défaut ne se verrait
+// alors que devant un compositeur qui retient — donc en production et sur une autre
+// machine.
+func TestWLWindowAlternatesItsBuffers(t *testing.T) {
+	f := wlNewFake(wlDefaultGlobals(), []uint32{wlShmXRGB8888, formatXBGR8888})
+	w, err := wlMount(t, f, wlTestOptions())
+	if err != nil {
+		t.Fatalf("montage de la fenêtre : %v", err)
+	}
+
+	for i := 0; i < 3; i++ {
+		wlSettle(t, w.c)
+		w.Present(wlTestFrame())
+	}
+	wlSettle(t, w.c)
+
+	attached := []string(nil)
+	for _, seen := range f.saw() {
+		if strings.HasPrefix(seen, "attach ") {
+			attached = append(attached, seen)
+		}
+	}
+	if len(attached) != 3 {
+		t.Fatalf("la fenêtre a attaché %d tampons, attendu 3 : %v", len(attached), attached)
+	}
+	if attached[0] == attached[1] {
+		t.Errorf("les deux premières présentations emploient le même tampon : %v", attached)
+	}
+	if attached[0] != attached[2] {
+		t.Errorf("la troisième présentation ne revient pas au premier tampon : %v", attached)
+	}
+}
+
+// TestWLWindowBuildsANewPoolWhenTheFrameChangesSize garde le remplacement du pool.
+//
+// Un `wl_buffer` porte ses dimensions, donc ceux d'une autre taille ne servent plus.
+// [wlPool] dit pourquoi l'agrandissement en place a été écarté ; ce cas garde la
+// conséquence observable, qui est qu'un pool neuf arrive et que les anciens tampons sont
+// détruits.
+func TestWLWindowBuildsANewPoolWhenTheFrameChangesSize(t *testing.T) {
+	f := wlNewFake(wlDefaultGlobals(), []uint32{wlShmXRGB8888, formatXBGR8888})
+	w, err := wlMount(t, f, wlTestOptions())
+	if err != nil {
+		t.Fatalf("montage de la fenêtre : %v", err)
+	}
+
+	w.Present(wlTestFrame())
+	wlSettle(t, w.c)
+
+	wide := &render.Buffer{Width: 4, Height: 2, Pixels: make([]render.Color, 8)}
+	w.Present(wide)
+	wlSettle(t, w.c)
+
+	if r := f.refusal(); r != "" {
+		t.Fatalf("le compositeur a refusé : %s", r)
+	}
+
+	pools, destroyed := 0, 0
+	for _, seen := range f.saw() {
+		switch {
+		case strings.HasPrefix(seen, "create_pool "):
+			pools++
+		case seen == "destroy_buffer":
+			destroyed++
+		}
+	}
+	if pools != 2 {
+		t.Errorf("le compositeur a vu %d pools, attendu 2", pools)
+	}
+	if destroyed != wlBuffers {
+		t.Errorf("%d tampons détruits, attendu %d", destroyed, wlBuffers)
+	}
+	if got, _ := w.pool.buffers[0], 0; got.at != 0 {
+		t.Errorf("le premier tampon du pool neuf est au décalage %d, attendu 0", got.at)
+	}
+}
+
+// TestWLWindowPacesNothing garde la réponse que le jalon a renversée.
+//
+// Le brief l'annonçait vraie pour les deux nouvelles familles, et c'est faux : le jeton de
+// `wl_surface.frame` s'arme au commit, donc dans la présentation — que la boucle saute
+// précisément devant une fenêtre qui se dit cadencée. Le témoin de `loop_test.go` garde ce
+// que la boucle en fait ; celui-ci garde la réponse.
+func TestWLWindowPacesNothing(t *testing.T) {
+	f := wlNewFake(wlDefaultGlobals(), []uint32{wlShmXRGB8888, formatXBGR8888})
+	w, err := wlMount(t, f, wlTestOptions())
+	if err != nil {
+		t.Fatalf("montage de la fenêtre : %v", err)
+	}
+	if w.Paced() {
+		t.Error("la fenêtre se dit cadencée, et la boucle sauterait alors la présentation qui arme le jeton")
 	}
 }
 

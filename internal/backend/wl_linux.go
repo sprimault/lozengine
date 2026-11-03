@@ -101,6 +101,23 @@ const (
 	wlSurfacePreferredBufferTransform uint16 = 3
 )
 
+// Les opcodes de `wl_shm`, `wl_shm_pool` et `wl_buffer`, version 1.
+//
+// `wl_shm_pool.resize` est à l'opcode 2 et n'est pas employé : il ne sait qu'agrandir, et
+// il garde la projection du client sur la même mémoire — donc il faudrait attendre que le
+// compositeur rende ses tampons avant de réécrire aux mêmes décalages. Un pool neuf à
+// chaque géométrie laisse au contraire l'ancienne mémoire au compositeur seul.
+const (
+	wlShmCreatePool uint16 = 0
+
+	wlShmPoolCreateBuffer uint16 = 0
+	wlShmPoolDestroy      uint16 = 1
+
+	wlBufferDestroy uint16 = 0
+
+	wlBufferRelease uint16 = 0
+)
+
 // wlShmFormat est l'opcode de l'événement par lequel `wl_shm` annonce un format, et il
 // en envoie un par format qu'il accepte.
 const wlShmFormat uint16 = 0

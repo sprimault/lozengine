@@ -18,8 +18,9 @@ package backend
 
 import (
 	"fmt"
-	"os"
+	"net"
 	"sync"
+	"syscall"
 	"testing"
 )
 
@@ -76,20 +77,49 @@ type wlFake struct {
 	// closing fait suivre la configuration d'une demande de fermeture.
 	closing bool
 
+	// pool est l'objet `wl_shm_pool` en cours, mem la projection que le compositeur a
+	// faite du descripteur reçu, et buffers les tampons qu'on y a créés.
+	//
+	// **Projeter la mémoire est ce qui donne sa valeur au compositeur de pacotille sur
+	// ce chemin** : un cas peut alors relire les octets exactement comme un vrai
+	// compositeur les lirait, au lieu de croire une requête bien formée.
+	pool    uint32
+	mem     []byte
+	buffers map[uint32]wlFakeBuffer
+
+	// fds est la file des descripteurs reçus, dans l'ordre d'arrivée, comme du côté
+	// client : rien ne lie un descripteur au message qu'on lit.
+	fds []int
+
+	// attached est le dernier tampon commis, et releaseOnCommit fait rendre le tampon
+	// aussitôt — ce qui est le régime courant d'un compositeur qui recopie la surface,
+	// et celui que la description appelle « typically ».
+	attached        uint32
+	releaseOnCommit bool
+
 	// seen porte les requêtes reconnues dans l'ordre, et refused le refus prononcé.
 	// Il n'y en a qu'un : une erreur de protocole est fatale, donc rien ne suit.
 	seen    []string
 	refused string
 }
 
+// wlFakeBuffer est ce qu'un `wl_buffer` porte, tel que le compositeur l'a reçu.
+type wlFakeBuffer struct {
+	at                    int
+	width, height, stride int
+	format                uint32
+}
+
 // wlNewFake monte un compositeur de pacotille dans son régime ordinaire.
 func wlNewFake(globals []wlFakeGlobal, formats []uint32) *wlFake {
 	return &wlFake{
-		globals:   globals,
-		formats:   formats,
-		issued:    make(map[uint32]bool),
-		ping:      true,
-		sequences: 1,
+		globals:         globals,
+		formats:         formats,
+		issued:          make(map[uint32]bool),
+		buffers:         make(map[uint32]wlFakeBuffer),
+		ping:            true,
+		sequences:       1,
+		releaseOnCommit: true,
 	}
 }
 
@@ -238,18 +268,115 @@ func (f *wlFake) handle(sender uint32, opcode uint16, r *wlReader, out *wlWriter
 	case sender == f.toplevel && opcode == wlXDGToplevelSetAppID:
 		f.note("set_app_id %s", r.string())
 
-	case sender == f.surface && opcode == wlSurfaceAttach:
-		if !f.configured {
-			f.refuse(out, f.xdg, wlXDGErrUnconfiguredBuffer,
-				"a buffer was attached before the first configure")
+	case sender == f.shm && opcode == wlShmCreatePool:
+		id, size := r.uint(), r.uint()
+		if len(f.fds) == 0 {
+			f.refuse(out, id, wlErrInvalidObject, "create_pool came without a file descriptor")
 			return
 		}
-		f.note("attach %d", r.uint())
+		fd := f.fds[0]
+		f.fds = f.fds[1:]
+
+		mem, err := syscall.Mmap(fd, 0, int(size), syscall.PROT_READ, syscall.MAP_SHARED)
+		syscall.Close(fd)
+		if err != nil {
+			f.refuse(out, id, wlErrInvalidObject,
+				fmt.Sprintf("mapping the %d bytes the client shared: %v", size, err))
+			return
+		}
+		f.unmap()
+		f.pool, f.mem = id, mem
+		f.note("create_pool %d", size)
+
+	case sender == f.pool && opcode == wlShmPoolCreateBuffer:
+		id, at := r.uint(), r.uint()
+		width, height, stride, format := r.int(), r.int(), r.int(), r.uint()
+		if !f.offers(format) {
+			f.refuse(out, id, wlErrInvalidObject,
+				fmt.Sprintf("format %#x was never advertised", format))
+			return
+		}
+		f.buffers[id] = wlFakeBuffer{
+			at: int(at), width: int(width), height: int(height),
+			stride: int(stride), format: format,
+		}
+		f.note("create_buffer %d×%d at %d", width, height, at)
+
+	case sender == f.pool && opcode == wlShmPoolDestroy:
+		f.note("destroy_pool")
+
+	case opcode == wlBufferDestroy && f.isBuffer(sender):
+		delete(f.buffers, sender)
+		f.note("destroy_buffer")
+
+	case sender == f.surface && opcode == wlSurfaceAttach:
+		id := r.uint()
+		switch {
+		case !f.configured:
+			f.refuse(out, f.xdg, wlXDGErrUnconfiguredBuffer,
+				"a buffer was attached before the first configure")
+		case id != 0 && !f.isBuffer(id):
+			f.refuse(out, id, wlErrInvalidObject, "attach names an object that is not a buffer")
+		default:
+			f.attached = id
+			f.note("attach %d", id)
+		}
+
+	case sender == f.surface && opcode == wlSurfaceDamage:
+		x, y, width, height := r.int(), r.int(), r.int(), r.int()
+		f.note("damage %d,%d %d×%d", x, y, width, height)
 
 	case sender == f.surface && opcode == wlSurfaceCommit:
 		f.note("commit")
 		f.commit(out)
 	}
+}
+
+// offers dit si le format a bien été annoncé, ce que `create_buffer` exige.
+func (f *wlFake) offers(format uint32) bool {
+	for _, announced := range f.formats {
+		if announced == format {
+			return true
+		}
+	}
+	return false
+}
+
+// isBuffer dit si l'identifiant est celui d'un tampon vivant.
+func (f *wlFake) isBuffer(id uint32) bool {
+	_, ok := f.buffers[id]
+	return ok
+}
+
+// unmap rend la projection de la mémoire partagée, s'il y en a une.
+func (f *wlFake) unmap() {
+	if f.mem != nil {
+		syscall.Munmap(f.mem)
+		f.mem = nil
+	}
+}
+
+// shared relit la mémoire partagée comme un vrai compositeur la lirait.
+//
+// La copie est voulue : la tranche vit sous le verrou, et la rendre telle quelle laisserait
+// un cas lire pendant qu'une requête écrit.
+func (f *wlFake) shared(at, n int) []byte {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if at+n > len(f.mem) {
+		return nil
+	}
+	return append([]byte(nil), f.mem[at:at+n]...)
+}
+
+// bufferOf rend ce que le compositeur a retenu d'un tampon.
+func (f *wlFake) bufferOf(id uint32) (wlFakeBuffer, bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	b, ok := f.buffers[id]
+	return b, ok
 }
 
 // commit applique ce qu'un commit rend effectif, et répond ce que le protocole impose.
@@ -260,6 +387,19 @@ func (f *wlFake) handle(sender uint32, opcode uint16, r *wlReader, out *wlWriter
 // xdg_surface.configure event ». Un commit avant que le rôle soit donné ne déclenche rien,
 // l'état du rôle faisant partie de ce que la configuration transporte.
 func (f *wlFake) commit(out *wlWriter) {
+	// **Le renvoi du tampon vient avant la sortie anticipée, et l'ordre inverse a été
+	// écrit d'abord** : la configuration ne part qu'au premier commit, donc un renvoi
+	// posé après cette sortie ne partait jamais. Les deux tampons du client restaient
+	// alors détenus pour toujours, et le troisième tour sautait sa présentation — ce que
+	// le cas de la rotation a attrapé.
+	if f.attached != 0 && f.releaseOnCommit {
+		out.begin(f.attached, wlBufferRelease)
+		out.end()
+		f.attached = 0
+	}
+
+	// Le reste n'a lieu qu'une fois : la description veut que la configuration suive le
+	// premier commit, celui qui n'attache rien.
 	if f.toplevel == 0 || f.configured {
 		return
 	}
@@ -302,20 +442,55 @@ func (f *wlFake) configure(out *wlWriter) {
 	out.end()
 }
 
+// collect range les descripteurs qu'une lecture a rapportés.
+func (f *wlFake) collect(oob []byte) {
+	if len(oob) == 0 {
+		return
+	}
+	msgs, err := syscall.ParseSocketControlMessage(oob)
+	if err != nil {
+		return
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, m := range msgs {
+		if fds, err := syscall.ParseUnixRights(&m); err == nil {
+			f.fds = append(f.fds, fds...)
+		}
+	}
+}
+
 // serve met le compositeur de pacotille au bout d'une socket.
-func (f *wlFake) serve(t *testing.T, sock *os.File) {
+//
+// **La lecture emporte les données auxiliaires**, pour la raison qui vaut du côté client :
+// un descripteur accompagne un octet quelconque du flux, et `wl_shm.create_pool` en envoie
+// un. Le lire autrement le perdrait sans rien signaler, et le pool serait refusé pour une
+// cause qui n'a rien à voir.
+//
+// **Elle passe par la connexion et jamais par le descripteur entier**, et c'est ce qui fait
+// qu'elle se termine : la fermeture que le cas enregistre interrompt une lecture faite par
+// `net`, là qu'un `recvmsg` bloquant ne rendrait jamais la main. Une goroutine survivante
+// resterait sur un numéro de descripteur que le noyau réattribue, et volerait ses requêtes
+// au cas suivant — mesuré en intégration continue, un montage sur six expirait au bout de
+// la borne d'ouverture, et le cas qui tombait n'était pas celui qui avait le défaut.
+func (f *wlFake) serve(t *testing.T, sock *net.UnixConn) {
 	t.Helper()
+
+	oob := make([]byte, syscall.CmsgSpace(4*wlFDsPerRead))
+	t.Cleanup(f.unmap)
 
 	go func() {
 		in := make([]byte, 4096)
 		have := 0
 
 		for {
-			n, err := sock.Read(in[have:])
+			n, oobn, _, _, err := sock.ReadMsgUnix(in[have:], oob)
 			if err != nil || n == 0 {
 				return
 			}
 			have += n
+			f.collect(oob[:oobn])
 
 			for have >= wlHeaderSize {
 				second := wlOrder.Uint32(in[4:])

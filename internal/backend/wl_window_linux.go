@@ -17,6 +17,8 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+
+	"github.com/sprimault/lozengine/render"
 )
 
 // wlAppIDFallback est l'identifiant d'application employé quand l'exécutable n'en donne
@@ -58,6 +60,12 @@ type wlWindow struct {
 	// compositeur n'en propose pas d'autre.
 	width  uint16
 	height uint16
+
+	// pool est la mémoire partagée de la géométrie en cours, et nil avant la première
+	// présentation. Une fenêtre peut vivre sans — un jeu qui ne présente rien reste une
+	// fenêtre —, et la créer au montage demanderait de deviner la taille que le
+	// compositeur n'a pas encore proposée.
+	pool *wlPool
 
 	// closed retient que la fenêtre ne présentera plus rien. Il ne se relève jamais.
 	closed bool
@@ -179,6 +187,14 @@ func (w *wlWindow) mount(o Options) error {
 // `xdg_toplevel` suggère une taille là que celui d'`xdg_surface` clôt la séquence. Router
 // sur l'opcode seul confondrait une largeur avec un numéro de série.
 func (w *wlWindow) handle(sender uint32, opcode uint16, r *wlReader) error {
+	// **`wl_buffer.release` se reconnaît avant les autres, et il ne peut pas entrer
+	// dans le choix qui suit** : les tampons sont plusieurs et changent d'identifiant à
+	// chaque géométrie. C'est l'émetteur qui tranche et non l'opcode, qui vaut zéro ici
+	// comme pour la moitié des événements du protocole.
+	if opcode == wlBufferRelease && w.pool != nil && w.pool.returned(sender) {
+		return nil
+	}
+
 	switch sender {
 	case w.xdg:
 		if opcode == wlXDGSurfaceConfigure {
@@ -293,6 +309,146 @@ func wlAppID() string {
 	return wlAppIDFallback
 }
 
+// drain lit tout ce que le compositeur a envoyé, sans rien attendre.
+//
+// C'est le seul régime de lecture après l'ouverture : `Paced` rend faux, donc la boucle
+// dort entre deux pas et un chemin qui bloquerait figerait le jeu sur un compositeur qui
+// n'a rien à dire.
+func (w *wlWindow) drain() error {
+	for {
+		more, err := w.c.receive()
+		if err != nil {
+			return err
+		}
+		if !more {
+			return nil
+		}
+		if err := w.c.dispatch(); err != nil {
+			return err
+		}
+	}
+}
+
+// fit garantit un pool à la géométrie demandée.
+//
+// **Une fenêtre qui change de taille change de pool, et c'est la seule voie** : un
+// `wl_buffer` porte ses dimensions, donc les siens ne servent plus. [wlPool] dit pourquoi
+// l'agrandissement en place a été écarté.
+func (w *wlWindow) fit(width, height int) error {
+	if w.pool != nil && w.pool.width == width && w.pool.height == height {
+		return nil
+	}
+	if w.pool != nil {
+		w.pool.drop(w.c)
+		w.pool = nil
+	}
+
+	pool, err := wlNewPool(w.c, w.g, width, height)
+	if err != nil {
+		return err
+	}
+	w.pool = pool
+	return nil
+}
+
+// Present pose le tampon dans la mémoire que le compositeur lit, et le lui commet.
+//
+// **Les pixels ne traversent rien : ils sont écrits là où le compositeur les lira.** C'est
+// la différence avec X11, où la même image passe par une requête sur une socket. Ce que
+// cette famille demande en échange est de savoir quel tampon est libre, donc de **lire**
+// avant d'écrire — une présentation qui ne lirait pas trouverait tout détenu au second
+// tour et ne montrerait plus rien.
+//
+// Trois raisons de ne rien faire, et aucune n'est un échec, ce que le contrat prévoit : la
+// fenêtre est fermée, elle n'a pas encore reçu sa configuration — un tampon attaché avant
+// serait une erreur de protocole —, ou le compositeur détient les deux tampons. Ce qui est
+// terminal, en revanche, passe par [wlWindow.fail] : une mémoire partagée qu'on ne peut
+// plus créer n'est pas un tour perdu.
+//
+// L'acquittement vient juste avant le commit et non à la réception du `configure`, parce
+// que c'est l'ordre que la description impose : « if a client commits the surface in
+// response to the configure event, then the client must make an ack_configure request
+// sometime before the commit request ».
+func (w *wlWindow) Present(t *render.Buffer) {
+	if w.closed || !w.configured || t == nil || len(t.Pixels) == 0 {
+		return
+	}
+
+	if err := w.drain(); err != nil {
+		w.fail(err)
+		return
+	}
+	if err := w.fit(int(t.Width), int(t.Height)); err != nil {
+		w.fail(err)
+		return
+	}
+
+	i := w.pool.free()
+	if i < 0 {
+		return
+	}
+	b := &w.pool.buffers[i]
+	w.pool.write(b.at, w.g.pixels, t.Pixels)
+	b.held, w.pool.last = true, i
+
+	c := w.c
+	c.out.begin(w.surface, wlSurfaceAttach)
+	c.out.uint(b.id)
+	c.out.uint(0)
+	c.out.uint(0)
+	c.out.end()
+
+	// **`damage` et non `damage_buffer`, parce que les deux désignent ici la même
+	// région.** Le second est la requête moderne et travaille en coordonnées de tampon ;
+	// le premier travaille en coordonnées de surface, et les deux coïncident tant que la
+	// surface n'a ni échelle ni rotation. Le moteur ne pose jamais `set_buffer_scale` —
+	// sa règle d'échelle entière lui interdit de prendre celle d'un compositeur —, donc
+	// la coïncidence tient par construction et un seul chemin suffit à toutes les
+	// versions.
+	c.out.begin(w.surface, wlSurfaceDamage)
+	c.out.uint(0)
+	c.out.uint(0)
+	c.out.uint(uint32(t.Width))
+	c.out.uint(uint32(t.Height))
+	c.out.end()
+
+	w.ack()
+
+	c.out.begin(w.surface, wlSurfaceCommit)
+	c.out.end()
+
+	if err := c.flush(); err != nil {
+		w.fail(err)
+	}
+}
+
+// Paced rend faux, et c'est la réponse que le jalon 6 a renversée.
+//
+// **Le jeton de cadence du protocole existe et ne peut pas servir ici.** `wl_surface.frame`
+// demande un rappel pour l'image suivante, mais il « ne prend effet qu'au commit suivant » :
+// il s'arme donc dans la présentation, et pas ailleurs. Or la boucle, devant une fenêtre
+// qui se dit cadencée, **saute la présentation** d'un tour arrivé en avance — donc le
+// jeton ne se réarmerait pas, et le tour suivant attendrait un rappel que personne n'a
+// demandé. La fenêtre se figerait au premier tour en avance.
+//
+// C'est ce que le contrat de [Window.Paced] exige en toutes lettres : que le jeton se
+// réarme **sans passer par Present**. Une page le tient, parce que son attente vit dans
+// `Input` ; un compositeur Wayland ne le tient pas.
+func (w *wlWindow) Paced() bool {
+	return false
+}
+
+// fail retient ce qui a mis fin à la fenêtre autrement que par la volonté du joueur.
+//
+// Seule la première cause est gardée, comme X11 le fait : ce qui suit une connexion perdue
+// n'en est que la conséquence.
+func (w *wlWindow) fail(err error) {
+	if w.err == nil {
+		w.err = err
+	}
+	w.closed = true
+}
+
 // Size rend la taille que le compositeur a proposée en dernier.
 func (w *wlWindow) Size() (width, height uint16) {
 	return w.width, w.height
@@ -315,5 +471,9 @@ func (w *wlWindow) Err() error {
 // n'économiserait qu'un instant de table chez lui, au prix d'un ordre à tenir — un
 // `xdg_surface` ne se détruit qu'après son rôle.
 func (w *wlWindow) Close() {
+	if w.pool != nil {
+		w.pool.unmap()
+		w.pool = nil
+	}
 	w.c.Close()
 }
