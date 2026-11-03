@@ -135,6 +135,21 @@ func wlDisplayPath() (string, error) {
 	return filepath.Join(dir, name), nil
 }
 
+// wlNamed dit si l'environnement nomme un compositeur Wayland.
+//
+// **C'est la question que l'ouverture pose avant d'essayer cette famille, et elle ne se
+// confond pas avec « la socket existe-t-elle »** : [wlDisplayPath] se replie sur
+// `wayland-0`, donc une session X11 pure où un compositeur voisin tourne serait servie par
+// lui. L'absence des deux variables est ce qui épingle une session sur X11, et c'est l'état
+// d'un serveur X autonome comme d'un Xwayland qu'on veut éprouver pour lui-même.
+//
+// Les deux variables et non une : `WAYLAND_SOCKET` porte un descripteur déjà connecté, ce
+// qui est la façon dont un compositeur lance un client sans lui faire chercher sa socket.
+// Elle est retirée de l'environnement par [wlDial], donc cette question se pose avant.
+func wlNamed() bool {
+	return os.Getenv("WAYLAND_DISPLAY") != "" || os.Getenv("WAYLAND_SOCKET") != ""
+}
+
 // wlDial ouvre la socket du compositeur, ou adopte celle qu'on nous a passée.
 //
 // `WAYLAND_SOCKET` prime et porte un descripteur déjà connecté : c'est ainsi qu'un

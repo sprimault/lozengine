@@ -119,10 +119,6 @@ Deux exclusions suivent de la règle de dépendance, et elles sont assumées :
   lui-même refuse de lier sans cgo. Le jalon 5 couvre les deux par le navigateur,
   et la frontière backend les garde atteignables si la contrainte change.
 
-Wayland natif n'en est pas une, et c'était une erreur de le ranger là : c'est un
-protocole qu'on écrit sur une socket comme X11, donc il vient à son jalon et non
-jamais. XWayland couvre le besoin jusque-là.
-
 Ce qui sera exposé aux autres langages est le noyau, jamais la fenêtre ni la
 boucle : un jeu hôte possède déjà les siennes et ne cédera pas son thread
 principal.

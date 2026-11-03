@@ -119,10 +119,6 @@ Two exclusions follow from the dependency rule, and they are deliberate:
   without cgo. Milestone 5 covers both through the browser, and the backend
   boundary keeps them reachable should that constraint change.
 
-Native Wayland is not one of them, and listing it there was a mistake: it is a
-protocol one writes on a socket just like X11, so it comes at its milestone rather
-than never. XWayland covers the need until then.
-
 What will be exposed to other languages is the core, never the window or the
 loop: a host game already has its own and will not give up its main thread.
 
