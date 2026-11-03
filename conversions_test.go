@@ -33,7 +33,7 @@ import (
 var conversions = map[string]int{
 	"internal/backend/icon_windows.go":         4,
 	"internal/backend/open_windows.go":         3,
-	"internal/backend/pixels_web.go":           2,
+	"internal/backend/pixels.go":               2,
 	"internal/backend/pointer_windows.go":      1,
 	"internal/backend/present_js.go":           1,
 	"internal/backend/present_windows.go":      2,
