@@ -203,6 +203,42 @@ func (r *wlReader) string() string {
 	return s
 }
 
+// int lit un entier signé, qui occupe le même mot qu'un entier non signé.
+//
+// La conversion est la seule chose que cette méthode apporte, et elle vaut d'être nommée :
+// une largeur de `xdg_toplevel.configure` lue en non signé rendrait 4 294 967 295 au lieu
+// de -1 sans que rien ne le signale, et c'est une taille de fenêtre qu'un jeu reçoit.
+func (r *wlReader) int() int32 {
+	return int32(r.uint())
+}
+
+// array lit un tableau d'octets et laisse le curseur sur la frontière suivante.
+//
+// **Une longueur nulle est valide ici, contrairement à une chaîne**, et c'est le cas
+// courant : `xdg_toplevel.configure` porte la liste des états de la fenêtre, qui est vide
+// pour une fenêtre ordinaire. Il n'y a pas de terminateur à compter, donc zéro désigne
+// bien un tableau vide.
+//
+// La tranche rendue pointe dans le message et ne survit donc pas au découpage suivant.
+// C'est ce qui évite une allocation par événement sur un chemin que la boucle traverse à
+// chaque pas ; l'appelant qui veut la garder la recopie.
+func (r *wlReader) array() []byte {
+	n := r.uint()
+	if r.err != nil {
+		return nil
+	}
+	if r.at+int(n) > len(r.buf) {
+		r.fail("array")
+		return nil
+	}
+	a := r.buf[r.at : r.at+int(n)]
+	r.at += int(n)
+	for r.at%4 != 0 {
+		r.at++
+	}
+	return a
+}
+
 // fail retient la première lecture hors message.
 func (r *wlReader) fail(kind string) {
 	r.err = fmt.Errorf("wayland: message of %d bytes is too short to hold its %s argument at offset %d",

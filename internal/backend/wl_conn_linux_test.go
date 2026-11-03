@@ -3,15 +3,18 @@
 
 // Ce que la connexion doit tenir face à un compositeur de pacotille : ne perdre aucun
 // descripteur d'où qu'il arrive, garder un message coupé en deux, nommer ce qui l'a fait
-// tomber, et réemployer les identifiants qu'on lui rend.
+// tomber, réemployer les identifiants qu'on lui rend, et borner l'ouverture sans borner
+// la suite.
 
 package backend
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 )
 
 // wlConnPair monte une connexion sur une paire de sockets, et rend le bout du
@@ -348,5 +351,43 @@ func TestWLDisplayPathResolvesTheEnvironment(t *testing.T) {
 				t.Errorf("le chemin rendu est %q, attendu %q", got, c.want)
 			}
 		})
+	}
+}
+
+// TestWLConnBoundsABlockingReadAndThenReleasesIt garde les deux moitiés de la borne.
+//
+// **La seconde est celle qui compte, et elle n'a rien d'une politesse** : une échéance
+// laissée en place après l'ouverture ferait tomber la fenêtre dix secondes plus tard, sur
+// un chemin qui n'a rien à voir avec elle, et le message parlerait d'une lecture expirée
+// plutôt que d'un montage mal rangé.
+//
+// Le cas éprouve le mécanisme et non son emploi : l'attente du `configure` passe par lui,
+// mais l'éprouver par le montage demanderait d'attendre la borne réelle.
+func TestWLConnBoundsABlockingReadAndThenReleasesIt(t *testing.T) {
+	c, server := wlConnPair(t)
+
+	if err := c.bound(time.Millisecond); err != nil {
+		t.Fatalf("pose de l'échéance : %v", err)
+	}
+	switch err := c.fill(); {
+	case err == nil:
+		t.Fatal("la lecture a réussi sur une socket muette, attendu une expiration")
+	case !errors.Is(err, os.ErrDeadlineExceeded):
+		t.Fatalf("la lecture a échoué sur %v, attendu une expiration", err)
+	}
+
+	if err := c.bound(0); err != nil {
+		t.Fatalf("retrait de l'échéance : %v", err)
+	}
+
+	var w wlWriter
+	w.begin(wlDisplayID, wlDisplayDeleteID)
+	w.uint(7)
+	w.end()
+	if _, err := server.Write(w.buf); err != nil {
+		t.Fatalf("écriture du compositeur : %v", err)
+	}
+	if err := c.fill(); err != nil {
+		t.Fatalf("lecture après le retrait de l'échéance : %v", err)
 	}
 }
