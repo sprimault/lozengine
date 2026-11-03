@@ -10,6 +10,7 @@ package backend
 
 import (
 	"errors"
+	"net"
 	"os"
 	"strings"
 	"syscall"
@@ -24,7 +25,7 @@ import (
 // décrit, ce qui est la seule façon d'éprouver un codage sans dépendre de ce qu'une
 // implémentation tierce envoie. Le bout rendu sert à pousser des événements et à joindre
 // des descripteurs.
-func wlConnPair(t testing.TB) (*wlConn, *os.File) {
+func wlConnPair(t testing.TB) (*wlConn, *net.UnixConn) {
 	t.Helper()
 
 	fds, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_STREAM, 0)
@@ -47,7 +48,14 @@ func wlConnPair(t testing.TB) (*wlConn, *os.File) {
 	}
 	t.Cleanup(c.Close)
 
-	server := os.NewFile(uintptr(fds[1]), "compositeur")
+	// **Le côté serveur est une connexion du paquet `net` et non un fichier ouvert sur
+	// le descripteur**, et ce n'est pas un détail de confort : une lecture faite par
+	// `net` passe par l'ordonnanceur de Go, donc elle se termine quand la connexion se
+	// ferme. Un `recvmsg` bloquant sur le descripteur entier ne se termine jamais — la
+	// goroutine d'un cas fini reste alors sur un numéro que le noyau réattribue, et
+	// vole ses requêtes au cas suivant. Mesuré le 3 novembre 2026 en intégration
+	// continue : un montage sur six expirait, et seulement là.
+	server := unixConnOf(t, fds[1])
 	t.Cleanup(func() { server.Close() })
 	return c, server
 }
@@ -92,7 +100,7 @@ func TestWLConnTakesADescriptorFromAnyByteOfTheStream(t *testing.T) {
 
 	msg := wlEvent(wlDisplayID, wlDisplayDeleteID, 7)
 	rights := syscall.UnixRights(int(r.Fd()))
-	if err := syscall.Sendmsg(int(server.Fd()), msg, rights, nil, 0); err != nil {
+	if _, _, err := server.WriteMsgUnix(msg, rights, nil); err != nil {
 		t.Fatalf("envoi du message avec son descripteur : %v", err)
 	}
 
@@ -141,7 +149,7 @@ func TestWLConnRefusesTruncatedAncillaryData(t *testing.T) {
 	}
 
 	msg := wlEvent(wlDisplayID, wlDisplayDeleteID, 7)
-	if err := syscall.Sendmsg(int(server.Fd()), msg, syscall.UnixRights(opened...), nil, 0); err != nil {
+	if _, _, err := server.WriteMsgUnix(msg, syscall.UnixRights(opened...), nil); err != nil {
 		t.Fatalf("envoi des %d descripteurs : %v", len(opened), err)
 	}
 

@@ -79,6 +79,13 @@ type wlConn struct {
 	in   []byte
 	have int
 
+	// outFDs porte les descripteurs qui doivent accompagner le prochain envoi.
+	//
+	// Une tranche et non un champ, pour que l'absence se dise : zéro est un descripteur
+	// valide — c'est l'entrée standard —, donc un champ ne pourrait pas distinguer
+	// « aucun » de « le premier ».
+	outFDs []int
+
 	// fds est la file des descripteurs reçus, dans l'ordre d'arrivée.
 	//
 	// **Une file et non un champ, parce que rien ne lie un descripteur au message
@@ -288,11 +295,40 @@ func (c *wlConn) flush() error {
 		return nil
 	}
 
-	if _, err := c.sock.Write(c.out.buf); err != nil {
-		return fmt.Errorf("writing to the compositor: %w", err)
+	if len(c.outFDs) == 0 {
+		if _, err := c.sock.Write(c.out.buf); err != nil {
+			return fmt.Errorf("writing to the compositor: %w", err)
+		}
+		c.out.reset()
+		return nil
 	}
+
+	// **Un envoi avec descripteurs se contrôle sur son compte d'octets, là que le
+	// précédent n'en a pas besoin** : `Write` d'une socket écrit tout ou rend une
+	// erreur, alors que celui-ci est un unique `sendmsg` qui peut en écrire moins. Les
+	// messages concernés font quelques dizaines d'octets, donc le cas ne se produit pas
+	// — mais le taire ferait un flux tronqué dont le compositeur ne dirait rien
+	// d'exploitable.
+	n, _, err := c.sock.WriteMsgUnix(c.out.buf, syscall.UnixRights(c.outFDs...), nil)
+	if err != nil {
+		return fmt.Errorf("writing to the compositor with %d file descriptors: %w", len(c.outFDs), err)
+	}
+	if n != len(c.out.buf) {
+		return fmt.Errorf("wrote %d of %d bytes to the compositor in one message", n, len(c.out.buf))
+	}
+	c.outFDs = c.outFDs[:0]
 	c.out.reset()
 	return nil
+}
+
+// sendFD fait accompagner le prochain envoi par un descripteur.
+//
+// **Le descripteur reste au client**, et c'est la différence avec ceux qu'on reçoit : le
+// noyau en duplique un pour le destinataire, donc celui-ci garde sa vie propre et c'est à
+// l'appelant de le fermer quand il n'en a plus besoin. Le protocole n'a qu'un seul envoi
+// de cette forme, `wl_shm.create_pool`.
+func (c *wlConn) sendFD(fd int) {
+	c.outFDs = append(c.outFDs, fd)
 }
 
 // room garantit que le tampon d'entrée peut accueillir n octets de plus.

@@ -43,7 +43,7 @@ type wlWanted struct {
 // compositeur tient.
 var wlNeeded = []wlWanted{
 	{"wl_compositor", 6, "set_buffer_scale en 3, damage_buffer en 4, preferred_buffer_scale en 6"},
-	{"wl_shm", 1, "create_pool et les formats ; release arrive en 2 et ne sert qu'à détruire un pool vivant"},
+	{"wl_shm", 1, "create_pool et les formats ; release arrive en 2 et ne rend que l'objet lui-même, ce qu'une fenêtre ouverte n'a pas à faire"},
 	{"xdg_wm_base", 1, "get_xdg_surface et pong, qui sont tout ce qu'une fenêtre demande"},
 }
 
@@ -62,8 +62,15 @@ type wlGlobals struct {
 	wmBase        uint32
 	wmBaseVersion uint32
 
-	// pixels est la disposition retenue parmi ce que `wl_shm` a annoncé.
+	// pixels est la disposition retenue parmi ce que `wl_shm` a annoncé, et format la
+	// valeur sous laquelle le compositeur l'a annoncée.
+	//
+	// **Les deux, parce qu'elles ne servent pas au même endroit** : la disposition dit
+	// comment écrire les octets, la valeur est ce que `create_buffer` exige. Et la
+	// seconde ne se déduit pas de la première, les deux formats garantis portant des
+	// valeurs historiques plutôt que leur code à quatre caractères.
 	pixels pixelOrder
+	format uint32
 }
 
 // wlRegistry collecte ce que le compositeur annonce, le temps de l'ouverture.
@@ -120,7 +127,7 @@ func (c *wlConn) wlBindGlobals() (wlGlobals, error) {
 		return g, err
 	}
 
-	g.pixels, err = wlPixelOrder(reg.formats)
+	g.pixels, g.format, err = wlPixelOrder(reg.formats)
 	if err != nil {
 		return g, err
 	}
@@ -206,7 +213,8 @@ func (r *wlRegistry) handle(sender uint32, opcode uint16, rd *wlReader) error {
 	}
 }
 
-// wlPixelOrder choisit la disposition parmi les formats que le compositeur accepte.
+// wlPixelOrder choisit la disposition parmi les formats que le compositeur accepte, et
+// rend la valeur sous laquelle il l'a annoncée.
 //
 // **La préférence est l'ordre du moteur, et elle lui épargne toute conversion** : `XB24`
 // place le rouge, le vert et le bleu dans l'ordre où [render.Color] les porte, donc le
@@ -218,27 +226,39 @@ func (r *wlRegistry) handle(sender uint32, opcode uint16, rd *wlReader) error {
 // dispositions rapides écrivent zéro dans l'octet restant, ce qui rendrait la surface
 // transparente. C'est aussi pour cela qu'`argb8888`, le second format garanti, ne sert pas
 // de repli.
-func wlPixelOrder(formats []uint32) (pixelOrder, error) {
+func wlPixelOrder(formats []uint32) (pixelOrder, uint32, error) {
 	if len(formats) == 0 {
-		return pixelOrder{}, errors.New("the compositor announced no shared-memory pixel format, and the protocol requires at least two")
+		return pixelOrder{}, 0, errors.New("the compositor announced no shared-memory pixel format, and the protocol requires at least two")
 	}
 
-	offered := make(map[uint32]bool, len(formats))
+	// **La valeur annoncée est gardée à côté du code, et c'est elle qu'il faut rendre** :
+	// `wl_shm_pool.create_buffer` veut un format « which must be one of those
+	// advertised through the wl_shm.format event », et la traduction vers un code à
+	// quatre caractères est à sens unique. La refaire à l'envers rendrait `0x34325258`
+	// là où le protocole attend `1` pour `xrgb8888`.
+	//
+	// Un compositeur qui annoncerait le même format sous ses deux valeurs — la
+	// historique et son code — ferait gagner la dernière, et les deux désignent la même
+	// disposition.
+	offered := make(map[uint32]uint32, len(formats))
 	for _, f := range formats {
-		offered[wlFourCCOf(f)] = true
+		offered[wlFourCCOf(f)] = f
 	}
 
 	for _, code := range [2]uint32{formatXBGR8888, formatXRGB8888} {
-		if offered[code] {
-			return pixelOrderOfFourCC(code)
+		announced, ok := offered[code]
+		if !ok {
+			continue
 		}
+		order, err := pixelOrderOfFourCC(code)
+		return order, announced, err
 	}
 
 	names := make([]string, 0, len(formats))
 	for _, f := range formats {
 		names = append(names, fourccName(wlFourCCOf(f)))
 	}
-	return pixelOrder{}, fmt.Errorf("the compositor accepts none of the formats this backend writes; it offers %v", names)
+	return pixelOrder{}, 0, fmt.Errorf("the compositor accepts none of the formats this backend writes; it offers %v", names)
 }
 
 // wlFourCCOf traduit une valeur de `wl_shm.format` vers un code à quatre caractères.
