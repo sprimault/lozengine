@@ -45,6 +45,25 @@ notes de publication.
 
 ## [Non publié]
 
+### Ajouté
+
+- Wayland est pris en charge : le moteur y ouvre une fenêtre, l'affiche, lit le clavier et
+  le pointeur. Un jeu déjà écrit y tourne sans qu'une ligne change, et un bureau Wayland
+  n'est plus servi par XWayland.
+- `Options.Icons` reste sans effet sous Wayland, dont le protocole ne transporte pas
+  d'image de fenêtre : l'icône y vient du fichier de bureau que le nom de l'exécutable
+  désigne.
+
+***
+
+### Added
+
+- Wayland is supported: the engine opens a window there, displays it, reads the keyboard
+  and the pointer. A game already written runs there without a single line changing, and a
+  Wayland desktop is no longer served through XWayland.
+- `Options.Icons` has no effect under Wayland, whose protocol carries no window image: the
+  icon comes from the desktop entry the executable's name points to.
+
 ## [0.6.0] — 2026-11-03 — Jalon 5 · Backend web
 
 Un jeu s'écrit une fois et tourne sur les trois familles : Windows, Linux et le
