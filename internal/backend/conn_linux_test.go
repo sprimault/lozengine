@@ -83,7 +83,7 @@ func connPair(t testing.TB) (*x11Conn, *net.UnixConn) {
 
 	// Le visuel est celui d'un serveur courant, donc la conversion est l'échange des
 	// octets extrêmes. Les cas qui éprouvent les autres dispositions posent la leur.
-	pixels, err := pixelOrderOf(c.setup)
+	pixels, err := x11PixelOrderOf(c.setup)
 	if err != nil {
 		t.Fatalf("visuel de test refusé : %v", err)
 	}

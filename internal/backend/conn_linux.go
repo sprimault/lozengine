@@ -138,7 +138,7 @@ func x11Connect() (*x11Conn, error) {
 	// ailleurs : le compte se place dans le masque, où qu'il soit.
 	c.shift = bits.TrailingZeros32(c.setup.idMask)
 
-	if c.pixels, err = pixelOrderOf(c.setup); err != nil {
+	if c.pixels, err = x11PixelOrderOf(c.setup); err != nil {
 		sock.Close()
 		return nil, err
 	}

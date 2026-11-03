@@ -73,11 +73,15 @@ type presentation struct {
 
 // Present pose le tampon dans la page, tel quel.
 //
-// **Aucune conversion de disposition, et c'est la seule des trois familles dans ce cas.**
-// Un contexte `{alpha: false}` ignore le quatrième octet par la spécification, et
-// [render.Color] est déjà l'ordre qu'`ImageData` attend : les octets du moteur traversent
-// inchangés. Windows échange le rouge et le bleu, X11 suit l'ordre du visuel qu'il a
-// choisi.
+// **Aucune conversion de disposition.** Un contexte `{alpha: false}` ignore le quatrième
+// octet par la spécification, et [render.Color] est déjà l'ordre qu'`ImageData` attend :
+// les octets du moteur traversent inchangés. Windows échange le rouge et le bleu, X11
+// suit l'ordre du visuel qu'il a choisi.
+//
+// Ce n'est pas ce qui distingue la page des autres, et l'annoncer ainsi s'est périmé :
+// Wayland et DRM/KMS ne convertissent pas non plus dès qu'ils obtiennent `XB24`. Ce
+// qu'elle a de particulier est la **copie**, qu'une vue posée sur la mémoire du module
+// supprime en plus.
 //
 // Un tampon plus court que sa propre taille ne présente rien. Ce n'est pas de la
 // défensive : la longueur entre dans la construction d'un `ImageData`, et une

@@ -73,7 +73,7 @@ func TestPixelOrderFollowsTheServerAndNotTheMachine(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			o, err := pixelOrderOf(c.setup)
+			o, err := x11PixelOrderOf(c.setup)
 			if err != nil {
 				t.Fatalf("visuel refusé : %v", err)
 			}
@@ -108,7 +108,7 @@ func TestPixelOrderWritesWhereTheMasksPointTo(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			o, err := pixelOrderOf(c.setup)
+			o, err := x11PixelOrderOf(c.setup)
 			if err != nil {
 				t.Fatalf("visuel refusé : %v", err)
 			}
@@ -125,7 +125,7 @@ func TestPixelOrderWritesWhereTheMasksPointTo(t *testing.T) {
 
 	// Le cas général, où aucune des deux spécialisations ne s'applique : les trois
 	// composantes partent aux index 1, 2 et 3.
-	o, err := pixelOrderOf(visualOf(msbFirst, 0xFF0000, 0x00FF00, 0x0000FF))
+	o, err := x11PixelOrderOf(visualOf(msbFirst, 0xFF0000, 0x00FF00, 0x0000FF))
 	if err != nil {
 		t.Fatalf("visuel refusé : %v", err)
 	}
@@ -162,7 +162,7 @@ func TestPixelOrderSaysWhatTheOctetOutsideTheMasksHolds(t *testing.T) {
 		{"général", visualOf(msbFirst, 0xFF0000, 0x00FF00, 0x0000FF), 0, true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			o, err := pixelOrderOf(c.setup)
+			o, err := x11PixelOrderOf(c.setup)
 			if err != nil {
 				t.Fatalf("visuel refusé : %v", err)
 			}
@@ -217,7 +217,7 @@ func TestPixelOrderRefusesWhatAPermutationCannotServe(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if _, err := pixelOrderOf(c.setup); err == nil {
+			if _, err := x11PixelOrderOf(c.setup); err == nil {
 				t.Error("visuel accepté")
 			}
 		})
@@ -248,7 +248,7 @@ func BenchmarkAppendPixels(b *testing.B) {
 		{"échangé", visualOf(lsbFirst, 0xFF0000, 0x00FF00, 0x0000FF)},
 		{"direct", visualOf(lsbFirst, 0x0000FF, 0x00FF00, 0xFF0000)},
 	} {
-		o, err := pixelOrderOf(kind.setup)
+		o, err := x11PixelOrderOf(kind.setup)
 		if err != nil {
 			b.Fatalf("visuel %s refusé : %v", kind.name, err)
 		}
@@ -292,7 +292,7 @@ func BenchmarkAppendPixels(b *testing.B) {
 // ramasse-miettes dans ce chemin. La première image paie l'agrandissement, les
 // suivantes réemploient.
 func TestAppendPixelsDoesNotAllocateOnAWarmBuffer(t *testing.T) {
-	o, err := pixelOrderOf(visualOf(lsbFirst, 0xFF0000, 0x00FF00, 0x0000FF))
+	o, err := x11PixelOrderOf(visualOf(lsbFirst, 0xFF0000, 0x00FF00, 0x0000FF))
 	if err != nil {
 		t.Fatalf("visuel refusé : %v", err)
 	}
