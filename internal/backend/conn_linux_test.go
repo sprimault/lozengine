@@ -27,7 +27,7 @@ import (
 // Le paramètre est un `testing.TB` et non un `*testing.T` : un banc du chemin d'entrée a
 // besoin du même montage, et dupliquer celui-ci pour deux lignes de différence ferait
 // deux harnais à tenir d'accord.
-func connPair(t testing.TB) (*conn, *net.UnixConn) {
+func connPair(t testing.TB) (*x11Conn, *net.UnixConn) {
 	t.Helper()
 
 	fds, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_STREAM, 0)
@@ -61,7 +61,7 @@ func connPair(t testing.TB) (*conn, *net.UnixConn) {
 		t.Fatalf("délai sur le serveur : %v", err)
 	}
 
-	c := &conn{
+	c := &x11Conn{
 		sock: client,
 		raw:  raw,
 		in:   make([]byte, 4096),

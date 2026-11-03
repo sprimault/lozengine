@@ -29,7 +29,7 @@ func TestDisplaySocketsReadsTheUsualForms(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			paths, number, screen, err := displaySockets(c.display)
+			paths, number, screen, err := x11DisplaySockets(c.display)
 			if err != nil {
 				t.Fatalf("DISPLAY=%q refusé : %v", c.display, err)
 			}
@@ -53,7 +53,7 @@ func TestDisplaySocketsReadsTheUsualForms(t *testing.T) {
 // socket abstraite, propre à Linux et sans entrée dans l'arborescence : un seul chemin
 // ferait échouer l'ouverture là où le serveur écoute pourtant.
 func TestDisplaySocketsOffersBothSocketForms(t *testing.T) {
-	paths, _, _, err := displaySockets(":99")
+	paths, _, _, err := x11DisplaySockets(":99")
 	if err != nil {
 		t.Fatalf("DISPLAY=:99 refusé : %v", err)
 	}
@@ -92,7 +92,7 @@ func TestDisplaySocketsRefusesWhatItCannotServe(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			paths, _, _, err := displaySockets(c.display)
+			paths, _, _, err := x11DisplaySockets(c.display)
 			if err == nil {
 				t.Fatalf("DISPLAY=%q accepté, chemins %q", c.display, paths)
 			}

@@ -26,9 +26,9 @@ const (
 	pointerEventYSkip = 26
 )
 
-// buttonOf traduit un numéro de bouton du protocole, et dit s'il en porte un que le
+// x11ButtonOf traduit un numéro de bouton du protocole, et dit s'il en porte un que le
 // moteur nomme.
-func buttonOf(detail byte) (input.Button, bool) {
+func x11ButtonOf(detail byte) (input.Button, bool) {
 	switch detail {
 	case x11ButtonLeft:
 		return input.ButtonLeft, true
@@ -44,12 +44,12 @@ func buttonOf(detail byte) (input.Button, bool) {
 	return 0, false
 }
 
-// wheelStep dit si un numéro de bouton est en réalité un cran de molette, et lequel.
+// x11WheelStep dit si un numéro de bouton est en réalité un cran de molette, et lequel.
 //
 // Le protocole n'a pas d'axe : une molette s'y rapporte comme un bouton pressé puis
 // relâché aussitôt. Les traiter comme des boutons les ferait apparaître tenus pendant
 // une image, et un jeu qui lit [input.Input.ButtonHeld] verrait un clic.
-func wheelStep(detail byte) (steps int, ok bool) {
+func x11WheelStep(detail byte) (steps int, ok bool) {
 	switch detail {
 	case x11WheelUp:
 		return 1, true
@@ -65,7 +65,7 @@ func wheelStep(detail byte) (steps int, ok bool) {
 // qui nous intéressent — appui, relâchement, mouvement, entrée, sortie —, ce qui évite
 // un décodage par type. Elles sont signées : un appui qui commence dans la fenêtre et
 // se poursuit dehors continue d'être rapporté, avec des coordonnées négatives.
-func (w *window) pointerAt(m []byte) {
+func (w *x11Window) pointerAt(m []byte) {
 	x := int16(order.Uint16(m[pointerEventX:]))
 	y := int16(order.Uint16(m[pointerEventYSkip:]))
 	w.state.Move(x, y)

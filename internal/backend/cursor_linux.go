@@ -23,7 +23,7 @@ package backend
 // ferme avec la fenêtre. Les rendre demanderait deux requêtes de plus pour neuf octets,
 // et poserait la question de l'ordre entre la destruction du curseur et celle de la
 // fenêtre qui s'en sert.
-func (c *conn) hideCursor(window uint32) {
+func (c *x11Conn) hideCursor(x11Window uint32) {
 	pixmap, gc, cursor := c.id(), c.id(), c.id()
 
 	// Une pixmap de profondeur un : un curseur se décrit en noir et blanc, et sa
@@ -32,7 +32,7 @@ func (c *conn) hideCursor(window uint32) {
 	c.out = append(c.out, opCreatePixmap, 1, 0, 0)
 	order.PutUint16(c.out[at+2:], 4)
 	c.out = order.AppendUint32(c.out, pixmap)
-	c.out = order.AppendUint32(c.out, window)
+	c.out = order.AppendUint32(c.out, x11Window)
 	c.out = order.AppendUint16(c.out, 1)
 	c.out = order.AppendUint16(c.out, 1)
 	c.next()
@@ -73,7 +73,7 @@ func (c *conn) hideCursor(window uint32) {
 	at = len(c.out)
 	c.out = append(c.out, opChangeWindow, 0, 0, 0)
 	order.PutUint16(c.out[at+2:], 4)
-	c.out = order.AppendUint32(c.out, window)
+	c.out = order.AppendUint32(c.out, x11Window)
 	c.out = order.AppendUint32(c.out, cwCursor)
 	c.out = order.AppendUint32(c.out, cursor)
 	c.next()

@@ -1,7 +1,7 @@
 // Copyright 2026 Stéphane Primault <sprimault@users.noreply.github.com>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-// La fenêtre X11 : ce qu'elle retient des événements du serveur, et les six réponses
+// La fenêtre X11 : ce qu'elle retient des événements du serveur, et les sept réponses
 // qu'elle doit à la boucle.
 //
 // La différence de fond avec Windows tient en une phrase : là-bas le système rappelle
@@ -17,10 +17,10 @@ import (
 	"github.com/sprimault/lozengine/render"
 )
 
-// window est une fenêtre ouverte et ce que le serveur en a dit depuis la dernière
+// x11Window est une fenêtre ouverte et ce que le serveur en a dit depuis la dernière
 // image.
-type window struct {
-	c  *conn
+type x11Window struct {
+	c  *x11Conn
 	id uint32
 
 	// gc est le contexte graphique par lequel l'image entre dans la fenêtre. Créé
@@ -83,7 +83,7 @@ type window struct {
 // C'est ici que le flux se vide, parce que c'est le premier appel d'un pas : la boucle
 // lit les entrées, met à jour, puis présente. Lire ailleurs ferait répondre la fenêtre
 // en retard d'une image, et la taille servie serait celle du pas précédent.
-func (w *window) Input() input.Input {
+func (w *x11Window) Input() input.Input {
 	// Les événements mis de côté pendant l'ouverture passent d'abord, et dans
 	// l'ordre où ils sont arrivés : c'est là que vient la première taille réelle,
 	// celle qu'un gestionnaire de fenêtres a imposée à la fenêtre en la plaçant.
@@ -112,7 +112,7 @@ func (w *window) Input() input.Input {
 // Elle prend le message tel qu'il est arrivé, et c'est ce qui la rend vérifiable sans
 // serveur : un événement est trente-deux octets, donc un cas de test en écrit un et
 // regarde ce que la fenêtre en retient.
-func (w *window) handle(m []byte) {
+func (w *x11Window) handle(m []byte) {
 	// Le bit de poids fort dit qu'un autre client a fabriqué l'événement plutôt que
 	// le serveur. Il se masque avant de comparer, et c'est indispensable ici : la
 	// demande de fermeture arrive toujours ainsi.
@@ -121,13 +121,13 @@ func (w *window) handle(m []byte) {
 		// Une erreur à ce moment accuse une requête qui n'avait pas de réponse à
 		// elle. Elle est terminale : ce qui la suivait s'est appuyé sur un objet
 		// que le serveur a refusé de créer.
-		w.fail(protocolError(m))
+		w.fail(x11ProtocolError(m))
 
 	case msgReply:
 		// Aucune requête à réponse ne part pendant une image. Une réponse ici
 		// voudrait dire que le comptage des séquences a dérivé, et la jeter
 		// silencieusement laisserait chercher le décalage ailleurs.
-		w.fail(protocolError(m))
+		w.fail(x11ProtocolError(m))
 
 	case eventConfigureNotify:
 		// La taille vient du serveur et non d'une question qu'on lui pose : c'est
@@ -161,12 +161,12 @@ func (w *window) handle(m []byte) {
 		}
 
 	case eventKeyPress:
-		if k, ok := keyOf(m[1]); ok {
+		if k, ok := x11KeyOf(m[1]); ok {
 			w.state.Press(k)
 		}
 
 	case eventKeyRelease:
-		if k, ok := keyOf(m[1]); ok {
+		if k, ok := x11KeyOf(m[1]); ok {
 			w.state.Release(k)
 		}
 
@@ -174,16 +174,16 @@ func (w *window) handle(m []byte) {
 		// Les crans de molette arrivent comme des boutons qu'on presse et relâche
 		// aussitôt — c'est ainsi que le protocole les porte, faute d'axe dans le
 		// cœur de X11. Le relâchement qui suit ne compte donc pas une seconde fois.
-		if steps, ok := wheelStep(m[1]); ok {
+		if steps, ok := x11WheelStep(m[1]); ok {
 			w.state.Wheel(steps)
-		} else if b, ok := buttonOf(m[1]); ok {
+		} else if b, ok := x11ButtonOf(m[1]); ok {
 			w.state.PressButton(b)
 		}
 		w.pointerAt(m)
 
 	case eventButtonRelease:
-		if _, ok := wheelStep(m[1]); !ok {
-			if b, ok := buttonOf(m[1]); ok {
+		if _, ok := x11WheelStep(m[1]); !ok {
+			if b, ok := x11ButtonOf(m[1]); ok {
 				w.state.ReleaseButton(b)
 			}
 		}
@@ -220,7 +220,7 @@ func (w *window) handle(m []byte) {
 //
 // La fenêtre est déclarée fermée du même geste : il n'y a rien à présenter sur une
 // connexion perdue, et la boucle a besoin d'une seule question pour s'arrêter.
-func (w *window) fail(err error) {
+func (w *x11Window) fail(err error) {
 	if w.err == nil {
 		w.err = err
 	}
@@ -243,8 +243,8 @@ func (w *window) fail(err error) {
 //
 // Sans erreur, comme le contrat l'exige : une présentation qui ne peut pas avoir lieu
 // ne fait rien, et il n'y a personne à qui se plaindre soixante fois par seconde. Un
-// lien coupé pendant l'envoi met fin à la fenêtre, et c'est [window.Err] qui le dira.
-func (w *window) Present(t *render.Buffer) {
+// lien coupé pendant l'envoi met fin à la fenêtre, et c'est [x11Window.Err] qui le dira.
+func (w *x11Window) Present(t *render.Buffer) {
 	if w.closed || w.gc == 0 || t == nil || len(t.Pixels) == 0 {
 		return
 	}
@@ -278,12 +278,12 @@ func (w *window) Present(t *render.Buffer) {
 // C'est la dernière taille que le serveur a annoncée, et il n'y a ici ni bordure ni
 // barre de titre à retrancher : celles-ci appartiennent à une fenêtre que le
 // gestionnaire met autour de la nôtre, et la nôtre ne mesure que ce qu'on y peint.
-func (w *window) Size() (width, height uint16) {
+func (w *x11Window) Size() (width, height uint16) {
 	return w.width, w.height
 }
 
 // Closed dit que la fenêtre ne présentera plus rien.
-func (w *window) Closed() bool {
+func (w *x11Window) Closed() bool {
 	return w.closed
 }
 
@@ -293,12 +293,12 @@ func (w *window) Closed() bool {
 // une socket, donc un serveur qui s'arrête, une session qui se termine ou un lien
 // coupé mettent fin à la fenêtre sans que personne n'ait rien fermé. C'est ce membre
 // du contrat qui sépare cela d'une croix cliquée.
-func (w *window) Err() error {
+func (w *x11Window) Err() error {
 	return w.err
 }
 
 // Close rend au serveur ce qu'Open a pris. Appeler deux fois est sans effet.
-func (w *window) Close() {
+func (w *x11Window) Close() {
 	// L'état se pose d'abord : une fenêtre fermée ne présentera plus rien, et c'est
 	// vrai au second appel comme au premier.
 	w.closed = true
@@ -320,4 +320,4 @@ func (w *window) Close() {
 //
 // Le serveur envoie ses événements quand il en a, sans jamais réclamer d'image : rien
 // dans le protocole ne dit quand présenter, donc c'est à la boucle de tenir le pas.
-func (w *window) Paced() bool { return false }
+func (w *x11Window) Paced() bool { return false }

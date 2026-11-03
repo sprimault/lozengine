@@ -15,11 +15,11 @@ import (
 	"strings"
 )
 
-// socketDir est le répertoire où un serveur X pose sa socket locale, par convention
+// x11SocketDir est le répertoire où un serveur X pose sa socket locale, par convention
 // aussi ancienne que le protocole.
-const socketDir = "/tmp/.X11-unix/X"
+const x11SocketDir = "/tmp/.X11-unix/X"
 
-// displaySockets rend les chemins où joindre le serveur que display nomme, dans
+// x11DisplaySockets rend les chemins où joindre le serveur que display nomme, dans
 // l'ordre où les essayer, avec le numéro de session et celui de l'écran.
 //
 // **Deux chemins et non un**, et c'est une leçon de serveur sans écran : la même
@@ -32,7 +32,7 @@ const socketDir = "/tmp/.X11-unix/X"
 // demanderait une connexion par le réseau, que les serveurs refusent par défaut depuis
 // des années et que le moteur n'a aucune raison d'ouvrir : le dire est plus utile que
 // d'échouer plus loin sur un refus de connexion.
-func displaySockets(display string) (paths []string, number, screen int, err error) {
+func x11DisplaySockets(display string) (paths []string, number, screen int, err error) {
 	if display == "" {
 		return nil, 0, 0, errors.New("DISPLAY is not set: there is no display server to connect to")
 	}
@@ -64,6 +64,6 @@ func displaySockets(display string) (paths []string, number, screen int, err err
 		return nil, 0, 0, fmt.Errorf("DISPLAY=%q carries an unreadable display number", display)
 	}
 
-	path := socketDir + strconv.Itoa(number)
+	path := x11SocketDir + strconv.Itoa(number)
 	return []string{path, "@" + path}, number, screen, nil
 }

@@ -72,7 +72,7 @@ func TestTheServerHoldsExactlyWhatWasPresented(t *testing.T) {
 	}
 	defer opened.Close()
 
-	w, ok := opened.(*window)
+	w, ok := opened.(*x11Window)
 	if !ok {
 		t.Fatalf("Open a rendu un %T, et ce cas a besoin de relire l'image", opened)
 	}
@@ -193,7 +193,7 @@ func BenchmarkPresent(b *testing.B) {
 			}
 			defer opened.Close()
 
-			w := opened.(*window)
+			w := opened.(*x11Window)
 			buffer := render.NewBuffer(size.width, size.height)
 			for i := range buffer.Pixels {
 				buffer.Pixels[i] = render.Color{R: uint8(i), G: uint8(i >> 8), B: uint8(i >> 16), A: 255}
@@ -228,7 +228,7 @@ func BenchmarkPresent(b *testing.B) {
 // qui refuse alors par une erreur de correspondance. L'ouverture ne l'attend pas
 // exprès — attendre là bloquerait indéfiniment là où aucun gestionnaire de fenêtres ne
 // répond —, donc c'est au cas qui a besoin de l'image de patienter.
-func waitMapped(t *testing.T, w *window) {
+func waitMapped(t *testing.T, w *x11Window) {
 	t.Helper()
 
 	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); {
