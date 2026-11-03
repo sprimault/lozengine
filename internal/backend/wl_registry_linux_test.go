@@ -7,7 +7,6 @@
 package backend
 
 import (
-	"os"
 	"strings"
 	"testing"
 )
@@ -122,104 +121,6 @@ func TestWLPixelOrderRefusesWhatItCannotWrite(t *testing.T) {
 			t.Errorf("le refus dit %q, attendu qu'il nomme les formats offerts en clair", err)
 		}
 	})
-}
-
-// wlFakeGlobal est un global que le compositeur de pacotille annonce.
-type wlFakeGlobal struct {
-	name    uint32
-	iface   string
-	version uint32
-}
-
-// wlServe répond aux requêtes d'ouverture comme un compositeur le ferait.
-//
-// Il ne juge rien — c'est le lot de la surface qui apportera un compositeur qui refuse —,
-// mais il tient les deux choses dont l'ouverture dépend : un aller-retour reçoit sa
-// réponse, et les formats n'arrivent qu'après que `wl_shm` a été lié. Sans cette seconde
-// règle, le cas passerait avec un seul aller-retour et ne dirait rien du dispositif.
-func wlServe(t *testing.T, server *os.File, globals []wlFakeGlobal, formats []uint32) {
-	t.Helper()
-
-	go func() {
-		in := make([]byte, 4096)
-		have := 0
-		registry, shm := uint32(0), uint32(0)
-
-		for {
-			n, err := server.Read(in[have:])
-			if err != nil || n == 0 {
-				return
-			}
-			have += n
-
-			for have >= wlHeaderSize {
-				second := wlOrder.Uint32(in[4:])
-				size := int(second >> 16)
-				if size < wlHeaderSize || have < size {
-					break
-				}
-				sender, opcode := wlOrder.Uint32(in), uint16(second&0xffff)
-				r := wlReader{buf: in[wlHeaderSize:size]}
-
-				var out wlWriter
-				switch {
-				case sender == wlDisplayID && opcode == wlDisplayGetRegistry:
-					registry = r.uint()
-					for _, g := range globals {
-						out.begin(registry, wlRegistryGlobal)
-						out.uint(g.name)
-						out.string(g.iface)
-						out.uint(g.version)
-						out.end()
-					}
-
-				case sender == wlDisplayID && opcode == wlDisplaySync:
-					out.begin(r.uint(), wlCallbackDone)
-					out.uint(0)
-					out.end()
-
-				case sender == registry && opcode == wlRegistryBind:
-					r.uint()
-					iface, _, id := r.string(), r.uint(), r.uint()
-					if iface == "wl_shm" {
-						shm = id
-						for _, f := range formats {
-							out.begin(shm, wlShmFormat)
-							out.uint(f)
-							out.end()
-						}
-					}
-				}
-
-				if len(out.buf) > 0 {
-					if _, err := server.Write(out.buf); err != nil {
-						return
-					}
-				}
-				copy(in, in[size:have])
-				have -= size
-			}
-		}
-	}()
-}
-
-// wlOpenPair monte une connexion servie par le compositeur de pacotille.
-func wlOpenPair(t *testing.T, globals []wlFakeGlobal, formats []uint32) *wlConn {
-	t.Helper()
-
-	c, server := wlConnPair(t)
-	wlServe(t, server, globals, formats)
-	return c
-}
-
-// wlDefaultGlobals est ce qu'un compositeur ordinaire annonce de ce qui nous intéresse.
-func wlDefaultGlobals() []wlFakeGlobal {
-	return []wlFakeGlobal{
-		{1, "wl_compositor", 6},
-		{2, "wl_shm", 2},
-		{3, "wl_output", 4},
-		{4, "xdg_wm_base", 7},
-	}
 }
 
 // TestWLBindGlobalsTakesTheLowerVersion garde le choix de version.

@@ -147,6 +147,15 @@ func TestWLReaderRefusesToReadPastTheMessage(t *testing.T) {
 			make([]byte, 8),
 			func(r *wlReader) { r.string() },
 		},
+		{
+			"un tableau dont la longueur dépasse le message",
+			func() []byte {
+				b := make([]byte, 8)
+				wlOrder.PutUint32(b, 64)
+				return b
+			}(),
+			func(r *wlReader) { r.array() },
+		},
 	}
 
 	for _, c := range cases {
@@ -160,6 +169,64 @@ func TestWLReaderRefusesToReadPastTheMessage(t *testing.T) {
 				t.Errorf("le refus dit %q, attendu qu'il nomme la troncature", r.err)
 			}
 		})
+	}
+}
+
+// TestWLReaderReadsASignedIntAndAnArray garde les deux lectures que la configuration
+// d'une fenêtre demande.
+//
+// **Les deux ont un mode de panne silencieux, et ce sont deux silences différents.** Une
+// largeur négative lue en non signé rend 4 294 967 295 au lieu de -1, donc une taille de
+// fenêtre absurde que rien ne signale ; et un tableau dont on n'avance pas le curseur
+// laisse la lecture suivante tomber sur son contenu.
+//
+// Le cas compose exactement ce que `xdg_toplevel.configure` porte — deux entiers signés
+// puis un tableau — pour que le bourrage du tableau soit celui du protocole et non un
+// montage de circonstance.
+func TestWLReaderReadsASignedIntAndAnArray(t *testing.T) {
+	var w wlWriter
+	w.begin(3, wlXDGToplevelConfigure)
+	w.uint(0xffffffff) // -1 en complément à deux, tel qu'un compositeur l'écrirait
+	w.uint(720)
+	w.uint(2)
+	w.buf = append(w.buf, 4, 0)
+	w.pad()
+	w.uint(0xcafe)
+	w.end()
+
+	r := wlReader{buf: w.buf[wlHeaderSize:]}
+	if got, want := r.int(), int32(-1); got != want {
+		t.Errorf("la largeur vaut %d, attendu %d", got, want)
+	}
+	if got, want := r.int(), int32(720); got != want {
+		t.Errorf("la hauteur vaut %d, attendu %d", got, want)
+	}
+	if got := r.array(); len(got) != 2 || got[0] != 4 || got[1] != 0 {
+		t.Errorf("le tableau vaut %v, attendu [4 0]", got)
+	}
+	if got, want := r.uint(), uint32(0xcafe); got != want {
+		t.Errorf("l'argument qui suit le tableau vaut %#x, attendu %#x : le bourrage n'a pas été franchi",
+			got, want)
+	}
+	if r.err != nil {
+		t.Errorf("la lecture a manqué de place : %v", r.err)
+	}
+}
+
+// TestWLReaderReadsAnEmptyArray garde la différence avec une chaîne.
+//
+// Une longueur nulle est refusée pour une chaîne, qui compte toujours son terminateur, et
+// valide pour un tableau, qui n'en a pas. C'est le cas **courant** de
+// `xdg_toplevel.configure` : une fenêtre ordinaire n'est ni maximisée, ni en plein écran,
+// ni en cours de redimensionnement, donc sa liste d'états est vide. La refuser ferait
+// échouer le montage de toute fenêtre normale.
+func TestWLReaderReadsAnEmptyArray(t *testing.T) {
+	r := wlReader{buf: make([]byte, 4)}
+	if got := r.array(); len(got) != 0 {
+		t.Errorf("le tableau porte %d octets, attendu aucun", len(got))
+	}
+	if r.err != nil {
+		t.Errorf("un tableau vide est refusé : %v", r.err)
 	}
 }
 

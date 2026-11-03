@@ -72,6 +72,35 @@ const (
 	wlRegistryGlobalRemove uint16 = 1
 )
 
+// wlCompositorCreateSurface est l'opcode de la requête qui crée une surface.
+//
+// `create_region` est la seconde et dernière requête de l'interface, à l'opcode 1 : elle
+// sert à décrire une zone opaque ou sensible au pointeur, ce qu'une fenêtre de jeu peut
+// laisser au défaut — toute la surface, et rien d'opaque déclaré.
+const wlCompositorCreateSurface uint16 = 0
+
+// Les opcodes de `wl_surface`, à la version que `wl_compositor` a accordée.
+//
+// **Trois d'entre eux ne sont pas à la version 1, et c'est ce qui décide de leur emploi** :
+// `set_buffer_transform` arrive en 2, `set_buffer_scale` en 3, `damage_buffer` en 4. Sous
+// une version plus basse, la parade n'est pas de les éviter un par un mais de ne pas
+// changer d'échelle : la surface et le tampon partagent alors leurs coordonnées, et
+// `damage` dit la même chose que `damage_buffer`.
+const (
+	wlSurfaceDestroy      uint16 = 0
+	wlSurfaceAttach       uint16 = 1
+	wlSurfaceDamage       uint16 = 2
+	wlSurfaceFrame        uint16 = 3
+	wlSurfaceCommit       uint16 = 6
+	wlSurfaceSetScale     uint16 = 8
+	wlSurfaceDamageBuffer uint16 = 9
+
+	wlSurfaceEnter                    uint16 = 0
+	wlSurfaceLeave                    uint16 = 1
+	wlSurfacePreferredBufferScale     uint16 = 2
+	wlSurfacePreferredBufferTransform uint16 = 3
+)
+
 // wlShmFormat est l'opcode de l'événement par lequel `wl_shm` annonce un format, et il
 // en envoie un par format qu'il accepte.
 const wlShmFormat uint16 = 0

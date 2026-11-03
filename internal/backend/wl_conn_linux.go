@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
+	"time"
 )
 
 // wlFDsPerRead est le nombre de descripteurs qu'une lecture peut recevoir d'un coup.
@@ -35,6 +36,17 @@ const wlFDsPerRead = 8
 
 // wlDefaultDisplay est le nom de socket qu'un client emploie quand rien ne le nomme.
 const wlDefaultDisplay = "wayland-0"
+
+// wlHandshake borne l'ouverture, de la liaison du registre à la configuration de la
+// fenêtre.
+//
+// **Elle borne la phase entière et non chaque lecture**, ce qui est la seule façon de
+// borner quelque chose : un compositeur qui livrerait un octet toutes les secondes ne
+// déclencherait jamais une échéance par lecture, et l'ouverture n'avancerait pas pour
+// autant. Toute l'ouverture est de la communication entre deux processus de la même
+// machine et prend ordinairement moins d'une milliseconde ; dix secondes sont donc quatre
+// ordres de grandeur de marge, et bornent quand même un compositeur en panne.
+const wlHandshake = 10 * time.Second
 
 // wlConn est une connexion ouverte à un compositeur.
 //
@@ -233,6 +245,21 @@ func (c *wlConn) newID() (uint32, error) {
 	id := c.nextID
 	c.nextID++
 	return id, nil
+}
+
+// bound arme une échéance de lecture, et la retire quand d vaut zéro.
+//
+// **Le retrait est la moitié qui compte, et c'est un piège plutôt qu'une politesse.** Une
+// échéance laissée en place ne gêne pas [wlConn.receive] aujourd'hui, qui ne se met jamais
+// en attente — elle lit ce qui est là et rend `EAGAIN` sinon. Mais c'est une propriété de
+// l'implémentation et non du contrat : le jour où cette lecture attendrait la lisibilité,
+// l'échéance ferait tomber la fenêtre dix secondes après son ouverture, sur un chemin qui
+// n'a rien à voir avec elle.
+func (c *wlConn) bound(d time.Duration) error {
+	if d == 0 {
+		return c.sock.SetReadDeadline(time.Time{})
+	}
+	return c.sock.SetReadDeadline(time.Now().Add(d))
 }
 
 // takeFD retire le plus ancien descripteur reçu.
