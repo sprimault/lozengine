@@ -45,6 +45,11 @@ notes de publication.
 
 ## [Non publié]
 
+## [0.6.0] — 2026-11-03 — Jalon 5 · Backend web
+
+Un jeu s'écrit une fois et tourne sur les trois familles : Windows, Linux et le
+navigateur — donc aussi Android et iOS, par la page.
+
 ### Ajouté
 
 - `js/wasm` n'est plus seulement compilée : la suite de tests y passe à chaque lot et y
@@ -69,6 +74,9 @@ notes de publication.
   la fenêtre reçoit deux fois plus de pixels pour la même surface visible.
 
 ***
+
+A game is written once and runs on all three families: Windows, Linux and the browser —
+so Android and iOS too, through the page.
 
 ### Added
 
