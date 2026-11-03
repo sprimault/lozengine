@@ -66,16 +66,18 @@ func TestTheServerHoldsExactlyWhatWasPresented(t *testing.T) {
 
 	const side = 64
 
-	opened, err := Open(Options{Title: "lozengine", Width: side, Height: side})
+	// **La famille se monte directement et non par la cascade**, et c'est la correction
+	// que l'ouverture par cascade a imposée : un job qui pose `WAYLAND_DISPLAY` ferait
+	// rendre un `*wlWindow` à `Open`, là que ce cas relit son image par une requête
+	// X11. L'assertion de type qui gardait ce régime échouait proprement, mais échouer
+	// n'est pas la bonne réponse — ce cas n'a rien à dire d'un compositeur, et c'est
+	// [TestTheCompositorHoldsExactlyWhatWasPresented] qui parle pour l'autre famille.
+	w, err := x11Open(Options{Title: "lozengine", Width: side, Height: side})
 	if err != nil {
 		t.Fatalf("ouverture de la fenêtre : %v", err)
 	}
-	defer opened.Close()
+	defer w.Close()
 
-	w, ok := opened.(*x11Window)
-	if !ok {
-		t.Fatalf("Open a rendu un %T, et ce cas a besoin de relire l'image", opened)
-	}
 	waitMapped(t, w)
 
 	buffer := render.NewBuffer(side, side)
@@ -187,13 +189,12 @@ func BenchmarkPresent(b *testing.B) {
 		{"1920×1080, un écran entier", 1920, 1080},
 	} {
 		b.Run(size.name, func(b *testing.B) {
-			opened, err := Open(Options{Title: "lozengine", Width: size.width, Height: size.height})
+			w, err := x11Open(Options{Title: "lozengine", Width: size.width, Height: size.height})
 			if err != nil {
 				b.Fatalf("ouverture de la fenêtre : %v", err)
 			}
-			defer opened.Close()
+			defer w.Close()
 
-			w := opened.(*x11Window)
 			buffer := render.NewBuffer(size.width, size.height)
 			for i := range buffer.Pixels {
 				buffer.Pixels[i] = render.Color{R: uint8(i), G: uint8(i >> 8), B: uint8(i >> 16), A: 255}

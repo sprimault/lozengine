@@ -1029,11 +1029,19 @@ CACHE_MONTE = /gocache
 # conteneur en chemins Windows avant que `docker` les voie. Sans elle, Go rapporte
 # « GOCACHE is not an absolute path » et la cible échoue sur un contrôle sans rapport.
 # La variable n'a de sens que sur ce shell, et Linux l'ignore.
+#
+# **Les sources entrent par `SUIVIS` et non par `git ls-files` nu**, corrigé le 3 novembre
+# 2026 : la forme étroite ne rend que l'**indexé**, donc un fichier créé dans le lot et pas
+# encore ajouté n'entrait pas dans le conteneur. Le mode de panne est silencieux — un
+# paquet dont un fichier de test manque **compile**, et `go test -run` sort alors avec zéro
+# en disant « no tests to run » —, donc la cible rendait un vert sur un périmètre amputé.
+# C'est arrivé en éprouvant les cas Wayland, et `poste.md` avait déjà corrigé le même point
+# pour `entetes`.
 .PHONY: container
 container:
 	@command -v docker >/dev/null || { echo "docker est absent, et cette cible seule en a besoin"; exit 1; }
 	@echo "contrôle complet dans un conteneur, Go $(PLANCHER)"
-	@git ls-files -z | tar -cf - --null -T - | MSYS_NO_PATHCONV=1 docker run --rm -i \
+	@$(SUIVIS) -z | tar -cf - --null -T - | MSYS_NO_PATHCONV=1 docker run --rm -i \
 	  --name lozengine-check-$$$$ \
 	  --label projet=lozengine \
 	  -e CGO_ENABLED=0 \
@@ -1042,6 +1050,69 @@ container:
 	  -v $(CACHE_VOLUME):$(CACHE_MONTE) \
 	  golang:$(PLANCHER) \
 	  sh -c 'mkdir -p /src && cd /src && tar -x && git init -q . && git add -A && make check'
+
+# L'image de l'épreuve d'affichage, et ce n'est pas celle du plancher.
+#
+# **C'est une mesure qui l'impose, et elle a coûté quatre hypothèses.** L'image du plancher
+# est Debian bookworm et porte cage 0.1.4 sur wlroots 0.15, qui **ne compose pas sans
+# écran** : la fenêtre se monte, le format est accordé, la capture sort — et elle est noire,
+# wlroots refusant son propre test de sortie. Relevé le 3 novembre 2026, le même binaire de
+# test passe sous cage 0.1.5 et wlroots 0.17.1.
+#
+# Ce que l'écart ne remet pas en cause : le plancher éprouve la **chaîne Go**, et c'est son
+# seul objet. Un compositeur n'est pas de la chaîne Go, donc l'épreuve d'affichage se fait
+# sur la distribution qui en porte un capable — celle du runner, ce qui aligne les deux
+# régimes au lieu de les séparer.
+COMPOSITEUR_IMAGE ?= ubuntu:24.04
+
+# Éprouve le backend Wayland sous un vrai compositeur, sans écran et sans privilège.
+#
+# **Deux cas et deux vérités différentes** : l'un relit la mémoire partagée, qui est ce que
+# le compositeur lira, l'autre compare au pixel l'image qu'il a **composée**, capturée par
+# son propre outil. Le second est la seule assertion du dépôt qui traverse la composition.
+#
+# **Le binaire se compile ici et s'exécute là-bas**, ce qui évite d'installer une chaîne Go
+# dans l'image : la compilation croisée sans cgo suffit, et elle est native sur la machine
+# de contrôle. Il va dans `.tmp/`, comme tout ce que la chaîne Go produit.
+#
+# **Deux contraintes du compositeur, mesurées et non devinées.** Cage refuse de démarrer en
+# root — « Unable to drop root » —, et un conteneur y est par défaut : l'installation se
+# fait donc en root puis l'épreuve sous un compte ordinaire, qui est le régime d'un runner.
+# Et cage lance XWayland inconditionnellement, donc son absence l'empêche de démarrer.
+# L'UID n'est pas forcé : l'image en a déjà un à mille.
+#
+# **Le verdict se lit dans la trace et jamais dans le code de sortie**, pour la raison que
+# le job d'affichage documente : `go test -run` sort avec zéro quand son motif ne
+# correspond à aucun cas, et un saut n'est pas un échec. Sans ce `grep`, renommer un cas
+# emporterait l'épreuve sans un mot.
+.PHONY: compositeur
+compositeur:
+	@command -v docker >/dev/null || { echo "docker est absent, et cette cible seule en a besoin"; exit 1; }
+	@echo "épreuve d'affichage sous un compositeur sans écran, $(COMPOSITEUR_IMAGE)"
+	@mkdir -p .tmp
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c -o .tmp/backend.test ./internal/backend/
+	@tar -cf - -C .tmp backend.test | MSYS_NO_PATHCONV=1 docker run --rm -i \
+	  --name lozengine-compositeur-$$$$ \
+	  --label projet=lozengine \
+	  -e DEBIAN_FRONTEND=noninteractive \
+	  $(COMPOSITEUR_IMAGE) \
+	  sh -c 'cd /tmp && tar -x && chmod 755 backend.test \
+	    && apt-get update -qq >/dev/null 2>&1 \
+	    && apt-get install -y -qq cage grim xwayland >/dev/null 2>&1 \
+	    && { id -u essai >/dev/null 2>&1 || useradd -m essai; } \
+	    && mkdir -p /tmp/run && chown essai /tmp/run && chmod 700 /tmp/run \
+	    && runuser -u essai -- env XDG_RUNTIME_DIR=/tmp/run \
+	         WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=1 WLR_LIBINPUT_NO_DEVICES=1 \
+	         LOZENGINE_WAYLAND=1 \
+	         cage -- /tmp/backend.test -test.count=1 -test.v \
+	           -test.run "TestTheCompositor(Holds|Composed)ExactlyWhatWasPresented" \
+	       > /tmp/verdict.log 2>&1; \
+	    cat /tmp/verdict.log; \
+	    for cas in TestTheCompositorHoldsExactlyWhatWasPresented \
+	               TestTheCompositorComposedExactlyWhatWasPresented; do \
+	      grep -q "^--- PASS: $$cas " /tmp/verdict.log \
+	        || { echo "échec, ou cas jamais exécuté : $$cas"; exit 1; }; \
+	    done'
 
 # Vide le cache du conteneur, et c'est le pendant obligé de sa persistance : ce qui
 # survit à une commande doit avoir un moyen de partir qui ne demande pas de connaître

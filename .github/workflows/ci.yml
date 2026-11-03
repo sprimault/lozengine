@@ -324,7 +324,7 @@ jobs:
               attendu=/tmp/.X11-unix/X99
               ;;
             Xwayland)
-              weston --backend=headless-backend.so --xwayland \
+              weston --backend=headless --xwayland \
                      --socket=lozengine-wayland >/tmp/serveur.log 2>&1 &
               echo "DISPLAY=:0" >> "$GITHUB_ENV"
               attendu=/tmp/.X11-unix/X0
@@ -595,10 +595,130 @@ jobs:
       - name: Le relevé par un navigateur sans écran
         run: make frametime-sans-ecran
 
+  # Le pendant Wayland du job d'affichage, et le seul endroit où la **composition** se
+  # vérifie. Les deux familles Linux ont désormais chacune son job, et ils n'éprouvent pas
+  # la même chose : là-bas un serveur détient une image qu'on lui a transmise, ici un
+  # compositeur lit la mémoire que le client écrit puis la peint.
+  #
+  # **Deux piles, parce qu'elles n'annoncent pas les mêmes globals.** cage est sur wlroots
+  # et porte l'outil de capture du même protocole ; weston est l'implémentation de
+  # référence et ne l'a pas. La capture ne se fait donc que sous la première, et le cas qui
+  # la demande se saute proprement sous la seconde — ce que la matrice apprend est ce que
+  # chaque pile accorde en versions et en formats, qui est déjà ce qu'un backend doit
+  # encaisser.
+  #
+  # **`fail-fast: false` parce que les deux verdicts sont distincts** : un backend qui parle
+  # à wlroots et pas à weston est précisément ce qu'on veut savoir.
+  #
+  # **Rien n'est lancé en root ici, et il faut le dire** : cage refuse de démarrer sous ce
+  # compte — « Unable to drop root » —, ce qui est sans effet sur un runner mais arrête net
+  # un conteneur. `make compositeur` porte la parade pour l'épreuve locale, et son
+  # commentaire dit aussi pourquoi elle n'emploie pas l'image du plancher.
+  compositeur:
+    name: Compositeur — ${{ matrix.pile }}
+    runs-on: ubuntu-latest
+
+    # La même borne que le job d'affichage, et pour la même raison : ces jobs installent
+    # des paquets, et une infrastructure chargée ralentit cette étape d'un facteur que la
+    # durée nominale ne prédit pas.
+    timeout-minutes: 8
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pile: cage
+            paquets: cage grim xwayland
+            capture: true
+          - pile: weston
+            paquets: weston xwayland
+            capture: false
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - name: Paquets du compositeur
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ${{ matrix.paquets }}
+
+      # Le binaire se compile une fois et s'exécute sous le compositeur. Le compiler
+      # au travers de celui-ci mêlerait la durée de compilation à celle de l'épreuve,
+      # et un échec de compilation s'y lirait comme un échec du compositeur.
+      - name: Le binaire de test
+        run: go test -c -o /tmp/backend.test ./internal/backend/
+        env:
+          CGO_ENABLED: 0
+
+      # **`--backend=headless` et non `headless-backend.so`** : weston 13 accepte les deux
+      # et son aide ne documente que le nom court. L'ancienne forme reste nécessaire sous
+      # weston 10, que l'image du plancher porte — une forme de nom de module ne se recopie
+      # donc pas d'un régime à l'autre sans dire quelle version la porte.
+      #
+      # `--renderer=pixman` parce qu'un runner n'a pas de carte graphique, et que le refus
+      # qui s'ensuit ne se voit pas : le compositeur démarre, accorde tout, et compose du
+      # noir.
+      #
+      # L'attente porte sur la socket et non sur une durée : un `sleep` assez long serait du
+      # temps perdu à chaque passage, un `sleep` trop court un échec intermittent qu'on
+      # chercherait dans le backend.
+      - name: Les deux cas sous le compositeur
+        run: |
+          export XDG_RUNTIME_DIR=/tmp/lozengine-run
+          mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
+          export WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=1 WLR_LIBINPUT_NO_DEVICES=1
+          export LOZENGINE_WAYLAND=1
+
+          case "${{ matrix.pile }}" in
+            cage)
+              cage -- /tmp/backend.test -test.count=1 -test.v \
+                -test.run 'TestTheCompositor(Holds|Composed)ExactlyWhatWasPresented' \
+                > verdict.log 2>&1 || true
+              ;;
+            weston)
+              weston --backend=headless --renderer=pixman \
+                     --socket=lozengine-wl > compositeur.log 2>&1 &
+              for _ in $(seq 100); do
+                [ -e "$XDG_RUNTIME_DIR/lozengine-wl" ] && break
+                sleep 0.2
+              done
+              if [ ! -e "$XDG_RUNTIME_DIR/lozengine-wl" ]; then
+                echo "le compositeur n'a pas ouvert sa socket :"
+                cat compositeur.log
+                exit 1
+              fi
+              WAYLAND_DISPLAY=lozengine-wl /tmp/backend.test -test.count=1 -test.v \
+                -test.run 'TestTheCompositor(Holds|Composed)ExactlyWhatWasPresented' \
+                > verdict.log 2>&1 || true
+              ;;
+          esac
+          cat verdict.log
+
+          # **Le verdict vient de la trace et jamais du code de sortie**, pour la raison
+          # que le job d'affichage documente : `go test` sort avec zéro quand son motif ne
+          # correspond à aucun cas, et un saut n'est pas un échec. Sans ce `grep`, renommer
+          # un cas emporterait sans un mot la seule assertion du dépôt qui traverse la
+          # composition.
+          grep -q "^--- PASS: TestTheCompositorHoldsExactlyWhatWasPresented " verdict.log
+          if [ "${{ matrix.capture }}" = "true" ]; then
+            grep -q "^--- PASS: TestTheCompositorComposedExactlyWhatWasPresented " verdict.log
+          fi
+
+      # Ce que chaque pile accorde, consigné plutôt que vérifié : c'est une observation,
+      # et c'est elle qu'on relira le jour où un backend tombe sur une seule des deux.
+      - name: Relevé de la pile
+        if: always()
+        run: |
+          ${{ matrix.pile }} --version 2>&1 | head -1 || true
+          dpkg -l | awk '/libwlroots|^ii *weston/{print $2, $3}'
+
   bilan:
     name: Bilan
     if: always()
-    needs: [controles, tests, affichage, plancher, navigateur]
+    needs: [controles, tests, affichage, compositeur, plancher, navigateur]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -624,10 +744,12 @@ jobs:
           echo "contrôles : ${{ needs.controles.result }}"
           echo "tests     : ${{ needs.tests.result }}"
           echo "affichage : ${{ needs.affichage.result }}"
+          echo "compositeur: ${{ needs.compositeur.result }}"
           echo "plancher  : ${{ needs.plancher.result }}"
           echo "navigateur: ${{ needs.navigateur.result }}"
           [ "${{ needs.controles.result }}" = "success" ] || exit 1
           [ "${{ needs.tests.result }}" = "success" ] || exit 1
           [ "${{ needs.affichage.result }}" = "success" ] || exit 1
+          [ "${{ needs.compositeur.result }}" = "success" ] || exit 1
           [ "${{ needs.plancher.result }}" = "success" ] || exit 1
           [ "${{ needs.navigateur.result }}" = "success" ] || exit 1
