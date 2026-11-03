@@ -51,6 +51,17 @@ type wlFake struct {
 	xdg        uint32
 	toplevel   uint32
 
+	// seat est le siège lié, keyboard et pointer les objets d'entrée que le client en
+	// a tirés, et caps ce que le siège annonce au moment du `bind`.
+	//
+	// Les capacités partent là et non plus tard parce que c'est ce qu'un compositeur
+	// fait : l'événement suit immédiatement la liaison, et c'est précisément ce que le
+	// client doit écouter assez tôt pour l'entendre.
+	seat     uint32
+	keyboard uint32
+	pointer  uint32
+	caps     uint32
+
 	// configured dit qu'une séquence de configuration a été émise, et issued porte
 	// les numéros de série émis — c'est contre elle que s'apprécie un acquittement.
 	configured bool
@@ -97,6 +108,10 @@ type wlFake struct {
 	attached        uint32
 	releaseOnCommit bool
 
+	// sock est la socket du côté serveur, par laquelle un cas pousse un événement que
+	// nulle requête ne provoque — une touche enfoncée, un cran de molette.
+	sock *net.UnixConn
+
 	// seen porte les requêtes reconnues dans l'ordre, et refused le refus prononcé.
 	// Il n'y en a qu'un : une erreur de protocole est fatale, donc rien ne suit.
 	seen    []string
@@ -120,6 +135,7 @@ func wlNewFake(globals []wlFakeGlobal, formats []uint32) *wlFake {
 		ping:            true,
 		sequences:       1,
 		releaseOnCommit: true,
+		caps:            wlSeatPointer | wlSeatKeyboard,
 	}
 }
 
@@ -130,6 +146,7 @@ func wlDefaultGlobals() []wlFakeGlobal {
 		{2, "wl_shm", 2},
 		{3, "wl_output", 4},
 		{4, "xdg_wm_base", 7},
+		{5, "wl_seat", 9},
 	}
 }
 
@@ -214,10 +231,47 @@ func (f *wlFake) handle(sender uint32, opcode uint16, r *wlReader, out *wlWriter
 				out.uint(format)
 				out.end()
 			}
+		case "wl_seat":
+			f.seat = id
+			out.begin(id, wlSeatCapabilities)
+			out.uint(f.caps)
+			out.end()
 		case "xdg_wm_base":
 			f.wmBase = id
 		}
 		f.note("bind %s", iface)
+
+	case sender == f.seat && opcode == wlSeatGetPointer:
+		f.pointer = r.uint()
+		f.note("get_pointer")
+
+	case sender == f.seat && opcode == wlSeatGetKeyboard:
+		f.keyboard = r.uint()
+		f.note("get_keyboard")
+
+	// **Le routage par émetteur n'est pas une élégance ici, il est obligatoire** :
+	// `wl_pointer.set_cursor` et `wl_keyboard.release` portent tous deux l'opcode zéro,
+	// et `wl_pointer.release` le même un que `wl_seat.get_keyboard`.
+	case sender == f.pointer && opcode == wlPointerSetCursor:
+		serial, surface := r.uint(), r.uint()
+		if !f.issued[serial] {
+			// **Le protocole ne refuse pas cela, et c'est pourquoi ce compositeur
+			// le refuse.** Il dit qu'une requête au numéro périmé est ignorée, ce
+			// qui fait reparaître le curseur sans la moindre erreur — le seul mode
+			// de panne du lot que rien d'autre n'attraperait.
+			f.refuse(out, f.pointer, wlErrInvalidObject,
+				fmt.Sprintf("set_cursor carries serial %d, which no enter event sent", serial))
+			return
+		}
+		f.note("set_cursor %d surface %d", serial, surface)
+
+	case sender == f.pointer && opcode == wlPointerRelease:
+		f.pointer = 0
+		f.note("release_pointer")
+
+	case sender == f.keyboard && opcode == wlKeyboardRelease:
+		f.keyboard = 0
+		f.note("release_keyboard")
 
 	case sender == f.compositor && opcode == wlCompositorCreateSurface:
 		f.surface = r.uint()
@@ -479,6 +533,7 @@ func (f *wlFake) serve(t *testing.T, sock *net.UnixConn) {
 
 	oob := make([]byte, syscall.CmsgSpace(4*wlFDsPerRead))
 	t.Cleanup(f.unmap)
+	f.sock = sock
 
 	go func() {
 		in := make([]byte, 4096)
@@ -514,6 +569,53 @@ func (f *wlFake) serve(t *testing.T, sock *net.UnixConn) {
 			}
 		}
 	}()
+}
+
+// emit pousse vers le client des événements que nulle requête ne provoque.
+//
+// **C'est le seul chemin par lequel une entrée arrive**, et il n'a pas d'équivalent dans
+// le reste du compositeur de pacotille : une configuration ou un format répondent à une
+// requête, un appui sur une touche ne répond à rien. Les messages partent d'un bloc pour
+// qu'une trame de défilement arrive entière, ce qui est ce que le client doit savoir
+// traiter.
+//
+// Elle s'appelle entre deux pas et jamais pendant : le compositeur n'écrit que lorsqu'il
+// reçoit, donc rien n'entrelace cette écriture avec les siennes tant qu'un cas ne lit pas
+// en même temps qu'il émet.
+func (f *wlFake) emit(t *testing.T, messages ...[]byte) {
+	t.Helper()
+
+	var out []byte
+	for _, m := range messages {
+		out = append(out, m...)
+	}
+	if _, err := f.sock.Write(out); err != nil {
+		t.Fatalf("émission de %d octets vers le client : %v", len(out), err)
+	}
+}
+
+// emitFD pousse un événement accompagné d'un descripteur de fichier.
+//
+// C'est la forme de `wl_keyboard.keymap`, le seul événement du protocole de base à en
+// porter un. Le noyau en installe un duplicata chez le client, donc celui du cas reste
+// ouvert et à lui.
+func (f *wlFake) emitFD(t *testing.T, fd int, message []byte) {
+	t.Helper()
+
+	rights := syscall.UnixRights(fd)
+	if _, _, err := f.sock.WriteMsgUnix(message, rights, nil); err != nil {
+		t.Fatalf("émission d'un événement avec le descripteur %d : %v", fd, err)
+	}
+}
+
+// entered enregistre le numéro de série d'un `enter` que le cas va émettre.
+//
+// Sans lui, le compositeur refuserait la requête de curseur qui le cite : il ne tient pour
+// émis que ce qu'il a émis lui-même, et les entrées viennent du cas.
+func (f *wlFake) entered(serial uint32) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.issued[serial] = true
 }
 
 // wlFakeConn monte une connexion servie par le compositeur donné.
@@ -564,5 +666,6 @@ func wlFakeMounted() *wlFake {
 	f := wlNewFake(wlDefaultGlobals(), []uint32{wlShmXRGB8888})
 	f.registry, f.compositor, f.shm, f.wmBase = 10, 11, 12, 13
 	f.surface, f.xdg = 20, 21
+	f.seat, f.keyboard, f.pointer = 30, 31, 32
 	return f
 }

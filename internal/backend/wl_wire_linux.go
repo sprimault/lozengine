@@ -30,6 +30,12 @@ import (
 // l'en-tête : la spécification le dit en donnant ce minimum de huit.
 const wlHeaderSize = 8
 
+// wlFixedShift est le nombre de bits de fraction d'un nombre à virgule fixe du protocole.
+//
+// La description donne « signed 24.8 decimal number », donc le mot porte l'entier dans ses
+// vingt-quatre bits de poids fort et la fraction dans les huit autres.
+const wlFixedShift = 8
+
 // wlOrder est l'ordre d'octets du protocole.
 //
 // **C'est le seul endroit du dépôt où `NativeEndian` est le bon choix**, et c'est la
@@ -210,6 +216,23 @@ func (r *wlReader) string() string {
 // de -1 sans que rien ne le signale, et c'est une taille de fenêtre qu'un jeu reçoit.
 func (r *wlReader) int() int32 {
 	return int32(r.uint())
+}
+
+// fixed lit un nombre à virgule fixe signé et rend sa partie entière.
+//
+// Le protocole porte ces nombres sur vingt-quatre bits d'entier et huit de fraction, et
+// c'est l'unité des positions du pointeur comme des distances de défilement.
+//
+// **Le décalage arithmétique est ce qui rend la troncature juste sur un négatif**, et le
+// cas se produit : un appui qui commence dans la fenêtre et se poursuit dehors continue
+// d'être rapporté, avec des coordonnées négatives. Une division par deux cent cinquante-six
+// arrondirait vers zéro, donc un pointeur à un demi-pixel au-dessus du bord rendrait zéro
+// — soit dedans — là que le décalage rend moins un.
+//
+// Ce qui a besoin de la fraction ne passe pas par ici : un cran de molette haute résolution
+// vaut moins d'une unité, et [wlAxis] l'accumule donc sur la valeur brute.
+func (r *wlReader) fixed() int32 {
+	return r.int() >> wlFixedShift
 }
 
 // array lit un tableau d'octets et laisse le curseur sur la frontière suivante.

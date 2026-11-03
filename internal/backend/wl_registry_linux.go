@@ -6,8 +6,9 @@
 //
 // Un client Wayland ne demande pas ce qu'il veut : il écoute ce qu'on lui annonce, puis
 // lie ce qu'il reconnaît. Deux allers-retours suffisent et il en faut deux — le premier
-// parce que rien ne dit quand la liste des offres se termine, le second parce que les
-// formats de la mémoire partagée n'arrivent qu'après qu'on l'a liée.
+// parce que rien ne dit quand la liste des offres se termine, le second parce que ce qu'un
+// objet annonce de lui-même n'arrive qu'après l'avoir lié : les formats de la mémoire
+// partagée, et les capacités du siège.
 
 package backend
 
@@ -34,17 +35,39 @@ type wlWanted struct {
 	iface   string
 	version uint32
 	gives   string
+
+	// optional dit qu'un compositeur qui n'offre pas cette interface garde une
+	// fenêtre, au lieu de voir l'ouverture refusée.
+	//
+	// **Une seule entrée l'est, et c'est le siège.** Sans compositeur, sans mémoire
+	// partagée ou sans protocole de bureau, il n'y a pas de fenêtre à montrer : le
+	// refus est alors la seule réponse honnête. Sans siège, il y a une fenêtre que
+	// personne ne pilote — ce qui est exactement un afficheur de kiosque, et un
+	// régime où un jeu a encore une image à produire.
+	optional bool
 }
 
 // wlNeeded énumère ce que le backend lie, avec la raison de chaque version.
-//
-// `wl_seat` n'y est pas : le lot qui lit le clavier et le pointeur l'ajoutera, et lier un
-// objet dont personne ne se sert ne ferait qu'occuper une entrée de la table que le
-// compositeur tient.
+// Les champs sont nommés parce que le dernier ne l'est que pour une entrée : un `false`
+// positionnel répété trois fois dirait moins que son absence.
 var wlNeeded = []wlWanted{
-	{"wl_compositor", 6, "set_buffer_scale en 3, damage_buffer en 4, preferred_buffer_scale en 6"},
-	{"wl_shm", 1, "create_pool et les formats ; release arrive en 2 et ne rend que l'objet lui-même, ce qu'une fenêtre ouverte n'a pas à faire"},
-	{"xdg_wm_base", 1, "get_xdg_surface et pong, qui sont tout ce qu'une fenêtre demande"},
+	{
+		iface: "wl_compositor", version: 6,
+		gives: "set_buffer_scale en 3, damage_buffer en 4, preferred_buffer_scale en 6",
+	},
+	{
+		iface: "wl_shm", version: 1,
+		gives: "create_pool et les formats ; release arrive en 2 et ne rend que l'objet lui-même, ce qu'une fenêtre ouverte n'a pas à faire",
+	},
+	{
+		iface: "wl_seat", version: 8,
+		gives:    "axis_value120 en 8, qui compte les crans de molette en cent-vingtièmes ; frame et axis_discrete en 5, release en 3",
+		optional: true,
+	},
+	{
+		iface: "xdg_wm_base", version: 1,
+		gives: "get_xdg_surface et pong, qui sont tout ce qu'une fenêtre demande",
+	},
 }
 
 // wlGlobals porte ce que le client a lié et ce qu'il en a appris.
@@ -58,6 +81,18 @@ type wlGlobals struct {
 	compositorVersion uint32
 
 	shm uint32
+
+	// seat porte le siège, seatVersion la version liée, et seatCaps le masque de
+	// capacités qu'il a annoncé.
+	//
+	// **Le masque est collecté à l'ouverture, et il faut le dire parce que c'est
+	// contre-intuitif** : un siège annonce ses capacités aussitôt après avoir été
+	// lié, donc son unique annonce initiale arrive pendant le second aller-retour.
+	// Attendre la vie de la fenêtre pour écouter l'événement ferait perdre la seule
+	// annonce qu'un siège stable envoie, et le jeu n'aurait ni clavier ni souris.
+	seat        uint32
+	seatVersion uint32
+	seatCaps    uint32
 
 	wmBase        uint32
 	wmBaseVersion uint32
@@ -89,6 +124,13 @@ type wlRegistry struct {
 	// pour la mauvaise raison, et le premier objet ajouté ici le ferait de travers.
 	shm     uint32
 	formats []uint32
+
+	// seat est l'identifiant du siège une fois lié, et caps le dernier masque de
+	// capacités qu'il a annoncé. C'est le troisième objet qui parle avant qu'une
+	// surface existe, et l'avertissement ci-dessus s'est vérifié sur lui : son
+	// événement de capacités porte l'opcode zéro, comme ceux des deux autres.
+	seat uint32
+	caps uint32
 }
 
 // wlBindGlobals lie ce dont le backend a besoin et choisit la disposition des pixels.
@@ -127,6 +169,7 @@ func (c *wlConn) wlBindGlobals() (wlGlobals, error) {
 		return g, err
 	}
 
+	g.seatCaps = reg.caps
 	g.pixels, g.format, err = wlPixelOrder(reg.formats)
 	if err != nil {
 		return g, err
@@ -143,6 +186,9 @@ func (c *wlConn) bind(reg *wlRegistry, g *wlGlobals) error {
 	for _, want := range wlNeeded {
 		offer, ok := reg.offers[want.iface]
 		if !ok {
+			if want.optional {
+				continue
+			}
 			return fmt.Errorf("the compositor does not offer %s, which this backend needs for %s",
 				want.iface, want.gives)
 		}
@@ -163,6 +209,8 @@ func (c *wlConn) bind(reg *wlRegistry, g *wlGlobals) error {
 			g.compositor, g.compositorVersion = id, version
 		case "wl_shm":
 			g.shm, reg.shm = id, id
+		case "wl_seat":
+			g.seat, g.seatVersion, reg.seat = id, version, id
 		case "xdg_wm_base":
 			g.wmBase, g.wmBaseVersion = id, version
 		}
@@ -170,16 +218,29 @@ func (c *wlConn) bind(reg *wlRegistry, g *wlGlobals) error {
 	return c.flush()
 }
 
-// handle reçoit les événements du registre et ceux de la mémoire partagée.
+// handle reçoit les événements du registre, ceux de la mémoire partagée et ceux du siège.
 //
-// Les deux arrivent pendant l'ouverture, et ce sont les deux seuls objets qui parlent
+// Les trois arrivent pendant l'ouverture, et ce sont les trois seuls objets qui parlent
 // avant qu'une surface existe — les rappels d'un aller-retour étant interceptés plus bas.
 // Un événement d'un autre objet est donc ignoré plutôt que refusé : un compositeur a le
 // droit d'annoncer ce qu'il veut sur des globals qu'on n'a pas liés.
+//
+// **Le siège y est pour une raison et une seule, et c'est elle qu'on oublierait** : son
+// annonce de capacités suit immédiatement le `bind`, donc elle tombe dans le second
+// aller-retour. La laisser à la fenêtre serait la perdre, et un siège qui ne change pas
+// n'en envoie jamais d'autre.
 func (r *wlRegistry) handle(sender uint32, opcode uint16, rd *wlReader) error {
 	if sender == r.shm && r.shm != 0 {
 		if opcode == wlShmFormat {
 			r.formats = append(r.formats, rd.uint())
+		}
+		return rd.err
+	}
+	if sender == r.seat && r.seat != 0 {
+		// `name` arrive aussi, et il ne sert à rien ici : c'est un libellé pour
+		// une interface d'utilisateur, pas une identité à retenir.
+		if opcode == wlSeatCapabilities {
+			r.caps = rd.uint()
 		}
 		return rd.err
 	}
