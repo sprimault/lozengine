@@ -72,6 +72,26 @@ const (
 	wlRegistryGlobalRemove uint16 = 1
 )
 
+// wlShmFormat est l'opcode de l'événement par lequel `wl_shm` annonce un format, et il
+// en envoie un par format qu'il accepte.
+const wlShmFormat uint16 = 0
+
+// Les deux valeurs de `wl_shm.format` qui ne sont pas des codes à quatre caractères.
+//
+// **C'est une exception historique, et elle vaut sur le seul format que le protocole
+// garantisse.** La description donne `argb8888` à zéro et `xrgb8888` à un, là que tous les
+// autres portent leur code — `xbgr8888` vaut `0x34324258`, qui est `XB24`. Un client qui
+// passerait une valeur de `wl_shm.format` au constructeur commun chercherait donc
+// `0x34325258` et ne reconnaîtrait pas le format de repli, celui dont il a le plus besoin.
+//
+// La traduction vit ici et non dans [pixelOrderOfFourCC], parce que ces deux nombres ne
+// veulent rien dire ailleurs : sous DRM/KMS, zéro n'est pas un format, c'est l'absence de
+// format.
+const (
+	wlShmARGB8888 uint32 = 0
+	wlShmXRGB8888 uint32 = 1
+)
+
 // wlCallbackDone est l'opcode de l'unique événement de `wl_callback`, version 1.
 //
 // La description le marque `destructor` : l'objet disparaît en le rendant, donc son
