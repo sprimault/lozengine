@@ -39,12 +39,28 @@ type paperWindow struct {
 	// ce qu'elle en a compté.
 	turns, seen int
 
+	// armsOnPresent modélise une plateforme qui n'autorise l'image suivante qu'en
+	// réponse à la présentation précédente — Wayland par son `wl_surface.frame`,
+	// DRM/KMS par l'événement de sa bascule de page. armed est le jeton qu'elle
+	// accorde, et starved compte les tours servis sans jeton : une vraie famille y
+	// gèlerait ou tournerait à plein régime, donc le compte est ce qu'un test peut
+	// observer de ce régime.
+	armsOnPresent bool
+	armed         bool
+	starved       int
+
 	presents int
 	err      error
 }
 
 // Input compte un tour et ferme la fenêtre quand le compte est atteint.
 func (w *paperWindow) Input() input.Input {
+	if w.armsOnPresent {
+		if !w.armed {
+			w.starved++
+		}
+		w.armed = false
+	}
 	if w.wait > 0 {
 		time.Sleep(w.wait)
 	}
@@ -56,8 +72,11 @@ func (w *paperWindow) Input() input.Input {
 	return s.Frame()
 }
 
-// Present compte une présentation.
-func (w *paperWindow) Present(*render.Buffer) { w.presents++ }
+// Present compte une présentation, et réarme le jeton quand c'est elle qui le produit.
+func (w *paperWindow) Present(*render.Buffer) {
+	w.presents++
+	w.armed = true
+}
 
 // Size rend une taille fixe, qui n'est pas le sujet de ces cas.
 func (w *paperWindow) Size() (uint16, uint16) { return 64, 64 }
@@ -132,6 +151,41 @@ func TestLoopSkipsEarlyTurnsOnAPacedWindow(t *testing.T) {
 	if w.presents != 0 {
 		t.Errorf("%d présentations sur %d tours, attendu aucune : la boucle a fait des pas "+
 			"en avance sur son échéance", w.presents, w.seen)
+	}
+}
+
+// TestLoopStarvesAPacedWindowThatArmsOnPresent garde la condition qu'une réponse vraie à
+// [backend.Window.Paced] exige, en montrant ce qui arrive quand elle n'est pas tenue.
+//
+// **C'est un témoin et non une correction** : il affirme le piège au lieu de son absence,
+// parce que le piège est la conséquence assumée du rejet des tours en avance. Une fenêtre
+// dont le jeton d'image naît de Present ne le voit jamais revenir — c'est justement la
+// présentation que la boucle saute —, donc tous ses tours après le premier sont servis à
+// vide. Une vraie famille y gèlerait, si son Input attend un jeton que personne n'a
+// demandé, ou tournerait à plein régime, le sommeil étant interdit sous ce régime.
+//
+// C'est ce qui a fait répondre faux aux deux familles du jalon 6, et c'est ce que ce cas
+// garde : **il rougit si la boucle cesse de sauter la présentation d'un tour en avance**,
+// qui est exactement le changement qui rendrait une réponse vraie tenable. La godoc de
+// Paced et les backends concernés se reprendraient alors dans le même lot. Vérifié par
+// mutation en inversant la comparaison de `pace`.
+//
+// **Des deux assertions, une seule est à lui**, et il faut le dire : le compte de
+// présentations est la précondition du cas — sans un tick qui domine, il ne dirait rien —
+// et le cas voisin la garde déjà. Le compte de tours à vide est le sien, aucun autre cas
+// ne modélisant le jeton d'une plateforme.
+func TestLoopStarvesAPacedWindowThatArmsOnPresent(t *testing.T) {
+	w := &paperWindow{paced: true, armsOnPresent: true, armed: true, turns: 50}
+	runLoop(t, w, time.Hour)
+
+	if w.presents != 0 {
+		t.Errorf("%d présentations, attendu aucune : le tick dépasse toute la durée du cas",
+			w.presents)
+	}
+	if w.starved != w.seen-1 {
+		t.Errorf("%d tours à vide sur %d, attendu %d : un jeton s'est réarmé alors que seule "+
+			"Present le produit, donc la condition de Paced a changé",
+			w.starved, w.seen, w.seen-1)
 	}
 }
 
