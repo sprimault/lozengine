@@ -29,7 +29,7 @@ package backend
 // d'X11 porte une suite d'images et le gestionnaire de fenêtres prend celle qui lui
 // convient. Aucune icône laisse celle du système.
 func Open(o Options) (Window, error) {
-	c, err := connect()
+	c, err := x11Connect()
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func Open(o Options) (Window, error) {
 		return nil, err
 	}
 
-	return &window{
+	return &x11Window{
 		c:            c,
 		id:           id,
 		gc:           gc,

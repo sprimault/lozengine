@@ -76,7 +76,7 @@ var extendedKeys = [...]input.Key{
 	127: 0x15D, // menu contextuel
 }
 
-// keyOf traduit un code de touche X11 vers la place du moteur, et dit si elle existe.
+// x11KeyOf traduit un code de touche X11 vers la place du moteur, et dit si elle existe.
 //
 // **La touche de pause n'y est pas, et c'est une correspondance refusée plutôt
 // qu'oubliée.** Le jeu 1 l'envoyait en trois octets et Windows ne la rapporte pas
@@ -87,7 +87,7 @@ var extendedKeys = [...]input.Key{
 //
 // Les codes inconnus sont écartés sans bruit. Un clavier exotique ou un pilote bavard
 // est une donnée du monde extérieur, pas une faute de programmation.
-func keyOf(code byte) (input.Key, bool) {
+func x11KeyOf(code byte) (input.Key, bool) {
 	if code < keycodeShift {
 		return 0, false
 	}
@@ -117,7 +117,7 @@ func keyOf(code byte) (input.Key, bool) {
 //
 // Le vecteur couvre les codes à partir de huit, un bit par touche : l'octet n porte
 // les codes 8+8n à 15+8n, du bit de poids faible au bit de poids fort.
-func (w *window) relearnKeys(bitmap []byte) {
+func (w *x11Window) relearnKeys(bitmap []byte) {
 	w.state.Forget()
 
 	for at, mask := range bitmap {
@@ -132,7 +132,7 @@ func (w *window) relearnKeys(bitmap []byte) {
 				// qui parle d'autre chose que de ce protocole.
 				return
 			}
-			if k, ok := keyOf(uint8(code)); ok {
+			if k, ok := x11KeyOf(uint8(code)); ok {
 				w.state.Press(k)
 			}
 		}

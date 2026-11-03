@@ -83,21 +83,21 @@ func TestCreateWindowAsksTheUsefulSizeWithoutAdjusting(t *testing.T) {
 func TestRequestsDeclareTheLengthTheyWrote(t *testing.T) {
 	cases := []struct {
 		name string
-		send func(c *conn)
+		send func(c *x11Conn)
 	}{
-		{"la création de fenêtre", func(c *conn) { c.createWindow(0x04000001, 480, 270, maskKeyPress) }},
-		{"l'apparition", func(c *conn) { c.mapWindow(0x04000001) }},
-		{"la destruction", func(c *conn) { c.destroyWindow(0x04000001) }},
-		{"un titre, dont la longueur n'est pas un multiple de quatre", func(c *conn) {
+		{"la création de fenêtre", func(c *x11Conn) { c.createWindow(0x04000001, 480, 270, maskKeyPress) }},
+		{"l'apparition", func(c *x11Conn) { c.mapWindow(0x04000001) }},
+		{"la destruction", func(c *x11Conn) { c.destroyWindow(0x04000001) }},
+		{"un titre, dont la longueur n'est pas un multiple de quatre", func(c *x11Conn) {
 			c.changeProperty(0x04000001, atomWMName, atomString, 8, []byte("essai"))
 		}},
-		{"un titre vide", func(c *conn) {
+		{"un titre vide", func(c *x11Conn) {
 			c.changeProperty(0x04000001, atomWMName, atomString, 8, nil)
 		}},
-		{"les bornes de taille", func(c *conn) { c.setFloor(0x04000001, 480, 270) }},
-		{"la liste des protocoles", func(c *conn) { c.setProtocols(0x04000001, 100, 101) }},
-		{"le contexte graphique", func(c *conn) { c.createGC(0x04000002, 0x04000001) }},
-		{"un transfert d'image", func(c *conn) {
+		{"les bornes de taille", func(c *x11Conn) { c.setFloor(0x04000001, 480, 270) }},
+		{"la liste des protocoles", func(c *x11Conn) { c.setProtocols(0x04000001, 100, 101) }},
+		{"le contexte graphique", func(c *x11Conn) { c.createGC(0x04000002, 0x04000001) }},
+		{"un transfert d'image", func(c *x11Conn) {
 			c.putImage(0x04000001, 0x04000002, 24, 0, 2, 2, make([]render.Color, 4))
 		}},
 	}

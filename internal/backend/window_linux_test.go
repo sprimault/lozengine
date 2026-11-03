@@ -23,11 +23,11 @@ import (
 // Les atomes sont posés à la main : les demander exigerait un serveur qui réponde, et
 // ce ne sont pas eux que ces cas éprouvent — seulement ce que la fenêtre fait des
 // événements qui les portent.
-func windowPair(t testing.TB) (*window, *net.UnixConn) {
+func windowPair(t testing.TB) (*x11Window, *net.UnixConn) {
 	t.Helper()
 
 	c, server := connPair(t)
-	return &window{
+	return &x11Window{
 		c:            c,
 		id:           0x04000001,
 		protocols:    0x120,

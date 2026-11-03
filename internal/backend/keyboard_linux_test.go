@@ -54,7 +54,7 @@ func TestKeyOfSubtractsEightOnTheSharedCodes(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got, ok := keyOf(c.keycode)
+			got, ok := x11KeyOf(c.keycode)
 			if !ok {
 				t.Fatalf("code %d refusé", c.keycode)
 			}
@@ -95,7 +95,7 @@ func TestKeyOfTranslatesTheExtendedCodes(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got, ok := keyOf(c.keycode)
+			got, ok := x11KeyOf(c.keycode)
 			if !ok {
 				t.Fatalf("code %d refusé", c.keycode)
 			}
@@ -133,11 +133,11 @@ func TestEvdevSeparatesTheNumpadFromTheNavigationBlock(t *testing.T) {
 
 	for _, p := range pairs {
 		t.Run(p.name, func(t *testing.T) {
-			numpad, ok := keyOf(p.numpad + keycodeShift)
+			numpad, ok := x11KeyOf(p.numpad + keycodeShift)
 			if !ok {
 				t.Fatalf("code %d du pavé numérique refusé", p.numpad)
 			}
-			navigation, ok := keyOf(p.navigat + keycodeShift)
+			navigation, ok := x11KeyOf(p.navigat + keycodeShift)
 			if !ok {
 				t.Fatalf("code %d du bloc de navigation refusé", p.navigat)
 			}
@@ -175,7 +175,7 @@ func TestKeyOfRefusesWhatHasNoHonestPlace(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if got, ok := keyOf(c.keycode); ok {
+			if got, ok := x11KeyOf(c.keycode); ok {
 				t.Errorf("code %d accepté comme place %#x", c.keycode, got)
 			}
 		})

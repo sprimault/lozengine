@@ -22,8 +22,8 @@ import (
 	"syscall"
 )
 
-// conn est une connexion ouverte à un serveur d'affichage.
-type conn struct {
+// x11Conn est une connexion ouverte à un serveur d'affichage.
+type x11Conn struct {
 	sock *net.UnixConn
 
 	// raw sert les lectures qui ne doivent pas attendre, et c'est la seule raison de
@@ -39,7 +39,7 @@ type conn struct {
 	//
 	// **Construite ici parce qu'une fermeture passée à une méthode d'interface
 	// s'échappe** : `syscall.RawConn.Read` en est une, donc la valeur de fonction et les
-	// variables qu'elle capture partaient sur le tas à **chaque image** — `window.Input`
+	// variables qu'elle capture partaient sur le tas à **chaque image** — `x11Window.Input`
 	// appelle `poll` puis `receive` au moins une fois par pas. Les deux autres chemins
 	// par image du backend avaient leur garde ; l'entrée n'en avait aucune.
 	//
@@ -91,19 +91,19 @@ type conn struct {
 	pending [][]byte
 }
 
-// connect ouvre une connexion au serveur que `DISPLAY` nomme et lit ce qu'il dit de
+// x11Connect ouvre une connexion au serveur que `DISPLAY` nomme et lit ce qu'il dit de
 // lui-même.
 //
 // Tout ce qui peut échouer échoue ici, et c'est voulu : une fois cette fonction
 // passée, le reste du backend n'a plus à se demander si le serveur existe, s'il a
 // accepté l'autorisation ou quelle est la profondeur de l'écran.
-func connect() (*conn, error) {
-	paths, number, screen, err := displaySockets(os.Getenv("DISPLAY"))
+func x11Connect() (*x11Conn, error) {
+	paths, number, screen, err := x11DisplaySockets(os.Getenv("DISPLAY"))
 	if err != nil {
 		return nil, err
 	}
 
-	sock, err := dialAny(paths)
+	sock, err := x11DialAny(paths)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func connect() (*conn, error) {
 		return nil, fmt.Errorf("taking hold of the display socket: %w", err)
 	}
 
-	c := &conn{sock: sock, raw: raw, in: make([]byte, 4096)}
+	c := &x11Conn{sock: sock, raw: raw, in: make([]byte, 4096)}
 
 	name, data := authority(number)
 	if _, err := sock.Write(authRequest(name, data)); err != nil {
@@ -182,13 +182,13 @@ func connect() (*conn, error) {
 	return c, nil
 }
 
-// dialAny essaie les chemins dans l'ordre et rend la première connexion obtenue.
+// x11DialAny essaie les chemins dans l'ordre et rend la première connexion obtenue.
 //
 // Les échecs sont rendus ensemble et non seulement le dernier : les deux formes de
 // socket échouent pour des raisons différentes — un fichier absent, une socket
 // abstraite qui n'écoute pas — et savoir laquelle a manqué est ce qui distingue « il
 // n'y a pas de serveur » de « le serveur n'écoute pas là où on l'a cherché ».
-func dialAny(paths []string) (*net.UnixConn, error) {
+func x11DialAny(paths []string) (*net.UnixConn, error) {
 	var failures []error
 	for _, path := range paths {
 		sock, err := net.DialUnix("unix", nil, &net.UnixAddr{Name: path, Net: "unix"})
@@ -202,7 +202,7 @@ func dialAny(paths []string) (*net.UnixConn, error) {
 
 // Close rend la socket. Les ressources créées sur le serveur partent avec elle, le
 // protocole les détruisant à la fermeture d'une connexion.
-func (c *conn) Close() {
+func (c *x11Conn) Close() {
 	if c.sock != nil {
 		c.sock.Close()
 		c.sock = nil
@@ -215,13 +215,13 @@ func (c *conn) Close() {
 // rattacher une erreur à ce qui l'a causée : le serveur ne répond pas aux requêtes qui
 // réussissent, donc une erreur arrive plus tard, pendant qu'on fait autre chose. Un
 // décalage d'un seul rang ferait accuser la requête voisine.
-func (c *conn) next() uint16 {
+func (c *x11Conn) next() uint16 {
 	c.seq++
 	return c.seq
 }
 
 // id réserve un identifiant de ressource dans la plage que le serveur a concédée.
-func (c *conn) id() uint32 {
+func (c *x11Conn) id() uint32 {
 	c.ids++
 	return c.setup.idBase | (c.ids<<c.shift)&c.setup.idMask
 }
@@ -231,7 +231,7 @@ func (c *conn) id() uint32 {
 // Rien ne part avant : le protocole n'exige aucune réponse pour la plupart des
 // requêtes, donc une fenêtre entière — création, titre, bornes, apparition — tient en
 // un seul envoi.
-func (c *conn) flush() error {
+func (c *x11Conn) flush() error {
 	if len(c.out) == 0 {
 		return nil
 	}
@@ -247,7 +247,7 @@ func (c *conn) flush() error {
 // Elle compacte d'abord, ce qui suffit presque toujours : les messages se consomment
 // au rythme où ils arrivent, donc l'espace repris en tête est celui que la lecture
 // suivante demande. L'agrandissement ne sert qu'aux réponses longues.
-func (c *conn) room(need int) {
+func (c *x11Conn) room(need int) {
 	if len(c.in)-c.have >= need {
 		return
 	}
@@ -269,7 +269,7 @@ func (c *conn) room(need int) {
 // La tranche rendue pointe dans le tampon de réception et ne vaut que jusqu'à la
 // lecture suivante. C'est ce qui évite une copie par événement, et aucun appelant ne
 // la garde.
-func (c *conn) message() []byte {
+func (c *x11Conn) message() []byte {
 	available := c.have - c.cut
 	if available < eventSize {
 		return nil
@@ -293,7 +293,7 @@ func (c *conn) message() []byte {
 
 // receive lit ce que la socket tient déjà, sans attendre, et dit si quelque chose est
 // arrivé.
-func (c *conn) receive() (bool, error) {
+func (c *x11Conn) receive() (bool, error) {
 	c.room(eventSize)
 
 	if c.read == nil {
@@ -333,7 +333,7 @@ func (c *conn) receive() (bool, error) {
 //
 // C'est ce qu'une image emploie : la boucle ne peut pas se permettre d'attendre un
 // événement qui ne viendra pas.
-func (c *conn) poll() ([]byte, error) {
+func (c *x11Conn) poll() ([]byte, error) {
 	for {
 		if m := c.message(); m != nil {
 			return m, nil
@@ -353,7 +353,7 @@ func (c *conn) poll() ([]byte, error) {
 // Réservé à l'ouverture, où l'on sait qu'une réponse vient. L'employer dans une image
 // arrêterait le jeu jusqu'au prochain événement, c'est-à-dire jusqu'à ce que le joueur
 // touche quelque chose.
-func (c *conn) await() ([]byte, error) {
+func (c *x11Conn) await() ([]byte, error) {
 	for {
 		if m := c.message(); m != nil {
 			return m, nil
@@ -374,7 +374,7 @@ func (c *conn) await() ([]byte, error) {
 // erreur de protocole ne se rattrape pas : elle dit qu'une requête était fausse, donc
 // que ce qui la suivait s'est appuyé sur quelque chose qui n'existe pas. La poursuivre
 // ferait rapporter l'échec quelques requêtes plus loin, sur un objet sans rapport.
-func (c *conn) reply(seq uint16) ([]byte, error) {
+func (c *x11Conn) reply(seq uint16) ([]byte, error) {
 	for {
 		m, err := c.await()
 		if err != nil {
@@ -383,7 +383,7 @@ func (c *conn) reply(seq uint16) ([]byte, error) {
 
 		switch {
 		case m[0] == msgError:
-			return nil, protocolError(m)
+			return nil, x11ProtocolError(m)
 
 		case m[0] == msgReply:
 			if got := order.Uint16(m[2:]); got != seq {
@@ -397,11 +397,11 @@ func (c *conn) reply(seq uint16) ([]byte, error) {
 	}
 }
 
-// protocolError nomme une erreur du protocole, telle que le serveur l'a envoyée.
+// x11ProtocolError nomme une erreur du protocole, telle que le serveur l'a envoyée.
 //
 // Le numéro de séquence y est, et c'est lui qui sert : il dit laquelle des requêtes
 // envoyées était fausse, là où le code d'erreur ne dit que de quelle sorte.
-func protocolError(m []byte) error {
+func x11ProtocolError(m []byte) error {
 	return fmt.Errorf("the display server refused request %d with a %s error: value %#x, opcode %d.%d",
-		order.Uint16(m[2:]), errorName(m[1]), order.Uint32(m[4:]), m[10], order.Uint16(m[8:]))
+		order.Uint16(m[2:]), x11ErrorName(m[1]), order.Uint32(m[4:]), m[10], order.Uint16(m[8:]))
 }

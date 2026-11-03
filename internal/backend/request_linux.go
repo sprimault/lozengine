@@ -19,7 +19,7 @@ import "github.com/sprimault/lozengine/render"
 // traduction. Les demander ensemble plutôt qu'un par un fait un aller-retour au lieu
 // de quatre — le serveur traite les requêtes d'un même client dans l'ordre reçu, donc
 // les réponses arrivent dans celui où on les attend.
-func (c *conn) internAtom(names ...string) ([]uint32, error) {
+func (c *x11Conn) internAtom(names ...string) ([]uint32, error) {
 	var zeros [3]byte
 
 	first := c.seq + 1
@@ -57,7 +57,7 @@ func (c *conn) internAtom(names ...string) ([]uint32, error) {
 // bordure ni barre de titre dans ce que le client demande, celles-ci appartenant à une
 // fenêtre que le gestionnaire met autour de la nôtre. C'est l'inverse de Win32, qui
 // demande la fenêtre entière.
-func (c *conn) createWindow(id uint32, width, height uint16, events uint32) {
+func (c *x11Conn) createWindow(id uint32, width, height uint16, events uint32) {
 	at := len(c.out)
 	c.out = append(c.out, opCreateWindow, copyFromParent, 0, 0)
 	order.PutUint16(c.out[at+2:], 10)
@@ -88,7 +88,7 @@ func (c *conn) createWindow(id uint32, width, height uint16, events uint32) {
 // Aucune valeur n'est posée, et le masque vide est voulu : les défauts du protocole
 // conviennent exactement — la fonction de combinaison recopie, le masque de plans
 // couvre tout. Les régler reviendrait à redire ce que le serveur fait déjà.
-func (c *conn) createGC(id, drawable uint32) {
+func (c *x11Conn) createGC(id, drawable uint32) {
 	at := len(c.out)
 	c.out = append(c.out, opCreateGC, 0, 0, 0)
 	order.PutUint16(c.out[at+2:], 4)
@@ -117,7 +117,7 @@ const putImageHeader = 24
 // Le découpage se fait en hauteur, jamais en largeur — une ligne de l'image doit
 // rester contiguë en mémoire pour partir sans second découpage — d'où l'abscisse nulle
 // et l'ordonnée reçue.
-func (c *conn) putImage(drawable, gc uint32, depth byte, y int16, width, height uint16, pixels []render.Color) {
+func (c *x11Conn) putImage(drawable, gc uint32, depth byte, y int16, width, height uint16, pixels []render.Color) {
 	data := c.pixels.size * len(pixels)
 	words := (putImageHeader + data) / 4
 
@@ -161,7 +161,7 @@ func (c *conn) putImage(drawable, gc uint32, depth byte, y int16, width, height 
 // l'appelant d'avoir pompé les événements jusqu'à son apparition.
 //
 // Le masque de plans prend tout : on veut l'image telle qu'elle est, pas une couche.
-func (c *conn) getImage(drawable uint32, width, height uint16) ([]byte, error) {
+func (c *x11Conn) getImage(drawable uint32, width, height uint16) ([]byte, error) {
 	at := len(c.out)
 	c.out = append(c.out, opGetImage, zPixmap, 0, 0)
 	order.PutUint16(c.out[at+2:], 5)
@@ -194,7 +194,7 @@ func (c *conn) getImage(drawable uint32, width, height uint16) ([]byte, error) {
 // La marge de quatre octets couvre le mot de longueur étendue, pour que le compte
 // reste bon dans les deux formes de requête plutôt que de dépendre de laquelle on
 // emploiera.
-func (c *conn) linesPerRequest(width uint16) int {
+func (c *x11Conn) linesPerRequest(width uint16) int {
 	perLine := c.pixels.size * int(width)
 	if perLine == 0 {
 		return 0
@@ -207,7 +207,7 @@ func (c *conn) linesPerRequest(width uint16) int {
 // Un serveur qui ne l'a pas répond sans erreur, avec un drapeau à faux : l'absence
 // d'une extension est un régime ordinaire et non un échec, et c'est ce qui permet au
 // repli de ne rien avoir à rattraper.
-func (c *conn) queryExtension(name string) (present bool, major byte, err error) {
+func (c *x11Conn) queryExtension(name string) (present bool, major byte, err error) {
 	var zeros [3]byte
 
 	words := 2 + (len(name)+pad(len(name)))/4
@@ -237,7 +237,7 @@ func (c *conn) queryExtension(name string) (present bool, major byte, err error)
 // et une image de la taille d'un écran part en dizaines de morceaux. C'est le meilleur
 // rapport entre l'effort et le résultat du jalon : une requête à l'ouverture, un champ
 // de longueur conditionnel, et le découpage disparaît.
-func (c *conn) enableBigRequests(major byte) (uint32, error) {
+func (c *x11Conn) enableBigRequests(major byte) (uint32, error) {
 	at := len(c.out)
 	c.out = append(c.out, major, bigRequestsEnable, 0, 0)
 	order.PutUint16(c.out[at+2:], 1)
@@ -265,7 +265,7 @@ func (c *conn) enableBigRequests(major byte) (uint32, error) {
 //
 // Deux requêtes et non une : l'extension refuse tout avant que les versions se soient
 // accordées.
-func (c *conn) detectableAutoRepeat(major byte) (bool, error) {
+func (c *x11Conn) detectableAutoRepeat(major byte) (bool, error) {
 	at := len(c.out)
 	c.out = append(c.out, major, xkbUseExtension, 0, 0)
 	order.PutUint16(c.out[at+2:], 2)
@@ -321,7 +321,7 @@ const changePropertyHeader = 24
 // une liste d'atomes ou de nombres —, et la longueur se compte en éléments et non en
 // octets. Les confondre sur une propriété de trente-deux bits en enverrait quatre fois
 // trop, ce que le serveur refuse par une erreur de longueur.
-func (c *conn) changeProperty(window, property, kind uint32, format byte, data []byte) {
+func (c *x11Conn) changeProperty(x11Window, property, kind uint32, format byte, data []byte) {
 	var zeros [3]byte
 
 	words := 6 + (len(data)+pad(len(data)))/4
@@ -330,7 +330,7 @@ func (c *conn) changeProperty(window, property, kind uint32, format byte, data [
 	c.out = append(c.out, opChangeProperty, propReplace, 0, 0)
 	order.PutUint16(c.out[at+2:], uint16(words))
 
-	c.out = order.AppendUint32(c.out, window)
+	c.out = order.AppendUint32(c.out, x11Window)
 	c.out = order.AppendUint32(c.out, property)
 	c.out = order.AppendUint32(c.out, kind)
 	c.out = append(c.out, format, 0, 0, 0)
@@ -346,7 +346,7 @@ func (c *conn) changeProperty(window, property, kind uint32, format byte, data [
 // Rien n'est affiché avant, et la fenêtre existe pourtant : la création et l'apparition
 // sont deux requêtes, ce qui laisse poser le titre et les bornes avant que quoi que ce
 // soit se voie.
-func (c *conn) mapWindow(id uint32) {
+func (c *x11Conn) mapWindow(id uint32) {
 	at := len(c.out)
 	c.out = append(c.out, opMapWindow, 0, 0, 0)
 	order.PutUint16(c.out[at+2:], 2)
@@ -361,7 +361,7 @@ func (c *conn) mapWindow(id uint32) {
 // créé quand sa connexion tombe. La requête est envoyée quand même, parce qu'elle
 // distingue une fermeture voulue d'un client qui a disparu — ce qu'un gestionnaire de
 // fenêtres et un serveur consignent différemment.
-func (c *conn) destroyWindow(id uint32) {
+func (c *x11Conn) destroyWindow(id uint32) {
 	at := len(c.out)
 	c.out = append(c.out, opDestroyWindow, 0, 0, 0)
 	order.PutUint16(c.out[at+2:], 2)
@@ -379,8 +379,8 @@ func (c *conn) destroyWindow(id uint32) {
 // force le rendez-vous : sa réponse ne peut pas précéder leurs erreurs.
 //
 // Les événements arrivés entre-temps — l'apparition de la fenêtre, sa première taille
-// réelle — sont mis de côté par [conn.reply] et non perdus.
-func (c *conn) sync() error {
+// réelle — sont mis de côté par [x11Conn.reply] et non perdus.
+func (c *x11Conn) sync() error {
 	at := len(c.out)
 	c.out = append(c.out, opGetInputFocus, 0, 0, 0)
 	order.PutUint16(c.out[at+2:], 1)
@@ -400,9 +400,9 @@ func (c *conn) sync() error {
 // récents lisent d'abord et elle porte de l'UTF-8. Ne poser que la seconde laisse un
 // gestionnaire ancien sans titre ; ne poser que la première ampute les titres accentués
 // chez tous les autres.
-func (c *conn) setTitle(window uint32, title string, netName, utf8 uint32) {
-	c.changeProperty(window, atomWMName, atomString, 8, []byte(title))
-	c.changeProperty(window, netName, utf8, 8, []byte(title))
+func (c *x11Conn) setTitle(x11Window uint32, title string, netName, utf8 uint32) {
+	c.changeProperty(x11Window, atomWMName, atomString, 8, []byte(title))
+	c.changeProperty(x11Window, netName, utf8, 8, []byte(title))
 }
 
 // setProtocols annonce les messages du gestionnaire de fenêtres que le client sait
@@ -412,10 +412,10 @@ func (c *conn) setTitle(window uint32, title string, netName, utf8 uint32) {
 // l'utilisateur clique la croix**, connexion coupée et processus mort. Ce n'est pas
 // une dégradation de confort : c'est la différence entre une fermeture que le jeu voit
 // venir et un arrêt brutal au milieu d'une image.
-func (c *conn) setProtocols(window uint32, protocols, deleteWindow uint32) {
+func (c *x11Conn) setProtocols(x11Window uint32, protocols, deleteWindow uint32) {
 	var data [4]byte
 	order.PutUint32(data[:], deleteWindow)
-	c.changeProperty(window, protocols, atomAtom, 32, data[:])
+	c.changeProperty(x11Window, protocols, atomAtom, 32, data[:])
 }
 
 // setIcons pose toutes les tailles d'icône que le jeu fournit, dans la propriété que
@@ -441,7 +441,7 @@ func (c *conn) setProtocols(window uint32, protocols, deleteWindow uint32) {
 // deux icônes de 48 pixels font moins de vingt kilooctets, mais une de 256 en fait
 // deux cent cinquante. Au-delà du plafond, le serveur rend une erreur de longueur que
 // la synchronisation de l'ouverture rapporte — donc à l'ouverture, et non plus tard.
-func (c *conn) setIcons(window, atom uint32, icons []*render.Buffer) {
+func (c *x11Conn) setIcons(x11Window, atom uint32, icons []*render.Buffer) {
 	var data []byte
 
 	for _, icon := range icons {
@@ -465,7 +465,7 @@ func (c *conn) setIcons(window, atom uint32, icons []*render.Buffer) {
 	if len(data) == 0 {
 		return
 	}
-	c.changeProperty(window, atom, atomCardinal, 32, data)
+	c.changeProperty(x11Window, atom, atomCardinal, 32, data)
 }
 
 // setFloor dit au gestionnaire de fenêtres sous quelle taille la fenêtre ne doit pas
@@ -479,11 +479,11 @@ func (c *conn) setIcons(window, atom uint32, icons []*render.Buffer) {
 // à la respecter, et sans gestionnaire — le régime d'un serveur sans écran — elle
 // n'est lue par personne. La boucle ne s'y fie donc pas, et c'est elle qui tient la
 // taille réellement reçue.
-func (c *conn) setFloor(window uint32, width, height uint16) {
+func (c *x11Conn) setFloor(x11Window uint32, width, height uint16) {
 	var hints [4 * sizeHintsWords]byte
 	order.PutUint32(hints[0:], sizeHintsMinSize)
 	order.PutUint32(hints[4*sizeHintsMinIndex:], uint32(width))
 	order.PutUint32(hints[4*(sizeHintsMinIndex+1):], uint32(height))
 
-	c.changeProperty(window, atomWMNormalHints, atomWMSizeHints, 32, hints[:])
+	c.changeProperty(x11Window, atomWMNormalHints, atomWMSizeHints, 32, hints[:])
 }

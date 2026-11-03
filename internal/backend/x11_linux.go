@@ -278,13 +278,13 @@ const (
 	xkbDetectableAutoRepeat = 1 << 0
 )
 
-// errorNames nomme les erreurs du protocole par leur code.
+// x11ErrorNames nomme les erreurs du protocole par leur code.
 //
 // Le nom entre dans le message que rend [Window.Err], et il porte beaucoup plus que le
 // code : « Match » dit une incohérence entre une requête et son objet, « Window » un
 // identifiant qui ne désigne rien. La liste est close depuis la version 11, et un code
 // hors liste ne peut venir que d'une extension — d'où le repli plutôt qu'un plantage.
-var errorNames = [...]string{
+var x11ErrorNames = [...]string{
 	1:  "Request",
 	2:  "Value",
 	3:  "Window",
@@ -304,11 +304,11 @@ var errorNames = [...]string{
 	17: "Implementation",
 }
 
-// errorName nomme le code d'une erreur du protocole, ou le rend tel quel quand il
+// x11ErrorName nomme le code d'une erreur du protocole, ou le rend tel quel quand il
 // vient d'une extension.
-func errorName(code byte) string {
-	if int(code) < len(errorNames) && errorNames[code] != "" {
-		return errorNames[code]
+func x11ErrorName(code byte) string {
+	if int(code) < len(x11ErrorNames) && x11ErrorNames[code] != "" {
+		return x11ErrorNames[code]
 	}
 	return "extension error " + strconv.Itoa(int(code))
 }
