@@ -288,3 +288,42 @@ func TestWLWriterResetKeepsTheBuffer(t *testing.T) {
 	w.begin(1, 2)
 	w.end()
 }
+
+// TestWLReaderTruncatesAFixedTowardsTheNegative garde le décalage arithmétique de la
+// virgule fixe.
+//
+// **Il rougit sur la forme qui vient d'abord à l'esprit** : une division par deux cent
+// cinquante-six arrondit vers zéro en Go, donc un pointeur à un quart de pixel au-dessus
+// du bord rendrait zéro — soit dedans — là que le décalage rend moins un. Le cas se
+// produit dès qu'un appui commence dans la fenêtre et se poursuit dehors, ce que le
+// protocole continue de rapporter.
+func TestWLReaderTruncatesAFixedTowardsTheNegative(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  int32
+		want int32
+	}{
+		{"l'origine", 0, 0},
+		{"un pixel juste", 1 << wlFixedShift, 1},
+		{"un pixel et demi", 3 << (wlFixedShift - 1), 1},
+		{"un quart de pixel, qui n'en fait pas un", 1 << (wlFixedShift - 2), 0},
+		{"moins un quart de pixel, qui sort de la fenêtre", -(1 << (wlFixedShift - 2)), -1},
+		{"moins un pixel juste", -(1 << wlFixedShift), -1},
+		{"moins un pixel et demi", -(3 << (wlFixedShift - 1)), -2},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			buf := make([]byte, 4)
+			wlOrder.PutUint32(buf, uint32(c.raw))
+
+			r := wlReader{buf: buf}
+			if got := r.fixed(); got != c.want {
+				t.Errorf("la virgule fixe %d a rendu %d, attendu %d", c.raw, got, c.want)
+			}
+			if r.err != nil {
+				t.Errorf("lecture en échec : %v", r.err)
+			}
+		})
+	}
+}

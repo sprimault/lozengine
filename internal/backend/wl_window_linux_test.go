@@ -77,6 +77,15 @@ func wlTestOptions() Options {
 	return Options{Title: "essai", Width: 800, Height: 600}
 }
 
+// La fenêtre Wayland remplit le contrat des sept méthodes, et c'est ici que la
+// vérification vit.
+//
+// **Rien d'autre ne la fait**, et c'est la raison de cette ligne : [wlOpen] rend un type
+// concret, donc aucune conversion n'éprouve l'interface avant le lot qui met la famille
+// dans la cascade d'ouverture. Une signature qui dériverait — un [input.Input] rendu par
+// pointeur, une taille en entiers — ne se verrait qu'à ce moment-là.
+var _ Window = (*wlWindow)(nil)
+
 // TestWLWindowMountsInTheOrderTheProtocolImposes fige la suite des requêtes d'ouverture.
 //
 // **C'est le cas qui porte le lot**, et il garde quatre choses qu'aucun autre n'attrape
@@ -102,7 +111,12 @@ func TestWLWindowMountsInTheOrderTheProtocolImposes(t *testing.T) {
 	want := []string{
 		"bind wl_compositor",
 		"bind wl_shm",
+		"bind wl_seat",
 		"bind xdg_wm_base",
+		// Les deux objets d'entrée viennent avant la surface : ils n'en dépendent
+		// pas, et le masque de capacités qui les autorise est déjà arrivé.
+		"get_keyboard",
+		"get_pointer",
 		"create_surface",
 		"get_xdg_surface",
 		"get_toplevel",

@@ -138,6 +138,111 @@ const (
 	wlShmXRGB8888 uint32 = 1
 )
 
+// Les opcodes de `wl_seat` que le backend emploie, et ses deux événements.
+//
+// `get_touch` est à l'opcode 2 et `release` à 3, tous deux sans emploi : l'état d'entrée
+// n'offre qu'un pointeur, donc le tactile d'un écran de bureau n'a pas de place où aller,
+// et rendre le siège entier n'a d'objet que pour un client qui cesse de lire les entrées
+// sans fermer sa fenêtre.
+const (
+	wlSeatGetPointer  uint16 = 0
+	wlSeatGetKeyboard uint16 = 1
+
+	wlSeatCapabilities uint16 = 0
+	wlSeatName         uint16 = 1
+)
+
+// Les capacités qu'un siège annonce, en masque de bits et non en énumération.
+//
+// **C'est un masque, et le lire comme une valeur serait le défaut qui ne se voit pas** :
+// un siège ordinaire annonce trois sur son premier événement, qui n'est ni le pointeur ni
+// le clavier mais les deux. L'événement revient à chaque fois qu'une capacité apparaît ou
+// disparaît, donc le masque se compare à ce qui a déjà été créé plutôt que de se lire une
+// fois.
+const (
+	wlSeatPointer  uint32 = 1
+	wlSeatKeyboard uint32 = 2
+	wlSeatTouch    uint32 = 4
+)
+
+// Les opcodes de `wl_keyboard` : une requête et six événements.
+//
+// `modifiers` et `repeat_info` sont reçus et ignorés, et c'est ce que les deux décisions
+// du jalon prévoient. Le premier porte l'état de xkb, dont le moteur n'a que faire : une
+// place de clavier n'est pas un caractère. Le second annonce la cadence de répétition du
+// compositeur, que le moteur n'a pas à filtrer — l'état d'entrée absorbe une répétition
+// sans produire de front neuf.
+const (
+	wlKeyboardRelease uint16 = 0
+
+	wlKeyboardKeymap     uint16 = 0
+	wlKeyboardEnter      uint16 = 1
+	wlKeyboardLeave      uint16 = 2
+	wlKeyboardKey        uint16 = 3
+	wlKeyboardModifiers  uint16 = 4
+	wlKeyboardRepeatInfo uint16 = 5
+)
+
+// wlKeymapFormatNoKeymap est le format que `wl_keyboard.keymap` annonce quand le
+// compositeur ne fournit aucune carte.
+//
+// L'autre valeur est `xkb_v1`, à un, qui est le cas courant. Les deux mènent ici au même
+// geste — fermer le descripteur sans le lire —, et la valeur ne sert donc qu'à nommer ce
+// qu'on a reçu dans un message d'erreur.
+const wlKeymapFormatNoKeymap uint32 = 0
+
+// Les opcodes de `wl_pointer` que le backend lit, et les deux requêtes de l'interface.
+//
+// `axis_source` est à 6 et reçu sans effet : il dit de quel geste vient un défilement, ce
+// que la préférence pour les crans rend inutile. `axis_relative_direction` est à 10 et
+// n'arrive qu'en version 9, donc un client qui lie huit ne le voit pas — et ce qu'il
+// annonce, un réglage du système qui inverse le sens du défilement, est déjà appliqué aux
+// valeurs que les autres événements portent.
+const (
+	wlPointerSetCursor uint16 = 0
+	wlPointerRelease   uint16 = 1
+
+	wlPointerEnter        uint16 = 0
+	wlPointerLeave        uint16 = 1
+	wlPointerMotion       uint16 = 2
+	wlPointerButton       uint16 = 3
+	wlPointerAxis         uint16 = 4
+	wlPointerFrame        uint16 = 5
+	wlPointerAxisStop     uint16 = 7
+	wlPointerAxisDiscrete uint16 = 8
+	wlPointerAxisValue120 uint16 = 9
+)
+
+// Les états qu'une touche et un bouton partagent, et l'axe de défilement qui compte.
+//
+// **Une version plus récente de `wl_keyboard` ajoute un état de répétition**, que le
+// backend ne reçoit pas puisqu'il lie huit. Le recevoir serait d'ailleurs sans effet, un
+// état inconnu étant ignoré — et c'est le bon geste, l'état d'entrée absorbant déjà la
+// répétition.
+//
+// L'axe horizontal vaut un et n'est pas nommé : le moteur ne porte qu'une molette
+// verticale, donc un défilement latéral est écarté plutôt que confondu avec elle, comme
+// X11 écarte ses boutons six et sept.
+const (
+	wlReleased uint32 = 0
+	wlPressed  uint32 = 1
+
+	wlAxisVertical uint32 = 0
+)
+
+// Les versions d'introduction dont le traitement des entrées dépend.
+//
+// **Elles sont nommées parce qu'un repli se décide sur la version liée et non sur ce qui
+// arrive.** Un compositeur n'envoie `axis_discrete` qu'aux clients d'avant la huitième —
+// sa description le dit sans détour, « this event is not sent to clients supporting
+// version 8 or later » —, donc router les deux sources de crans sans regarder la version
+// compterait deux fois le même geste chez l'un et rien chez l'autre.
+const (
+	wlPointerFrameSince    uint32 = 5
+	wlPointerValue120Since uint32 = 8
+	wlInputReleaseSince    uint32 = 3
+)
+
 // wlCallbackDone est l'opcode de l'unique événement de `wl_callback`, version 1.
 //
 // La description le marque `destructor` : l'objet disparaît en le rendant, donc son

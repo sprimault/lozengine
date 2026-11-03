@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sprimault/lozengine/input"
 	"github.com/sprimault/lozengine/render"
 )
 
@@ -40,6 +41,20 @@ type wlWindow struct {
 	surface  uint32
 	xdg      uint32
 	toplevel uint32
+
+	// seat porte le clavier et le pointeur, et state ce qu'ils ont dit depuis le pas
+	// précédent.
+	//
+	// L'état vit sur la fenêtre et non sur le siège parce que c'est la fenêtre qui en
+	// tire une image d'entrées, et parce qu'il survit à un périphérique débranché : un
+	// siège qui perd sa capacité de clavier relâche les touches, il ne jette pas le
+	// pointeur avec.
+	seat  wlSeat
+	state input.State
+
+	// hideCursor retient ce que l'ouverture a demandé, parce que la requête qui
+	// l'applique se renvoie à chaque prise de focus du pointeur et non une fois.
+	hideCursor bool
 
 	// configured dit que le premier `configure` est arrivé, donc qu'un tampon peut
 	// s'attacher. Il ne se relève jamais : la surface reste configurée jusqu'à sa
@@ -117,7 +132,18 @@ func (w *wlWindow) mount(o Options) error {
 		return err
 	}
 	w.g = g
+	w.hideCursor = o.HideCursor
 	c.handler = w.handle
+
+	// **Le siège se prend avant la surface, et son masque de capacités est déjà
+	// connu** : il est arrivé dans l'aller-retour qui a suivi la liaison, ce que le
+	// registre collecte pour cette raison. Les deux objets d'entrée ne dépendent pas de
+	// la surface — un `enter` ne peut venir qu'après qu'elle existe —, donc les créer
+	// d'abord garde les six requêtes de la fenêtre d'un seul bloc.
+	w.seat.id, w.seat.version = g.seat, g.seatVersion
+	if err := w.wlApplyCaps(g.seatCaps); err != nil {
+		return err
+	}
 
 	surface, err := c.newID()
 	if err != nil {
@@ -226,6 +252,15 @@ func (w *wlWindow) handle(sender uint32, opcode uint16, r *wlReader) error {
 		}
 		return nil
 
+	case w.seat.id:
+		return w.wlSeatEvent(opcode, r)
+
+	case w.seat.keyboard:
+		return w.wlKeyboardEvent(opcode, r)
+
+	case w.seat.pointer:
+		return w.wlPointerEvent(opcode, r)
+
 	case w.g.wmBase:
 		if opcode == wlXDGWMBasePing {
 			serial := r.uint()
@@ -327,6 +362,32 @@ func (w *wlWindow) drain() error {
 			return err
 		}
 	}
+}
+
+// Input lit ce que le compositeur a envoyé, puis rend les entrées du pas qui commence.
+//
+// C'est le premier appel d'un pas, et c'est ce que le contrat de [Window] impose : la
+// boucle lit les entrées, met à jour, puis présente. Lire ailleurs ferait répondre la
+// fenêtre en retard d'une image, et la taille servie serait celle du pas précédent.
+//
+// **Elle ne se met jamais en attente**, parce que [wlWindow.Paced] rend faux : la boucle
+// dort entre deux pas pour tenir sa cadence, donc une attente ici l'ajouterait à la
+// sienne. Un compositeur qui n'a rien dit laisse simplement l'état inchangé.
+//
+// **C'est aussi d'ici que part ce que la lecture a composé**, et c'est la seule raison
+// pour laquelle elle écrit sur la socket : un `pong` qu'aucun chemin n'émet fait couper la
+// connexion, et une requête de curseur datée d'une prise de focus est ignorée en silence
+// si elle arrive trop tard. Les deux naissent pendant la lecture, et celle-ci est le
+// chemin que chaque pas traverse.
+func (w *wlWindow) Input() input.Input {
+	if !w.closed {
+		if err := w.drain(); err != nil {
+			w.fail(err)
+		} else if err := w.c.flush(); err != nil {
+			w.fail(err)
+		}
+	}
+	return w.state.Frame()
 }
 
 // fit garantit un pool à la géométrie demandée.
