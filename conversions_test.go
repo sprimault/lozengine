@@ -35,8 +35,7 @@ var conversions = map[string]int{
 	// `ioctl` ne se fait pas sans passer l'adresse de son argument, donc la conversion
 	// est inévitable, mais une par requête en aurait mis seize ici — à relire une à
 	// une alors qu'elles ne diffèrent que par la structure passée.
-	"internal/backend/drm_ioctl_linux.go":      1,
-	"internal/backend/drm_ioctl_linux_test.go": 3,
+	"internal/backend/drm_ioctl_linux.go":      2,
 	"internal/backend/icon_windows.go":         4,
 	"internal/backend/open_windows.go":         3,
 	"internal/backend/pixels.go":               2,
