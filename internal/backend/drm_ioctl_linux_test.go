@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"syscall"
 	"testing"
-	"unsafe"
 )
 
 // TestDRMIoctlReachesTheKernelWithItsArgumentsInPlace garde la mécanique de l'appel sans
@@ -41,12 +40,12 @@ func TestDRMIoctlReachesTheKernelWithItsArgumentsInPlace(t *testing.T) {
 	t.Cleanup(func() { file.Close() })
 
 	var res drmModeCardRes
-	err = drmIoctl(int(file.Fd()), drmModeGetResources, unsafe.Pointer(&res))
+	err = drmIoctl(int(file.Fd()), drmModeGetResources, &res)
 	if !errors.Is(err, syscall.ENOTTY) {
 		t.Errorf("sur un fichier ordinaire, la requête rend %v, attendu ENOTTY", err)
 	}
 
-	if err := drmIoctl(-1, drmModeGetResources, unsafe.Pointer(&res)); !errors.Is(err, syscall.EBADF) {
+	if err := drmIoctl(-1, drmModeGetResources, &res); !errors.Is(err, syscall.EBADF) {
 		t.Errorf("sur un descripteur invalide, la requête rend %v, attendu EBADF", err)
 	}
 }
@@ -67,7 +66,7 @@ func TestDRMIoctlLeavesItsArgumentUntouchedOnRefusal(t *testing.T) {
 	res := drmModeCardRes{countConnectors: 7, maxWidth: 4096}
 	before := res
 
-	if err := drmIoctl(-1, drmModeGetResources, unsafe.Pointer(&res)); err == nil {
+	if err := drmIoctl(-1, drmModeGetResources, &res); err == nil {
 		t.Fatal("la requête sur un descripteur invalide a réussi")
 	}
 	if res != before {

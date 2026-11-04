@@ -71,6 +71,7 @@ const drmRequestType = 'd' << drmRequestTypeShift
 // Les numéros viennent de `drm.h` : `DRM_IOCTL_SET_CLIENT_CAP` en `_IOW`,
 // `SET_MASTER` et `DROP_MASTER` en `_IO`, et tout le reste du réglage de mode en `_IOWR`.
 const (
+	drmGetCap       = drmDirBoth | uintptr(unsafe.Sizeof(drmCap{}))<<drmRequestSizeShift | drmRequestType | 0x0c
 	drmSetClientCap = drmDirWrite | uintptr(unsafe.Sizeof(drmClientCap{}))<<drmRequestSizeShift | drmRequestType | 0x0d
 
 	drmSetMaster  = drmDirNone | drmRequestType | 0x1e
@@ -95,15 +96,38 @@ const (
 	drmModeAddFB2 = drmDirBoth | uintptr(unsafe.Sizeof(drmModeFBCmd2{}))<<drmRequestSizeShift | drmRequestType | 0xb8
 )
 
+// drmCapability est une capacité du pilote que `DRM_IOCTL_GET_CAP` interroge.
+//
+// Deux valeurs sont relevées. [drmCapDumbBuffer] est celle qui décide : un pilote qui rend
+// zéro ne sait pas fabriquer de tampon simple, donc la carte n'est pas utilisable par ce
+// chemin — c'est le cas d'un périphérique de rendu sans sortie, qui existe sur la même
+// machine sous un autre nœud. [drmCapDumbPreferredDepth] est relevée pour ne pas la
+// supposer : le moteur écrit en trente-deux bits par pixel, et un pilote qui préférerait
+// autre chose l'accepte quand même, donc elle informe sans décider.
+type drmCapability uint64
+
+// Les capacités de pilote de `drm.h`, dans la numérotation qu'il déclare.
+const (
+	drmCapDumbBuffer         drmCapability = 0x1
+	drmCapDumbPreferredDepth drmCapability = 0x3
+)
+
 // drmClientCapability est une capacité que le client demande au pilote par
 // `DRM_IOCTL_SET_CLIENT_CAP`.
 //
-// Deux valeurs sont relevées, et le moteur n'en emploiera qu'une :
-// [drmClientCapAtomic], que la validation du jalon n'exige pas — le chemin retenu pose
-// son mode par `SETCRTC` —, et [drmClientCapWritebackConnectors], qui fait **apparaître**
-// le connecteur d'écriture différée dans l'énumération. Mesuré par le brief : neuf
-// connecteurs sans elle, dix avec. Elle ne donne aucun droit de plus, et poser un mode
-// sur ce connecteur n'en dépend pas.
+// Deux valeurs sont relevées, et **le moteur n'en demande aucune** : il pose son mode par
+// `SETCRTC`, l'interface héritée, donc [drmClientCapAtomic] ne lui sert pas ; et
+// [drmClientCapWritebackConnectors], qui fait **apparaître** le connecteur d'écriture
+// différée dans l'énumération, ne sert qu'au dispositif d'épreuve — un jeu qui
+// l'obtiendrait allumerait, sur une machine sans écran, une sortie que personne ne
+// regarde.
+//
+// **Les deux ne se demandent que dans cet ordre, et c'est mesuré le 4 novembre 2026** :
+// l'écriture différée demandée seule est **refusée**, le noyau ne la servant qu'à un
+// client qui a déjà pris le modèle atomique. Demandée après lui, elle passe, et
+// l'énumération montre dix connecteurs au lieu de neuf — dont un writeback `connected` qui
+// annonce trente-deux modes, donc avec de quoi choisir. Le brief la croyait indépendante,
+// et le cas de découverte a échoué deux fois dessus.
 type drmClientCapability uint64
 
 // Les capacités de `drm.h`, dans la numérotation qu'il déclare.
@@ -143,6 +167,25 @@ const (
 // zéro **ou** à la fin.
 const drmModeNameLen = 32
 
+// Les types et les drapeaux d'un mode, du champ `type` et du champ `flags` de
+// [drmModeInfo].
+//
+// [drmModeTypePreferred] est le seul critère sûr pour choisir un mode : la liste qu'un
+// connecteur rend est ordonnée à la convenance du pilote, donc prendre la première sans
+// regarder ce drapeau marche souvent et pas toujours. [drmModeTypeDriver] dit que le mode
+// vient du pilote et non d'un réglage de l'espace utilisateur.
+//
+// Les deux drapeaux sont relevés pour être **écartés** : sous un mode entrelacé, une image
+// ne porte qu'une ligne sur deux, et sous un mode doublé chaque ligne compte double. Le
+// moteur écrit un tampon linéaire, donc il choisit un mode qui n'a ni l'un ni l'autre.
+const (
+	drmModeTypePreferred = 1 << 3
+	drmModeTypeDriver    = 1 << 6
+
+	drmModeFlagInterlace  = 1 << 4
+	drmModeFlagDoubleScan = 1 << 5
+)
+
 // Les drapeaux de `DRM_IOCTL_MODE_PAGE_FLIP`.
 //
 // [drmPageFlipEvent] demande que la bascule soit annoncée par un événement lisible sur
@@ -163,6 +206,17 @@ const (
 	drmEventVblankType   = 0x01
 	drmEventFlipComplete = 0x02
 )
+
+// drmCap est l'argument de `DRM_IOCTL_GET_CAP`, soit `struct drm_get_cap`.
+//
+// Elle a la même forme que [drmClientCap] et reste un type distinct, parce que les deux
+// structures sont distinctes dans l'UAPI : les fondre ferait dépendre la requête de l'une
+// de la taille de l'autre, et un noyau qui élargirait une seule des deux changerait les
+// deux mots de requête.
+type drmCap struct {
+	capability uint64
+	value      uint64
+}
 
 // drmClientCap est l'argument de `DRM_IOCTL_SET_CLIENT_CAP`, soit
 // `struct drm_set_client_cap`.
