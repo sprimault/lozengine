@@ -420,6 +420,12 @@ func (w *wlWindow) fit(width, height int) error {
 // avant d'écrire — une présentation qui ne lirait pas trouverait tout détenu au second
 // tour et ne montrerait plus rien.
 //
+// **Ce que tout ce qui n'est pas l'écriture coûte est mesuré, et c'est deux
+// microsecondes** : le drain, le choix du tampon, les trois requêtes et l'envoi tiennent
+// ensemble dans un centième de pour cent du budget d'une image. Cette présentation **est**
+// donc son écriture, dont le prix se lit dans [wlPool.write]. Voir
+// [BenchmarkWaylandPresent].
+//
 // Trois raisons de ne rien faire, et aucune n'est un échec, ce que le contrat prévoit : la
 // fenêtre est fermée, elle n'a pas encore reçu sa configuration — un tampon attaché avant
 // serait une erreur de protocole —, ou le compositeur détient les deux tampons. Ce qui est

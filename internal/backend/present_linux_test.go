@@ -144,7 +144,12 @@ func imageWord(s setup, b []byte) uint32 {
 	return binary.LittleEndian.Uint32(b)
 }
 
-// BenchmarkPresent mesure ce qu'une image remise au serveur coûte par image.
+// BenchmarkX11Present mesure ce qu'une image remise au serveur coûte par image.
+//
+// **Le nom porte sa famille depuis le jalon 6**, pour la raison qui a préfixé le reste du
+// backend : trois familles Linux se partagent un paquet et une contrainte de
+// construction, donc un nom sans famille serait pris par la première écrite. Windows garde
+// le sien, sa contrainte ne le disputant à personne.
 //
 // **Il existe pour décider si MIT-SHM valait d'être écrit**, et c'est sa seule raison :
 // le transfert d'image par le protocole représente environ quatre fois la taille de
@@ -177,7 +182,7 @@ func imageWord(s setup, b []byte) uint32 {
 // Le serveur lit aussi ces octets, et MIT-SHM lui épargne une copie qu'aucun banc d'ici
 // ne compte. Le gain réel est donc supérieur à ce plafond, d'un facteur qu'il faudrait
 // mesurer de l'autre côté.
-func BenchmarkPresent(b *testing.B) {
+func BenchmarkX11Present(b *testing.B) {
 	requireDisplay(b)
 
 	for _, size := range []struct {

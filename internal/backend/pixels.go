@@ -222,9 +222,14 @@ func pixelKindOf(at [3]int) pixelKind {
 // 10,5 et 11,4 % du budget d'une image à soixante par seconde. Elle est limitée par ses
 // opérations et non par la bande passante — 8,3 Mo écrits, donc environ 4,4 Go/s sur une
 // machine qui en porte deux cent cinquante —, donc sa part brute est déjà sa part et ne
-// se pondère pas. **Ces deux chiffres valent pour une destination X11**, c'est-à-dire un
-// tampon d'émission du tas de Go ; une mémoire partagée projetée ou un tampon dumb du
-// noyau sont une autre destination, et le lot qui présente les mesure. Ce qui resterait à
+// se pondère pas. **La destination ne les change pas, et la réserve qui disait l'attendre
+// est levée** : mesurée le 4 novembre 2026, la conversion échangée rend le même chiffre
+// vers une mémoire partagée projetée que le compositeur lit que vers un tampon du tas —
+// deux millièmes d'écart, dont le signe s'inverse entre deux séries. Ce qui coûte est la
+// permutation et non l'endroit où elle écrit, et [BenchmarkWaylandWrite] porte le chiffre.
+// Un tampon dumb du noyau reste la
+// destination qu'aucun banc ne mesure, et c'est le lot qui présente en DRM/KMS qui le dira.
+// Ce qui resterait à
 // gagner demanderait `unsafe` dans le cœur, et le déclencheur est nommé dans les règles
 // du dépôt : le jour où un de ces backends manque ses images.
 func (o pixelOrder) appendPixels(dst []byte, pixels []render.Color) []byte {
