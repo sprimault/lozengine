@@ -227,9 +227,15 @@ func pixelKindOf(at [3]int) pixelKind {
 // vers une mémoire partagée projetée que le compositeur lit que vers un tampon du tas —
 // deux millièmes d'écart, dont le signe s'inverse entre deux séries. Ce qui coûte est la
 // permutation et non l'endroit où elle écrit, et [BenchmarkWaylandWrite] porte le chiffre.
-// Un tampon dumb du noyau reste la
-// destination qu'aucun banc ne mesure, et c'est le lot qui présente en DRM/KMS qui le dira.
-// Ce qui resterait à
+// **Le tampon dumb du noyau dit la même chose**, mesuré le 4 novembre 2026 et porté par
+// [BenchmarkDRMWrite] : deux dixièmes de millième d'écart, à pas de ligne aligné comme
+// allongé. La réserve est donc levée pour les trois destinations du moteur, et ce qui coûte
+// est la permutation.
+//
+// **Ce qui dépend de la destination est l'autre chemin, celui de la copie**, et il ne
+// relève pas de cette fonction : écrire ligne par ligne dans un tampon que le pilote prête
+// coûte trente pour cent de plus que dans le tas, là qu'une copie d'un bloc n'y change
+// rien. Ce qui resterait à
 // gagner demanderait `unsafe` dans le cœur, et le déclencheur est nommé dans les règles
 // du dépôt : le jour où un de ces backends manque ses images.
 func (o pixelOrder) appendPixels(dst []byte, pixels []render.Color) []byte {

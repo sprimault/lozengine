@@ -35,7 +35,7 @@ const cardRequired = "LOZENGINE_DRM"
 func requireCard(tb testing.TB) *drmCard {
 	tb.Helper()
 
-	file, err := drmOpenCard()
+	file, fd, err := drmOpenCard()
 	if err == nil {
 		// **L'ordre des deux capacités n'est pas indifférent, et c'est mesuré** :
 		// demandée seule, celle d'écriture différée est refusée — le noyau ne la
@@ -44,12 +44,12 @@ func requireCard(tb testing.TB) *drmCard {
 		//
 		// Le refus n'arrête pas le cas : une carte qui a une vraie sortie n'a besoin
 		// d'aucune des deux, et c'est le régime d'une machine avec écran.
-		if drmEnableClientCap(int(file.Fd()), drmClientCapAtomic) == nil {
-			_ = drmEnableClientCap(int(file.Fd()), drmClientCapWritebackConnectors)
+		if drmEnableClientCap(fd, drmClientCapAtomic) == nil {
+			_ = drmEnableClientCap(fd, drmClientCapWritebackConnectors)
 		}
 
 		var card *drmCard
-		if card, err = drmDiscoverOn(file); err == nil {
+		if card, err = drmDiscoverOn(file, fd); err == nil {
 			tb.Cleanup(card.Close)
 			return card
 		}

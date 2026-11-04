@@ -27,6 +27,20 @@ const drmDeviceDir = "/dev/dri"
 type drmCard struct {
 	file *os.File
 
+	// fd est le descripteur de la carte, relevé une fois à l'ouverture.
+	//
+	// **Il est gardé, et `os.File.Fd` ne se rappelle jamais, pour une raison mesurée le
+	// 4 novembre 2026** : Go ajoute ce nœud à son scrutateur, donc `Fd` **remet le
+	// descripteur en mode bloquant** à chaque appel — c'est écrit dans sa
+	// documentation. Un `SetNonblock` posé au montage était donc défait par le premier
+	// `Fd` du tour suivant, et la lecture des événements de bascule bloquait pour de
+	// bon : mesuré, le cas de présentation a tenu les six cents secondes du délai de
+	// `go test` sans rien faire.
+	//
+	// Le relevé passe par [syscall.RawConn.Control], qui rend le descripteur sans
+	// toucher à son mode, là où `Fd` le change.
+	fd int
+
 	// connector, crtc et mode sont ce que la découverte a retenu : le connecteur qui
 	// porte un écran, le contrôleur qui peut l'alimenter, et le mode à poser.
 	connector uint32
@@ -36,6 +50,22 @@ type drmCard struct {
 	// saved est l'état du contrôleur avant qu'on y touche. Un contrôleur qui
 	// n'alimentait rien a un `mode_valid` nul, ce qui se repasse aussi bien.
 	saved drmModeCrtc
+
+	// frames sont les tampons que la présentation fait tourner, order la disposition
+	// que le pilote a accordée, et front celui qui est à l'écran.
+	frames [drmFrames]drmFrame
+	order  pixelOrder
+	front  int
+
+	// lit dit que le mode a été posé, donc que les tours suivants basculent au lieu de
+	// rallumer. Il ne se relève jamais : un écran allumé le reste jusqu'à la
+	// fermeture.
+	lit bool
+
+	// closed retient que la carte ne présentera plus rien, et err ce qui l'a mise fin
+	// autrement que par la volonté du joueur. Seule la première cause est gardée.
+	closed bool
+	err    error
 }
 
 // errNoDisplay dit qu'aucune carte n'offre d'écran à allumer.
@@ -57,10 +87,10 @@ var errNoDisplay = errors.New("no DRM card offers a connected display")
 // numérotées, et la première qui répond est retenue. L'erreur rendue est celle de la
 // dernière essayée : une machine sans aucune carte et une machine dont la carte refuse ne
 // se distinguent pas du point de vue de l'appelant, qui passera à la famille suivante.
-func drmOpenCard() (*os.File, error) {
+func drmOpenCard() (*os.File, int, error) {
 	entries, err := os.ReadDir(drmDeviceDir)
 	if err != nil {
-		return nil, fmt.Errorf("listing %s: %w", drmDeviceDir, err)
+		return nil, 0, fmt.Errorf("listing %s: %w", drmDeviceDir, err)
 	}
 
 	names := make([]string, 0, len(entries))
@@ -75,12 +105,23 @@ func drmOpenCard() (*os.File, error) {
 	for _, name := range names {
 		path := filepath.Join(drmDeviceDir, name)
 
-		file, err := os.OpenFile(path, os.O_RDWR, 0)
+		// **`O_NONBLOCK` dès l'ouverture, et non un `SetNonblock` plus tard** : la
+		// présentation lit les événements de bascule à chaque tour et ne doit jamais
+		// y attendre, et c'est le drapeau d'ouverture que Go respecte — un réglage
+		// posé après coup est défait par le premier `os.File.Fd`.
+		file, err := os.OpenFile(path, os.O_RDWR|syscall.O_NONBLOCK, 0)
 		if err != nil {
 			last = err
 			continue
 		}
-		if dumb, err := drmCapabilityOf(int(file.Fd()), drmCapDumbBuffer); err != nil || dumb == 0 {
+
+		fd, err := drmRawFd(file)
+		if err != nil {
+			file.Close()
+			last = err
+			continue
+		}
+		if dumb, err := drmCapabilityOf(fd, drmCapDumbBuffer); err != nil || dumb == 0 {
 			file.Close()
 			if err != nil {
 				last = err
@@ -89,9 +130,9 @@ func drmOpenCard() (*os.File, error) {
 			}
 			continue
 		}
-		return file, nil
+		return file, fd, nil
 	}
-	return nil, last
+	return nil, 0, last
 }
 
 // drmCapabilityOf interroge une capacité du pilote.
@@ -101,6 +142,28 @@ func drmCapabilityOf(fd int, which drmCapability) (uint64, error) {
 		return 0, fmt.Errorf("asking the driver for capability %d: %w", which, err)
 	}
 	return arg.value, nil
+}
+
+// drmRawFd relève le descripteur d'un fichier sans toucher à son mode.
+//
+// **C'est la seule façon de l'obtenir sans le remettre en bloquant**, et c'est tout ce qui
+// la justifie : `os.File.Fd` le change pour un nœud que Go a confié à son scrutateur, et sa
+// documentation le dit. [syscall.RawConn.Control] appelle sa fonction avec le descripteur
+// tel qu'il est, le temps de l'appel.
+//
+// Le descripteur qu'elle rend ne vaut que tant que le fichier reste ouvert, ce qui est la
+// durée de vie de la carte qui le porte.
+func drmRawFd(file *os.File) (int, error) {
+	raw, err := file.SyscallConn()
+	if err != nil {
+		return 0, fmt.Errorf("getting raw access to %s: %w", file.Name(), err)
+	}
+
+	fd := -1
+	if err := raw.Control(func(handle uintptr) { fd = int(handle) }); err != nil {
+		return 0, fmt.Errorf("reading the descriptor of %s: %w", file.Name(), err)
+	}
+	return fd, nil
 }
 
 // drmEnableClientCap demande une capacité client au pilote.
@@ -284,11 +347,11 @@ func drmCrtcForMask(mask uint32, crtcs []uint32) (uint32, bool) {
 // rien à y poser, et le distinguer n'apprendrait rien à l'appelant, qui passera de toute
 // façon à la famille suivante.
 func drmDiscover() (*drmCard, error) {
-	file, err := drmOpenCard()
+	file, fd, err := drmOpenCard()
 	if err != nil {
 		return nil, err
 	}
-	return drmDiscoverOn(file)
+	return drmDiscoverOn(file, fd)
 }
 
 // drmDiscoverOn découvre sur une carte déjà ouverte, et prend sa propriété.
@@ -302,8 +365,7 @@ func drmDiscover() (*drmCard, error) {
 // Elle prend la propriété du fichier dans les deux sens : la carte rendue le porte, et un
 // échec le ferme. Un appelant qui garderait la main dessus aurait à défaire une découverte
 // à moitié faite.
-func drmDiscoverOn(file *os.File) (*drmCard, error) {
-	fd := int(file.Fd())
+func drmDiscoverOn(file *os.File, fd int) (*drmCard, error) {
 	connectors, crtcs, err := drmResources(fd)
 	if err != nil {
 		file.Close()
@@ -326,7 +388,7 @@ func drmDiscoverOn(file *os.File) (*drmCard, error) {
 				continue
 			}
 
-			card := &drmCard{file: file, connector: id, crtc: crtc, mode: mode}
+			card := &drmCard{file: file, fd: fd, connector: id, crtc: crtc, mode: mode}
 			card.saved = drmModeCrtc{crtcID: crtc}
 			if err := drmIoctl(fd, drmModeGetCrtc, &card.saved); err != nil {
 				file.Close()
@@ -340,15 +402,44 @@ func drmDiscoverOn(file *os.File) (*drmCard, error) {
 	return nil, errNoDisplay
 }
 
-// Close rend la carte au système.
+// Close remet l'affichage comme il était et rend la carte au système.
 //
-// Il ne restaure rien : ce qui a été posé se défait dans le lot qui l'a posé, et une carte
-// découverte sans qu'un mode ait été posé n'a rien à défaire.
+// **L'état du contrôleur se remet ici, chez qui l'a posé**, et non dans un lot ultérieur :
+// un chemin qui allume un écran sans savoir l'éteindre laisse la machine dans l'état où il
+// l'a mise à chaque exécution, y compris celle d'un cas de test. Ce qui reste au lot qui
+// rend l'affichage est ce que ce fichier ne pose pas — le mode de la console et la
+// maîtrise.
+//
+// **Le contrôleur se remet dans son état lu avant tout**, et c'est ce qui rend la remise
+// juste quoi qu'on ait fait : un contrôleur qui n'alimentait rien a un `mode_valid` nul,
+// donc le repasser l'éteint ; un contrôleur qui alimentait quelque chose retrouve son mode
+// et son tampon.
+//
+// L'ordre des trois gestes n'est pas indifférent : éteindre avant de détruire les tampons,
+// sinon le pilote refuserait de détruire ce qu'il balaie ; et détruire avant de fermer le
+// descripteur, par lequel les requêtes passent.
 func (c *drmCard) Close() {
-	if c.file != nil {
-		c.file.Close()
-		c.file = nil
+	if c.file == nil {
+		return
 	}
+	if c.lit {
+		c.restore()
+		c.lit = false
+	}
+	c.unmount()
+	c.file.Close()
+	c.file = nil
+	c.closed = true
+}
+
+// restore repasse au contrôleur l'état que la découverte avait lu.
+//
+// Son échec n'est pas rapporté : on est en train de partir, et il n'y a plus personne à
+// qui le dire. Ce qui reste vrai est que le descripteur se ferme ensuite, ce qui fait
+// reprendre l'affichage au système de toute façon.
+func (c *drmCard) restore() {
+	state := c.saved
+	_ = drmIoctl(c.fd, drmModeSetCrtc, &state)
 }
 
 // size rend la taille de l'image que le mode retenu demande.
