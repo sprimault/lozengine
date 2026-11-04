@@ -49,10 +49,10 @@ func wlShiftedFrame(by uint8) *render.Buffer {
 // La structure est bâtie à la main plutôt que par [wlOpen], qui joint la socket que
 // l'environnement désigne : ce qui s'éprouve ici est le montage, pas la découverte du
 // chemin, dont les cas vivent avec [wlDisplayPath].
-func wlMount(t *testing.T, f *wlFake, o Options) (*wlWindow, error) {
-	t.Helper()
+func wlMount(tb testing.TB, f *wlFake, o Options) (*wlWindow, error) {
+	tb.Helper()
 
-	c := wlFakeConn(t, f)
+	c := wlFakeConn(tb, f)
 	w := &wlWindow{c: c, width: o.Width, height: o.Height}
 	return w, w.mount(o)
 }

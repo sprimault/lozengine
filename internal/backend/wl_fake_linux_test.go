@@ -528,11 +528,11 @@ func (f *wlFake) collect(oob []byte) {
 // resterait sur un numéro de descripteur que le noyau réattribue, et volerait ses requêtes
 // au cas suivant — mesuré en intégration continue, un montage sur six expirait au bout de
 // la borne d'ouverture, et le cas qui tombait n'était pas celui qui avait le défaut.
-func (f *wlFake) serve(t *testing.T, sock *net.UnixConn) {
-	t.Helper()
+func (f *wlFake) serve(tb testing.TB, sock *net.UnixConn) {
+	tb.Helper()
 
 	oob := make([]byte, syscall.CmsgSpace(4*wlFDsPerRead))
-	t.Cleanup(f.unmap)
+	tb.Cleanup(f.unmap)
 	f.sock = sock
 
 	go func() {
@@ -619,11 +619,16 @@ func (f *wlFake) entered(serial uint32) {
 }
 
 // wlFakeConn monte une connexion servie par le compositeur donné.
-func wlFakeConn(t *testing.T, f *wlFake) *wlConn {
-	t.Helper()
+//
+// Elle prend un [testing.TB] et non un `*testing.T` parce qu'un banc monte le même
+// compositeur : ce que la fonction lui demande — une aide de trace et un nettoyage — est
+// dans l'interface commune, et restreindre au cas de test obligerait à écrire un second
+// montage qui dériverait du premier.
+func wlFakeConn(tb testing.TB, f *wlFake) *wlConn {
+	tb.Helper()
 
-	c, server := wlConnPair(t)
-	f.serve(t, server)
+	c, server := wlConnPair(tb)
+	f.serve(tb, server)
 	return c
 }
 

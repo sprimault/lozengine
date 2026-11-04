@@ -210,6 +210,12 @@ func wlNewPool(c *wlConn, g wlGlobals, width, height int) (*wlPool, error) {
 // L'octet d'alpha tombe alors dans l'octet que le format déclare ignoré, et la boucle
 // qu'on évite est la plus parcourue du backend.
 //
+// **Ce que ce cas à part achète est mesuré, et c'est un facteur treize** : 142 µs contre
+// 1,89 ms à 1920×1080 sur la machine de contrôle, soit 0,85 % du budget d'une image contre
+// 11,4 %. Le format accordé décide donc à lui seul si cette famille a le chemin de
+// présentation le moins cher du dépôt ou l'un des plus chers, et un jeu n'y peut rien :
+// c'est le compositeur qui annonce ce qu'il accepte. Voir [BenchmarkWaylandWrite].
+//
 // La longueur écrite vient du nombre de pixels et non de la géométrie du pool, parce que
 // l'appelant vient d'ajuster l'une à l'autre. Le découpage à trois indices borne quand même
 // la capacité au tampon : sous une incohérence, l'extension irait au tas et l'image ne
